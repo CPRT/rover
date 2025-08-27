@@ -1,0 +1,26 @@
+frontLeft:
+  ros__parameters:
+    id: 3
+
+backLeft:
+  ros__parameters:
+    id: 4
+
+frontRight:
+  ros__parameters:
+    id: 1
+
+backRight:
+  ros__parameters:
+    id: 2
+
+talon_drive_controller:
+  ros__parameters:
+    wheels: ["frontRight", "frontLeft", "backRight", "backLeft"]
+    max_speed: 2.0
+    base_width: 0.9
+    pub_odom: true
+    pub_elec: true
+    wheel_rad: 0.10
+    angular_slip_ratio: 0.6
+    low_latency_mode: true

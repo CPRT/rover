@@ -1,0 +1,10 @@
+<class_libraries>
+  <!-- "<" is replaced with "&lt;" & ">" is replaced with "&gt" -->
+  <library path="preserve_cost_inflation_filter">
+    <class name="cprtGridMapFilters/PreserveCostInflationFilter" type="grid_map::PreserveCostInflationFilter&lt;grid_map::GridMap&gt;" base_class_type="filters::FilterBase&lt;grid_map::GridMap&gt;">
+      <description>
+        Inflate the gridmap while maintaining the original cost values.
+      </description>
+    </class>
+  </library>
+</class_libraries>

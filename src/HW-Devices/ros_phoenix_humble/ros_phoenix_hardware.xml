@@ -1,0 +1,16 @@
+<library path="ros_phoenix_control">
+    <class name="ros_phoenix/PhoenixBridge"
+        type="ros_phoenix::PhoenixBridge"
+        base_class_type="hardware_interface::SystemInterface">
+        <description>
+            ros2_control system wrapper for a phoenix_container
+        </description>
+    </class>
+    <class name="ros_phoenix/PhoenixSystem"
+        type="ros_phoenix::PhoenixSystem"
+        base_class_type="hardware_interface::SystemInterface">
+        <description>
+            ros2_control phoenix system
+        </description>
+    </class>
+</library>

@@ -1,0 +1,22 @@
+/**:
+  ros__parameters:
+    # inputs: ['zed2i_pointcloud', 'ouster_OS0_32U_pointcloud'] # Set by launch file
+    zed2i_pointcloud: # A name to identify the input source
+      type: pointcloud # Supported types: pointcloud
+      topic: /zed/zed_node/point_cloud/cloud_registered
+      queue_size: 10
+      publish_on_update: true # Whether to publish the elevation map after a callback from this source.
+      sensor_processor:
+        type: perfect 
+        ignore_points_above: 0.5
+    ouster_OS0_32U_pointcloud:
+      type: pointcloud
+      topic: /ouster/points
+      queue_size: 10
+      publish_on_update: true
+      sensor_processor:
+        type: laser
+        ignore_points_above: 0.5
+    map_frame_id: "map"
+    robot_base_frame_id: "base_link"
+    robot_pose_with_covariance_topic: "/odometry/filtered/local"

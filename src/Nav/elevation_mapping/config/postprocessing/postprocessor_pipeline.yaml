@@ -1,0 +1,39 @@
+elevation_mapping:
+  ros__parameters:
+  
+    postprocessor_pipeline: # set by postprocessor_pipeline_name
+      # Fill holes in the map with inpainting.
+        # Inpaint filter is broken, stacktrace below:
+        #0  0x0000fffff6bb7724 in cv::_OutputArray::create(cv::Size_<int>, int, int, bool, cv::_OutputArray::DepthMask) const () 
+        #           from /lib/aarch64-linux-gnu/libopencv_core.so.4.5d
+        #1  0x0000fffff7a4c890 in cv::inpaint(cv::_InputArray const&, cv::_InputArray const&, cv::_OutputArray const&, double, int) () from /lib/libopencv_photo.so.408
+        #2  0x0000fffff7aa1c94 in ?? () from /opt/ros/humble/lib/libgrid_map_cv.so
+        #3  0x0000aaaaaab78fac in elevation_mapping::PostprocessingPipelineFunctor::operator()(grid_map::GridMap&) ()
+      # filter1:
+      #   name: inpaint
+      #   type: gridMapCv/InpaintFilter
+
+      #   params:
+      #     input_layer: elevation
+      #     output_layer: elevation_inpainted
+      #     radius: 0.05
+
+
+      # Compute Surface normals
+      filter1:
+        name: surface_normals
+        type: gridMapFilters/NormalVectorsFilter
+        params:
+          # input_layer: elevation_inpainted
+          input_layer: elevation
+          output_layers_prefix: normal_vectors_
+          radius: 0.3 # 1.5 times the map resolution is good
+          normal_vector_positive_axis: z
+
+      #  Delete layers that are not needed to reduce bandwidth
+      filter2:
+        name: delete_original_layers
+        type: gridMapFilters/DeletionFilter
+        params:
+          layers: [lowest_scan_point,sensor_x_at_lowest_scan, sensor_y_at_lowest_scan, sensor_z_at_lowest_scan] # List of layers.
+

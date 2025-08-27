@@ -1,0 +1,27 @@
+flightstick_control:
+  ros__parameters:
+    drive_mode_button: 12
+    arm_ik_mode_button: 11
+    arm_manual_mode_button: 10
+    nav_mode_button: 13
+    science_mode_button: 14
+
+    drive_mode:
+      throttle:
+        axis: 3
+        min: -1.0
+        max: 1.0
+      forward_axis: 1
+      yaw_axis: 0
+      cam_tilt_axis: 5
+      cam_pan_axis: 4
+      cam_reset: 1
+      cam_next: 3
+      cam_prev: 2
+      cruise_control: 0
+      max_linear: 2.0
+      max_angular: 1.0
+      max_increment: 0.1
+      min_speed: 0.001
+      
+    

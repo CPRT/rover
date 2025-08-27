@@ -1,0 +1,12 @@
+navsat_transform_node:
+  ros__parameters:
+    frequency: 10.0
+    delay: 0.0
+    magnetic_declination_radians: 0.0 # 0.226893 for Drumheller, 0.20944 for Ottawa
+                                      # 0.0 for no declination (e.g., Using GPS headings)
+    yaw_offset: 0.0 # 1.5707963 IMU reads 0 facing magnetic east = 0
+    zero_altitude: True
+    broadcast_cartesian_transform: True
+    publish_filtered_gps: False
+    use_odometry_yaw: False
+    wait_for_datum: False

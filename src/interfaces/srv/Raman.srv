@@ -1,0 +1,7 @@
+# --- request ---
+int32  inittime
+int32  scansavg
+int32  smoothing
+---
+# --- response ---
+string csv               # whole CSV as text

@@ -1,0 +1,9 @@
+<library path="ros2_control_rover_arm">
+  <class name="ros2_control_rover_arm/RoverArmHardwareInterface"
+         type="ros2_control_rover_arm::RoverArmHardwareInterface"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+      Ros2 control for rover arm.
+    </description>
+  </class>
+</library>

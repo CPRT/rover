@@ -1,0 +1,32 @@
+name: Lint and Format Check
+
+on:
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  lint-and-format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Python Formatting and Linting
+      - name: Install Python dependencies
+        run: |
+          pip install black pylint
+      - name: Run Pylint
+        run: |
+          pylint $(find . -name "*.py") --exit-zero
+        env:
+          PYLINT_SCORE_THRESHOLD: 10.0  # You can implement stricter checks here
+      - name: Run Black
+        run: black --check .
+
+      # C++ Formatting
+      - name: Install Clang-format
+        run: sudo apt-get install -y clang-format
+      - name: Run Clang-format
+        run: |
+          find . -name "*.h" -o -name "*.hpp" -o -name "*.cpp" -print | xargs clang-format --dry-run --Werror

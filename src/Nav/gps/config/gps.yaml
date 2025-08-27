@@ -1,0 +1,69 @@
+ublox_gps_node:
+  ros__parameters:
+    debug: 0                    # Range 0-4 (0 means no debug statements will print)
+    device: /dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_GNSS_receiver-if00
+    frame_id: gps_link
+    uart1:
+      baudrate: 115200
+      in: 32
+      out: 32
+    uart2:
+      baudrate: 115200
+      in: 32
+      out: 32
+    rate: 1.0
+    nav_rate: 1
+    enable_ppp: false
+    tmode3: 0
+    gnss:
+      sbas: false
+      max: 0
+      usage: 0
+      gps: true
+      glonass: true
+      beidou: true
+      qzss: true
+      qzss_sig_cfg: L1CA
+      galileo: true
+      imes: true
+    dynamic_model: portable
+    fix_mode: auto
+    dr_limit: 0
+    save_on_shutdown: false
+    clear_bbr: false
+    inf:                  # Whether to display all INF messages in console
+      debug: false
+      error: false
+      notice: false
+      test: false
+      warning: false
+    publish:
+      aid:
+        alm: false
+        eph: false
+        hui: false
+      rxm:
+        alm: false
+        eph: false
+        raw: false
+        rtcm: false
+        sfrb: false
+      mon:
+        hw: false
+      nav:
+        att: false
+        clock: false
+        posecef: false
+        posllh: false
+        pvt: false
+        relposned: true
+        heading: false
+        sat: false
+        status: false
+        svinfo: false
+      esf:
+        alg: false
+        ins: false
+        meas: false
+        raw: false
+        status: false

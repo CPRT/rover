@@ -1,0 +1,7 @@
+<library path="libtalon_drive_controller">
+  <class name="TalonDriveController"
+         type="TalonDriveController"
+         base_class_type="rclcpp::Node">
+    <description>Composable Talon Drive Controller</description>
+  </class>
+</library>

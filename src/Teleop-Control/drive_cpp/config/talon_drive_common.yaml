@@ -1,0 +1,10 @@
+/**:
+  ros__parameters:
+    interface: "can0"
+    watchdog_ms: 300
+    P: 2.00
+    I: 0.0
+    D: 0.0
+    max_voltage: 24.0
+    brake_mode: true
+    sensor_multiplier: 0.0003623188 # 1/2760

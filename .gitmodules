@@ -1,0 +1,11 @@
+[submodule "src/third-party/ublox"]
+	path = src/third-party/ublox
+	url = https://github.com/KumarRobotics/ublox.git
+	branch = ros2
+[submodule "src/third-party/ouster-ros"]
+	path = src/third-party/ouster-ros
+	url = https://github.com/ouster-lidar/ouster-ros.git
+	branch = ros2
+[submodule "src/third-party/zed-ros2-wrapper"]
+	path = src/third-party/zed-ros2-wrapper
+	url = https://github.com/stereolabs/zed-ros2-wrapper.git

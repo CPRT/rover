@@ -1,0 +1,11 @@
+[Unit]
+Description=Power cycle all USB ports on hub 2-3 at boot
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c '/usr/sbin/uhubctl -l 2-3 -a 0 && /usr/sbin/uhubctl -l 1-4 -a 0 && /bin/sleep 2 && /usr/sbin/uhubctl -l 2-3 -a 1 && /usr/sbin/uhubctl -l 1-4 -a 1'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

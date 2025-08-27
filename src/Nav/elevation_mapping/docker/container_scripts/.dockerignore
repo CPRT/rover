@@ -1,0 +1,5 @@
+# Ignore everything
+*
+
+# Allow package.xml for rosdep
+!/**/package.xml

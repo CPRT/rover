@@ -1,0 +1,18 @@
+/**:
+  ros__parameters:
+    inputs: ['ground_truth_cloud']
+    ground_truth_cloud: # A name to identify the input source
+      type: pointcloud # Supported types: pointcloud
+      topic: /zed/zed_node/point_cloud/cloud_registered
+      queue_size: 10
+      publish_on_update: true # Whether to publish the elevation map after a callback from this source.
+      sensor_processor:
+        type: perfect 
+        ignore_points_above: 0.5
+    map_frame_id: "map"
+    robot_base_frame_id: "zed_left_camera_frame"
+    robot_pose_with_covariance_topic: "/zed/zed_node/odom"
+    track_point_frame_id: "zed_left_camera_frame"
+    track_point_x: 5.0
+    track_point_y: 0.0
+    track_point_z: -0.5

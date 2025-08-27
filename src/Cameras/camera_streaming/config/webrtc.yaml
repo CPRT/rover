@@ -1,0 +1,33 @@
+#Types: 0 for v4l2, 1 for test source, 2 for rtp jpeg source, Other types are not supported yet
+
+webrtc_node:
+  ros__parameters:
+    camera_name:
+    - "Drive"
+    - "EndEffector"
+    - "Bottom"
+    - "Microscope"
+    - "Panoramic"
+    Drive:
+      path: "/dev/drive_camera"
+      type: 0
+      aruco: true
+      aruco_detect_interval: 30
+    EndEffector:
+      path: "/dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._USB_2.0_Camera_SN5100-video-index0"
+      type: 0
+      encoded: true
+    Bottom:
+      path: "/dev/v4l/by-id/usb-HD_Camera_Manufacturer_USB_2.0_Camera-video-index0"
+      type: 0
+      encoded: true
+    Microscope:
+      type: 2
+      path: "udp://0.0.0.0:9000"
+      encoded: true
+    # Hack:
+    # Tricks the clients into displaying this as a option which the panoramic camera will recieve the request instead
+    Panoramic:
+      type: 1
+    web_server: false
+    web_server_path: "/home/cprt/gstreamer/webrtc/gstwebrtc-api/dist"

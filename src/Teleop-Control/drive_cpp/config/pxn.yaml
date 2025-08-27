@@ -1,0 +1,80 @@
+flightstick_control:
+  ros__parameters:
+    drive_mode_button: 11
+    arm_ik_mode_button: 9
+    arm_manual_mode_button: 10
+    nav_mode_button: 6
+    science_mode_button: 7
+    teleop_light_mode: 2
+    arm_dummy_mode_button: 8
+
+    drive_mode:
+      throttle:
+        axis: 2
+        min: -1.0
+        max: 1.0
+      forward_axis: 1
+      yaw_axis: 0
+      cam_tilt_axis: 5
+      cam_pan_axis: 4
+      cam_reset: 1
+      lights_up: 5
+      lights_down: 3
+      camera_speed: 3.0
+      cruise_control: 0
+      max_linear: 2.0
+      max_angular: 1.0
+      max_increment: 0.1
+      min_speed: 0.001
+      default_pan: 180.0
+      default_tilt: 45.0
+      
+    arm_manual_mode:
+      throttle:
+        axis: 2
+        min: -1.0
+        max: 1.0
+      base_axis: 0
+      wrist_roll: 4
+      wrist_yaw_positive: 3
+      wrist_yaw_negative: 5
+      act1_axis: 1
+      act2_axis: 5
+      elbow_yaw: 3
+      claw_open: 1
+      claw_close: 0
+      simple_forward: 2
+      simple_backward: 4
+      servo_port: 3
+  
+    arm_ik_mode:
+      x_axis: 1
+      y_axis: 0
+      up_button: 5
+      down_button: 3
+      rotate_around_y: 5
+      rotate_around_x: 4
+      rotate_around_z: 3
+      open_claw: 1
+      close_claw: 0
+      base_frame: 4
+      eef_frame: 2
+      servo_port: 3
+
+    science_mode:
+      platform_axis: 1
+      drill_button: 0
+      microscope_axis: 5
+      soil_collection_button: 5
+      cancel_collection_button: 3
+      soil_test_button: 2
+      lock_sample_button: 4
+      microscope_light_button: 4
+      microscope_servo: 1
+      collection_servo: 0
+      collection_open: 170
+      collection_dump: 80
+      collection_test: 0
+      collection_lock: 180
+      throttle_axis: 2
+

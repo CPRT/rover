@@ -1,0 +1,44 @@
+/**:
+    ros__parameters:
+        general:
+            camera_model: 'zed2i'
+            camera_name: 'zed' # Erik: MUST BE ZED. The xacro lookup fails resulting in the robot state publisher failing if not 'zed'.
+            grab_resolution: 'HD720' # The native camera grab resolution. 'HD2K', 'HD1080', 'HD720', 'VGA', 'AUTO'
+            grab_frame_rate: 60 # ZED SDK internal grabbing rate
+
+            pub_resolution: "CUSTOM" # The resolution used for output. 'NATIVE' to use the same `general.grab_resolution` - `CUSTOM` to apply the `general.pub_downscale_factor` downscale factory to reduce bandwidth in transmission
+            pub_downscale_factor: 1.0 # rescale factor used to rescale image before publishing when 'pub_resolution' is 'CUSTOM'
+            pub_frame_rate: 5.0 # frequency of publishing of visual images and depth images
+            gpu_id: -1
+
+        depth: # Only stereo cameras
+            depth_mode: "NEURAL" # Matches the ZED SDK setting: 'NONE', 'PERFORMANCE', 'QUALITY', 'ULTRA', 'NEURAL', 'NEURAL_PLUS' - Note: if 'NONE' all the modules that requires depth extraction are disabled by default (Pos. Tracking, Obj. Detection, Mapping, ...)
+            min_depth: 0.3 # Min: 0.3, Max: 3.0
+            max_depth: 5.0 # Max: 40.0
+            depth_stabilization: 1 # Forces positional tracking to start if major than 0 - Range: [0,100]
+            depth_confidence: 50 # [DYNAMIC]
+            depth_texture_conf: 99 # [DYNAMIC]
+            remove_saturated_areas: true # [DYNAMIC]
+
+        svo:
+            svo_loop: true # Enable loop mode when using an SVO as input source
+            svo_realtime: false # if true the SVO will be played trying to respect the original framerate eventually skipping frames, otherwise every frame will be processed respecting the `pub_frame_rate` setting
+
+        video:
+            brightness: 4 # [DYNAMIC] Not available for ZED X/ZED X Mini
+            contrast: 4 # [DYNAMIC] Not available for ZED X/ZED X Mini
+            hue: 0 # [DYNAMIC] Not available for ZED X/ZED X Mini
+            saturation: 4 # [DYNAMIC]
+            sharpness: 4 # [DYNAMIC]
+            gamma: 8 # [DYNAMIC]
+            auto_exposure_gain: true # [DYNAMIC]
+            exposure: 80 # [DYNAMIC]
+            gain: 80 # [DYNAMIC]
+            auto_whitebalance: true # [DYNAMIC]
+            whitebalance_temperature: 42 # [DYNAMIC] - [28,65] x100 - works only if `auto_whitebalance` is false
+
+        pos_tracking: # Only stereo cameras
+            reset_odom_with_loop_closure: false # Re-initialize odometry to the last valid pose when loop closure happens (reset camera odometry drift)
+            set_gravity_as_origin: false # If 'true' align the positional tracking world to imu gravity measurement. Keep the yaw from the user initial pose.
+            initial_base_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0] # Initial position of the `camera_link` frame in the map -> [X, Y, Z, R, P, Y]
+        

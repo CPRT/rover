@@ -1,0 +1,15 @@
+pyserial
+adafruit-circuitpython-lis3dh
+adafruit-circuitpython-pca9685
+adafruit-circuitpython-motorkit
+Adafruit-Blinka
+adafruit-circuitpython-bme280
+adafruit-circuitpython-ens160
+adafruit-circuitpython-busdevice
+adafruit-circuitpython-register
+adafruit-circuitpython-neopixel
+pyubx2
+RPi.GPIO
+rpi-hardware-pwm
+Jetson.GPIO
+python-can

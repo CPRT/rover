@@ -1,0 +1,9 @@
+# Request: Four integers, port, position, min, and max respectively
+int64 port
+int64 pos
+int64 min
+int64 max
+---
+# Response: status and status message
+bool status
+string status_msg

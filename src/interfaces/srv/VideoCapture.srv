@@ -1,0 +1,10 @@
+# VideoCapture.srv
+
+string source
+
+# Optional: save image to file if filename is given
+string filename
+
+---
+sensor_msgs/CompressedImage image
+bool success

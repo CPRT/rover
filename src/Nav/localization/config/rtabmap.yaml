@@ -1,0 +1,51 @@
+rtabmap:
+  ros__parameters:
+    frame_id: base_link
+    subscribe_depth: false
+    subscribe_rgb: false
+    subscribe_scan_cloud: true
+    approx_sync: true
+    publish_tf: false
+    use_sim_time: false
+    qos_imu: 2
+
+    Optimizer:
+      Strategy: 1                  # 0=TORO 1=g2o 2=GTSAM
+      GravitySigma: 0.3
+
+    RGBD:
+      OptimizeMaxError: 1.0
+      OptimizeFromGraphEnd: true
+      NeighborLinkRefining: true
+
+    GFTT:
+      MinDistance: 2.5
+      QualityLevel: 0.1
+
+    Vis:
+      CorGuessWinSize: 40
+      CorType: 0
+      MaxFeatures: 1000
+      MinDepth: 0.0
+      MaxDepth: 5.0
+
+    Grid:
+      DepthDecimation: 2
+      RangeMin: 1.5
+      RangeMax: 10
+      MinClusterSize: 20
+      MaxGroundAngle: 40
+      NormalK: 20
+      CellSize: 0.05
+      FlatObstacleDetected: true
+      # Sensor: 0
+      FootprintLength: 2.0
+      FootprintWidth: 1.0
+
+    GridGlobal:
+      UpdateError: 0.01
+      MinSize: 200
+      FootprintRadius: 2
+
+    Reg:
+      Strategy: 1

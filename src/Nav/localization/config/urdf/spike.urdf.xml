@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<robot name="Sensor_only" xmlns:xacro="http://ros.org/wiki/xacro">
+  <link name="base_link"/>
+  <link name="imu_link"/>
+  <link name="zed_camera_link"/>
+  <link name="lidar_link"/>
+  <link name="gps_link"/>
+
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0.0 0.0 0.0 " rpy="0 0 0"/>
+  </joint>
+
+  <joint name="zed_camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="zed_camera_link"/>
+    <origin xyz="0.555 -0.03 0.11 " rpy="0.0 0.33 0.0"/>
+  </joint>
+
+  <joint name="ouster_lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+    <origin xyz="0.425 0.0 0.0 " rpy="3.14159 0.0 -1.570796 "/>
+  </joint>
+
+  <joint name="gps_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="gps_link"/>
+    <origin xyz="0.08 0.0 0.0 " rpy="0 0 1.5707"/>
+  </joint>
+</robot>

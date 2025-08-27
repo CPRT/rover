@@ -1,0 +1,12 @@
+<!--
+THis behaviour tree is great for testing path planning because it don't do any recovery or running a path.
+It just generates a path and then gives error following path but will still show the planned path at /path.
+-->
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <Sequence name="SingleAttemptNavigation">
+      <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+      <FollowPath path="{path}" controller_id="FollowPath"/>
+    </Sequence>
+  </BehaviorTree>
+</root>

@@ -1,0 +1,62 @@
+# Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
+#
+# NVIDIA CORPORATION and its licensors retain all intellectual property
+# and proprietary rights in and to this software, related documentation
+# and any modifications thereto.  Any use, reproduction, disclosure or
+# distribution of this software and related documentation without an express
+# license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+#
+# From Nvidia's Isaac ROS Dockerfile
+# Modified by CPRT 
+# 
+
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# Disable terminal interaction for apt
+ENV DEBIAN_FRONTEND=noninteractive
+ENV SHELL /bin/bash
+SHELL ["/bin/bash", "-c"]
+
+# Setup non-root dev user
+ARG USERNAME=dev
+ARG USER_UID=1000
+ARG USER_GID=1000
+
+
+# Create the 'dev' user if not already exists
+RUN if [ ! $(getent passwd ${USERNAME}) ]; then \
+        groupadd --gid ${USER_GID} ${USERNAME} ; \
+        useradd --no-log-init --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME} ; \
+    fi
+
+# Update 'dev' user
+RUN echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME} \
+    && chmod 0440 /etc/sudoers.d/${USERNAME} \
+    && adduser ${USERNAME} video && adduser ${USERNAME} plugdev && adduser ${USERNAME} sudo
+
+# Copy scripts
+RUN mkdir -p /usr/local/bin/scripts
+COPY container_scripts/*entrypoint.sh /usr/local/bin/scripts/
+RUN  chmod +x /usr/local/bin/scripts/*.sh
+
+# Copy middleware profiles
+RUN mkdir -p /usr/local/share/middleware_profiles
+COPY middleware_profiles/*profile.xml /usr/local/share/middleware_profiles/
+
+ENV USERNAME=${USERNAME}
+ENV USER_GID=${USER_GID}
+ENV USER_UID=${USER_UID}
+
+# Create workspace folder with permissions for dev user
+RUN mkdir -p /workspaces && chown ${USER_UID}:${USER_GID} /workspaces && chmod 770 /workspaces
+
+# Switch to non-root user and return to root
+USER ${USERNAME}
+RUN --mount=type=cache,target=/var/cache/apt \
+    rosdep update
+
+RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> ~/.bashrc
+
+USER root
