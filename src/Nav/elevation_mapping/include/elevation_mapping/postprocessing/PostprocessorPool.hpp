@@ -31,7 +31,7 @@ namespace elevation_mapping {
  * elevation map instead of working on the same data.
  */
 class PostprocessorPool {
- public:
+public:
   using GridMap = grid_map::GridMap;
 
   /**
@@ -41,7 +41,7 @@ class PostprocessorPool {
    * publish the finished tasks.
    */
   PostprocessorPool(std::size_t poolSize,
-                    std::shared_ptr<rclcpp::Node>& nodeHandle);
+                    std::shared_ptr<rclcpp::Node> &nodeHandle);
 
   /**
    * @brief Destructor.
@@ -58,7 +58,7 @@ class PostprocessorPool {
    * @return True if the PostprocessorPool accepted the task. If false the
    * PostprocessorPool had no available threads and discarded the task.
    */
-  bool runTask(const GridMap& gridMap);
+  bool runTask(const GridMap &gridMap);
 
   /**
    * @brief Performs a check on the number of subscribers.
@@ -67,7 +67,7 @@ class PostprocessorPool {
    */
   bool pipelineHasSubscribers() const;
 
- private:
+private:
   /**
    * @brief Wrap a task so that the postprocessor pool gets notified on
    * completion of the task.
@@ -86,4 +86,4 @@ class PostprocessorPool {
   std::deque<size_t> availableServices_;
 };
 
-}  // namespace elevation_mapping
+} // namespace elevation_mapping

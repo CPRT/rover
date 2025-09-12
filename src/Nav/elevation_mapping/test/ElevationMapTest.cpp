@@ -14,7 +14,7 @@
 // gtest
 #include <gtest/gtest.h>
 
-TEST(ElevationMap, Test) {  // NOLINT
+TEST(ElevationMap, Test) { // NOLINT
   //  ros::M_string remappings;
   //  ros::init(remappings, "test_elevation_mapping");
   //  ros::NodeHandle nodeHandle("~");

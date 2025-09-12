@@ -3,7 +3,7 @@
 #include "controller_manager_msgs/srv/switch_controller.hpp"
 #include "std_msgs/msg/bool.hpp"
 
-ArmDummyMode::ArmDummyMode(rclcpp::Node* node) : Mode("Dummy Arm", node) {
+ArmDummyMode::ArmDummyMode(rclcpp::Node *node) : Mode("Dummy Arm", node) {
   RCLCPP_INFO(node_->get_logger(), "Arm Dumb Mode");
   loadParameters();
   twist_pub_ =
@@ -136,7 +136,7 @@ void ArmDummyMode::handleTwist(
   wristTurn_pub_->publish(wristTurn_);
 }
 
-void ArmDummyMode::declareParameters(rclcpp::Node* node) {
+void ArmDummyMode::declareParameters(rclcpp::Node *node) {
   node->declare_parameter("arm_manual_mode.base_axis", 0);
   node->declare_parameter("arm_manual_mode.wrist_roll", 1);
   node->declare_parameter("arm_manual_mode.wrist_yaw_positive", 2);
@@ -172,9 +172,8 @@ void ArmDummyMode::loadParameters() {
   node_->get_parameter("arm_manual_mode.throttle.min", kThrottleMin);
 }
 
-interfaces::srv::MoveServo::Response ArmDummyMode::sendRequest(int port,
-                                                               int pos, int min,
-                                                               int max) const {
+interfaces::srv::MoveServo::Response
+ArmDummyMode::sendRequest(int port, int pos, int min, int max) const {
   auto request = std::make_shared<interfaces::srv::MoveServo::Request>();
   request->port = port;
   request->pos = pos;
@@ -219,7 +218,7 @@ void ArmDummyMode::servoRequest(int req_port, int req_pos, int req_min,
           if (!response->status) {
             RCLCPP_ERROR(node_->get_logger(), "Servo move failed");
           }
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
           RCLCPP_ERROR(node_->get_logger(), "Service call failed: %s",
                        e.what());
         }

@@ -6,12 +6,12 @@
 #include "telemetry_collector.hpp"
 
 class MemoryCollector : public TelemetryCollector {
- public:
+public:
   MemoryCollector();
-  void collect(interfaces::msg::SystemTelemetry& msg) override;
+  void collect(interfaces::msg::SystemTelemetry &msg) override;
 
- private:
+private:
   std::ifstream meminfo_file_;
 };
 
-#endif  // MEMORY_COLLECTOR_HPP_
+#endif // MEMORY_COLLECTOR_HPP_

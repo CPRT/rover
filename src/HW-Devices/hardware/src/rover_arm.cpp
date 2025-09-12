@@ -73,16 +73,18 @@ hardware_interface::CallbackReturn RoverArmHardwareInterface::on_deactivate(
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
-hardware_interface::return_type RoverArmHardwareInterface::read(
-    const rclcpp::Time &, const rclcpp::Duration &) {
+hardware_interface::return_type
+RoverArmHardwareInterface::read(const rclcpp::Time &,
+                                const rclcpp::Duration &) {
   for (auto &controller : controllers_) {
     controller->read();
   }
   return hardware_interface::return_type::OK;
 }
 
-hardware_interface::return_type RoverArmHardwareInterface::write(
-    const rclcpp::Time &, const rclcpp::Duration &) {
+hardware_interface::return_type
+RoverArmHardwareInterface::write(const rclcpp::Time &,
+                                 const rclcpp::Duration &) {
   for (auto &controller : controllers_) {
     controller->write();
   }
@@ -90,7 +92,7 @@ hardware_interface::return_type RoverArmHardwareInterface::write(
   return hardware_interface::return_type::OK;
 }
 
-}  // namespace ros2_control_rover_arm
+} // namespace ros2_control_rover_arm
 
 #include "pluginlib/class_list_macros.hpp"
 

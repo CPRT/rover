@@ -23,26 +23,26 @@ namespace elevation_mapping {
  */
 
 class StereoSensorProcessor : public SensorProcessorBase {
- public:
+public:
   /*!
    * Constructor.
    * @param nodeHandle the ROS node handle.
    */
   StereoSensorProcessor(
-      std::shared_ptr<rclcpp::Node>& nodeHandle,
-      const SensorProcessorBase::GeneralParameters& generalParameters);
+      std::shared_ptr<rclcpp::Node> &nodeHandle,
+      const SensorProcessorBase::GeneralParameters &generalParameters);
 
   /*!
    * Destructor.
    */
   ~StereoSensorProcessor() override;
 
- private:
+private:
   /*!
    * Reads and verifies the parameters.
    * @return true if successful.
    */
-  bool readParameters(std::string& inputSourceName) override;
+  bool readParameters(std::string &inputSourceName) override;
 
   /*!
    * Computes the elevation map height variances for each point in a point cloud
@@ -53,16 +53,16 @@ class StereoSensorProcessor : public SensorProcessorBase {
    * @return true if successful.
    */
   bool computeVariances(const PointCloudType::ConstPtr pointCloud,
-                        const Eigen::Matrix<double, 6, 6>& robotPoseCovariance,
-                        Eigen::VectorXf& variances) override;
+                        const Eigen::Matrix<double, 6, 6> &robotPoseCovariance,
+                        Eigen::VectorXf &variances) override;
 
   /*!
    * Cuts off points that are not within the cutoff interval
    * @param pointCloud the point cloud to filter.
    * @return true if successful.
    */
-  bool filterPointCloudSensorType(
-      const PointCloudType::Ptr pointCloud) override;
+  bool
+  filterPointCloudSensorType(const PointCloudType::Ptr pointCloud) override;
 
   //! Helper functions to get i-j indices out of a single index.
   int getI(int index);
@@ -73,4 +73,4 @@ class StereoSensorProcessor : public SensorProcessorBase {
   int originalWidth_;
 };
 
-}  // namespace elevation_mapping
+} // namespace elevation_mapping

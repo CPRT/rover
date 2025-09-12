@@ -31,11 +31,11 @@
 class PresetWidget : public QWidget {
   Q_OBJECT
 
- public:
-  PresetWidget(QWidget* parent = nullptr);
+public:
+  PresetWidget(QWidget *parent = nullptr);
   ~PresetWidget();
 
- signals:
+signals:
   /**
    * @brief Gets the source names from CameraClient
    */
@@ -46,7 +46,7 @@ class PresetWidget : public QWidget {
    */
   void send_preset(std::vector<interfaces::msg::VideoSource> preset);
 
- public slots:
+public slots:
   /**
    * @brief Adds a new SourceWidget to the preset
    */
@@ -61,32 +61,32 @@ class PresetWidget : public QWidget {
   /**
    * @brief Removes given SourceWidget from this preset and deletes it
    */
-  void remove_source(SourceWidget* src);
+  void remove_source(SourceWidget *src);
 
   /**
    * @brief Gets source names from CameraClient
    */
   void receive_source_names(std::vector<std::string> sources);
 
- private slots:
+private slots:
   /**
    * @brief Called when clicking the refresh button in SourceWidget to get the
    * source names
    */
   void get_source_names();
 
- private:
-  std::vector<SourceWidget*> sources_;
+private:
+  std::vector<SourceWidget *> sources_;
 
-  QLabel* widget_header_;
+  QLabel *widget_header_;
 
-  QWidget* sources_container_;
-  QVBoxLayout* sources_layout_;
-  QScrollArea* sources_scroll_area_;
-  QVBoxLayout* main_layout_;
+  QWidget *sources_container_;
+  QVBoxLayout *sources_layout_;
+  QScrollArea *sources_scroll_area_;
+  QVBoxLayout *main_layout_;
 
-  QPushButton* add_source_button_;
-  QPushButton* submit_preset_button_;
+  QPushButton *add_source_button_;
+  QPushButton *submit_preset_button_;
 };
 
 #endif

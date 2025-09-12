@@ -23,26 +23,25 @@
 template class pcl::PointCloud<pcl::PointXYZRGBConfidenceRatio>;
 template class pcl::PCLBase<
     pcl::
-        PointXYZRGBConfidenceRatio>;  // NOLINT(cppcoreguidelines-special-member-functions)
+        PointXYZRGBConfidenceRatio>; // NOLINT(cppcoreguidelines-special-member-functions)
 template class pcl::VoxelGrid<
     pcl::
-        PointXYZRGBConfidenceRatio>;  // NOLINT(cppcoreguidelines-special-member-functions)
+        PointXYZRGBConfidenceRatio>; // NOLINT(cppcoreguidelines-special-member-functions)
 template void pcl::removeNaNFromPointCloud<pcl::PointXYZRGBConfidenceRatio>(
-    const pcl::PointCloud<pcl::PointXYZRGBConfidenceRatio>& cloud_in,
-    pcl::PointCloud<pcl::PointXYZRGBConfidenceRatio>& cloud_out,
-    std::vector<int, std::allocator<int> >& index);
+    const pcl::PointCloud<pcl::PointXYZRGBConfidenceRatio> &cloud_in,
+    pcl::PointCloud<pcl::PointXYZRGBConfidenceRatio> &cloud_out,
+    std::vector<int, std::allocator<int>> &index);
 template class pcl::ExtractIndices<pcl::PointXYZRGBConfidenceRatio>;
 template class pcl::PassThrough<pcl::PointXYZRGBConfidenceRatio>;
 template class pcl::CropBox<pcl::PointXYZRGBConfidenceRatio>;
 
-std::ostream& operator<<(std::ostream& os,
-                         const pcl::PointXYZRGBConfidenceRatio& p) {
+std::ostream &operator<<(std::ostream &os,
+                         const pcl::PointXYZRGBConfidenceRatio &p) {
   os << "(" << p.x << "," << p.y << "," << p.z << " - " << static_cast<int>(p.r)
-     << ","  // NOLINT(cppcoreguidelines-pro-type-union-access)
-     << static_cast<int>(
-            p.g)  // NOLINT(cppcoreguidelines-pro-type-union-access)
-     << ","       // NOLINT(cppcoreguidelines-pro-type-union-access)
+     << ","                   // NOLINT(cppcoreguidelines-pro-type-union-access)
+     << static_cast<int>(p.g) // NOLINT(cppcoreguidelines-pro-type-union-access)
+     << ","                   // NOLINT(cppcoreguidelines-pro-type-union-access)
      << static_cast<int>(p.b) << " - " << p.confidence_ratio
-     << ")";  // NOLINT(cppcoreguidelines-pro-type-union-access)
+     << ")"; // NOLINT(cppcoreguidelines-pro-type-union-access)
   return (os);
 }

@@ -11,7 +11,7 @@
 namespace elevation_mapping {
 
 PostprocessorPool::PostprocessorPool(
-    std::size_t poolSize, std::shared_ptr<rclcpp::Node>& nodeHandle) {
+    std::size_t poolSize, std::shared_ptr<rclcpp::Node> &nodeHandle) {
   nodeHandle->declare_parameter("output_topic",
                                 std::string("elevation_map_raw_post"));
   nodeHandle->declare_parameter(
@@ -28,22 +28,22 @@ PostprocessorPool::PostprocessorPool(
 
 PostprocessorPool::~PostprocessorPool() {
   // Force all threads to return from io_service::run().
-  for (auto& worker : workers_) {
+  for (auto &worker : workers_) {
     worker->ioService().stop();
   }
 
   // Suppress all exceptions. Try to join every worker thread.
-  for (auto& worker : workers_) {
+  for (auto &worker : workers_) {
     try {
       if (worker->thread().joinable()) {
         worker->thread().join();
       }
-    } catch (const std::exception&) {
+    } catch (const std::exception &) {
     }
   }
 }
 
-bool PostprocessorPool::runTask(const GridMap& gridMap) {
+bool PostprocessorPool::runTask(const GridMap &gridMap) {
   // Get an available service id from the shared services pool in a mutually
   // exclusive manner.
   size_t serviceIndex;
@@ -72,7 +72,7 @@ void PostprocessorPool::wrapTask(size_t serviceIndex) {
     workers_.at(serviceIndex)->publish(postprocessedMap);
   }
   // Suppress all exceptions.
-  catch (const std::exception& exception) {
+  catch (const std::exception &exception) {
     RCLCPP_ERROR_STREAM(rclcpp::get_logger("my_logger"),
                         "Postprocessor pipeline, thread "
                             << serviceIndex
@@ -86,9 +86,9 @@ void PostprocessorPool::wrapTask(size_t serviceIndex) {
 
 bool PostprocessorPool::pipelineHasSubscribers() const {
   return std::all_of(workers_.cbegin(), workers_.cend(),
-                     [](const std::unique_ptr<PostprocessingWorker>& worker) {
+                     [](const std::unique_ptr<PostprocessingWorker> &worker) {
                        return worker->hasSubscribers();
                      });
 }
 
-}  // namespace elevation_mapping
+} // namespace elevation_mapping

@@ -5,7 +5,7 @@
 #include <string>
 
 double GPUCollector::get_gpu_usage() {
-  FILE* pipe = popen("tegrastats | head -n 1", "r");
+  FILE *pipe = popen("tegrastats | head -n 1", "r");
   if (!pipe) {
     RCLCPP_WARN(logger_, "%s: Failed to run command", __FUNCTION__);
     return 0.0;
@@ -28,6 +28,6 @@ double GPUCollector::get_gpu_usage() {
   return 0.0;
 }
 
-void GPUCollector::collect(interfaces::msg::SystemTelemetry& msg) {
+void GPUCollector::collect(interfaces::msg::SystemTelemetry &msg) {
   msg.gpu_usage = static_cast<float>(get_gpu_usage());
 }

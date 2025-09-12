@@ -6,12 +6,12 @@
 #include "interfaces/msg/system_telemetry.hpp"
 
 class TelemetryCollector {
- public:
-  virtual void collect(interfaces::msg::SystemTelemetry& msg) = 0;
+public:
+  virtual void collect(interfaces::msg::SystemTelemetry &msg) = 0;
   virtual ~TelemetryCollector() = default;
 
- protected:
+protected:
   rclcpp::Logger logger_ = rclcpp::get_logger("telemetry_collector");
 };
 
-#endif  // TELEMETRY_COLLECTOR_HPP_
+#endif // TELEMETRY_COLLECTOR_HPP_

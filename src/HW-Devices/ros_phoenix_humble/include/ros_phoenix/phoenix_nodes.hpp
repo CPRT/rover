@@ -9,7 +9,7 @@ class TalonFXNode
     : public PhoenixNode<ctre::phoenix::motorcontrol::can::TalonFX,
                          TalonFXConfiguration, TalonFXFeedbackDevice,
                          TalonFXControlMode> {
- public:
+public:
   TalonFXNode(const std::string &name,
               const NodeOptions &options = NodeOptions());
 
@@ -24,7 +24,7 @@ class TalonSRXNode
     : public PhoenixNode<ctre::phoenix::motorcontrol::can::TalonSRX,
                          TalonSRXConfiguration, TalonSRXFeedbackDevice,
                          TalonSRXControlMode> {
- public:
+public:
   TalonSRXNode(const std::string &name,
                const NodeOptions &options = NodeOptions());
 
@@ -39,7 +39,7 @@ class VictorSPXNode
     : public PhoenixNode<ctre::phoenix::motorcontrol::can::VictorSPX,
                          VictorSPXConfiguration, FeedbackDevice,
                          VictorSPXControlMode> {
- public:
+public:
   VictorSPXNode(const std::string &name,
                 const NodeOptions &options = NodeOptions());
 
@@ -50,6 +50,6 @@ class VictorSPXNode
   virtual double get_output_current();
 };
 
-}  // namespace ros_phoenix
+} // namespace ros_phoenix
 
-#endif  // ROS_PHOENIX_PHOENIX_NODES
+#endif // ROS_PHOENIX_PHOENIX_NODES

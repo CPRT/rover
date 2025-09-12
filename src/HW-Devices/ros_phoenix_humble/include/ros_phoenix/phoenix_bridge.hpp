@@ -13,7 +13,7 @@
 namespace ros_phoenix {
 
 class PhoenixBridge : public hardware_interface::SystemInterface {
- public:
+public:
   RCLCPP_SHARED_PTR_DEFINITIONS(PhoenixBridge)
 
   PhoenixBridge();
@@ -22,8 +22,8 @@ class PhoenixBridge : public hardware_interface::SystemInterface {
 
   ~PhoenixBridge() = default;
 
-  hardware_interface::return_type configure(
-      const hardware_interface::HardwareInfo &info);
+  hardware_interface::return_type
+  configure(const hardware_interface::HardwareInfo &info);
 
   std::vector<hardware_interface::StateInterface> export_state_interfaces();
 
@@ -36,10 +36,10 @@ class PhoenixBridge : public hardware_interface::SystemInterface {
   hardware_interface::return_type read(const rclcpp::Time &time,
                                        const rclcpp::Duration &period) override;
 
-  hardware_interface::return_type write(
-      const rclcpp::Time &time, const rclcpp::Duration &period) override;
+  hardware_interface::return_type
+  write(const rclcpp::Time &time, const rclcpp::Duration &period) override;
 
- private:
+private:
   enum InterfaceType {
     INVALID = -1,
     PERCENT_OUTPUT = 0,
@@ -66,5 +66,5 @@ class PhoenixBridge : public hardware_interface::SystemInterface {
       subscribers_;
 };
 
-}  // namespace ros_phoenix
-#endif  // ROS_PHOENIX_PHOENIX_BRIDGE
+} // namespace ros_phoenix
+#endif // ROS_PHOENIX_PHOENIX_BRIDGE

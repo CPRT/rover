@@ -12,10 +12,10 @@
 using namespace std::chrono_literals;
 
 class SystemTelemetryPublisher : public rclcpp::Node {
- public:
+public:
   SystemTelemetryPublisher();
 
- private:
+private:
   void publish_telemetry();
 
   rclcpp::Publisher<interfaces::msg::SystemTelemetry>::SharedPtr publisher_;

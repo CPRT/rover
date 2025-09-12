@@ -22,9 +22,8 @@
 #include <string>
 #include <vector>
 
-template <typename T>
-struct GstDeleter {
-  void operator()(T* object) const {
+template <typename T> struct GstDeleter {
+  void operator()(T *object) const {
     if (object) {
       gst_object_unref(object);
     }
@@ -32,8 +31,7 @@ struct GstDeleter {
 };
 
 // Type alias for unique_ptr managing a GStreamer object
-template <typename T>
-using GstUniquePtr = std::unique_ptr<T, GstDeleter<T>>;
+template <typename T> using GstUniquePtr = std::unique_ptr<T, GstDeleter<T>>;
 
 /**
  * @class WebRTCStreamer
@@ -44,7 +42,7 @@ using GstUniquePtr = std::unique_ptr<T, GstDeleter<T>>;
  * video output requests.
  */
 class WebRTCStreamer : public rclcpp::Node {
- public:
+public:
   /**
    * @brief Constructor for WebRTCStreamer.
    */
@@ -77,7 +75,7 @@ class WebRTCStreamer : public rclcpp::Node {
     bool aruco;
   };
 
- private:
+private:
   /**
    * @brief Initializes the GStreamer pipeline
    */
@@ -142,7 +140,7 @@ class WebRTCStreamer : public rclcpp::Node {
    * @param src The camera source information.
    * @return A pointer to the created GStreamer element.
    */
-  GstElement* create_source(const CameraSource& src);
+  GstElement *create_source(const CameraSource &src);
 
   /**
    * @brief Updates the GStreamer pipeline based on the video output request.
@@ -158,7 +156,7 @@ class WebRTCStreamer : public rclcpp::Node {
    *
    * @return A pointer to the initialized GStreamer pipeline element.
    */
-  GstElement* initialize_pipeline();
+  GstElement *initialize_pipeline();
 
   /**
    * @brief Unlinks current sources from the compositor element.
@@ -171,21 +169,21 @@ class WebRTCStreamer : public rclcpp::Node {
    * @param pad The pad to be unlinked.
    * @return True if the pad was successfully unlinked, false otherwise.
    */
-  static bool unlink_pad(GstPad* pad);
+  static bool unlink_pad(GstPad *pad);
 
   /**
    * @brief Creates a GStreamer video converter element.
    *
    * @return A pointer to the created video converter element.
    */
-  GstElement* create_vid_conv();
+  GstElement *create_vid_conv();
   /**
    * @brief Adds a chain of GStreamer elements to the pipeline.
    *
    * @param chain The vector of GStreamer elements to be added.
    * @return A pointer to the last element in the chain.
    */
-  GstElement* add_element_chain(const std::vector<GstElement*>& chain);
+  GstElement *add_element_chain(const std::vector<GstElement *> &chain);
   /**
    * @brief Creates a GStreamer element of the specified type.
    *
@@ -193,14 +191,14 @@ class WebRTCStreamer : public rclcpp::Node {
    * @param element_name The name of the GStreamer element (optional).
    * @return A pointer to the created GStreamer element.
    */
-  GstElement* create_element(std::string element_type,
+  GstElement *create_element(std::string element_type,
                              std::string element_name = "");
 
   bool web_server_; /**< Flag indicating if the web server is enabled */
-  std::string web_server_path_;       /**< Path to the web server */
-  std::vector<GstElement*> elements_; /**< List of GStreamer elements */
-  GstUniquePtr<GstElement> pipeline_; /**< GStreamer pipeline element */
-  GstElement* compositor_;            /**< GStreamer compositor element */
+  std::string web_server_path_;        /**< Path to the web server */
+  std::vector<GstElement *> elements_; /**< List of GStreamer elements */
+  GstUniquePtr<GstElement> pipeline_;  /**< GStreamer pipeline element */
+  GstElement *compositor_;             /**< GStreamer compositor element */
   rclcpp::Service<interfaces::srv::VideoOut>::SharedPtr
       start_video_service_; /**< ROS2 service for starting video output */
   rclcpp::Service<interfaces::srv::VideoCapture>::SharedPtr
@@ -226,8 +224,8 @@ class WebRTCStreamer : public rclcpp::Node {
    * @param user_data User data passed to the callback.
    * @return True if the message was successfully handled, false otherwise.
    */
-  static gboolean on_bus_message(GstBus* bus, GstMessage* message,
+  static gboolean on_bus_message(GstBus *bus, GstMessage *message,
                                  gpointer user_data);
 };
 
-#endif  // WEBRTC_STREAMER_HPP
+#endif // WEBRTC_STREAMER_HPP

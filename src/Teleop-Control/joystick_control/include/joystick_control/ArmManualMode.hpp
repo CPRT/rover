@@ -16,13 +16,13 @@
  * control the arm manually, meaning each join is controlled individually.
  */
 class ArmManualMode : public Mode {
- public:
+public:
   /**
    * @brief Constructor to the ArmManualMode class.
    *
    * @param node A pointer to the rclcpp::Node instance.
    */
-  ArmManualMode(rclcpp::Node* node);
+  ArmManualMode(rclcpp::Node *node);
 
   /**
    * @brief Processes the joystick input.
@@ -33,7 +33,7 @@ class ArmManualMode : public Mode {
   void processJoystickInput(
       std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) override;
 
-  static void declareParameters(rclcpp::Node* node);
+  static void declareParameters(rclcpp::Node *node);
 
   /**
    * @brief Sends a request to move a servo
@@ -54,7 +54,7 @@ class ArmManualMode : public Mode {
    */
   void servoRequest(int req_port, int req_pos) const;
 
- private:
+private:
   /**
    * @brief creates and publishes the MotorControl msg based on joystickinput.
    *
@@ -68,35 +68,35 @@ class ArmManualMode : public Mode {
    * @param joystickMsg A shared pointer to the sensor_msgs::msg::Joy message.
    * @return The throttle value as a double between 0 and one inclusive.
    */
-  double getThrottleValue(
-      std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const;
+  double
+  getThrottleValue(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const;
 
   void loadParameters();
 
   // Parameters
-  int8_t kBaseAxis;          ///< Axis for movement of the base
-  int8_t kWristRoll;         ///< Axis for the roll of the wrist joint
-  int8_t kWristYawPositive;  ///< Button for the wrist join to rotate in the
-                             ///< positive direction
-  int8_t kWristYawNegative;  ///< Button for the wrist join to rotate in the
-                             ///< negative direction
-  int8_t kAct1Axis;          ///< Axis for the upper linear actuator control
-  int8_t kAct2Axis;          ///< Axis for the lower linear actuator control
-  int8_t kElbowYaw;          ///< Axis for the yaw of the elbow joint
+  int8_t kBaseAxis;         ///< Axis for movement of the base
+  int8_t kWristRoll;        ///< Axis for the roll of the wrist joint
+  int8_t kWristYawPositive; ///< Button for the wrist join to rotate in the
+                            ///< positive direction
+  int8_t kWristYawNegative; ///< Button for the wrist join to rotate in the
+                            ///< negative direction
+  int8_t kAct1Axis;         ///< Axis for the upper linear actuator control
+  int8_t kAct2Axis;         ///< Axis for the lower linear actuator control
+  int8_t kElbowYaw;         ///< Axis for the yaw of the elbow joint
 
-  int8_t kThrottleAxis;  ///< Axis for the throttle value
-  double kThrottleMax;   ///< Maximum throttle value from joystick.
-  double kThrottleMin;   ///< Minimum throttle value from joystick.
+  int8_t kThrottleAxis; ///< Axis for the throttle value
+  double kThrottleMax;  ///< Maximum throttle value from joystick.
+  double kThrottleMin;  ///< Minimum throttle value from joystick.
 
-  int8_t kClawOpen;   ///< Button for claw to open.
-  int8_t kClawClose;  ///< Button for claw to close.
+  int8_t kClawOpen;  ///< Button for claw to open.
+  int8_t kClawClose; ///< Button for claw to close.
 
-  int8_t kSimpleForward;   ///< Button to move the end effector forward
-  int8_t kSimpleBackward;  ///< Button to move the end effector backward
+  int8_t kSimpleForward;  ///< Button to move the end effector forward
+  int8_t kSimpleBackward; ///< Button to move the end effector backward
 
   // Publishers
   rclcpp::Publisher<control_msgs::msg::JointJog>::SharedPtr
-      joint_pub_;  ///< Publisher for joint jog messages.
+      joint_pub_; ///< Publisher for joint jog messages.
 
   // Message Messages
   control_msgs::msg::JointJog joint_msg_;
@@ -116,4 +116,4 @@ class ArmManualMode : public Mode {
   bool buttonPressed_;
 };
 
-#endif  // JOYSTICK_CONTROL__ARMMANUAL_MODE_HPP_
+#endif // JOYSTICK_CONTROL__ARMMANUAL_MODE_HPP_

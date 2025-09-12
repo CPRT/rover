@@ -12,7 +12,7 @@ void TalonFXNode::configure_current_limit(TalonFXConfiguration &config) {
   supply.currentLimit = this->get_parameter("max_current").as_double();
   supply.triggerThresholdCurrent =
       this->get_parameter("max_current").as_double();
-  supply.triggerThresholdTime = 100;  // ms
+  supply.triggerThresholdTime = 100; // ms
   supply.enable = true;
   config.supplyCurrLimit = supply;
 }
@@ -36,7 +36,7 @@ void TalonSRXNode::configure_current_limit(TalonSRXConfiguration &config) {
   config.continuousCurrentLimit =
       this->get_parameter("max_current").as_double();
   config.peakCurrentLimit = this->get_parameter("max_current").as_double();
-  config.peakCurrentDuration = 100;  // ms
+  config.peakCurrentDuration = 100; // ms
   this->controller_->EnableCurrentLimit(true);
 }
 
@@ -73,4 +73,4 @@ void VictorSPXNode::configure_sensor() {}
 
 double VictorSPXNode::get_output_current() { return 0.0; }
 
-}  // namespace ros_phoenix
+} // namespace ros_phoenix

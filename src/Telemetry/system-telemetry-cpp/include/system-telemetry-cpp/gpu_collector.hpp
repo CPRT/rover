@@ -4,11 +4,11 @@
 #include "telemetry_collector.hpp"
 
 class GPUCollector : public TelemetryCollector {
- public:
-  void collect(interfaces::msg::SystemTelemetry& msg) override;
+public:
+  void collect(interfaces::msg::SystemTelemetry &msg) override;
 
- private:
+private:
   double get_gpu_usage();
 };
 
-#endif  // GPU_COLLECTOR_HPP_
+#endif // GPU_COLLECTOR_HPP_

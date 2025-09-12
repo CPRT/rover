@@ -6,7 +6,7 @@
 #include "rcutils/logging_macros.h"
 #include "ros_phoenix/base_node.hpp"
 
-#define Phoenix_No_WPI  // remove WPI dependencies
+#define Phoenix_No_WPI // remove WPI dependencies
 #include <chrono>
 #include <stdexcept>
 
@@ -20,7 +20,7 @@ namespace ros_phoenix {
 template <class MotorController, class Configuration, class FeedbackDevice,
           class ControlMode>
 class PhoenixNode : public BaseNode {
- public:
+public:
   explicit PhoenixNode(const std::string &name,
                        const NodeOptions &options = NodeOptions())
       : BaseNode(name, options) {
@@ -66,8 +66,8 @@ class PhoenixNode : public BaseNode {
     ControlMode mode = static_cast<ControlMode>(control_msg->mode);
     if (mode == ControlMode::Velocity) {
       // CTRE library expects velocity in units/100ms
-      this->controller_->Set(
-          mode, control_msg->value / 10.0 / this->sensor_multiplier_);
+      this->controller_->Set(mode, control_msg->value / 10.0 /
+                                       this->sensor_multiplier_);
     } else if (mode == ControlMode::Position) {
       this->controller_->Set(mode, (this->sensor_offset_ + control_msg->value) /
                                        this->sensor_multiplier_);
@@ -81,8 +81,8 @@ class PhoenixNode : public BaseNode {
     }
   }
 
-  virtual rcl_interfaces::msg::SetParametersResult reconfigure(
-      const std::vector<rclcpp::Parameter> &params) {
+  virtual rcl_interfaces::msg::SetParametersResult
+  reconfigure(const std::vector<rclcpp::Parameter> &params) {
     std::lock_guard<std::mutex> guard(this->config_mutex_);
 
     for (auto &param : params) {
@@ -100,14 +100,14 @@ class PhoenixNode : public BaseNode {
     return BaseNode::reconfigure(params);
   }
 
- protected:
+protected:
   virtual void configure() {
     bool warned = false;
     while (!this->configured_) {
       std::this_thread::sleep_for(std::chrono::seconds(1));
       std::lock_guard<std::mutex> guard(this->config_mutex_);
       if (this->configured_) {
-        break;  // Break out if signaled to stop while sleeping
+        break; // Break out if signaled to stop while sleeping
       }
 
       if (this->controller_->GetFirmwareVersion() == -1) {
@@ -133,7 +133,7 @@ class PhoenixNode : public BaseNode {
       this->configure_current_limit(config);
 
       ErrorCode error =
-          this->controller_->ConfigAllSettings(config, 50);  // Takes up to 50ms
+          this->controller_->ConfigAllSettings(config, 50); // Takes up to 50ms
       if (error != ErrorCode::OK) {
         if (!warned) {
           RCLCPP_WARN(this->get_logger(),
@@ -175,6 +175,6 @@ class PhoenixNode : public BaseNode {
   std::shared_ptr<MotorController> controller_;
 };
 
-}  // namespace ros_phoenix
+} // namespace ros_phoenix
 
-#endif  // ROS_PHOENIX_BASE_COMPONENT
+#endif // ROS_PHOENIX_BASE_COMPONENT

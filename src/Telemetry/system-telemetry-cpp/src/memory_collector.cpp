@@ -6,7 +6,7 @@
 
 MemoryCollector::MemoryCollector() : meminfo_file_("/proc/meminfo") {}
 
-void MemoryCollector::collect(interfaces::msg::SystemTelemetry& msg) {
+void MemoryCollector::collect(interfaces::msg::SystemTelemetry &msg) {
   std::string line;
   meminfo_file_.clear();
   meminfo_file_.seekg(0, std::ios::beg);

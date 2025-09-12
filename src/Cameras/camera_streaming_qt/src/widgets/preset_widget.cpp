@@ -2,7 +2,7 @@
 
 #include <QDebug>
 
-PresetWidget::PresetWidget(QWidget* parent) : QWidget(parent) {
+PresetWidget::PresetWidget(QWidget *parent) : QWidget(parent) {
   main_layout_ = new QVBoxLayout(this);
 
   widget_header_ = new QLabel("Custom Preset");
@@ -41,9 +41,10 @@ PresetWidget::PresetWidget(QWidget* parent) : QWidget(parent) {
 PresetWidget::~PresetWidget() {}
 
 void PresetWidget::add_source() {
-  if (!sources_layout_) return;
+  if (!sources_layout_)
+    return;
 
-  SourceWidget* src = new SourceWidget();
+  SourceWidget *src = new SourceWidget();
 
   connect(src, &SourceWidget::request_remove, this,
           &PresetWidget::remove_source);
@@ -65,8 +66,9 @@ void PresetWidget::submit_preset() {
   emit send_preset(sources);
 }
 
-void PresetWidget::remove_source(SourceWidget* src) {
-  if (!src) return;
+void PresetWidget::remove_source(SourceWidget *src) {
+  if (!src)
+    return;
 
   // Remove src from sources
   for (int i = 0; i < sources_.size(); i++) {

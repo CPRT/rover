@@ -13,11 +13,11 @@
 namespace elevation_mapping {
 
 InputSourceManager::InputSourceManager(
-    const std::shared_ptr<rclcpp::Node>& nodeHandle)
+    const std::shared_ptr<rclcpp::Node> &nodeHandle)
     : nodeHandle_(nodeHandle) {}
 
 bool InputSourceManager::configureFromRos(
-    const std::string& inputSourcesNamespace) {
+    const std::string &inputSourcesNamespace) {
   nodeHandle_->declare_parameter("inputs", std::vector<std::string>());
 
   // Configure the visualizations from a configuration stored on the parameter
@@ -36,10 +36,10 @@ bool InputSourceManager::configureFromRos(
   return configure(inputSourcesConfiguration, inputSourcesNamespace);
 }
 
-bool InputSourceManager::configure(const std::vector<std::string>& config,
-                                   const std::string& sourceConfigurationName) {
-  if (config.size() == 0) {  // Use Empty array as special case to explicitly
-                             // configure no inputs.
+bool InputSourceManager::configure(const std::vector<std::string> &config,
+                                   const std::string &sourceConfigurationName) {
+  if (config.size() == 0) { // Use Empty array as special case to explicitly
+                            // configure no inputs.
     return true;
   }
 
@@ -86,4 +86,4 @@ int InputSourceManager::getNumberOfSources() {
   return static_cast<int>(sources_.size());
 }
 
-}  // namespace elevation_mapping
+} // namespace elevation_mapping

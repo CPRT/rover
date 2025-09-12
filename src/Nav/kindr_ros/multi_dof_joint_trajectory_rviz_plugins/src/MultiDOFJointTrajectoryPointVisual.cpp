@@ -5,21 +5,20 @@
 namespace multi_dof_joint_trajectory_rviz_plugins {
 
 MultiDOFJointTrajectoryPointVisual::MultiDOFJointTrajectoryPointVisual(
-    Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node,
-    const trajectory_msgs::MultiDOFJointTrajectoryPoint& msg,
+    Ogre::SceneManager *scene_manager, Ogre::SceneNode *parent_node,
+    const trajectory_msgs::MultiDOFJointTrajectoryPoint &msg,
     bool show_transform_rotation, bool show_velocity_linear,
     bool show_velocity_angular, bool show_acceleration_linear,
     bool show_acceleration_angular, float size_transform_rotation,
     float diameter_arrows, float scale_velocity_linear,
     float scale_velocity_angular, float scale_acceleration_linear,
     float scale_acceleration_angular, float alpha_transform_rotatation,
-    const Ogre::ColourValue& color_velocity_linear,
-    const Ogre::ColourValue& color_velocity_angular,
-    const Ogre::ColourValue& color_acceleration_linear,
-    const Ogre::ColourValue& color_acceleration_angular,
-    const std::vector<std::string>& captions, float font_size, bool show_text)
-    : scene_manager_(scene_manager),
-      axis_radius_per_size_(0.1),
+    const Ogre::ColourValue &color_velocity_linear,
+    const Ogre::ColourValue &color_velocity_angular,
+    const Ogre::ColourValue &color_acceleration_linear,
+    const Ogre::ColourValue &color_acceleration_angular,
+    const std::vector<std::string> &captions, float font_size, bool show_text)
+    : scene_manager_(scene_manager), axis_radius_per_size_(0.1),
       show_transform_rotation_(show_transform_rotation),
       show_velocity_linear_(show_velocity_linear),
       show_velocity_angular_(show_velocity_angular),
@@ -36,9 +35,7 @@ MultiDOFJointTrajectoryPointVisual::MultiDOFJointTrajectoryPointVisual(
       color_velocity_angular_(color_velocity_angular),
       color_acceleration_linear_(color_acceleration_linear),
       color_acceleration_angular_(color_acceleration_angular),
-      captions_(captions),
-      font_size_(font_size),
-      show_text_(show_text) {
+      captions_(captions), font_size_(font_size), show_text_(show_text) {
   // check vector lengths
   assert((msg.transforms.size() == captions.size()) &&
          "ERROR: MultiDOFJointTrajectoryPointVisual: captions and transforms "
@@ -231,31 +228,31 @@ void MultiDOFJointTrajectoryPointVisual::setAlphaTransformRotation(
 }
 
 void MultiDOFJointTrajectoryPointVisual::setColorVelocityLinear(
-    const Ogre::ColourValue& color) {
+    const Ogre::ColourValue &color) {
   color_velocity_linear_ = color;
   updateColorVelocityLinear();
 }
 
 void MultiDOFJointTrajectoryPointVisual::setColorVelocityAngular(
-    const Ogre::ColourValue& color) {
+    const Ogre::ColourValue &color) {
   color_velocity_angular_ = color;
   updateColorVelocityAngular();
 }
 
 void MultiDOFJointTrajectoryPointVisual::setColorAccelerationLinear(
-    const Ogre::ColourValue& color) {
+    const Ogre::ColourValue &color) {
   color_acceleration_linear_ = color;
   updateColorAccelerationLinear();
 }
 
 void MultiDOFJointTrajectoryPointVisual::setColorAccelerationAngular(
-    const Ogre::ColourValue& color) {
+    const Ogre::ColourValue &color) {
   color_acceleration_angular_ = color;
   updateColorAccelerationAngular();
 }
 
 void MultiDOFJointTrajectoryPointVisual::setCaptions(
-    const std::vector<std::string>& captions) {
+    const std::vector<std::string> &captions) {
   // check vector lengths
   assert(captions_.size() == captions.size() &&
          "ERROR: MultiDOFJointTrajectoryPointVisual: old and new captions "
@@ -277,11 +274,11 @@ void MultiDOFJointTrajectoryPointVisual::setShowText(bool show_text) {
 
 void MultiDOFJointTrajectoryPointVisual::updateSizeTransformRotation() {
   for (unsigned int i = 0; i < transforms_rotation_.size(); i++) {
-    transforms_rotation_[i]->set(
-        size_transform_rotation_,
-        axis_radius_per_size_ * size_transform_rotation_);
+    transforms_rotation_[i]->set(size_transform_rotation_,
+                                 axis_radius_per_size_ *
+                                     size_transform_rotation_);
   }
-  updateAlphaTransformRotation();  // colors are reset by set()
+  updateAlphaTransformRotation(); // colors are reset by set()
 }
 
 void MultiDOFJointTrajectoryPointVisual::updateDiametersArrows() {
@@ -394,8 +391,9 @@ void MultiDOFJointTrajectoryPointVisual::updateShowText() {
   }
 }
 
-Ogre::ColourValue MultiDOFJointTrajectoryPointVisual::getColor(
-    const Ogre::ColourValue& color, bool visible) {
+Ogre::ColourValue
+MultiDOFJointTrajectoryPointVisual::getColor(const Ogre::ColourValue &color,
+                                             bool visible) {
   if (!visible) {
     Ogre::ColourValue color_invisible = color;
     color_invisible.a = 0;
@@ -413,4 +411,4 @@ float MultiDOFJointTrajectoryPointVisual::getCharacterHeight() {
   }
 }
 
-}  // namespace multi_dof_joint_trajectory_rviz_plugins
+} // namespace multi_dof_joint_trajectory_rviz_plugins

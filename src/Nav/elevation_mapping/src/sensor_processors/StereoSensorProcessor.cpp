@@ -19,13 +19,13 @@
 namespace elevation_mapping {
 
 StereoSensorProcessor::StereoSensorProcessor(
-    std::shared_ptr<rclcpp::Node>& nodeHandle,
-    const SensorProcessorBase::GeneralParameters& generalParameters)
+    std::shared_ptr<rclcpp::Node> &nodeHandle,
+    const SensorProcessorBase::GeneralParameters &generalParameters)
     : SensorProcessorBase(nodeHandle, generalParameters), originalWidth_(1) {}
 
 StereoSensorProcessor::~StereoSensorProcessor() = default;
 
-bool StereoSensorProcessor::readParameters(std::string& inputSourceName) {
+bool StereoSensorProcessor::readParameters(std::string &inputSourceName) {
   SensorProcessorBase::readParameters(inputSourceName);
   nodeHandle_->declare_parameter(inputSourceName + ".sensor_processor.p_1",
                                  rclcpp::ParameterValue(0.0));
@@ -37,9 +37,9 @@ bool StereoSensorProcessor::readParameters(std::string& inputSourceName) {
                                  rclcpp::ParameterValue(0.0));
   nodeHandle_->declare_parameter(inputSourceName + ".sensor_processor.p_5",
                                  rclcpp::ParameterValue(0.0));
-  nodeHandle_->declare_parameter(
-      inputSourceName + ".sensor_processor.lateral_factor",
-      rclcpp::ParameterValue(0.0));
+  nodeHandle_->declare_parameter(inputSourceName +
+                                     ".sensor_processor.lateral_factor",
+                                 rclcpp::ParameterValue(0.0));
   nodeHandle_->declare_parameter(
       inputSourceName + ".sensor_processor.depth_to_disparity_factor",
       rclcpp::ParameterValue(0.0));
@@ -60,18 +60,18 @@ bool StereoSensorProcessor::readParameters(std::string& inputSourceName) {
                              sensorParameters_["p_4"]);
   nodeHandle_->get_parameter(inputSourceName + ".sensor_processor.p_5",
                              sensorParameters_["p_5"]);
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.lateral_factor",
-      sensorParameters_["lateral_factor"]);
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.depth_to_disparity_factor",
-      sensorParameters_["depth_to_disparity_factor"]);
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.cutoff_min_depth",
-      sensorParameters_["cutoff_min_depth"]);
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.cutoff_max_depth",
-      sensorParameters_["cutoff_max_depth"]);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.lateral_factor",
+                             sensorParameters_["lateral_factor"]);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.depth_to_disparity_factor",
+                             sensorParameters_["depth_to_disparity_factor"]);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.cutoff_min_depth",
+                             sensorParameters_["cutoff_min_depth"]);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.cutoff_max_depth",
+                             sensorParameters_["cutoff_max_depth"]);
 
   // nodeHandle_.param("sensor_processor/p_1", sensorParameters_["p_1"], 0.0);
   // nodeHandle_.param("sensor_processor/p_2", sensorParameters_["p_2"], 0.0);
@@ -91,8 +91,8 @@ bool StereoSensorProcessor::readParameters(std::string& inputSourceName) {
 
 bool StereoSensorProcessor::computeVariances(
     const PointCloudType::ConstPtr pointCloud,
-    const Eigen::Matrix<double, 6, 6>& robotPoseCovariance,
-    Eigen::VectorXf& variances) {
+    const Eigen::Matrix<double, 6, 6> &robotPoseCovariance,
+    Eigen::VectorXf &variances) {
   variances.resize(pointCloud->size());
 
   // Projection vector (P).
@@ -128,11 +128,11 @@ bool StereoSensorProcessor::computeVariances(
     pcl::PointXYZRGBConfidenceRatio point = pointCloud->points[i];
     double disparity =
         sensorParameters_.at("depth_to_disparity_factor") /
-        point.z;  // NOLINT(cppcoreguidelines-pro-type-union-access)
+        point.z; // NOLINT(cppcoreguidelines-pro-type-union-access)
     Eigen::Vector3f pointVector(
         point.x, point.y,
-        point.z);  // S_r_SP // NOLINT(cppcoreguidelines-pro-type-union-access)
-    float heightVariance = 0.0;  // sigma_p
+        point.z); // S_r_SP // NOLINT(cppcoreguidelines-pro-type-union-access)
+    float heightVariance = 0.0; // sigma_p
 
     // Measurement distance.
     float measurementDistance = pointVector.norm();
@@ -200,4 +200,4 @@ int StereoSensorProcessor::getJ(int index) {
   return indices_[index] % originalWidth_;
 }
 
-}  // namespace elevation_mapping
+} // namespace elevation_mapping

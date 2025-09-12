@@ -39,13 +39,9 @@
 namespace kindr_rviz_plugins {
 
 VectorAtPositionVisual::VectorAtPositionVisual(
-    Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node)
-    : vector_(Ogre::Vector3::UNIT_Z),
-      length_(0.0),
-      lengthScalingFactor_(1.0),
-      widthScalingFactor_(1.0),
-      showText_(true),
-      showTorque_(false),
+    Ogre::SceneManager *scene_manager, Ogre::SceneNode *parent_node)
+    : vector_(Ogre::Vector3::UNIT_Z), length_(0.0), lengthScalingFactor_(1.0),
+      widthScalingFactor_(1.0), showText_(true), showTorque_(false),
       color_(Ogre::ColourValue(0, 0, 0, 1)) {
   scene_manager_ = scene_manager;
 
@@ -79,7 +75,7 @@ VectorAtPositionVisual::~VectorAtPositionVisual() {
 }
 
 void VectorAtPositionVisual::setMessage(
-    const kindr_msgs::VectorAtPosition::ConstPtr& msg) {
+    const kindr_msgs::VectorAtPosition::ConstPtr &msg) {
   // Check if type is torque
   showTorque_ = msg->type == msg->TYPE_TORQUE;
 
@@ -112,12 +108,12 @@ void VectorAtPositionVisual::setMessage(
   scene_node_circle_->setVisible(showTorque_);
 }
 
-void VectorAtPositionVisual::setArrowPosition(const Ogre::Vector3& position) {
+void VectorAtPositionVisual::setArrowPosition(const Ogre::Vector3 &position) {
   scene_node_frame_->setPosition(position);
 }
 
 void VectorAtPositionVisual::setArrowOrientation(
-    const Ogre::Quaternion& orientation) {
+    const Ogre::Quaternion &orientation) {
   scene_node_frame_->setOrientation(orientation);
 }
 
@@ -128,7 +124,7 @@ void VectorAtPositionVisual::setScalingFactors(float lengthScalingFactor,
   updateScaling();
 }
 
-void VectorAtPositionVisual::setColor(const Ogre::ColourValue& color) {
+void VectorAtPositionVisual::setColor(const Ogre::ColourValue &color) {
   color_ = color;
   updateColor();
 }
@@ -197,4 +193,4 @@ void VectorAtPositionVisual::updateText() {
   scene_node_text_->attachObject(text_.get());
 }
 
-}  // namespace kindr_rviz_plugins
+} // namespace kindr_rviz_plugins

@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-DriveMode::DriveMode(rclcpp::Node* node)
+DriveMode::DriveMode(rclcpp::Node *node)
     : Mode("Drive", node), camera_service_available_(false) {
   RCLCPP_INFO(node_->get_logger(), "Drive Mode");
   loadParameters();
@@ -125,7 +125,7 @@ void DriveMode::handleVideo(
   // TODO: Implement stream control
 }
 
-void DriveMode::declareParameters(rclcpp::Node* node) {
+void DriveMode::declareParameters(rclcpp::Node *node) {
   node->declare_parameter("drive_mode.forward_axis", 1);
   node->declare_parameter("drive_mode.yaw_axis", 2);
   node->declare_parameter("drive_mode.cam_tilt_axis", 3);

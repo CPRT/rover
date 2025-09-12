@@ -21,7 +21,7 @@
  * navigation, and science operations.
  */
 class FlightstickControl : public rclcpp::Node {
- public:
+public:
   /**
    * @brief Constructor for FlightstickControl.
    *
@@ -40,7 +40,7 @@ class FlightstickControl : public rclcpp::Node {
    */
   void processJoystick(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
 
- private:
+private:
   /*
    * @brief Declares parameters for the node and modes.
    */
@@ -70,17 +70,17 @@ class FlightstickControl : public rclcpp::Node {
     ARM_DUMMY
   };
 
-  uint8_t kDriveModeButton;      ///< Button index for drive mode.
-  uint8_t kArmIKModeButton;      ///< Button index for inverse kinematics arm
-                                 ///< control mode.
-  uint8_t kArmManualModeButton;  ///< Button index for manual arm control mode.
-  uint8_t kNavModeButton;        ///< Button index for navigation mode.
-  uint8_t kScienceModeButton;    ///< Button index for science mode.
+  uint8_t kDriveModeButton;     ///< Button index for drive mode.
+  uint8_t kArmIKModeButton;     ///< Button index for inverse kinematics arm
+                                ///< control mode.
+  uint8_t kArmManualModeButton; ///< Button index for manual arm control mode.
+  uint8_t kNavModeButton;       ///< Button index for navigation mode.
+  uint8_t kScienceModeButton;   ///< Button index for science mode.
   uint8_t kArmDummyButton;
 
-  uint8_t kTeleopLightMode;  ///< Button index for teleoperation light mode.
+  uint8_t kTeleopLightMode; ///< Button index for teleoperation light mode.
 
-  ModeType currentMode_;  ///< The current control mode of the rover.
+  ModeType currentMode_; ///< The current control mode of the rover.
 
   /**
    * @brief Checks for mode change based on joystick input.
@@ -116,13 +116,13 @@ class FlightstickControl : public rclcpp::Node {
   bool changeMode(ModeType mode);
 
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
-      joy_sub_;  ///< Subscription to joystick messages.
+      joy_sub_; ///< Subscription to joystick messages.
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr
-      status_pub_;  ///< Publisher for status messages.
+      status_pub_; ///< Publisher for status messages.
   rclcpp::Publisher<std_msgs::msg::Int8>::SharedPtr
-      light_pub_;  ///< Publisher for light control messages.
+      light_pub_; ///< Publisher for light control messages.
 
-  std::unique_ptr<Mode> mode_;  ///< Pointer to the current mode object.
+  std::unique_ptr<Mode> mode_; ///< Pointer to the current mode object.
 };
 
-#endif  // FLIGHTSTICK_CONTROL_HPP
+#endif // FLIGHTSTICK_CONTROL_HPP

@@ -48,7 +48,7 @@ SystemTelemetryPublisher::SystemTelemetryPublisher()
 
 void SystemTelemetryPublisher::publish_telemetry() {
   interfaces::msg::SystemTelemetry msg;
-  for (const auto& collector : collectors_) {
+  for (const auto &collector : collectors_) {
     collector->collect(msg);
   }
   publisher_->publish(msg);
@@ -57,7 +57,7 @@ void SystemTelemetryPublisher::publish_telemetry() {
               msg.cpu_usage, msg.mem_usage, msg.gpu_usage);
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<SystemTelemetryPublisher>();
   rclcpp::spin(node);

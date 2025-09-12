@@ -18,17 +18,17 @@ enum class WheelSide { LEFT, RIGHT };
  * messages to control the wheel.
  */
 class WheelControl {
- public:
+public:
   /**
    * @brief Struct to hold the status of a wheel, including velocity,
    * temperature, current, and voltages.
    */
   struct Status {
-    double velocity;     ///< The current velocity of the wheel.
-    double temperature;  ///< The temperature of the motor.
-    double current;      ///< The output current to the motor.
-    double voltageIn;    ///< The input voltage to the motor.
-    double voltageOut;   ///< The output voltage from the motor.
+    double velocity;    ///< The current velocity of the wheel.
+    double temperature; ///< The temperature of the motor.
+    double current;     ///< The output current to the motor.
+    double voltageIn;   ///< The input voltage to the motor.
+    double voltageOut;  ///< The output voltage from the motor.
   };
 
   /**
@@ -38,7 +38,7 @@ class WheelControl {
    * @throws std::invalid_argument if the wheel name doesn't include "Left" or
    * "Right".
    */
-  WheelControl(std::string wheel_name, rclcpp::Node* node);
+  WheelControl(std::string wheel_name, rclcpp::Node *node);
 
   /**
    * @brief Set the velocity of the wheel.
@@ -72,7 +72,7 @@ class WheelControl {
    */
   void setStatus(const MotorStatus::SharedPtr msg);
 
- private:
+private:
   /**
    * @brief The name of the wheel (e.g., "frontLeft").
    */
@@ -96,7 +96,7 @@ class WheelControl {
   /**
    * @brief Pointer to the ROS node for creating publishers.
    */
-  rclcpp::Node* node_;
+  rclcpp::Node *node_;
 
   /**
    * @brief Publisher for sending motor control messages.
@@ -104,4 +104,4 @@ class WheelControl {
   rclcpp::Publisher<MotorControl>::SharedPtr pub_;
 };
 
-#endif  // WHEEL_CONTROL_HPP
+#endif // WHEEL_CONTROL_HPP

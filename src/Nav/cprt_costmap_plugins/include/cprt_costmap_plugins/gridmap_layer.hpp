@@ -21,7 +21,7 @@ namespace cprt_costmap_plugins {
  * @brief Takes in a gridmap map generated to add costs to costmap
  */
 class GridmapLayer : public nav2_costmap_2d::CostmapLayer {
- public:
+public:
   /**
    * @brief Gridmap Layer constructor
    */
@@ -72,8 +72,8 @@ class GridmapLayer : public nav2_costmap_2d::CostmapLayer {
    * @param max_y Y max map coord of the window to update
    */
   virtual void updateBounds(double robot_x, double robot_y, double robot_yaw,
-                            double* min_x, double* min_y, double* max_x,
-                            double* max_y);
+                            double *min_x, double *min_y, double *max_x,
+                            double *max_y);
 
   /**
    * @brief Update the costs in the master costmap in the window
@@ -83,10 +83,10 @@ class GridmapLayer : public nav2_costmap_2d::CostmapLayer {
    * @param max_x X max map coord of the window to update
    * @param max_y Y max map coord of the window to update
    */
-  virtual void updateCosts(nav2_costmap_2d::Costmap2D& master_grid, int min_i,
+  virtual void updateCosts(nav2_costmap_2d::Costmap2D &master_grid, int min_i,
                            int min_j, int max_i, int max_j);
 
- protected:
+protected:
   /**
    * @brief Get parameters of layer
    */
@@ -95,7 +95,7 @@ class GridmapLayer : public nav2_costmap_2d::CostmapLayer {
   /**
    * @brief Process a new map coming from a topic
    */
-  void processMap(const grid_map::GridMap& new_map);
+  void processMap(const grid_map::GridMap &new_map);
 
   /**
    * @brief  Callback to update the costmap's map from the map_server
@@ -116,13 +116,13 @@ class GridmapLayer : public nav2_costmap_2d::CostmapLayer {
    * @brief Clear costmap layer info below the robot's footprint
    */
   void updateFootprint(double robot_x, double robot_y, double robot_yaw,
-                       double* min_x, double* min_y, double* max_x,
-                       double* max_y);
+                       double *min_x, double *min_y, double *max_x,
+                       double *max_y);
 
-  bool getTransform(geometry_msgs::msg::TransformStamped& transform);
+  bool getTransform(geometry_msgs::msg::TransformStamped &transform);
 
-  std::string global_frame_;  ///< @brief The global frame for the costmap
-  std::string map_frame_;     /// @brief frame that map is located in
+  std::string global_frame_; ///< @brief The global frame for the costmap
+  std::string map_frame_;    /// @brief frame that map is located in
 
   bool has_updated_data_{false};
 
@@ -149,6 +149,6 @@ class GridmapLayer : public nav2_costmap_2d::CostmapLayer {
   grid_map::GridMap gridmap_in_;
 };
 
-}  // namespace cprt_costmap_plugins
+} // namespace cprt_costmap_plugins
 
-#endif  // NAV2_GRIDMAP_COSTMAP_GRIDMAP_LAYER_HPP_
+#endif // NAV2_GRIDMAP_COSTMAP_GRIDMAP_LAYER_HPP_

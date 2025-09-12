@@ -32,9 +32,9 @@ bool RobotMotionMapUpdater::readParameters() {
   return true;
 }
 
-bool RobotMotionMapUpdater::update(ElevationMap& map, const Pose& robotPose,
-                                   const PoseCovariance& robotPoseCovariance,
-                                   const rclcpp::Time& time) {
+bool RobotMotionMapUpdater::update(ElevationMap &map, const Pose &robotPose,
+                                   const PoseCovariance &robotPoseCovariance,
+                                   const rclcpp::Time &time) {
   const PoseCovariance robotPoseCovarianceScaled =
       covarianceScale_ * robotPoseCovariance;
 
@@ -46,7 +46,7 @@ bool RobotMotionMapUpdater::update(ElevationMap& map, const Pose& robotPose,
   // Initialize update data.
   grid_map::Size size = map.getRawGridMap().getSize();
   grid_map::Matrix varianceUpdate(size(0),
-                                  size(1));  // TODO(max): Make as grid map?
+                                  size(1)); // TODO(max): Make as grid map?
   grid_map::Matrix horizontalVarianceUpdateX(size(0), size(1));
   grid_map::Matrix horizontalVarianceUpdateY(size(0), size(1));
   grid_map::Matrix horizontalVarianceUpdateXY(size(0), size(1));
@@ -89,12 +89,12 @@ bool RobotMotionMapUpdater::update(ElevationMap& map, const Pose& robotPose,
       map.getPose().getRotation().inverseRotate(
           map.getPose().getPosition() - previousRobotPose_.getPosition());
 
-  auto& heightLayer = map.getRawGridMap()["elevation"];
+  auto &heightLayer = map.getRawGridMap()["elevation"];
 
   // For each cell in map. // TODO(max): Change to new iterator.
   for (unsigned int i = 0; i < static_cast<unsigned int>(size(0)); ++i) {
     for (unsigned int j = 0; j < static_cast<unsigned int>(size(1)); ++j) {
-      kindr::Position3D cellPosition;  // M_r_MP
+      kindr::Position3D cellPosition; // M_r_MP
 
       const auto height = heightLayer(i, j);
       if (std::isfinite(height)) {
@@ -143,8 +143,8 @@ bool RobotMotionMapUpdater::update(ElevationMap& map, const Pose& robotPose,
 }
 
 bool RobotMotionMapUpdater::computeReducedCovariance(
-    const Pose& robotPose, const PoseCovariance& robotPoseCovariance,
-    ReducedCovariance& reducedCovariance) {
+    const Pose &robotPose, const PoseCovariance &robotPoseCovariance,
+    ReducedCovariance &reducedCovariance) {
   // Get augmented Jacobian (A.4).
   kindr::EulerAnglesZyxPD eulerAngles(robotPose.getRotation());
   double tanOfPitch = tan(eulerAngles.pitch());
@@ -163,8 +163,8 @@ bool RobotMotionMapUpdater::computeReducedCovariance(
 }
 
 bool RobotMotionMapUpdater::computeRelativeCovariance(
-    const Pose& robotPose, const ReducedCovariance& reducedCovariance,
-    ReducedCovariance& relativeCovariance) {
+    const Pose &robotPose, const ReducedCovariance &reducedCovariance,
+    ReducedCovariance &relativeCovariance) {
   // Rotation matrix of z-align frame R_I_tilde_B.
   const kindr::RotationVectorPD rotationVector_I_B(robotPose.getRotation());
   const kindr::RotationVectorPD rotationVector_I_tilde_B(
@@ -175,7 +175,7 @@ bool RobotMotionMapUpdater::computeRelativeCovariance(
   kindr::Position3D positionInRobotFrame =
       previousRobotPose_.getRotation().inverseRotate(
           robotPose.getPosition() - previousRobotPose_.getPosition());
-  kindr::Velocity3D v_Delta_t(positionInRobotFrame);  // (A.8)
+  kindr::Velocity3D v_Delta_t(positionInRobotFrame); // (A.8)
 
   // Jacobian F (A.8).
   Jacobian F;
@@ -202,4 +202,4 @@ bool RobotMotionMapUpdater::computeRelativeCovariance(
   return true;
 }
 
-}  // namespace elevation_mapping
+} // namespace elevation_mapping

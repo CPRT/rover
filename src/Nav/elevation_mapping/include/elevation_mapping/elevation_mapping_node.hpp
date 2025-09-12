@@ -10,13 +10,13 @@
 namespace elevation_mapping {
 
 class ElevationMapNode : public rclcpp::Node {
- public:
-  ElevationMapNode(const rclcpp::NodeOptions& opt = rclcpp::NodeOptions());
+public:
+  ElevationMapNode(const rclcpp::NodeOptions &opt = rclcpp::NodeOptions());
 
- private:
+private:
   std::unique_ptr<ElevationMapping> elevationMapping_;
   rclcpp::TimerBase::SharedPtr timer_;
 };
 
-}  // namespace elevation_mapping
-#endif  // ELEVATION_MAP_NODE_HPP
+} // namespace elevation_mapping
+#endif // ELEVATION_MAP_NODE_HPP

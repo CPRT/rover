@@ -29,32 +29,32 @@
 namespace ros2_control_rover_arm {
 
 class RoverArmHardwareInterface : public hardware_interface::SystemInterface {
- public:
+public:
   RCLCPP_SHARED_PTR_DEFINITIONS(RoverArmHardwareInterface)
 
   // runs on start
-  hardware_interface::CallbackReturn on_init(
-      const hardware_interface::HardwareInfo &info) override;
+  hardware_interface::CallbackReturn
+  on_init(const hardware_interface::HardwareInfo &info) override;
 
   // runs on configure
-  hardware_interface::CallbackReturn on_configure(
-      const rclcpp_lifecycle::State &previous_state) override;
+  hardware_interface::CallbackReturn
+  on_configure(const rclcpp_lifecycle::State &previous_state) override;
 
   // returns the pointer to the hardware position states vector
-  std::vector<hardware_interface::StateInterface> export_state_interfaces()
-      override;
+  std::vector<hardware_interface::StateInterface>
+  export_state_interfaces() override;
 
   // returns the pointer to the hardware commands states vector
-  std::vector<hardware_interface::CommandInterface> export_command_interfaces()
-      override;
+  std::vector<hardware_interface::CommandInterface>
+  export_command_interfaces() override;
 
   // runs on activate
-  hardware_interface::CallbackReturn on_activate(
-      const rclcpp_lifecycle::State &previous_state) override;
+  hardware_interface::CallbackReturn
+  on_activate(const rclcpp_lifecycle::State &previous_state) override;
 
   // runs on deactivate
-  hardware_interface::CallbackReturn on_deactivate(
-      const rclcpp_lifecycle::State &previous_state) override;
+  hardware_interface::CallbackReturn
+  on_deactivate(const rclcpp_lifecycle::State &previous_state) override;
 
   // gets called every so often by ros2_control, where you have to update the
   // hardware positions vector
@@ -63,14 +63,14 @@ class RoverArmHardwareInterface : public hardware_interface::SystemInterface {
 
   // gets called every so often by ros2_control, so you have to read from the
   // hardware commands vector and send it out
-  hardware_interface::return_type write(
-      const rclcpp::Time &time, const rclcpp::Duration &period) override;
+  hardware_interface::return_type
+  write(const rclcpp::Time &time, const rclcpp::Duration &period) override;
 
- private:
+private:
   rclcpp::Node::SharedPtr debug_node_;
   std::vector<std::shared_ptr<TalonSRXWrapper>> controllers_;
 };
 
-}  // namespace ros2_control_rover_arm
+} // namespace ros2_control_rover_arm
 
-#endif  // ROS2_CONTROL_ROVER_ARM
+#endif // ROS2_CONTROL_ROVER_ARM

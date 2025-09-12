@@ -10,12 +10,11 @@ namespace elevation_mapping {
  * it in a multi threaded scenario.
  * @tparam Data the dataclass to wrapp.
  */
-template <typename Data>
-class ThreadSafeDataWrapper {
- public:
+template <typename Data> class ThreadSafeDataWrapper {
+public:
   ThreadSafeDataWrapper() = default;
 
-  ThreadSafeDataWrapper(const ThreadSafeDataWrapper<Data>& other)
+  ThreadSafeDataWrapper(const ThreadSafeDataWrapper<Data> &other)
       : data_(other.getData()) {}
 
   //! @param data to write. For partial updates of the data use
@@ -33,16 +32,16 @@ class ThreadSafeDataWrapper {
 
   //! @return a writable reference to write the data and a guard to prevent
   //! concurrent data access while doing so.
-  std::pair<Data&, std::unique_lock<std::mutex>> getDataToWrite() {
+  std::pair<Data &, std::unique_lock<std::mutex>> getDataToWrite() {
     std::unique_lock<std::mutex> dataWriteGuard{dataMutex_};
     return {data_, std::move(dataWriteGuard)};
   }
 
- private:
+private:
   //! The data to wrap and guard its access.
   Data data_;
   //! Mutex to hold whenever reading/ writing data_.
   mutable std::mutex dataMutex_;
 };
 
-}  // namespace elevation_mapping
+} // namespace elevation_mapping

@@ -1,6 +1,6 @@
 #include "ros_phoenix/phoenix_manager.hpp"
 
-#define Phoenix_No_WPI  // remove WPI dependencies
+#define Phoenix_No_WPI // remove WPI dependencies
 #include <functional>
 #include <iostream>
 
@@ -16,8 +16,8 @@ std::shared_ptr<PhoenixManager> PhoenixManager::singleton_;
 const std::string PhoenixManager::PARAMETER_PERIOD_MS = "period_ms";
 const std::string PhoenixManager::PARAMETER_WATCHDOG_MS = "watchdog_ms";
 
-std::shared_ptr<PhoenixManager> PhoenixManager::getInstance(
-    std::weak_ptr<rclcpp::Executor> exec) {
+std::shared_ptr<PhoenixManager>
+PhoenixManager::getInstance(std::weak_ptr<rclcpp::Executor> exec) {
   std::lock_guard<std::mutex> lock_guard(PhoenixManager::singleton_mutex_);
   if (!PhoenixManager::singleton_) {
     PhoenixManager::singleton_ =
@@ -53,8 +53,8 @@ void PhoenixManager::feedEnable() const {
   ctre::phoenix::unmanaged::Unmanaged::FeedEnable(this->watchdog_ms_);
 }
 
-rcl_interfaces::msg::SetParametersResult PhoenixManager::reconfigure(
-    const std::vector<rclcpp::Parameter> &params) {
+rcl_interfaces::msg::SetParametersResult
+PhoenixManager::reconfigure(const std::vector<rclcpp::Parameter> &params) {
   for (const auto &param : params) {
     if (param.get_name() == PARAMETER_PERIOD_MS) {
       this->timer_ =
@@ -70,4 +70,4 @@ rcl_interfaces::msg::SetParametersResult PhoenixManager::reconfigure(
   return result;
 }
 
-}  // namespace ros_phoenix
+} // namespace ros_phoenix

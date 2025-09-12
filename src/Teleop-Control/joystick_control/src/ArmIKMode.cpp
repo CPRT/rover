@@ -3,7 +3,7 @@
 #include "ArmHelpers.hpp"
 #include "std_msgs/msg/bool.hpp"
 
-ArmIKMode::ArmIKMode(rclcpp::Node* node) : Mode("IK Arm", node) {
+ArmIKMode::ArmIKMode(rclcpp::Node *node) : Mode("IK Arm", node) {
   RCLCPP_INFO(node_->get_logger(), "IK Arm Mode");
   loadParameters();
 
@@ -93,7 +93,7 @@ void ArmIKMode::handleGripper(
   }
 }
 
-void ArmIKMode::declareParameters(rclcpp::Node* node) {
+void ArmIKMode::declareParameters(rclcpp::Node *node) {
   node->declare_parameter("arm_ik_mode.x_axis", 0);
   node->declare_parameter("arm_ik_mode.y_axis", 1);
   node->declare_parameter("arm_ik_mode.up_button", 2);
@@ -166,7 +166,7 @@ void ArmIKMode::servoRequest(int req_port, int req_pos) const {
           if (!response->status) {
             RCLCPP_ERROR(node_->get_logger(), "Servo move failed");
           }
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
           RCLCPP_ERROR(node_->get_logger(), "Service call failed: %s",
                        e.what());
         }

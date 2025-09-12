@@ -5,7 +5,7 @@
 
 #include "widgets/main_widget.h"
 
-MainWindow::MainWindow(CameraClient* camera_client, QWidget* parent)
+MainWindow::MainWindow(CameraClient *camera_client, QWidget *parent)
     : QMainWindow(parent) {
   camera_client_ = camera_client;
 
@@ -24,13 +24,15 @@ MainWindow::MainWindow(CameraClient* camera_client, QWidget* parent)
 MainWindow::~MainWindow() {}
 
 void MainWindow::get_source_names() {
-  if (!camera_client_ || !main_widget_) return;
+  if (!camera_client_ || !main_widget_)
+    return;
   std::vector<std::string> names = camera_client_->get_cameras();
   main_widget_->receive_source_names(names);
 }
 
 void MainWindow::receive_preset(
     std::vector<interfaces::msg::VideoSource> preset) {
-  if (!camera_client_) return;
+  if (!camera_client_)
+    return;
   camera_client_->start_video(preset.size(), preset);
 }

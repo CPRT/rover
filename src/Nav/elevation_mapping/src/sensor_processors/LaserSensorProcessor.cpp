@@ -31,13 +31,13 @@ namespace elevation_mapping {
  */
 
 LaserSensorProcessor::LaserSensorProcessor(
-    std::shared_ptr<rclcpp::Node>& nodeHandle,
-    const SensorProcessorBase::GeneralParameters& generalParameters)
+    std::shared_ptr<rclcpp::Node> &nodeHandle,
+    const SensorProcessorBase::GeneralParameters &generalParameters)
     : SensorProcessorBase(nodeHandle, generalParameters) {}
 
 LaserSensorProcessor::~LaserSensorProcessor() = default;
 
-bool LaserSensorProcessor::readParameters(std::string& inputSourceName) {
+bool LaserSensorProcessor::readParameters(std::string &inputSourceName) {
   SensorProcessorBase::readParameters(inputSourceName);
 
   nodeHandle_->declare_parameter(
@@ -51,9 +51,9 @@ bool LaserSensorProcessor::readParameters(std::string& inputSourceName) {
                              sensorParameters_["min_radius"]);
   nodeHandle_->get_parameter(inputSourceName + ".sensor_processor.beam_angle",
                              sensorParameters_["beam_angle"]);
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.beam_constant",
-      sensorParameters_["beam_constant"]);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.beam_constant",
+                             sensorParameters_["beam_constant"]);
 
   // nodeHandle_.param("sensor_processor/min_radius",
   // sensorParameters_["min_radius"], 0.0);
@@ -66,8 +66,8 @@ bool LaserSensorProcessor::readParameters(std::string& inputSourceName) {
 
 bool LaserSensorProcessor::computeVariances(
     const PointCloudType::ConstPtr pointCloud,
-    const Eigen::Matrix<double, 6, 6>& robotPoseCovariance,
-    Eigen::VectorXf& variances) {
+    const Eigen::Matrix<double, 6, 6> &robotPoseCovariance,
+    Eigen::VectorXf &variances) {
   variances.resize(pointCloud->size());
 
   // Projection vector (P).
@@ -105,10 +105,10 @@ bool LaserSensorProcessor::computeVariances(
     // unit testing. For every point in point cloud.
 
     // Preparation.
-    const auto& point = pointCloud->points[i];
+    const auto &point = pointCloud->points[i];
     const Eigen::Vector3f pointVector(
         point.x, point.y,
-        point.z);  // S_r_SP // NOLINT(cppcoreguidelines-pro-type-union-access)
+        point.z); // S_r_SP // NOLINT(cppcoreguidelines-pro-type-union-access)
 
     // Measurement distance.
     const float measurementDistance = pointVector.norm();
@@ -129,7 +129,7 @@ bool LaserSensorProcessor::computeVariances(
         P_mul_C_BM_transpose * (C_SB_transpose_times_S_r_SP_skew + B_r_BS_skew);
 
     // Measurement variance for map (error propagation law).
-    float heightVariance = 0.0;  // sigma_p
+    float heightVariance = 0.0; // sigma_p
     heightVariance =
         rotationJacobian * rotationVariance * rotationJacobian.transpose();
     heightVariance +=
@@ -142,4 +142,4 @@ bool LaserSensorProcessor::computeVariances(
   return true;
 }
 
-}  // namespace elevation_mapping
+} // namespace elevation_mapping

@@ -39,26 +39,20 @@
 namespace elevation_mapping {
 
 ElevationMapping::ElevationMapping(std::shared_ptr<rclcpp::Node> nodeHandle)
-    : nodeHandle_(nodeHandle),
-      inputSources_(nodeHandle_),
+    : nodeHandle_(nodeHandle), inputSources_(nodeHandle_),
       robotPoseCacheSize_(200),
       // transformListener_(transformBuffer_),
-      map_(nodeHandle),
-      robotMotionMapUpdater_(nodeHandle),
-      ignoreRobotMotionUpdates_(false),
-      updatesEnabled_(true),
+      map_(nodeHandle), robotMotionMapUpdater_(nodeHandle),
+      ignoreRobotMotionUpdates_(false), updatesEnabled_(true),
       maxNoUpdateDuration_(rclcpp::Duration::from_seconds(0.0)),
       timeTolerance_(rclcpp::Duration::from_seconds(0.0)),
       fusedMapPublishTimerDuration_(rclcpp::Duration::from_seconds(0.0)),
       isContinuouslyFusing_(false),
       visibilityCleanupTimerDuration_(rclcpp::Duration::from_seconds(0.0)),
       receivedFirstMatchingPointcloudAndPose_(false),
-      initializeElevationMap_(true),
-      initializationMethod_(0),
-      lengthInXInitSubmap_(1.2),
-      lengthInYInitSubmap_(1.8),
-      marginInitSubmap_(0.3),
-      initSubmapHeightOffset_(0.0) {
+      initializeElevationMap_(true), initializationMethod_(0),
+      lengthInXInitSubmap_(1.2), lengthInYInitSubmap_(1.8),
+      marginInitSubmap_(0.3), initSubmapHeightOffset_(0.0) {
 #ifndef NDEBUG
   // Print a warning if built in debug.
   RCLCPP_WARN(nodeHandle_->get_logger(),
@@ -83,9 +77,9 @@ ElevationMapping::ElevationMapping(std::shared_ptr<rclcpp::Node> nodeHandle)
   RCLCPP_INFO(nodeHandle_->get_logger(), "Successfully launched node.");
 }
 
-void ElevationMapping::setupSubscribers() {  // Handle deprecated
-                                             // point_cloud_topic and
-                                             // input_sources configuration.
+void ElevationMapping::setupSubscribers() { // Handle deprecated
+                                            // point_cloud_topic and
+                                            // input_sources configuration.
   auto res = nodeHandle_->get_topic_names_and_types();
   for (auto a : res) {
     RCLCPP_INFO(nodeHandle_->get_logger(), "topic: %s", a.first.c_str());
@@ -207,7 +201,7 @@ void ElevationMapping::setupTimers() {
 ElevationMapping::~ElevationMapping() {
   // Shutdown all services.
 
-  {  // Fusion Service Queue
+  { // Fusion Service Queue
     rawSubmapService_.reset();
     fusionTriggerService_.reset();
     fusedSubmapService_.reset();
@@ -217,7 +211,7 @@ ElevationMapping::~ElevationMapping() {
     // fusionServiceQueue_.clear();
   }
 
-  {  // Visibility cleanup queue
+  { // Visibility cleanup queue
     visibilityCleanupTimer_->cancel();
 
     // visibilityCleanupQueue_.disable();
@@ -334,7 +328,7 @@ bool ElevationMapping::readParameters() {
   nodeHandle_->declare_parameter("mahalanobis_distance_threshold", 2.5);
   nodeHandle_->declare_parameter("multi_height_noise", pow(0.003, 2));
   nodeHandle_->declare_parameter("min_horizontal_variance",
-                                 pow(resolution / 2.0, 2));  // two-sigma
+                                 pow(resolution / 2.0, 2)); // two-sigma
   nodeHandle_->declare_parameter("max_horizontal_variance", 0.5);
   nodeHandle_->declare_parameter("underlying_map_topic", std::string());
   nodeHandle_->declare_parameter("enable_visibility_cleanup", true);
@@ -349,7 +343,7 @@ bool ElevationMapping::readParameters() {
                              map_.mahalanobisDistanceThreshold_);
   nodeHandle_->get_parameter("multi_height_noise", map_.multiHeightNoise_);
   nodeHandle_->get_parameter("min_horizontal_variance",
-                             map_.minHorizontalVariance_);  // two-sigma
+                             map_.minHorizontalVariance_); // two-sigma
   nodeHandle_->get_parameter("max_horizontal_variance",
                              map_.maxHorizontalVariance_);
   nodeHandle_->get_parameter("underlying_map_topic", map_.underlyingMapTopic_);
@@ -425,7 +419,7 @@ bool ElevationMapping::initialize() {
   // fusionServiceThread_ =
   // std::thread(boost::bind(&ElevationMapping::runFusionServiceThread, this));
   rclcpp::sleep_for(
-      std::chrono::seconds(1));  // Need this to get the TF caches fill up.
+      std::chrono::seconds(1)); // Need this to get the TF caches fill up.
   // resetMapUpdateTimer();
   fusedMapPublishTimer_->reset();
   // visibilityCleanupThread_ =
@@ -460,7 +454,7 @@ bool ElevationMapping::initialize() {
 
 void ElevationMapping::pointCloudCallback(
     sensor_msgs::msg::PointCloud2::ConstSharedPtr pointCloudMsg,
-    bool publishPointCloud, const SensorProcessorBase::Ptr& sensorProcessor_) {
+    bool publishPointCloud, const SensorProcessorBase::Ptr &sensorProcessor_) {
   // RCLCPP_INFO(nodeHandle_->get_logger(), "Processing data from: %s",
   // pointCloudMsg->header.frame_id.c_str());
   if (!updatesEnabled_) {
@@ -561,7 +555,7 @@ void ElevationMapping::pointCloudCallback(
     }
     RCLCPP_ERROR(
         nodeHandle_->get_logger(),
-        "Point cloud could not be processed.");  // TODO: what causes this issue
+        "Point cloud could not be processed."); // TODO: what causes this issue
     // resetMapUpdateTimer();
     return;
   }
@@ -626,8 +620,8 @@ void ElevationMapping::mapUpdateTimerCallback() {
 
   rclcpp::Time time = rclcpp::Clock(RCL_ROS_TIME).now();
   if ((lastPointCloudUpdateTime_ - time) <=
-      maxNoUpdateDuration_) {  // there were updates from sensordata, no need to
-                               // force an update.
+      maxNoUpdateDuration_) { // there were updates from sensordata, no need to
+                              // force an update.
     return;
   }
   rclcpp::Clock clock;
@@ -688,7 +682,7 @@ bool ElevationMapping::isFusingEnabled() {
   return isContinuouslyFusing_ && map_.hasFusedMapSubscribers();
 }
 
-bool ElevationMapping::updatePrediction(const rclcpp::Time& time) {
+bool ElevationMapping::updatePrediction(const rclcpp::Time &time) {
   if (ignoreRobotMotionUpdates_) {
     return true;
   }
@@ -759,7 +753,7 @@ bool ElevationMapping::updateMapLocation() {
   try {
     trackPointTransformed =
         transformBuffer_->transform(trackPoint, map_.getFrameId());
-  } catch (tf2::TransformException& ex) {
+  } catch (tf2::TransformException &ex) {
     RCLCPP_ERROR(nodeHandle_->get_logger(), "%s", ex.what());
     return false;
   }
@@ -794,7 +788,7 @@ bool ElevationMapping::getFusedSubmapServiceCallback(
     response->map = *grid_map::GridMapRosConverter::toMessage(subMap);
   } else {
     std::vector<std::string> layers;
-    for (const std::string& layer : request->layers) {
+    for (const std::string &layer : request->layers) {
       layers.push_back(layer);
     }
     response->map = *grid_map::GridMapRosConverter::toMessage(subMap, layers);
@@ -828,7 +822,7 @@ bool ElevationMapping::getRawSubmapServiceCallback(
     response->map = *grid_map::GridMapRosConverter::toMessage(subMap);
   } else {
     std::vector<std::string> layers;
-    for (const std::string& layer : request->layers) {
+    for (const std::string &layer : request->layers) {
       layers.push_back(layer);
     }
     response->map = *grid_map::GridMapRosConverter::toMessage(subMap, layers);
@@ -870,11 +864,11 @@ bool ElevationMapping::initializeElevationMap() {
             rclcpp::Duration::from_seconds(5.0));
         tf2::fromMsg(transform_msg, transform);
 
-        RCLCPP_DEBUG_STREAM(
-            nodeHandle_->get_logger(),
-            "Initializing with x: " << transform.getOrigin().x()
-                                    << " y: " << transform.getOrigin().y()
-                                    << " z: " << transform.getOrigin().z());
+        RCLCPP_DEBUG_STREAM(nodeHandle_->get_logger(),
+                            "Initializing with x: "
+                                << transform.getOrigin().x()
+                                << " y: " << transform.getOrigin().y()
+                                << " z: " << transform.getOrigin().z());
 
         const grid_map::Position positionRobot(transform.getOrigin().x(),
                                                transform.getOrigin().y());
@@ -887,7 +881,7 @@ bool ElevationMapping::initializeElevationMap() {
             positionRobot, transform.getOrigin().z() + initSubmapHeightOffset_,
             lengthInXInitSubmap_, lengthInYInitSubmap_, marginInitSubmap_);
         return true;
-      } catch (tf2::TransformException& ex) {
+      } catch (tf2::TransformException &ex) {
         RCLCPP_DEBUG(nodeHandle_->get_logger(), "%s", ex.what());
         RCLCPP_WARN(
             nodeHandle_->get_logger(),
@@ -938,10 +932,10 @@ bool ElevationMapping::maskedReplaceServiceCallback(
     if (*sourceLayerIterator == maskedReplaceServiceMaskLayerName_) {
       continue;
     }
-    grid_map::Matrix& sourceLayer = sourceMap[*sourceLayerIterator];
+    grid_map::Matrix &sourceLayer = sourceMap[*sourceLayerIterator];
     // Check if the layer exists in the elevation map
     if (map_.getRawGridMap().exists(*sourceLayerIterator)) {
-      grid_map::Matrix& destinationLayer =
+      grid_map::Matrix &destinationLayer =
           map_.getRawGridMap()[*sourceLayerIterator];
       for (grid_map::GridMapIterator destinationIterator(map_.getRawGridMap());
            !destinationIterator.isPastEnd(); ++destinationIterator) {
@@ -1038,4 +1032,4 @@ bool ElevationMapping::loadMapServiceCallback(
 //   mapUpdateTimer_->cancel();
 // }
 
-}  // namespace elevation_mapping
+} // namespace elevation_mapping

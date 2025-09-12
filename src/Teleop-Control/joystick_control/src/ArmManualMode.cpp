@@ -4,7 +4,7 @@
 #include "control_msgs/msg/joint_jog.hpp"
 #include "std_msgs/msg/bool.hpp"
 
-ArmManualMode::ArmManualMode(rclcpp::Node* node) : Mode("Manual Arm", node) {
+ArmManualMode::ArmManualMode(rclcpp::Node *node) : Mode("Manual Arm", node) {
   RCLCPP_INFO(node_->get_logger(), "Arm Manual Mode");
   loadParameters();
   joint_pub_ = node_->create_publisher<control_msgs::msg::JointJog>(
@@ -132,7 +132,7 @@ void ArmManualMode::handleTwist(
   joint_pub_->publish(joint_msg_);
 }
 
-void ArmManualMode::declareParameters(rclcpp::Node* node) {
+void ArmManualMode::declareParameters(rclcpp::Node *node) {
   node->declare_parameter("arm_manual_mode.base_axis", 0);
   node->declare_parameter("arm_manual_mode.wrist_roll", 1);
   node->declare_parameter("arm_manual_mode.wrist_yaw_positive", 2);
@@ -186,7 +186,7 @@ void ArmManualMode::servoRequest(int req_port, int req_pos) const {
           if (!response->status) {
             RCLCPP_ERROR(node_->get_logger(), "Servo move failed");
           }
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
           RCLCPP_ERROR(node_->get_logger(), "Service call failed: %s",
                        e.what());
         }

@@ -40,7 +40,7 @@ namespace elevation_mapping {
  * the desired frame.
  */
 class SensorProcessorBase {
- public:
+public:
   using Ptr = std::unique_ptr<SensorProcessorBase>;
   friend class ElevationMapping;
   friend class Input;
@@ -62,8 +62,8 @@ class SensorProcessorBase {
    * in order to work. // TODO (magnus) improve documentation.
    * @param inputSourceName input source name
    */
-  SensorProcessorBase(std::shared_ptr<rclcpp::Node>& nodeHandle,
-                      const GeneralParameters& generalConfig);
+  SensorProcessorBase(std::shared_ptr<rclcpp::Node> &nodeHandle,
+                      const GeneralParameters &generalConfig);
 
   /*!
    * Destructor.
@@ -81,9 +81,9 @@ class SensorProcessorBase {
    * @return true if successful.
    */
   bool process(const PointCloudType::ConstPtr pointCloudInput,
-               const Eigen::Matrix<double, 6, 6>& robotPoseCovariance,
+               const Eigen::Matrix<double, 6, 6> &robotPoseCovariance,
                const PointCloudType::Ptr pointCloudMapFrame,
-               Eigen::VectorXf& variances, std::string sensorFrame);
+               Eigen::VectorXf &variances, std::string sensorFrame);
 
   /*!
    * Checks if a valid tf transformation was received since startup.
@@ -91,13 +91,13 @@ class SensorProcessorBase {
    */
   bool isTfAvailableInBuffer() { return firstTfAvailable_; }
 
- protected:
+protected:
   /*!
    * Reads and verifies the parameters.
    * @param input source name
    * @return true if successful.
    */
-  virtual bool readParameters(std::string& inputSourceName);
+  virtual bool readParameters(std::string &inputSourceName);
 
   /*!
    * Filters the point cloud regardless of the sensor type. Removes NaN values.
@@ -123,17 +123,17 @@ class SensorProcessorBase {
    * @param[out] variances the elevation map height variances.
    * @return true if successful.
    */
-  virtual bool computeVariances(
-      const PointCloudType::ConstPtr pointCloud,
-      const Eigen::Matrix<double, 6, 6>& robotPoseCovariance,
-      Eigen::VectorXf& variances) = 0;
+  virtual bool
+  computeVariances(const PointCloudType::ConstPtr pointCloud,
+                   const Eigen::Matrix<double, 6, 6> &robotPoseCovariance,
+                   Eigen::VectorXf &variances) = 0;
 
   /*!
    * Update the transformations for a given time stamp.
    * @param timeStamp the time stamp for the transformation.
    * @return true if successful.
    */
-  bool updateTransformations(const rclcpp::Time& timeStamp);
+  bool updateTransformations(const rclcpp::Time &timeStamp);
 
   /*!
    * Transforms the point cloud the a target frame.
@@ -145,17 +145,17 @@ class SensorProcessorBase {
    */
   bool transformPointCloud(PointCloudType::ConstPtr pointCloud,
                            PointCloudType::Ptr pointCloudTransformed,
-                           const std::string& targetFrame);
+                           const std::string &targetFrame);
 
   /*!
    * Removes points with z-coordinate above a limit in map frame.
    * @param[in/out] pointCloud the point cloud to be cropped.
    */
   void removePointsOutsideLimits(PointCloudType::ConstPtr reference,
-                                 std::vector<PointCloudType::Ptr>& pointClouds);
+                                 std::vector<PointCloudType::Ptr> &pointClouds);
 
   //! ROS nodehandle.
-  std::shared_ptr<rclcpp::Node>& nodeHandle_;
+  std::shared_ptr<rclcpp::Node> &nodeHandle_;
 
   //! TF transform listener and buffer.
   std::shared_ptr<tf2_ros::Buffer> transformBuffer_;

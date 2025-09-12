@@ -28,18 +28,18 @@ class MultiDOFJointTrajectoryDisplay
     : public rviz::MessageFilterDisplay<
           trajectory_msgs::MultiDOFJointTrajectory> {
   Q_OBJECT
- public:
+public:
   MultiDOFJointTrajectoryDisplay();
   virtual ~MultiDOFJointTrajectoryDisplay();
 
- protected:
+protected:
   virtual void onInitialize();
   virtual void reset();
 
- Q_SIGNALS:
+Q_SIGNALS:
   void updateTrajectorySignal();
 
- private Q_SLOTS:
+private Q_SLOTS:
   void setShowConnection();
   void setShowTransformRotation();
   void setShowVelocityLinear();
@@ -68,9 +68,9 @@ class MultiDOFJointTrajectoryDisplay
 
   void updateTrajectory();
 
- private:
-  void processMessage(
-      const trajectory_msgs::MultiDOFJointTrajectory::ConstPtr& msg);
+private:
+  void
+  processMessage(const trajectory_msgs::MultiDOFJointTrajectory::ConstPtr &msg);
 
   void updateShowConnection();
   void updateShowTransformRotation();
@@ -103,32 +103,32 @@ class MultiDOFJointTrajectoryDisplay
       boost::shared_ptr<MultiDOFJointTrajectoryPointConnectionVisual>>>
       visuals_connections_;
 
-  rviz::BoolProperty* property_show_connection_;
-  rviz::BoolProperty* property_show_transform_rotation_;
-  rviz::BoolProperty* property_show_velocity_linear_;
-  rviz::BoolProperty* property_show_velocity_angular_;
-  rviz::BoolProperty* property_show_acceleration_linear_;
-  rviz::BoolProperty* property_show_acceleration_angular_;
+  rviz::BoolProperty *property_show_connection_;
+  rviz::BoolProperty *property_show_transform_rotation_;
+  rviz::BoolProperty *property_show_velocity_linear_;
+  rviz::BoolProperty *property_show_velocity_angular_;
+  rviz::BoolProperty *property_show_acceleration_linear_;
+  rviz::BoolProperty *property_show_acceleration_angular_;
 
-  rviz::FloatProperty* property_size_transform_rotation_;
-  rviz::FloatProperty* property_diameter_arrows_;
-  rviz::FloatProperty* property_scale_velocity_linear_;
-  rviz::FloatProperty* property_scale_velocity_angular_;
-  rviz::FloatProperty* property_scale_acceleration_linear_;
-  rviz::FloatProperty* property_scale_acceleration_angular_;
+  rviz::FloatProperty *property_size_transform_rotation_;
+  rviz::FloatProperty *property_diameter_arrows_;
+  rviz::FloatProperty *property_scale_velocity_linear_;
+  rviz::FloatProperty *property_scale_velocity_angular_;
+  rviz::FloatProperty *property_scale_acceleration_linear_;
+  rviz::FloatProperty *property_scale_acceleration_angular_;
 
-  rviz::ColorProperty* property_color_connection_;
-  rviz::ColorProperty* property_color_velocity_linear_;
-  rviz::ColorProperty* property_color_velocity_angular_;
-  rviz::ColorProperty* property_color_acceleration_linear_;
-  rviz::ColorProperty* property_color_acceleration_angular_;
+  rviz::ColorProperty *property_color_connection_;
+  rviz::ColorProperty *property_color_velocity_linear_;
+  rviz::ColorProperty *property_color_velocity_angular_;
+  rviz::ColorProperty *property_color_acceleration_linear_;
+  rviz::ColorProperty *property_color_acceleration_angular_;
 
-  rviz::FloatProperty* property_alpha_;
+  rviz::FloatProperty *property_alpha_;
 
-  rviz::FloatProperty* property_font_size_;
-  rviz::BoolProperty* property_show_text_;
+  rviz::FloatProperty *property_font_size_;
+  rviz::BoolProperty *property_show_text_;
 
-  rviz::IntProperty* property_history_length_;
+  rviz::IntProperty *property_history_length_;
 
   bool show_connection_;
   bool show_transform_rotation_;
@@ -157,4 +157,4 @@ class MultiDOFJointTrajectoryDisplay
   trajectory_msgs::MultiDOFJointTrajectory::ConstPtr current_trajectory_;
 };
 
-}  // namespace multi_dof_joint_trajectory_rviz_plugins
+} // namespace multi_dof_joint_trajectory_rviz_plugins

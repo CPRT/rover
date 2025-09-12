@@ -16,7 +16,7 @@
 #include "elevation_mapping/sensor_processors/SensorProcessorBase.hpp"
 
 namespace elevation_mapping {
-class ElevationMapping;  // Forward declare to avoid cyclic import dependency.
+class ElevationMapping; // Forward declare to avoid cyclic import dependency.
 
 /**
  * @brief An Input feeds data to ElevationMapping callbacks. E.g it holds a
@@ -24,10 +24,10 @@ class ElevationMapping;  // Forward declare to avoid cyclic import dependency.
  * ElevationMapping callback.
  */
 class Input {
- public:
+public:
   template <typename MsgT>
-  using CallbackT = void (ElevationMapping::*)(MsgT, bool,
-                                               const SensorProcessorBase::Ptr&);
+  using CallbackT =
+      void (ElevationMapping::*)(MsgT, bool, const SensorProcessorBase::Ptr &);
 
   /**
    * @brief Constructor.
@@ -43,10 +43,10 @@ class Input {
    * processors.
    * @return True if configuring was successful.
    */
-  bool configure(std::string& inputSourceName,
-                 const std::string& sourceConfigurationName,
-                 const SensorProcessorBase::GeneralParameters&
-                     generalSensorProcessorParameters);
+  bool configure(std::string &inputSourceName,
+                 const std::string &sourceConfigurationName,
+                 const SensorProcessorBase::GeneralParameters
+                     &generalSensorProcessorParameters);
 
   /**
    * @brief Registers the corresponding callback in the elevationMap.
@@ -55,7 +55,7 @@ class Input {
    * @tparam MsgT The message types of the callback.
    */
   template <typename MsgT>
-  void registerCallback(ElevationMapping& map, CallbackT<MsgT> callback);
+  void registerCallback(ElevationMapping &map, CallbackT<MsgT> callback);
 
   /**
    * @return The topic (as absolute path, with renames) that this input
@@ -71,7 +71,7 @@ class Input {
     return parameters.type_;
   }
 
- private:
+private:
   /**
    * @brief Configures the used sensor processor from the given parameters.
    * @param name The name of this input source
@@ -80,9 +80,9 @@ class Input {
    * sensor processor that are not specific to this sensor processor.
    * @return True if successful.
    */
-  bool configureSensorProcessor(std::string& name, const std::string& parameter,
-                                const SensorProcessorBase::GeneralParameters&
-                                    generalSensorProcessorParameters);
+  bool configureSensorProcessor(std::string &name, const std::string &parameter,
+                                const SensorProcessorBase::GeneralParameters
+                                    &generalSensorProcessorParameters);
 
   // ROS connection.
   // rclcpp::Subscription<MsgT>::SharedPtr subscriber_;
@@ -107,7 +107,7 @@ class Input {
 };
 
 template <typename MsgT>
-void Input::registerCallback(ElevationMapping& map, CallbackT<MsgT> callback) {
+void Input::registerCallback(ElevationMapping &map, CallbackT<MsgT> callback) {
   const Parameters parameters{parameters_.getData()};
 
   std::function<void(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)>
@@ -124,4 +124,4 @@ void Input::registerCallback(ElevationMapping& map, CallbackT<MsgT> callback) {
               parameters.queueSize_);
 }
 
-}  // namespace elevation_mapping
+} // namespace elevation_mapping

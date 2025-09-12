@@ -9,13 +9,13 @@
 namespace Ogre {
 class Vector3;
 class Quaternion;
-}  // namespace Ogre
+} // namespace Ogre
 
 namespace rviz {
 class Arrow;
 class BillboardLine;
 class MovableText;
-}  // namespace rviz
+} // namespace rviz
 
 namespace kindr_rviz_plugins {
 
@@ -26,25 +26,25 @@ namespace kindr_rviz_plugins {
 // arrow with the direction and magnitude of the acceleration vector, but could
 // easily be expanded to include more of the message data.
 class VectorAtPositionVisual {
- public:
+public:
   // Constructor. Creates the visual stuff and puts it into the
   // scene, but in an unconfigured state.
-  VectorAtPositionVisual(Ogre::SceneManager* scene_manager,
-                         Ogre::SceneNode* parent_node);
+  VectorAtPositionVisual(Ogre::SceneManager *scene_manager,
+                         Ogre::SceneNode *parent_node);
 
   // Destructor. Removes the visual stuff from the scene.
   virtual ~VectorAtPositionVisual();
 
   // Configure the visual to show the data in the message.
-  void setMessage(const kindr_msgs::VectorAtPosition::ConstPtr& msg);
+  void setMessage(const kindr_msgs::VectorAtPosition::ConstPtr &msg);
 
   // Set the pose of the coordinate frame the message refers to.
   // These could be done inside setMessage(), but that would require
   // calls to FrameManager and error handling inside setMessage(),
   // which doesn't seem as clean. This way VectorAtPositionVisual is only
   // responsible for visualization.
-  void setArrowPosition(const Ogre::Vector3& position);
-  void setArrowOrientation(const Ogre::Quaternion& orientation);
+  void setArrowPosition(const Ogre::Vector3 &position);
+  void setArrowOrientation(const Ogre::Quaternion &orientation);
 
   // Set the scale of the visual, which are user-editable
   // parameters and therefore don't come from the VectorAtPosition message.
@@ -56,9 +56,9 @@ class VectorAtPositionVisual {
 
   // Set the color and alpha of the visual, which are user-editable
   // parameters and therefore don't come from the VectorAtPosition message.
-  void setColor(const Ogre::ColourValue& color);
+  void setColor(const Ogre::ColourValue &color);
 
- protected:
+protected:
   // The object implementing the actual arrow shape
   boost::shared_ptr<rviz::Arrow> arrow_;
   boost::shared_ptr<rviz::Arrow> circleArrow_;
@@ -88,14 +88,14 @@ class VectorAtPositionVisual {
 
   // A SceneNode whose pose is set to match the coordinate frame of
   // the VectorAtPosition message header.
-  Ogre::SceneNode* scene_node_frame_;
-  Ogre::SceneNode* scene_node_arrow_;
-  Ogre::SceneNode* scene_node_circle_;
-  Ogre::SceneNode* scene_node_text_;
+  Ogre::SceneNode *scene_node_frame_;
+  Ogre::SceneNode *scene_node_arrow_;
+  Ogre::SceneNode *scene_node_circle_;
+  Ogre::SceneNode *scene_node_text_;
 
   // The SceneManager, kept here only so the destructor can ask it to
   // destroy the ``frame_node_``.
-  Ogre::SceneManager* scene_manager_;
+  Ogre::SceneManager *scene_manager_;
 
   // Update the scaling of the arrow
   void updateScaling();
@@ -107,4 +107,4 @@ class VectorAtPositionVisual {
   void updateText();
 };
 
-}  // namespace kindr_rviz_plugins
+} // namespace kindr_rviz_plugins

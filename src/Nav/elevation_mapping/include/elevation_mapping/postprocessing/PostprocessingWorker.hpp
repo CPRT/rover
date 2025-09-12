@@ -25,16 +25,16 @@ namespace elevation_mapping {
  * external mutex, handled by the owner of this class.
  */
 class PostprocessingWorker {
- public:
+public:
   using GridMap = grid_map::GridMap;
 
   explicit PostprocessingWorker(std::shared_ptr<rclcpp::Node> nodeHandle);
 
   /*! @name Accessors */
   ///@{
-  boost::asio::io_service& ioService() { return ioService_; }
-  std::thread& thread() { return thread_; }
-  const GridMap& dataBuffer() { return dataBuffer_; }
+  boost::asio::io_service &ioService() { return ioService_; }
+  std::thread &thread() { return thread_; }
+  const GridMap &dataBuffer() { return dataBuffer_; }
   void setDataBuffer(GridMap data) { dataBuffer_ = std::move(data); }
   ///@}
 
@@ -52,7 +52,7 @@ class PostprocessingWorker {
    *
    * @param gridMap The grid map to publish.
    */
-  void publish(const GridMap& gridMap) const;
+  void publish(const GridMap &gridMap) const;
 
   /**
    * @brief Checks whether the worker publisher has any active subscribers.
@@ -63,7 +63,7 @@ class PostprocessingWorker {
   bool hasSubscribers() const;
   ///@}
 
- protected:
+protected:
   //! The functor to execute on a given GridMap.
   PostprocessingPipelineFunctor functor_;
 
@@ -83,4 +83,4 @@ class PostprocessingWorker {
   GridMap dataBuffer_;
 };
 
-}  // namespace elevation_mapping
+} // namespace elevation_mapping

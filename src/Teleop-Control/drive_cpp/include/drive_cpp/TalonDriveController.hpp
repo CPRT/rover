@@ -16,13 +16,13 @@ using namespace nav_msgs::msg;
  * diff drive and equal number of left and right wheels
  */
 class TalonDriveController : public rclcpp::Node {
- public:
+public:
   /**
    * @brief Construct a new TalonDriveController object.
    */
-  explicit TalonDriveController(const rclcpp::NodeOptions& options);
+  explicit TalonDriveController(const rclcpp::NodeOptions &options);
 
- private:
+private:
   /**
    * @brief Callback to publish odometry information.
    */
@@ -134,4 +134,4 @@ class TalonDriveController : public rclcpp::Node {
   rclcpp::TimerBase::SharedPtr odomTimer_;
 };
 
-#endif  // TALON_DRIVE_CONTROLLER_HPP
+#endif // TALON_DRIVE_CONTROLLER_HPP

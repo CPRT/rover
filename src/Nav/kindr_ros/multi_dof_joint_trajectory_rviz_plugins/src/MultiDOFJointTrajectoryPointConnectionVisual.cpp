@@ -4,12 +4,11 @@ namespace multi_dof_joint_trajectory_rviz_plugins {
 
 MultiDOFJointTrajectoryPointConnectionVisual::
     MultiDOFJointTrajectoryPointConnectionVisual(
-        Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node,
-        const trajectory_msgs::MultiDOFJointTrajectoryPoint& from,
-        const trajectory_msgs::MultiDOFJointTrajectoryPoint& to,
-        float show_connection, const Ogre::ColourValue& color)
-    : scene_manager_(scene_manager),
-      show_connection_(show_connection),
+        Ogre::SceneManager *scene_manager, Ogre::SceneNode *parent_node,
+        const trajectory_msgs::MultiDOFJointTrajectoryPoint &from,
+        const trajectory_msgs::MultiDOFJointTrajectoryPoint &to,
+        float show_connection, const Ogre::ColourValue &color)
+    : scene_manager_(scene_manager), show_connection_(show_connection),
       color_(color) {
   // check vector lengths
   assert(from.transforms.size() == to.transforms.size() &&
@@ -47,7 +46,7 @@ void MultiDOFJointTrajectoryPointConnectionVisual::setShowConnection(
 }
 
 void MultiDOFJointTrajectoryPointConnectionVisual::setColor(
-    const Ogre::ColourValue& color) {
+    const Ogre::ColourValue &color) {
   color_ = color;
   updateColor();
 }
@@ -64,4 +63,4 @@ void MultiDOFJointTrajectoryPointConnectionVisual::updateColor() {
   }
 }
 
-}  // namespace multi_dof_joint_trajectory_rviz_plugins
+} // namespace multi_dof_joint_trajectory_rviz_plugins

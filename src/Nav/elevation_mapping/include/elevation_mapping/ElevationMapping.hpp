@@ -53,7 +53,7 @@ enum class InitializationMethods { PlanarFloorInitializer };
  * and the data handling between the other classes.
  */
 class ElevationMapping {
- public:
+public:
   /*!
    * Constructor.
    *
@@ -76,7 +76,7 @@ class ElevationMapping {
    */
   void pointCloudCallback(
       sensor_msgs::msg::PointCloud2::ConstSharedPtr pointCloudMsg,
-      bool publishPointCloud, const SensorProcessorBase::Ptr& sensorProcessor_);
+      bool publishPointCloud, const SensorProcessorBase::Ptr &sensorProcessor_);
 
   /*!
    * Callback function for the update timer. Forces an update of the map from
@@ -170,10 +170,10 @@ class ElevationMapping {
    * @param response    The ROS service response.
    * @return true if successful.
    */
-  bool clearMapServiceCallback(
-      const std::shared_ptr<rmw_request_id_t>,
-      const std::shared_ptr<std_srvs::srv::Empty::Request>,
-      std::shared_ptr<std_srvs::srv::Empty::Response>);
+  bool
+  clearMapServiceCallback(const std::shared_ptr<rmw_request_id_t>,
+                          const std::shared_ptr<std_srvs::srv::Empty::Request>,
+                          std::shared_ptr<std_srvs::srv::Empty::Response>);
 
   /*!
    * ROS service callback function to allow for setting the individual layers of
@@ -216,7 +216,7 @@ class ElevationMapping {
       std::shared_ptr<grid_map_msgs::srv::ProcessFile::Request> request,
       std::shared_ptr<grid_map_msgs::srv::ProcessFile::Response> response);
 
- private:
+private:
   /*!
    * Reads and verifies the ROS parameters.
    *
@@ -262,7 +262,7 @@ class ElevationMapping {
    * @param time    Time to which the map is updated to.
    * @return true if successful.
    */
-  bool updatePrediction(const rclcpp::Time& time);
+  bool updatePrediction(const rclcpp::Time &time);
 
   /*!
    * Updates the location of the map to follow the tracking point. Takes care
@@ -296,12 +296,12 @@ class ElevationMapping {
   //! ROS nodehandle.
   std::shared_ptr<rclcpp::Node> nodeHandle_;
 
- protected:
+protected:
   //! Input sources.
   InputSourceManager inputSources_;
   //! ROS subscribers.
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr
-      pointCloudSubscriber_;  //!< Deprecated, use input_source instead.
+      pointCloudSubscriber_; //!< Deprecated, use input_source instead.
   message_filters::Subscriber<nav_msgs::msg::Odometry> robotPoseSubscriber_;
 
   //! ROS service servers.
@@ -341,7 +341,7 @@ class ElevationMapping {
   std::string trackPointFrameId_;
 
   //! ROS topics for subscriptions.
-  std::string pointCloudTopic_;  //!< Deprecated, use input_source instead.
+  std::string pointCloudTopic_; //!< Deprecated, use input_source instead.
   std::string robotPoseTopic_;
 
   //! Elevation map.
@@ -430,4 +430,4 @@ class ElevationMapping {
                                 false};
 };
 
-}  // namespace elevation_mapping
+} // namespace elevation_mapping

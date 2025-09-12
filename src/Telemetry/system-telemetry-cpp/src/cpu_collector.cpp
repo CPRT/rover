@@ -25,8 +25,8 @@ CPUCollector::CPUStats CPUCollector::read_cpu_stats() {
   return stats;
 }
 
-double CPUCollector::calculate_cpu_usage(const CPUStats& prev,
-                                         const CPUStats& curr) {
+double CPUCollector::calculate_cpu_usage(const CPUStats &prev,
+                                         const CPUStats &curr) {
   const uint64_t total_diff = curr.total - prev.total;
   const uint64_t idle_diff = curr.idle - prev.idle;
   if (total_diff == 0) {
@@ -35,7 +35,7 @@ double CPUCollector::calculate_cpu_usage(const CPUStats& prev,
   return 100.0 * (total_diff - idle_diff) / static_cast<double>(total_diff);
 }
 
-void CPUCollector::collect(interfaces::msg::SystemTelemetry& msg) {
+void CPUCollector::collect(interfaces::msg::SystemTelemetry &msg) {
   CPUStats current = read_cpu_stats();
   double usage = calculate_cpu_usage(prev_stats_, current);
   prev_stats_ = current;

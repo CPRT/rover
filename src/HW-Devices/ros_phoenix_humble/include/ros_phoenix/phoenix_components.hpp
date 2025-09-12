@@ -7,7 +7,7 @@ namespace ros_phoenix {
 
 template <class PhoenixNodeType>
 class PhoenixComponent : public PhoenixNodeType {
- public:
+public:
   PhoenixComponent(const NodeOptions &options = NodeOptions())
       : PhoenixNodeType("phoenix_component", options) {
     const std::string name(this->get_name());
@@ -19,7 +19,7 @@ class PhoenixComponent : public PhoenixNodeType {
             std::bind(&BaseNode::set, this, std::placeholders::_1));
   }
 
- private:
+private:
   virtual void onTimer() {
     BaseNode::onTimer();
     // TODO Improve this
@@ -34,6 +34,6 @@ using TalonFX = PhoenixComponent<TalonFXNode>;
 using TalonSRX = PhoenixComponent<TalonSRXNode>;
 using VictorSPX = PhoenixComponent<VictorSPXNode>;
 
-}  // namespace ros_phoenix
+} // namespace ros_phoenix
 
-#endif  // ROS_PHOENIX_PHOENIX_COMPONENT
+#endif // ROS_PHOENIX_PHOENIX_COMPONENT
