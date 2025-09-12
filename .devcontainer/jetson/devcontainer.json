@@ -1,0 +1,41 @@
+{
+  "name": "CPRT Dev Container",
+
+  "image": "cprtsoftware/rover:dev-arm64",
+
+  "runArgs": [
+    "--network=host",
+    "--volume=/dev:/dev",
+    "--volume=/sys:/sys",
+    "--volume=/etc/timezone:/etc/timezone",
+    "--runtime=nvidia",
+    "--gpus=all",
+    "--ipc=host",
+    "--shm-size=2g"
+  ],
+  "mounts": [
+    "source=${env:SSH_AUTH_SOCK},target=/ssh-agent,type=bind",
+    "source=${env:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,consistency=cached"
+  ],
+  "containerEnv": {
+    "SSH_AUTH_SOCK": "/ssh-agent",
+    "NVIDIA_VISIBLE_DEVICES": "all",
+    "NVIDIA_DRIVER_CAPABILITIES": "all"
+  },
+  "remoteUser": "vscode",
+  "containerUser": "vscode",
+  "remoteEnv": {
+    "USER": "vscode"
+  },
+
+  // Usual extras (optional)
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+      },
+      "extensions": [ "ms-vscode.cpptools", "ms-azuretools.vscode-docker" ]
+    }
+  },
+  "postCreateCommand": "source /opt/ros/humble/setup.bash"
+}
