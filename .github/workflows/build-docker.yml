@@ -6,32 +6,15 @@ on:
   pull_request:
     branches: [ main ]
 
-env:
-  IMAGE_NAME: cprtsoftware/rover
-
 jobs:
-  setup:
+  gstreamer-build:
     runs-on: ubuntu-latest
-    outputs:
-      IMAGE_NAME: ${{ env.IMAGE_NAME }}
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
-  build-amd64:
-    runs-on: ubuntu-latest
-    needs: setup
-    env:
-      IMAGE_NAME: ${{ needs.setup.outputs.IMAGE_NAME }}
-    outputs:
-      app_digest: ${{ steps.build_app.outputs.digest }}
-      dev_digest: ${{ steps.build_dev.outputs.digest }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: docker/setup-buildx-action@v3
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Docker login
         uses: docker/login-action@v3
@@ -39,63 +22,22 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # --- APP (rover) image, amd64 ---
-      - name: Build & push amd64 APP (with registry cache)
-        id: build_app
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          target: rover
-          platforms: linux/amd64
-          push: true
-          build-args: |
-            BASE_IMAGE=ubuntu:22.04
-            TARGETARCH=amd64
-          tags: |
-            ${{ env.IMAGE_NAME }}:amd64
-            ${{ env.IMAGE_NAME }}:${{ github.sha }}-amd64
-          cache-from: type=registry,ref=${{ env.IMAGE_NAME }}:amd64-cache
-          cache-to: type=registry,ref=${{ env.IMAGE_NAME }}:amd64-cache,mode=max
-          provenance: false
+      - name: Build & push gstreamer
+        id: gstreamer_build
+        run: |
+          echo "Building gstreamer image"
+          if [ "${{ github.event_name }}" = "push" ]; then
+            ./gstreamer-config/docker_build.sh --push
+          else
+            ./gstreamer-config/docker_build.sh
+          fi
 
-      # --- DEV image, amd64 ---
-      - name: Build & push amd64 DEV (with registry cache)
-        id: build_dev
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          target: dev
-          platforms: linux/amd64
-          push: true
-          build-args: |
-            BASE_IMAGE=ubuntu:22.04
-            TARGETARCH=amd64
-          tags: |
-            ${{ env.IMAGE_NAME }}:dev-amd64
-            ${{ env.IMAGE_NAME }}:dev-${{ github.sha }}-amd64
-          cache-from: type=registry,ref=${{ env.IMAGE_NAME }}:amd64-cache
-          cache-to: type=registry,ref=${{ env.IMAGE_NAME }}:amd64-cache,mode=max
-          provenance: false
-
-  build-arm64:
+  build-rover-amd64:
     runs-on: ubuntu-latest
-    needs: setup
-    env:
-      IMAGE_NAME: ${{ needs.setup.outputs.IMAGE_NAME }}
-    outputs:
-      app_digest: ${{ steps.build_app.outputs.digest }}
-      dev_digest: ${{ steps.build_dev.outputs.digest }}
+    needs: gstreamer-build
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up QEMU (for arm emulation)
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: linux/arm64
-
-      - uses: docker/setup-buildx-action@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Docker login
         uses: docker/login-action@v3
@@ -103,42 +45,35 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # --- APP (rover) image, arm64 ---
-      - name: Build & push arm64 APP (with registry cache)
-        id: build_app
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          target: rover
-          platforms: linux/arm64
-          push: true
-          build-args: |
-            BASE_IMAGE=nvcr.io/nvidia/l4t-jetpack:r36.4.0
-            TARGETARCH=arm64
-          tags: |
-            ${{ env.IMAGE_NAME }}:arm64
-            ${{ env.IMAGE_NAME }}:${{ github.sha }}-arm64
-          cache-from: type=registry,ref=${{ env.IMAGE_NAME }}:arm64-cache
-          cache-to: type=registry,ref=${{ env.IMAGE_NAME }}:arm64-cache,mode=max
-          provenance: false
+      - name: Build & optionally push (amd64)
+        id: build_rover_amd64
+        run: |
+          echo "Building for AMD64"
+          if [ "${{ github.event_name }}" = "push" ]; then
+            ./docker_build.sh --arch amd64 --push
+          else
+            ./docker_build.sh --arch amd64
+          fi
 
-      # --- DEV image, arm64 ---
-      - name: Build & push arm64 DEV (with registry cache)
-        id: build_dev
-        uses: docker/build-push-action@v6
+  build-rover-arm64:
+    runs-on: [self-hosted, ARM64]
+    needs: gstreamer-build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Docker login
+        uses: docker/login-action@v3
         with:
-          context: .
-          file: ./Dockerfile
-          target: dev
-          platforms: linux/arm64
-          push: true
-          build-args: |
-            BASE_IMAGE=nvcr.io/nvidia/l4t-jetpack:r36.4.0
-            TARGETARCH=arm64
-          tags: |
-            ${{ env.IMAGE_NAME }}:dev-arm64
-            ${{ env.IMAGE_NAME }}:dev-${{ github.sha }}-arm64
-          cache-from: type=registry,ref=${{ env.IMAGE_NAME }}:arm64-cache
-          cache-to: type=registry,ref=${{ env.IMAGE_NAME }}:arm64-cache,mode=max
-          provenance: false
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & optionally push (arm64)
+        id: build_rover_arm64
+        run: |
+          echo "Building for ARM64"
+          if [ "${{ github.event_name }}" = "push" ]; then
+            ./docker_build.sh --arch arm64 --push --workers 2
+          else
+            ./docker_build.sh --arch arm64 --workers 2
+          fi
