@@ -32,11 +32,11 @@
 class SourceWidget : public QWidget {
   Q_OBJECT
 
- public:
-  SourceWidget(QWidget* parent = nullptr);
+public:
+  SourceWidget(QWidget *parent = nullptr);
   ~SourceWidget();
 
-  interfaces::msg::VideoSource* get_source() const { return source_; }
+  interfaces::msg::VideoSource *get_source() const { return source_; }
 
   /**
    * @brief Returns get_requesting_source_names
@@ -50,20 +50,20 @@ class SourceWidget : public QWidget {
    */
   void receive_source_names(std::vector<std::string> names);
 
- signals:
+signals:
   /**
    * @brief Removes this widget from the preset and deletes itself
    *
    * @param widget The SourceWidget to remove
    */
-  void request_remove(SourceWidget* widget);
+  void request_remove(SourceWidget *widget);
 
   /**
    * @brief Gets the source names of all the cameras from CameraClient
    */
   void request_source_names();
 
- public slots:
+public slots:
   void set_source_name(QString name);
   void set_width(QString width);
   void set_height(QString height);
@@ -81,38 +81,38 @@ class SourceWidget : public QWidget {
    */
   void get_source_names();
 
- private:
+private:
   // Source model
-  interfaces::msg::VideoSource* source_;
+  interfaces::msg::VideoSource *source_;
 
-  QVBoxLayout* main_layout_;
-  QLabel* source_name_label_;
+  QVBoxLayout *main_layout_;
+  QLabel *source_name_label_;
 
   // Name UI
-  QHBoxLayout* name_layout_;
-  QLabel* name_label_;
-  QComboBox* name_combo_box_;
-  QPushButton* refresh_sources_button_;
+  QHBoxLayout *name_layout_;
+  QLabel *name_label_;
+  QComboBox *name_combo_box_;
+  QPushButton *refresh_sources_button_;
 
   // Size UI
-  QHBoxLayout* size_layout_;
-  QLabel* width_label_;
-  QLineEdit* width_line_edit_;
-  QLabel* height_label_;
-  QLineEdit* height_line_edit_;
+  QHBoxLayout *size_layout_;
+  QLabel *width_label_;
+  QLineEdit *width_line_edit_;
+  QLabel *height_label_;
+  QLineEdit *height_line_edit_;
 
-  QIntValidator* size_validator_;
+  QIntValidator *size_validator_;
 
   // Origin UI
-  QHBoxLayout* origin_layout_;
-  QLabel* origin_x_label_;
-  QLineEdit* origin_x_line_edit_;
-  QLabel* origin_y_label_;
-  QLineEdit* origin_y_line_edit_;
+  QHBoxLayout *origin_layout_;
+  QLabel *origin_x_label_;
+  QLineEdit *origin_x_line_edit_;
+  QLabel *origin_y_label_;
+  QLineEdit *origin_y_line_edit_;
 
-  QIntValidator* origin_validator_;
+  QIntValidator *origin_validator_;
 
-  QPushButton* remove_button_;
+  QPushButton *remove_button_;
 
   bool requesting_source_names_;
 };

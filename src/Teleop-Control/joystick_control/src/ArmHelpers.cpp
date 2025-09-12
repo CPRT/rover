@@ -2,7 +2,7 @@
 
 #include "std_srvs/srv/trigger.hpp"
 
-bool ArmHelpers::start_moveit_servo(rclcpp::Node* node, int attempts) {
+bool ArmHelpers::start_moveit_servo(rclcpp::Node *node, int attempts) {
   auto start_moveit_client =
       node->create_client<std_srvs::srv::Trigger>("/servo_node/start_servo");
   int i = 0;

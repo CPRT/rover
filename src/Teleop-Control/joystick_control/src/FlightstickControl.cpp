@@ -1,8 +1,7 @@
 #include "FlightstickControl.hpp"
 
 FlightstickControl::FlightstickControl()
-    : Node("flightstick_control"),
-      mode_(nullptr),
+    : Node("flightstick_control"), mode_(nullptr),
       currentMode_(ModeType::NONE) {
   declareParameters();
   loadParameters();
@@ -38,7 +37,7 @@ bool FlightstickControl::checkForModeChange(
       {kArmDummyButton, ModeType::ARM_DUMMY},
       {kNavModeButton, ModeType::NAV},
       {kScienceModeButton, ModeType::SCIENCE}};
-  for (const auto& [buttonIndex, mode] : buttonToMode) {
+  for (const auto &[buttonIndex, mode] : buttonToMode) {
     if (joystickMsg->buttons[buttonIndex]) {
       if (!checkAxes(joystickMsg, mode)) {
         RCLCPP_WARN(this->get_logger(),
@@ -60,13 +59,13 @@ bool FlightstickControl::checkAxes(
       {ModeType::ARM_IK, {0, 1, 4, 5, 6}},
       {ModeType::ARM_MANUAL, {0, 1, 4, 5, 6, 7}},
       {ModeType::SCIENCE, {1, 3}},
-      {ModeType::ARM_DUMMY, {0, 1, 4, 5, 6, 7}}};  // add nav?
+      {ModeType::ARM_DUMMY, {0, 1, 4, 5, 6, 7}}}; // add nav?
   auto it = modeParameters.find(nextMode);
   if (it == modeParameters.end()) {
     return true;
   }
-  const auto& axesIndices = it->second;
-  for (const int& index : axesIndices) {
+  const auto &axesIndices = it->second;
+  for (const int &index : axesIndices) {
     if (index >= joystickMsg->axes.size()) {
       continue;
     }
@@ -83,49 +82,48 @@ bool FlightstickControl::changeMode(ModeType mode) {
   currentMode_ = mode;
   auto message = std_msgs::msg::String();
   switch (mode) {
-    case ModeType::NONE:
-      mode_ = nullptr;
-      message.data = "Idle";
-      status_pub_->publish(message);
-      break;
-    case ModeType::DRIVE:
-      RCLCPP_INFO(this->get_logger(), "Entering Drive Mode");
-      mode_ = std::make_unique<DriveMode>(this);
-      message.data = "Drive";
-      status_pub_->publish(message);
-      break;
-    case ModeType::ARM_MANUAL:
-      RCLCPP_INFO(this->get_logger(), "Entering Manual Mode");
-      mode_ = std::make_unique<ArmManualMode>(this);
-      message.data = "Manual";
-      status_pub_->publish(message);
-      break;
-    case ModeType::SCIENCE:
-      RCLCPP_INFO(this->get_logger(), "Entering Science Mode");
-      mode_ = std::make_unique<ScienceMode>(this);
-      message.data = "Science";
-      status_pub_->publish(message);
-      break;
-    case ModeType::ARM_IK:
-      RCLCPP_INFO(this->get_logger(), "Entering IK Mode");
-      mode_ = std::make_unique<ArmIKMode>(this);
-      message.data = "IK";
-      status_pub_->publish(message);
-      break;
-    case ModeType::ARM_DUMMY:
-      RCLCPP_INFO(this->get_logger(), "Entering Arm Dumb Mode");
-      mode_ = std::make_unique<ArmDummyMode>(this);
-      message.data = "Dummy";
-      status_pub_->publish(message);
-      break;
-    default:
-      RCLCPP_WARN(this->get_logger(),
-                  "Mode not implemented, returning to NONE");
-      currentMode_ = ModeType::NONE;
-      mode_ = nullptr;
-      message.data = "Idle";
-      status_pub_->publish(message);
-      return false;
+  case ModeType::NONE:
+    mode_ = nullptr;
+    message.data = "Idle";
+    status_pub_->publish(message);
+    break;
+  case ModeType::DRIVE:
+    RCLCPP_INFO(this->get_logger(), "Entering Drive Mode");
+    mode_ = std::make_unique<DriveMode>(this);
+    message.data = "Drive";
+    status_pub_->publish(message);
+    break;
+  case ModeType::ARM_MANUAL:
+    RCLCPP_INFO(this->get_logger(), "Entering Manual Mode");
+    mode_ = std::make_unique<ArmManualMode>(this);
+    message.data = "Manual";
+    status_pub_->publish(message);
+    break;
+  case ModeType::SCIENCE:
+    RCLCPP_INFO(this->get_logger(), "Entering Science Mode");
+    mode_ = std::make_unique<ScienceMode>(this);
+    message.data = "Science";
+    status_pub_->publish(message);
+    break;
+  case ModeType::ARM_IK:
+    RCLCPP_INFO(this->get_logger(), "Entering IK Mode");
+    mode_ = std::make_unique<ArmIKMode>(this);
+    message.data = "IK";
+    status_pub_->publish(message);
+    break;
+  case ModeType::ARM_DUMMY:
+    RCLCPP_INFO(this->get_logger(), "Entering Arm Dumb Mode");
+    mode_ = std::make_unique<ArmDummyMode>(this);
+    message.data = "Dummy";
+    status_pub_->publish(message);
+    break;
+  default:
+    RCLCPP_WARN(this->get_logger(), "Mode not implemented, returning to NONE");
+    currentMode_ = ModeType::NONE;
+    mode_ = nullptr;
+    message.data = "Idle";
+    status_pub_->publish(message);
+    return false;
   }
   auto msg = std_msgs::msg::Int8();
   msg.data = kTeleopLightMode;
@@ -157,7 +155,7 @@ void FlightstickControl::loadParameters() {
   this->get_parameter("teleop_light_mode", kTeleopLightMode);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<FlightstickControl>());
   rclcpp::shutdown();

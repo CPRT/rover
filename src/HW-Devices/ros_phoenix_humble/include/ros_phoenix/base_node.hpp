@@ -16,7 +16,7 @@ using namespace ros_phoenix::msg;
 namespace ros_phoenix {
 
 class BaseNode : public Node {
- public:
+public:
   struct Parameter {
     static const std::string ID;
     static const std::string INTERFACE;
@@ -32,10 +32,10 @@ class BaseNode : public Node {
 
   virtual void set(MotorControl::SharedPtr control_msg);
 
-  virtual rcl_interfaces::msg::SetParametersResult reconfigure(
-      const std::vector<rclcpp::Parameter> &params);
+  virtual rcl_interfaces::msg::SetParametersResult
+  reconfigure(const std::vector<rclcpp::Parameter> &params);
 
- protected:
+protected:
   virtual void configure() = 0;
 
   virtual void onTimer();
@@ -50,7 +50,7 @@ class BaseNode : public Node {
   bool configured_ = false;
   std::mutex config_mutex_;
 
- private:
+private:
   int watchdog_ms_;
   int period_ms_;
 
@@ -63,6 +63,6 @@ class BaseNode : public Node {
   rclcpp::Time last_update_;
 };
 
-}  // namespace ros_phoenix
+} // namespace ros_phoenix
 
-#endif  // ROS_PHOENIX_MOTOR_CONTROLLER
+#endif // ROS_PHOENIX_MOTOR_CONTROLLER

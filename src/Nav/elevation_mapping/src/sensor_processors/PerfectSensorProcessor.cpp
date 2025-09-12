@@ -25,20 +25,20 @@ namespace elevation_mapping {
  */
 
 PerfectSensorProcessor::PerfectSensorProcessor(
-    std::shared_ptr<rclcpp::Node>& nodeHandle,
-    const SensorProcessorBase::GeneralParameters& generalParameters)
+    std::shared_ptr<rclcpp::Node> &nodeHandle,
+    const SensorProcessorBase::GeneralParameters &generalParameters)
     : SensorProcessorBase(nodeHandle, generalParameters) {}
 
 PerfectSensorProcessor::~PerfectSensorProcessor() = default;
 
-bool PerfectSensorProcessor::readParameters(std::string& inputSourceName) {
+bool PerfectSensorProcessor::readParameters(std::string &inputSourceName) {
   return SensorProcessorBase::readParameters(inputSourceName);
 }
 
 bool PerfectSensorProcessor::computeVariances(
     const PointCloudType::ConstPtr pointCloud,
-    const Eigen::Matrix<double, 6, 6>& robotPoseCovariance,
-    Eigen::VectorXf& variances) {
+    const Eigen::Matrix<double, 6, 6> &robotPoseCovariance,
+    Eigen::VectorXf &variances) {
   variances.resize(pointCloud->size());
 
   // Projection vector (P).
@@ -71,11 +71,11 @@ bool PerfectSensorProcessor::computeVariances(
     // For every point in point cloud.
 
     // Preparation.
-    auto& point = pointCloud->points[i];
+    auto &point = pointCloud->points[i];
     Eigen::Vector3f pointVector(
         point.x, point.y,
-        point.z);  // S_r_SP // NOLINT(cppcoreguidelines-pro-type-union-access)
-    float heightVariance = 0.0;  // sigma_p
+        point.z); // S_r_SP // NOLINT(cppcoreguidelines-pro-type-union-access)
+    float heightVariance = 0.0; // sigma_p
 
     // Compute sensor covariance matrix (Sigma_S) with sensor model.
     float varianceNormal = 0.0;
@@ -104,4 +104,4 @@ bool PerfectSensorProcessor::computeVariances(
   return true;
 }
 
-}  // namespace elevation_mapping
+} // namespace elevation_mapping

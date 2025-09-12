@@ -38,9 +38,9 @@ TalonDriveController::TalonDriveController(const rclcpp::NodeOptions &options)
   this->declare_parameter("low_latency_mode", true);
   low_latency_mode_ = this->get_parameter("low_latency_mode").as_bool();
 
-  this->declare_parameter(
-      "wheels", std::vector<std::string>{"frontRight", "frontLeft", "backRight",
-                                         "backLeft"});
+  this->declare_parameter("wheels",
+                          std::vector<std::string>{"frontRight", "frontLeft",
+                                                   "backRight", "backLeft"});
   std::vector<std::string> wheel_names =
       this->get_parameter("wheels").as_string_array();
 

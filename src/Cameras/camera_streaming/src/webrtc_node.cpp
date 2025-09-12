@@ -211,7 +211,7 @@ void WebRTCStreamer::capture_frame(
     }
     return;
   }
-  constexpr auto timeout = 1000000000;  // 1 second
+  constexpr auto timeout = 1000000000; // 1 second
   GstSample *sample = gst_app_sink_try_pull_sample(GST_APP_SINK(sink), timeout);
 
   auto pad = GstUniquePtr<GstPad>(
@@ -314,8 +314,8 @@ GstElement *WebRTCStreamer::create_element(std::string element_type,
   return element;
 }
 
-GstElement *WebRTCStreamer::add_element_chain(
-    const std::vector<GstElement *> &chain) {
+GstElement *
+WebRTCStreamer::add_element_chain(const std::vector<GstElement *> &chain) {
   GstElement *lastElement = nullptr;
   bool success = true;
   for (auto element : chain) {
@@ -421,7 +421,8 @@ GstElement *WebRTCStreamer::create_source(const CameraSource &src) {
   elements.emplace_back(create_element("queue"));
   if (!elements.back()) {
     for (auto element : elements) {
-      if (element) gst_object_unref(element);
+      if (element)
+        gst_object_unref(element);
     }
     return nullptr;
   }
@@ -579,25 +580,25 @@ gboolean WebRTCStreamer::on_bus_message(GstBus *bus, GstMessage *message,
               GST_MESSAGE_TYPE_NAME(message));
 
   switch (GST_MESSAGE_TYPE(message)) {
-    case GST_MESSAGE_ERROR:
-    case GST_MESSAGE_WARNING:
-      gchar *debug;
-      GError *err;
-      gst_message_parse_error(message, &err, &debug);
-      RCLCPP_ERROR(streamer->get_logger(), "GStreamer Error: %s", err->message);
-      g_error_free(err);
-      g_free(debug);
-      break;
-    case GST_MESSAGE_STATE_CHANGED: {
-      GstState old_state, new_state, pending_state;
-      gst_message_parse_state_changed(message, &old_state, &new_state,
-                                      &pending_state);
-      RCLCPP_INFO(streamer->get_logger(), "State change: %s -> %s",
-                  gst_element_state_get_name(old_state),
-                  gst_element_state_get_name(new_state));
-    } break;
-    default:
-      break;
+  case GST_MESSAGE_ERROR:
+  case GST_MESSAGE_WARNING:
+    gchar *debug;
+    GError *err;
+    gst_message_parse_error(message, &err, &debug);
+    RCLCPP_ERROR(streamer->get_logger(), "GStreamer Error: %s", err->message);
+    g_error_free(err);
+    g_free(debug);
+    break;
+  case GST_MESSAGE_STATE_CHANGED: {
+    GstState old_state, new_state, pending_state;
+    gst_message_parse_state_changed(message, &old_state, &new_state,
+                                    &pending_state);
+    RCLCPP_INFO(streamer->get_logger(), "State change: %s -> %s",
+                gst_element_state_get_name(old_state),
+                gst_element_state_get_name(new_state));
+  } break;
+  default:
+    break;
   }
   return TRUE;
 }

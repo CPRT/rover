@@ -53,7 +53,7 @@ void TestCameraNode::start_video(
   response->success = true;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
 
   TestCameraNode::SharedPtr get_camera_node =

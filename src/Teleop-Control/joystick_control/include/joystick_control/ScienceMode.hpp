@@ -10,21 +10,21 @@
 #include "std_srvs/srv/set_bool.hpp"
 
 class ScienceMode : public Mode {
- public:
-  ScienceMode(rclcpp::Node* node);
+public:
+  ScienceMode(rclcpp::Node *node);
 
   void processJoystickInput(
       std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) override;
 
-  static void declareParameters(rclcpp::Node* node);
+  static void declareParameters(rclcpp::Node *node);
 
- private:
+private:
   void handlePlatform(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const;
   void handleDrill(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const;
-  void handleMicroscope(
-      std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const;
-  void handlePanoramic(
-      std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const;
+  void
+  handleMicroscope(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const;
+  void
+  handlePanoramic(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const;
   void handleSoilCollection(
       std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const;
 

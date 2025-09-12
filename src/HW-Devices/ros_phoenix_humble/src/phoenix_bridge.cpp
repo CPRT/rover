@@ -6,8 +6,8 @@
 
 namespace ros_phoenix {
 
-PhoenixBridge::InterfaceType PhoenixBridge::str_to_interface(
-    const std::string &str) {
+PhoenixBridge::InterfaceType
+PhoenixBridge::str_to_interface(const std::string &str) {
   if (str == "percent_output") {
     return InterfaceType::PERCENT_OUTPUT;
 
@@ -24,8 +24,8 @@ PhoenixBridge::InterfaceType PhoenixBridge::str_to_interface(
 
 PhoenixBridge::PhoenixBridge() : logger_(rclcpp::get_logger("PhoenixBridge")) {}
 
-hardware_interface::return_type PhoenixBridge::configure(
-    const hardware_interface::HardwareInfo &info) {
+hardware_interface::return_type
+PhoenixBridge::configure(const hardware_interface::HardwareInfo &info) {
   this->logger_ = rclcpp::get_logger(info.name);
   this->info_ = info;
 
@@ -156,7 +156,7 @@ hardware_interface::return_type PhoenixBridge::write(const rclcpp::Time &,
   return hardware_interface::return_type::OK;
 }
 
-}  // namespace ros_phoenix
+} // namespace ros_phoenix
 
 #include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(ros_phoenix::PhoenixBridge,

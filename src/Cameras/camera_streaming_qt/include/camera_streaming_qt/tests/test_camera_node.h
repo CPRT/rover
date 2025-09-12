@@ -19,7 +19,7 @@
  * start_video services.
  */
 class TestCameraNode : public rclcpp::Node {
- public:
+public:
   TestCameraNode();
   ~TestCameraNode();
 
@@ -35,9 +35,9 @@ class TestCameraNode : public rclcpp::Node {
   /**
    * @brief Prints the preset from the request and returns true.
    */
-  void start_video(
-      const std::shared_ptr<interfaces::srv::VideoOut::Request> request,
-      std::shared_ptr<interfaces::srv::VideoOut::Response> response);
+  void
+  start_video(const std::shared_ptr<interfaces::srv::VideoOut::Request> request,
+              std::shared_ptr<interfaces::srv::VideoOut::Response> response);
   rclcpp::Service<interfaces::srv::VideoOut>::SharedPtr start_video_service_;
 };
 

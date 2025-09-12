@@ -16,13 +16,13 @@
 
 namespace Ogre {
 class SceneNode;
-}  // namespace Ogre
+} // namespace Ogre
 
 namespace rviz {
 class ColorProperty;
 class FloatProperty;
 class IntProperty;
-}  // namespace rviz
+} // namespace rviz
 
 // All the source in this plugin is in its own namespace. This is not
 // required but is good practice.
@@ -49,7 +49,7 @@ class VectorAtPositionVisual;
 class VectorAtPositionDisplay
     : public rviz::MessageFilterDisplay<kindr_msgs::VectorAtPosition> {
   Q_OBJECT
- public:
+public:
   // Constructor. pluginlib::ClassLoader creates instances by calling
   // the default constructor, so make sure you have one.
   VectorAtPositionDisplay();
@@ -60,18 +60,18 @@ class VectorAtPositionDisplay
   // subscribed to incoming data and should not show anything in the
   // 3D view. These functions are where these connections are made
   // and broken.
- protected:
+protected:
   virtual void onInitialize();
 
   // A helper to clear this display back to the initial state.
   virtual void reset();
 
- Q_SIGNALS:
+Q_SIGNALS:
   void updateVectorAtPositionSignal();
 
   // These Qt slots get connected to signals indicating changes in the
   // user-editable properties.
- private Q_SLOTS:
+private Q_SLOTS:
   void updateScale();
   void updateShowText();
   void updateColorAndAlpha();
@@ -80,20 +80,20 @@ class VectorAtPositionDisplay
   void updateVectorAtPosition();
 
   // Function to handle an incoming ROS message.
- private:
-  void processMessage(const kindr_msgs::VectorAtPosition::ConstPtr& msg);
+private:
+  void processMessage(const kindr_msgs::VectorAtPosition::ConstPtr &msg);
 
   // Storage for the list of visuals. It is a circular buffer where
   // data gets popped from the front (oldest) and pushed to the back (newest)
-  boost::circular_buffer<boost::shared_ptr<VectorAtPositionVisual> > visuals_;
+  boost::circular_buffer<boost::shared_ptr<VectorAtPositionVisual>> visuals_;
 
   // User-editable property variables.
-  rviz::FloatProperty* length_scale_property_;
-  rviz::FloatProperty* width_scale_property_;
-  rviz::BoolProperty* show_text_property_;
-  rviz::ColorProperty* color_property_;
-  rviz::FloatProperty* alpha_property_;
-  rviz::IntProperty* history_length_property_;
+  rviz::FloatProperty *length_scale_property_;
+  rviz::FloatProperty *width_scale_property_;
+  rviz::BoolProperty *show_text_property_;
+  rviz::ColorProperty *color_property_;
+  rviz::FloatProperty *alpha_property_;
+  rviz::IntProperty *history_length_property_;
 
   // Storage of user editable values
   float lengthScale_;
@@ -105,4 +105,4 @@ class VectorAtPositionDisplay
   kindr_msgs::VectorAtPosition::ConstPtr current_vector_at_position_;
 };
 
-}  // namespace kindr_rviz_plugins
+} // namespace kindr_rviz_plugins

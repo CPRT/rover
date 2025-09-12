@@ -47,7 +47,8 @@ void CameraClient::start_video(
       client->async_send_request(request).future.share();
 
   // Wait for result, if failed, then return
-  if (!wait_for_service_result<interfaces::srv::VideoOut>(future)) return;
+  if (!wait_for_service_result<interfaces::srv::VideoOut>(future))
+    return;
 
   RCLCPP_INFO(get_logger(), "Start video service call succeeded.");
 
@@ -78,7 +79,7 @@ void CameraClient::open_gst_widget() {
   // assign the sink to the window
   // This code was found from:
   // https://stackoverflow.com/questions/68461714/gstreamer-ximagesink-doesnt-work-when-embedded-in-gtk-window
-  GstBus* bus;
+  GstBus *bus;
   bus = gst_element_get_bus(gst_data.pipeline);
   gst_bus_set_sync_handler(
       bus, (GstBusSyncHandler)&CameraClient::bus_sync_handler, &gst_data, NULL);
@@ -86,9 +87,10 @@ void CameraClient::open_gst_widget() {
   gst_element_set_state(gst_data.pipeline, GST_STATE_PLAYING);
 }
 
-GstBusSyncReply CameraClient::bus_sync_handler(GstBus* bus, GstMessage* msg,
-                                               GstData* data) {
-  if (!data) return GST_BUS_PASS;
+GstBusSyncReply CameraClient::bus_sync_handler(GstBus *bus, GstMessage *msg,
+                                               GstData *data) {
+  if (!data)
+    return GST_BUS_PASS;
 
   if (!gst_is_video_overlay_prepare_window_handle_message(msg)) {
     return GST_BUS_PASS;
@@ -115,7 +117,7 @@ bool CameraClient::wait_for_service_result(
   return true;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
 
   auto camera_client = std::make_shared<CameraClient>();
@@ -125,7 +127,7 @@ int main(int argc, char** argv) {
   gst_init(&argc, &argv);
 
   // Main window with all of the settings
-  MainWindow* w = new MainWindow(camera_client.get(), nullptr);
+  MainWindow *w = new MainWindow(camera_client.get(), nullptr);
   w->resize(1280, 720);
   w->show();
 

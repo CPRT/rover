@@ -13,7 +13,7 @@
 #include "elevation_mapping/input_sources/Input.hpp"
 
 namespace elevation_mapping {
-class ElevationMapping;  // Forward declare to avoid cyclic import dependency.
+class ElevationMapping; // Forward declare to avoid cyclic import dependency.
 
 /**
  * @brief An input source manager reads a list of input sources from the
@@ -21,12 +21,12 @@ class ElevationMapping;  // Forward declare to avoid cyclic import dependency.
  * mapping.
  */
 class InputSourceManager {
- public:
+public:
   /**
    * @brief Constructor.
    * @param nodeHandle Used to resolve the namespace and setup the subscribers.
    */
-  explicit InputSourceManager(const std::shared_ptr<rclcpp::Node>& nodeHandle);
+  explicit InputSourceManager(const std::shared_ptr<rclcpp::Node> &nodeHandle);
 
   /**
    * @brief Configure the input sources from a configuration stored on the
@@ -34,7 +34,7 @@ class InputSourceManager {
    * @param inputSourcesNamespace The namespace of the subscribers list to load.
    * @return True if configuring was successful.
    */
-  bool configureFromRos(const std::string& inputSourcesNamespace);
+  bool configureFromRos(const std::string &inputSourcesNamespace);
 
   /**
    * @brief Configure the input sources.
@@ -43,8 +43,8 @@ class InputSourceManager {
    * @param sourceConfigurationName The name of the input source configuration.
    * @return True if configuring was successful.
    */
-  bool configure(const std::vector<std::string>& parameters,
-                 const std::string& sourceConfigurationName);
+  bool configure(const std::vector<std::string> &parameters,
+                 const std::string &sourceConfigurationName);
 
   /**
    * @brief Registers the corresponding callback in the elevationMap.
@@ -58,15 +58,15 @@ class InputSourceManager {
    */
   template <typename... MsgT>
   bool registerCallbacks(
-      ElevationMapping& map,
-      std::pair<const char*, Input::CallbackT<MsgT>>... callbacks);
+      ElevationMapping &map,
+      std::pair<const char *, Input::CallbackT<MsgT>>... callbacks);
 
   /**
    * @return The number of successfully configured input sources.
    */
   int getNumberOfSources();
 
- protected:
+protected:
   //! A list of input sources.
   std::vector<Input> sources_;
 
@@ -78,17 +78,17 @@ class InputSourceManager {
 
 template <typename... MsgT>
 bool InputSourceManager::registerCallbacks(
-    ElevationMapping& map,
-    std::pair<const char*, Input::CallbackT<MsgT>>... callbacks) {
+    ElevationMapping &map,
+    std::pair<const char *, Input::CallbackT<MsgT>>... callbacks) {
   if (sources_.empty()) {
     RCLCPP_WARN(nodeHandle_->get_logger(),
                 "Not registering any callbacks, no input sources given. Did "
                 "you configure the InputSourceManager?");
     return true;
   }
-  for (Input& source : sources_) {
+  for (Input &source : sources_) {
     bool callbackRegistered = false;
-    for (auto& callback : {callbacks...}) {
+    for (auto &callback : {callbacks...}) {
       if (source.getType() == callback.first) {
         source.registerCallback(map, callback.second);
         callbackRegistered = true;
@@ -100,7 +100,7 @@ bool InputSourceManager::registerCallbacks(
           "The configuration contains input sources of an unknown type: %s",
           source.getType().c_str());
       RCLCPP_WARN(nodeHandle_->get_logger(), "Available types are:");
-      for (auto& callback : {callbacks...}) {
+      for (auto &callback : {callbacks...}) {
         RCLCPP_WARN(nodeHandle_->get_logger(), "- %s", callback.first);
       }
       return false;
@@ -109,4 +109,4 @@ bool InputSourceManager::registerCallbacks(
   return true;
 }
 
-}  // namespace elevation_mapping
+} // namespace elevation_mapping

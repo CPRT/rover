@@ -28,33 +28,33 @@ namespace elevation_mapping {
  */
 
 StructuredLightSensorProcessor::StructuredLightSensorProcessor(
-    std::shared_ptr<rclcpp::Node>& nodeHandle,
-    const SensorProcessorBase::GeneralParameters& generalParameters)
+    std::shared_ptr<rclcpp::Node> &nodeHandle,
+    const SensorProcessorBase::GeneralParameters &generalParameters)
     : SensorProcessorBase(nodeHandle, generalParameters) {}
 
 StructuredLightSensorProcessor::~StructuredLightSensorProcessor() = default;
 
 bool StructuredLightSensorProcessor::readParameters(
-    std::string& inputSourceName) {
+    std::string &inputSourceName) {
   SensorProcessorBase::readParameters(inputSourceName);
-  nodeHandle_->declare_parameter(
-      inputSourceName + ".sensor_processor.normal_factor_a",
-      rclcpp::ParameterValue(0.0));
-  nodeHandle_->declare_parameter(
-      inputSourceName + ".sensor_processor.normal_factor_b",
-      rclcpp::ParameterValue(0.0));
-  nodeHandle_->declare_parameter(
-      inputSourceName + ".sensor_processor.normal_factor_c",
-      rclcpp::ParameterValue(0.0));
-  nodeHandle_->declare_parameter(
-      inputSourceName + ".sensor_processor.normal_factor_d",
-      rclcpp::ParameterValue(0.0));
-  nodeHandle_->declare_parameter(
-      inputSourceName + ".sensor_processor.normal_factor_e",
-      rclcpp::ParameterValue(0.0));
-  nodeHandle_->declare_parameter(
-      inputSourceName + ".sensor_processor.lateral_factor",
-      rclcpp::ParameterValue(0.0));
+  nodeHandle_->declare_parameter(inputSourceName +
+                                     ".sensor_processor.normal_factor_a",
+                                 rclcpp::ParameterValue(0.0));
+  nodeHandle_->declare_parameter(inputSourceName +
+                                     ".sensor_processor.normal_factor_b",
+                                 rclcpp::ParameterValue(0.0));
+  nodeHandle_->declare_parameter(inputSourceName +
+                                     ".sensor_processor.normal_factor_c",
+                                 rclcpp::ParameterValue(0.0));
+  nodeHandle_->declare_parameter(inputSourceName +
+                                     ".sensor_processor.normal_factor_d",
+                                 rclcpp::ParameterValue(0.0));
+  nodeHandle_->declare_parameter(inputSourceName +
+                                     ".sensor_processor.normal_factor_e",
+                                 rclcpp::ParameterValue(0.0));
+  nodeHandle_->declare_parameter(inputSourceName +
+                                     ".sensor_processor.lateral_factor",
+                                 rclcpp::ParameterValue(0.0));
   nodeHandle_->declare_parameter(
       inputSourceName + ".sensor_processor.cutoff_min_depth",
       rclcpp::ParameterValue(std::numeric_limits<double>::min()));
@@ -62,30 +62,30 @@ bool StructuredLightSensorProcessor::readParameters(
       inputSourceName + ".sensor_processor.cutoff_max_depth",
       rclcpp::ParameterValue(std::numeric_limits<double>::max()));
 
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.normal_factor_a",
-      sensorParameters_["normal_factor_a"]);
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.normal_factor_b",
-      sensorParameters_["normal_factor_b"]);
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.normal_factor_c",
-      sensorParameters_["normal_factor_c"]);
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.normal_factor_d",
-      sensorParameters_["normal_factor_d"]);
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.normal_factor_e",
-      sensorParameters_["normal_factor_e"]);
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.lateral_factor",
-      sensorParameters_["lateral_factor"]);
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.cutoff_min_depth",
-      sensorParameters_["cutoff_min_depth"]);
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.cutoff_max_depth",
-      sensorParameters_["cutoff_max_depth"]);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.normal_factor_a",
+                             sensorParameters_["normal_factor_a"]);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.normal_factor_b",
+                             sensorParameters_["normal_factor_b"]);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.normal_factor_c",
+                             sensorParameters_["normal_factor_c"]);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.normal_factor_d",
+                             sensorParameters_["normal_factor_d"]);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.normal_factor_e",
+                             sensorParameters_["normal_factor_e"]);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.lateral_factor",
+                             sensorParameters_["lateral_factor"]);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.cutoff_min_depth",
+                             sensorParameters_["cutoff_min_depth"]);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.cutoff_max_depth",
+                             sensorParameters_["cutoff_max_depth"]);
 
   // nodeHandle_.param("sensor_processor/normal_factor_a",
   // sensorParameters_["normal_factor_a"], 0.0);
@@ -108,8 +108,8 @@ bool StructuredLightSensorProcessor::readParameters(
 
 bool StructuredLightSensorProcessor::computeVariances(
     const PointCloudType::ConstPtr pointCloud,
-    const Eigen::Matrix<double, 6, 6>& robotPoseCovariance,
-    Eigen::VectorXf& variances) {
+    const Eigen::Matrix<double, 6, 6> &robotPoseCovariance,
+    Eigen::VectorXf &variances) {
   variances.resize(pointCloud->size());
 
   // Projection vector (P).
@@ -143,11 +143,11 @@ bool StructuredLightSensorProcessor::computeVariances(
     // For every point in point cloud.
 
     // Preparation.
-    auto& point = pointCloud->points[i];
-    const float& confidenceRatio = point.confidence_ratio;
+    auto &point = pointCloud->points[i];
+    const float &confidenceRatio = point.confidence_ratio;
     Eigen::Vector3f pointVector(
         point.x, point.y,
-        point.z);  // S_r_SP // NOLINT(cppcoreguidelines-pro-type-union-access)
+        point.z); // S_r_SP // NOLINT(cppcoreguidelines-pro-type-union-access)
 
     // Measurement distance.
     const float measurementDistance = pointVector.z();
@@ -176,7 +176,7 @@ bool StructuredLightSensorProcessor::computeVariances(
         P_mul_C_BM_transpose * (C_SB_transpose_times_S_r_SP_skew + B_r_BS_skew);
 
     // Measurement variance for map (error propagation law).
-    float heightVariance = 0.0;  // sigma_p
+    float heightVariance = 0.0; // sigma_p
     heightVariance =
         rotationJacobian * rotationVariance * rotationJacobian.transpose();
     // Scale the sensor variance by the inverse, squared confidence ratio
@@ -207,4 +207,4 @@ bool StructuredLightSensorProcessor::filterPointCloudSensorType(
   return true;
 }
 
-}  // namespace elevation_mapping
+} // namespace elevation_mapping

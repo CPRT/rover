@@ -4,14 +4,8 @@ namespace motors = ctre::phoenix::motorcontrol;
 
 TalonSRXWrapper::TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
                                  std::shared_ptr<rclcpp::Node> debug_node)
-    : info_(joint),
-      kP_(0),
-      kI_(0),
-      kD_(0),
-      kF_(0),
-      debug_node_(debug_node),
-      inverted_(false),
-      invert_sensor_(false) {
+    : info_(joint), kP_(0), kI_(0), kD_(0), kF_(0), debug_node_(debug_node),
+      inverted_(false), invert_sensor_(false) {
   id_ = -1;
   control_type_ = motors::ControlMode::Disabled;
   position_ = 0.0;
@@ -135,7 +129,7 @@ void TalonSRXWrapper::write() {
     output = (command_ - sensor_offset_) * sensor_ticks_ / (2.0 * M_PI);
   } else if (control_type_ == motors::ControlMode::Velocity) {
     output = command_ * sensor_ticks_ / (2.0 * M_PI) /
-             10.0;  // Convert rad/s to ticks per 100ms
+             10.0; // Convert rad/s to ticks per 100ms
   }
   talon_controller_->Set(control_type_, output);
 }
@@ -147,7 +141,8 @@ void TalonSRXWrapper::read() {
   // Crossover mode: wrap between -pi and pi
   if (crossover_mode_) {
     position = std::fmod(position + M_PI, 2.0 * M_PI);
-    if (position < 0) position += 2.0 * M_PI;
+    if (position < 0)
+      position += 2.0 * M_PI;
     position -= M_PI;
   }
   position_ = position;
@@ -206,7 +201,7 @@ void TalonSRXWrapper::configure() {
     config.pulseWidthPeriod_EdgesPerRot = sensor_ticks_;
     config.continuousCurrentLimit = 10.0;
     config.peakCurrentLimit = 10.0;
-    config.peakCurrentDuration = 100;  // ms
+    config.peakCurrentDuration = 100; // ms
     talon_controller_->EnableCurrentLimit(true);
     ErrorCode error =
         talon_controller_->ConfigAllSettings(config, /*timeout*/ 50);

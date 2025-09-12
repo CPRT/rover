@@ -2,7 +2,7 @@
 
 #include <QDebug>
 
-SourceWidget::SourceWidget(QWidget* parent) : QWidget(parent) {
+SourceWidget::SourceWidget(QWidget *parent) : QWidget(parent) {
   source_ = new interfaces::msg::VideoSource();
 
   main_layout_ = new QVBoxLayout(this);
@@ -119,32 +119,37 @@ void SourceWidget::receive_source_names(std::vector<std::string> names) {
 }
 
 void SourceWidget::set_source_name(QString name) {
-  if (!source_) return;
+  if (!source_)
+    return;
   source_->name = name.toStdString();
   qDebug() << "Changed source name to: "
            << QString::fromStdString(source_->name);
 }
 
 void SourceWidget::set_width(QString width) {
-  if (!source_ || !width.toInt()) return;
+  if (!source_ || !width.toInt())
+    return;
   source_->width = width.toInt();
   qDebug() << "Changed source width to: " << source_->width;
 }
 
 void SourceWidget::set_height(QString height) {
-  if (!source_ || !height.toInt()) return;
+  if (!source_ || !height.toInt())
+    return;
   source_->height = height.toInt();
   qDebug() << "Changed source height to: " << source_->height;
 }
 
 void SourceWidget::set_origin_x(QString x) {
-  if (!source_ || !x.toInt()) return;
+  if (!source_ || !x.toInt())
+    return;
   source_->origin_x = x.toInt();
   qDebug() << "Changed source origin x to: " << source_->origin_x;
 }
 
 void SourceWidget::set_origin_y(QString y) {
-  if (!source_ || !y.toInt()) return;
+  if (!source_ || !y.toInt())
+    return;
   source_->origin_y = y.toInt();
   qDebug() << "Changed source origin y to: " << source_->origin_y;
 }

@@ -2,20 +2,22 @@
 
 struct _GstArucoMarker {
   GstVideoFilter parent;
-  cv::Ptr<cv::aruco::Dictionary> dictionary;
+  cv::aruco::Dictionary dictionary;
+  cv::aruco::ArucoDetector detector;
   std::vector<int> ids;
   std::vector<std::vector<cv::Point2f>> corners;
   guint frame_count;
-  guint detect_every;     // Detect markers every N frames
-  gboolean draw_markers;  // Whether to draw detected markers
+  guint detect_every;    // Detect markers every N frames
+  gboolean draw_markers; // Whether to draw detected markers
 };
 
 static void gst_arucomarker_init(GstArucoMarker *self) {
   self->dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
+  self->detector = cv::aruco::ArucoDetector(self->dictionary);
   self->frame_count = 0;
   self->detect_every = 1;
-  self->ids = std::vector<int>();
-  self->corners = std::vector<std::vector<cv::Point2f>>();
+  self->ids.clear();
+  self->corners.clear();
   self->draw_markers = TRUE;
 }
 
@@ -45,7 +47,7 @@ static GstFlowReturn gst_arucomarker_transform_frame(GstVideoFilter *filter,
   if (self->frame_count % self->detect_every == 0) {
     ids.clear();
     corners.clear();
-    cv::aruco::detectMarkers(frame, self->dictionary, corners, ids);
+    self->detector.detectMarkers(frame, corners, ids);
     for (const int &id : ids) {
       g_signal_emit_by_name(self, "marker-detected", id);
     }
@@ -63,15 +65,15 @@ static void gst_arucomarker_set_property(GObject *object, guint prop_id,
                                          GParamSpec *pspec) {
   GstArucoMarker *self = GST_ARUCOMARKER(object);
   switch (prop_id) {
-    case 1:
-      self->detect_every = g_value_get_uint(value);
-      break;
-    case 2:
-      self->draw_markers = g_value_get_boolean(value);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-      break;
+  case 1:
+    self->detect_every = g_value_get_uint(value);
+    break;
+  case 2:
+    self->draw_markers = g_value_get_boolean(value);
+    break;
+  default:
+    G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+    break;
   }
 }
 
@@ -79,15 +81,15 @@ static void gst_arucomarker_get_property(GObject *object, guint prop_id,
                                          GValue *value, GParamSpec *pspec) {
   GstArucoMarker *self = GST_ARUCOMARKER(object);
   switch (prop_id) {
-    case 1:
-      g_value_set_uint(value, self->detect_every);
-      break;
-    case 2:
-      g_value_set_boolean(value, self->draw_markers);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-      break;
+  case 1:
+    g_value_set_uint(value, self->detect_every);
+    break;
+  case 2:
+    g_value_set_boolean(value, self->draw_markers);
+    break;
+  default:
+    G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+    break;
   }
 }
 

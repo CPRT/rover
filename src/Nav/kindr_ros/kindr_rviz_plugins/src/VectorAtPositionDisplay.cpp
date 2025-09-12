@@ -21,11 +21,8 @@ namespace kindr_rviz_plugins {
 // The constructor must have no arguments, so we can't give the
 // constructor the parameters it needs to fully initialize.
 VectorAtPositionDisplay::VectorAtPositionDisplay()
-    : lengthScale_(1.0f),
-      widthScale_(1.0f),
-      showText_(true),
-      color_(Ogre::ColourValue::Black),
-      alpha_(1.0) {
+    : lengthScale_(1.0f), widthScale_(1.0f), showText_(true),
+      color_(Ogre::ColourValue::Black), alpha_(1.0) {
   connect(this, SIGNAL(updateVectorAtPositionSignal()), this,
           SLOT(updateVectorAtPosition()));
 
@@ -189,11 +186,11 @@ void VectorAtPositionDisplay::updateVectorAtPosition() {
   // Now set or update the contents of the chosen visual.
   visual->setMessage(current_vector_at_position_);
   visual->setArrowPosition(
-      positionFixedToArrowInFixedFrame);  // position is taken from position in
-                                          // msg
+      positionFixedToArrowInFixedFrame); // position is taken from position in
+                                         // msg
   visual->setArrowOrientation(
-      orientationArrowFrameToFixedFrame);  // orientation is taken from vector
-                                           // in msg
+      orientationArrowFrameToFixedFrame); // orientation is taken from vector
+                                          // in msg
   visual->setScalingFactors(lengthScale_, widthScale_);
   visual->setShowText(showText_);
   visual->setColor(color_);
@@ -204,12 +201,12 @@ void VectorAtPositionDisplay::updateVectorAtPosition() {
 
 // This is our callback to handle an incoming message.
 void VectorAtPositionDisplay::processMessage(
-    const kindr_msgs::VectorAtPosition::ConstPtr& msg) {
+    const kindr_msgs::VectorAtPosition::ConstPtr &msg) {
   current_vector_at_position_ = msg;
   Q_EMIT updateVectorAtPositionSignal();
 }
 
-}  // namespace kindr_rviz_plugins
+} // namespace kindr_rviz_plugins
 
 // Tell pluginlib about this class. It is important to do this in
 // global scope, outside our package's namespace.

@@ -47,7 +47,7 @@ void GridmapLayer::reset() {
   current_ = false;
 }
 void GridmapLayer::matchSize() {
-  Costmap2D* master = layered_costmap_->getCostmap();
+  Costmap2D *master = layered_costmap_->getCostmap();
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   resizeMap(master->getSizeInCellsX(), master->getSizeInCellsY(),
             master->getResolution(), master->getOriginX(),
@@ -116,8 +116,8 @@ void GridmapLayer::incomingMap(
 }
 
 void GridmapLayer::updateBounds(double robot_x, double robot_y,
-                                double robot_yaw, double* min_x, double* min_y,
-                                double* max_x, double* max_y) {
+                                double robot_yaw, double *min_x, double *min_y,
+                                double *max_x, double *max_y) {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
 
   if (layered_costmap_->isRolling()) {
@@ -155,19 +155,19 @@ void GridmapLayer::updateBounds(double robot_x, double robot_y,
 }
 
 bool GridmapLayer::getTransform(
-    geometry_msgs::msg::TransformStamped& transform) {
+    geometry_msgs::msg::TransformStamped &transform) {
   try {
     transform = tf_buffer_->lookupTransform(
         layered_costmap_->getGlobalFrameID(), gridmap_in_.getFrameId(),
         tf2::TimePointZero);
     return true;
-  } catch (tf2::TransformException& ex) {
+  } catch (tf2::TransformException &ex) {
     RCLCPP_WARN(logger_, "Gridmap layer: %s", ex.what());
     return false;
   }
 }
 
-void GridmapLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_grid,
+void GridmapLayer::updateCosts(nav2_costmap_2d::Costmap2D &master_grid,
                                int min_i, int min_j, int max_i, int max_j) {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (!enabled_ || !has_updated_data_) {
@@ -177,7 +177,7 @@ void GridmapLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_grid,
   if (!getTransform(transform)) {
     return;
   }
-  unsigned char* master_array = master_grid.getCharMap();
+  unsigned char *master_array = master_grid.getCharMap();
 
   has_updated_data_ = false;
   geometry_msgs::msg::PointStamped grid_map_point, costmap_point;
@@ -206,7 +206,7 @@ void GridmapLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_grid,
     const bool isValid =
         worldToMap(costmap_point.point.x, costmap_point.point.y, mx, my);
     if (isValid) {
-      auto& index = master_array[getIndex(mx, my)];
+      auto &index = master_array[getIndex(mx, my)];
       if (use_maximum_) {
         index = std::max(index, cost);
       } else {
@@ -217,7 +217,7 @@ void GridmapLayer::updateCosts(nav2_costmap_2d::Costmap2D& master_grid,
   current_ = true;
 }
 
-}  // namespace cprt_costmap_plugins
+} // namespace cprt_costmap_plugins
 
 PLUGINLIB_EXPORT_CLASS(cprt_costmap_plugins::GridmapLayer,
                        nav2_costmap_2d::Layer)

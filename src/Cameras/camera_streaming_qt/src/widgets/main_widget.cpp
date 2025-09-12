@@ -2,7 +2,7 @@
 
 #include <QDebug>
 
-MainWidget::MainWidget(QWidget* parent) : QWidget(parent) {
+MainWidget::MainWidget(QWidget *parent) : QWidget(parent) {
   main_layout_ = new QVBoxLayout(this);
 
   // Setup presets UI
@@ -80,7 +80,8 @@ MainWidget::MainWidget(QWidget* parent) : QWidget(parent) {
 MainWidget::~MainWidget() {}
 
 void MainWidget::receive_source_names(std::vector<std::string> names) {
-  if (!preset_widget_) return;
+  if (!preset_widget_)
+    return;
 
   preset_widget_->receive_source_names(names);
 }

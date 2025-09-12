@@ -35,17 +35,17 @@
 class MainWidget : public QWidget {
   Q_OBJECT
 
- public:
-  MainWidget(QWidget* parent = nullptr);
+public:
+  MainWidget(QWidget *parent = nullptr);
   ~MainWidget();
 
   void receive_source_names(std::vector<std::string> names);
 
- signals:
+signals:
   void request_source_names();
   void send_preset(std::vector<interfaces::msg::VideoSource> preset);
 
- public slots:
+public slots:
   /**
    * @brief Slot that sets the signal server IP that gets called when the
    * server_ip_line_edit_ gets modified.
@@ -59,25 +59,25 @@ class MainWidget : public QWidget {
    */
   void receive_preset(std::vector<interfaces::msg::VideoSource> preset);
 
- private slots:
+private slots:
   /**
    * @brief Called when clicking the refresh button in SourceWidget to get the
    * source names
    */
   void get_source_names();
 
- private:
-  QVBoxLayout* main_layout_;
+private:
+  QVBoxLayout *main_layout_;
 
   // Presets UI
-  QHBoxLayout* preset_layout_;
+  QHBoxLayout *preset_layout_;
 
-  QPushButton* drive_preset_button_;
-  QPushButton* eef_preset_button_;
-  QPushButton* microscope_preset_button_;
-  QPushButton* belly_preset_button_;
-  QPushButton* drive_eef_preset_button_;
-  QPushButton* eef_drive_preset_button_;
+  QPushButton *drive_preset_button_;
+  QPushButton *eef_preset_button_;
+  QPushButton *microscope_preset_button_;
+  QPushButton *belly_preset_button_;
+  QPushButton *drive_eef_preset_button_;
+  QPushButton *eef_drive_preset_button_;
 
   // Functions for sending hardcoded presets to CameraClient
   void send_drive_preset();
@@ -88,20 +88,20 @@ class MainWidget : public QWidget {
   void send_eef_drive_preset();
 
   // Signal server UI
-  QHBoxLayout* signal_server_layout_;
-  QLineEdit* server_ip_line_edit_;
-  QPushButton* server_connect_button_;
+  QHBoxLayout *signal_server_layout_;
+  QLineEdit *server_ip_line_edit_;
+  QPushButton *server_connect_button_;
 
   QString signal_server_ip_;
 
   // Layout for horizontally displaying capture image and preset UIs
-  QHBoxLayout* controls_layout_;
+  QHBoxLayout *controls_layout_;
 
   // Capture Image UI
-  CaptureImageWidget* capture_image_widget_;
+  CaptureImageWidget *capture_image_widget_;
 
   // Preset UI
-  PresetWidget* preset_widget_;
+  PresetWidget *preset_widget_;
 };
 
 #endif

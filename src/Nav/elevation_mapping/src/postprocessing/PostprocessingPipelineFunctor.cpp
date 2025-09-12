@@ -16,8 +16,7 @@ namespace elevation_mapping {
 
 PostprocessingPipelineFunctor::PostprocessingPipelineFunctor(
     std::shared_ptr<rclcpp::Node> nodeHandle)
-    : nodeHandle_(nodeHandle),
-      filterChain_("grid_map::GridMap"),
+    : nodeHandle_(nodeHandle), filterChain_("grid_map::GridMap"),
       filterChainConfigured_(false) {
   // TODO (magnus) Add logic when setting up failed. What happens actually if it
   // is not configured?
@@ -53,7 +52,7 @@ void PostprocessingPipelineFunctor::readParameters() {
                              filterChainParametersName_);
 }
 
-grid_map::GridMap PostprocessingPipelineFunctor::operator()(GridMap& inputMap) {
+grid_map::GridMap PostprocessingPipelineFunctor::operator()(GridMap &inputMap) {
   if (not filterChainConfigured_) {
     RCLCPP_WARN_ONCE(nodeHandle_->get_logger(),
                      "No postprocessing pipeline was configured. Forwarding "
@@ -72,7 +71,7 @@ grid_map::GridMap PostprocessingPipelineFunctor::operator()(GridMap& inputMap) {
   return outputMap;
 }
 
-void PostprocessingPipelineFunctor::publish(const GridMap& gridMap) const {
+void PostprocessingPipelineFunctor::publish(const GridMap &gridMap) const {
   // Publish filtered output grid map.
   std::unique_ptr<grid_map_msgs::msg::GridMap> outputMessage;
   outputMessage = grid_map::GridMapRosConverter::toMessage(gridMap);
@@ -85,4 +84,4 @@ bool PostprocessingPipelineFunctor::hasSubscribers() const {
   return publisher_->get_subscription_count() > 0;
 }
 
-}  // namespace elevation_mapping
+} // namespace elevation_mapping

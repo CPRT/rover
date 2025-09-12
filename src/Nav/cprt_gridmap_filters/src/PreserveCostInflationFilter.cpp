@@ -19,10 +19,8 @@ namespace grid_map {
 
 template <typename T>
 PreserveCostInflationFilter<T>::PreserveCostInflationFilter()
-    : method_(Method::RadialInflationSerial),
-      coreInflationRadius_(0.0),
-      decayInflationRadius_(0.0),
-      decayRate_(0.0) {
+    : method_(Method::RadialInflationSerial), coreInflationRadius_(0.0),
+      decayInflationRadius_(0.0), decayRate_(0.0) {
   ///
 }
 
@@ -31,8 +29,7 @@ PreserveCostInflationFilter<T>::~PreserveCostInflationFilter() {
   ///
 }
 
-template <typename T>
-bool PreserveCostInflationFilter<T>::configure() {
+template <typename T> bool PreserveCostInflationFilter<T>::configure() {
   grid_map::ParameterReader param_reader(this->param_prefix_,
                                          this->params_interface_);
 
@@ -124,7 +121,7 @@ void PreserveCostInflationFilter<T>::computeWithSimpleSerialMethod(
     const grid_map::Index index = *iterator;
     grid_map::Position position;
     mapIn.getPosition(
-        index, position);  // Get position of cell from grid_map::Index of cell
+        index, position); // Get position of cell from grid_map::Index of cell
 
     const float value = layerIn.coeff(index(0), index(1));
     if (!std::isfinite(value)) {
@@ -167,7 +164,7 @@ void PreserveCostInflationFilter<T>::radialInflateSerial(
   }
 }
 
-}  // namespace grid_map
+} // namespace grid_map
 
 PLUGINLIB_EXPORT_CLASS(grid_map::PreserveCostInflationFilter<grid_map::GridMap>,
                        filters::FilterBase<grid_map::GridMap>)

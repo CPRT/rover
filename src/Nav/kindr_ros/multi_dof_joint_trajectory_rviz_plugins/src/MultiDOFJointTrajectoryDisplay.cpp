@@ -5,30 +5,23 @@
 namespace multi_dof_joint_trajectory_rviz_plugins {
 
 MultiDOFJointTrajectoryDisplay::MultiDOFJointTrajectoryDisplay()
-    : show_connection_(true),
-      show_transform_rotation_(true),
-      show_velocity_linear_(true),
-      show_velocity_angular_(true),
-      show_acceleration_linear_(true),
-      show_acceleration_angular_(true),
-      size_transform_rotation_(0.2),
-      diameter_arrows_(0.05),
-      scale_velocity_linear_(1.0),
-      scale_velocity_angular_(1.0),
-      scale_acceleration_linear_(1.0),
-      scale_acceleration_angular_(1.0),
+    : show_connection_(true), show_transform_rotation_(true),
+      show_velocity_linear_(true), show_velocity_angular_(true),
+      show_acceleration_linear_(true), show_acceleration_angular_(true),
+      size_transform_rotation_(0.2), diameter_arrows_(0.05),
+      scale_velocity_linear_(1.0), scale_velocity_angular_(1.0),
+      scale_acceleration_linear_(1.0), scale_acceleration_angular_(1.0),
       alpha_(1.0),
-      color_connection_(Ogre::ColourValue(1.0, 1.0, 1.0, alpha_)),  // white
+      color_connection_(Ogre::ColourValue(1.0, 1.0, 1.0, alpha_)), // white
       color_velocity_linear_(
-          Ogre::ColourValue(0.4, 0.0, 0.0, alpha_)),  // dark red
+          Ogre::ColourValue(0.4, 0.0, 0.0, alpha_)), // dark red
       color_velocity_angular_(
-          Ogre::ColourValue(0.0, 0.4, 0.0, alpha_)),  // dark green
+          Ogre::ColourValue(0.0, 0.4, 0.0, alpha_)), // dark green
       color_acceleration_linear_(
-          Ogre::ColourValue(1.0, 1.0, 0.0, alpha_)),  // yellow
+          Ogre::ColourValue(1.0, 1.0, 0.0, alpha_)), // yellow
       color_acceleration_angular_(
-          Ogre::ColourValue(0.75, 0.0, 0.75, alpha_)),  // purple
-      font_size_(0.05),
-      show_text_(true) {
+          Ogre::ColourValue(0.75, 0.0, 0.75, alpha_)), // purple
+      font_size_(0.05), show_text_(true) {
   connect(this, SIGNAL(updateTrajectorySignal()), this,
           SLOT(updateTrajectory()));
 
@@ -377,7 +370,7 @@ void MultiDOFJointTrajectoryDisplay::updateTrajectory() {
 }
 
 void MultiDOFJointTrajectoryDisplay::processMessage(
-    const trajectory_msgs::MultiDOFJointTrajectory::ConstPtr& msg) {
+    const trajectory_msgs::MultiDOFJointTrajectory::ConstPtr &msg) {
   current_trajectory_ = msg;
   Q_EMIT updateTrajectorySignal();
 }
@@ -548,7 +541,7 @@ void MultiDOFJointTrajectoryDisplay::updateShowText() {
   }
 }
 
-}  // namespace multi_dof_joint_trajectory_rviz_plugins
+} // namespace multi_dof_joint_trajectory_rviz_plugins
 
 #include <pluginlib/class_list_macros.h>
 PLUGINLIB_EXPORT_CLASS(

@@ -1,6 +1,6 @@
 #include "ScienceMode.hpp"
 
-ScienceMode::ScienceMode(rclcpp::Node* node) : Mode("Science", node) {
+ScienceMode::ScienceMode(rclcpp::Node *node) : Mode("Science", node) {
   RCLCPP_INFO(node_->get_logger(), "Science Mode");
   loadParameters();
   platform_pub_ = node_->create_publisher<ros_phoenix::msg::MotorControl>(
@@ -94,7 +94,7 @@ void ScienceMode::toggleLights() const {
   led_client_->async_send_request(request);
 }
 
-void ScienceMode::declareParameters(rclcpp::Node* node) {
+void ScienceMode::declareParameters(rclcpp::Node *node) {
   node->declare_parameter("science_mode.platform_axis", 1);
   node->declare_parameter("science_mode.drill_button", 2);
   node->declare_parameter("science_mode.microscope_axis", 3);

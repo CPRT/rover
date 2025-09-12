@@ -25,7 +25,7 @@ namespace cprt_planner_plugins {
  * horizon before completing the rest with a straight line.
  */
 class EventHorizonPlanner : public nav2_smac_planner::SmacPlannerHybrid {
- public:
+public:
   /**
    * @brief Constructor for planner::EventHorizonPlanner
    */
@@ -44,7 +44,7 @@ class EventHorizonPlanner : public nav2_smac_planner::SmacPlannerHybrid {
    * @param costmap_ros Costmap2DROS object of environment
    */
   void configure(
-      const rclcpp_lifecycle::LifecycleNode::WeakPtr& parent, std::string name,
+      const rclcpp_lifecycle::LifecycleNode::WeakPtr &parent, std::string name,
       std::shared_ptr<tf2_ros::Buffer> tf,
       std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
@@ -70,9 +70,9 @@ class EventHorizonPlanner : public nav2_smac_planner::SmacPlannerHybrid {
    * @param goal Goal pose
    * @return Path to goal pose from start pose
    */
-  nav_msgs::msg::Path createPlan(
-      const geometry_msgs::msg::PoseStamped& start,
-      const geometry_msgs::msg::PoseStamped& goal) override;
+  nav_msgs::msg::Path
+  createPlan(const geometry_msgs::msg::PoseStamped &start,
+             const geometry_msgs::msg::PoseStamped &goal) override;
 
   /**
    * @brief Setter for the tolerance parameter.
@@ -87,7 +87,7 @@ class EventHorizonPlanner : public nav2_smac_planner::SmacPlannerHybrid {
    */
   float getTolerance();
 
- private:
+private:
   /**
    * @brief Provides a new goal pose that is on/within the horizon on the line
    * between the start and goal if needed.
@@ -95,9 +95,9 @@ class EventHorizonPlanner : public nav2_smac_planner::SmacPlannerHybrid {
    * @param goal Goal pose
    * @return Updated goal pose
    */
-  const geometry_msgs::msg::PoseStamped getNewGoal(
-      const geometry_msgs::msg::PoseStamped& start,
-      const geometry_msgs::msg::PoseStamped& goal);
+  const geometry_msgs::msg::PoseStamped
+  getNewGoal(const geometry_msgs::msg::PoseStamped &start,
+             const geometry_msgs::msg::PoseStamped &goal);
 
   /**
    * @brief Convert euler vector to a quaternion
@@ -106,9 +106,8 @@ class EventHorizonPlanner : public nav2_smac_planner::SmacPlannerHybrid {
    * @param yaw
    * @return Quaternion equivalent
    */
-  static geometry_msgs::msg::Quaternion EulerToQuaternion(float roll,
-                                                          float pitch,
-                                                          float yaw);
+  static geometry_msgs::msg::Quaternion
+  EulerToQuaternion(float roll, float pitch, float yaw);
 
   // parameters
 
@@ -116,7 +115,7 @@ class EventHorizonPlanner : public nav2_smac_planner::SmacPlannerHybrid {
 
   nav2_util::LifecycleNode::SharedPtr node_;
 
-  nav2_costmap_2d::Costmap2D* costmap_;
+  nav2_costmap_2d::Costmap2D *costmap_;
 
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr
       new_goal_publisher_;
@@ -138,6 +137,6 @@ class EventHorizonPlanner : public nav2_smac_planner::SmacPlannerHybrid {
   rclcpp::Logger logger_{rclcpp::get_logger("RotationShimController")};
 };
 
-}  // namespace cprt_planner_plugins
+} // namespace cprt_planner_plugins
 
 #endif

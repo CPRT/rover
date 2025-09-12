@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-WheelControl::WheelControl(std::string wheel_name, rclcpp::Node* node)
+WheelControl::WheelControl(std::string wheel_name, rclcpp::Node *node)
     : node_(node), name_(wheel_name) {
   if (wheel_name.find("Left") != std::string::npos ||
       wheel_name.find("left") != std::string::npos) {

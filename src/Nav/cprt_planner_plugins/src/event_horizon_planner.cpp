@@ -16,7 +16,7 @@ namespace cprt_planner_plugins {
 EventHorizonPlanner::EventHorizonPlanner() {}
 
 void EventHorizonPlanner::configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr& parent, std::string name,
+    const rclcpp_lifecycle::LifecycleNode::WeakPtr &parent, std::string name,
     std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) {
   node_ = parent.lock();
@@ -77,9 +77,9 @@ void EventHorizonPlanner::deactivate() {
               name_.c_str());
 }
 
-nav_msgs::msg::Path EventHorizonPlanner::createPlan(
-    const geometry_msgs::msg::PoseStamped& start,
-    const geometry_msgs::msg::PoseStamped& goal) {
+nav_msgs::msg::Path
+EventHorizonPlanner::createPlan(const geometry_msgs::msg::PoseStamped &start,
+                                const geometry_msgs::msg::PoseStamped &goal) {
   RCLCPP_INFO(logger_, "Creating plan");
   nav_msgs::msg::Path global_path;
 
@@ -154,9 +154,9 @@ nav_msgs::msg::Path EventHorizonPlanner::createPlan(
   return global_path;
 }
 
-const geometry_msgs::msg::PoseStamped EventHorizonPlanner::getNewGoal(
-    const geometry_msgs::msg::PoseStamped& start,
-    const geometry_msgs::msg::PoseStamped& goal) {
+const geometry_msgs::msg::PoseStamped
+EventHorizonPlanner::getNewGoal(const geometry_msgs::msg::PoseStamped &start,
+                                const geometry_msgs::msg::PoseStamped &goal) {
   geometry_msgs::msg::PoseStamped new_goal;
 
   const double distance_to_goal =
@@ -199,8 +199,8 @@ bool EventHorizonPlanner::setTolerance(float value) {
 
 float EventHorizonPlanner::getTolerance() { return _tolerance; }
 
-geometry_msgs::msg::Quaternion EventHorizonPlanner::EulerToQuaternion(
-    float roll, float pitch, float yaw) {
+geometry_msgs::msg::Quaternion
+EventHorizonPlanner::EulerToQuaternion(float roll, float pitch, float yaw) {
   float cy = std::cos(yaw * 0.5);
   float sy = std::sin(yaw * 0.5);
   float cp = std::cos(pitch * 0.5);
@@ -216,7 +216,7 @@ geometry_msgs::msg::Quaternion EventHorizonPlanner::EulerToQuaternion(
   return q;
 }
 
-}  // namespace cprt_planner_plugins
+} // namespace cprt_planner_plugins
 
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(cprt_planner_plugins::EventHorizonPlanner,

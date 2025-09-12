@@ -2,7 +2,7 @@
 
 #include <QDebug>
 
-CaptureImageWidget::CaptureImageWidget(QWidget* parent) : QWidget(parent) {
+CaptureImageWidget::CaptureImageWidget(QWidget *parent) : QWidget(parent) {
   main_layout_ = new QVBoxLayout(this);
 
   widget_header_ = new QLabel("Capture Image");

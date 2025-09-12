@@ -12,8 +12,8 @@ const std::string CAM_FRAME_ID = "Link_6";
 const std::string BASE_FRAME_ID = "Link_2";
 
 class ArmIKMode : public Mode {
- public:
-  ArmIKMode(rclcpp::Node* node);
+public:
+  ArmIKMode(rclcpp::Node *node);
 
   void processJoystickInput(
       std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) override;
@@ -21,7 +21,7 @@ class ArmIKMode : public Mode {
   void handleTwist(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
   void handleGripper(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
 
-  static void declareParameters(rclcpp::Node* node);
+  static void declareParameters(rclcpp::Node *node);
   void loadParameters();
 
   /**
@@ -39,7 +39,7 @@ class ArmIKMode : public Mode {
    */
   void servoRequest(int req_port, int req_pos) const;
 
- private:
+private:
   // Servo Members
   rclcpp::Client<interfaces::srv::MoveServo>::SharedPtr servo_client_;
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_pub_;
@@ -67,4 +67,4 @@ class ArmIKMode : public Mode {
   std::string frame_to_publish_;
 };
 
-#endif  // JOYSTICK_CONTROL__ARMIK_MODE_HPP_
+#endif // JOYSTICK_CONTROL__ARMIK_MODE_HPP_

@@ -33,8 +33,8 @@
 namespace elevation_mapping {
 
 SensorProcessorBase::SensorProcessorBase(
-    std::shared_ptr<rclcpp::Node>& nodeHandle,
-    const GeneralParameters& generalConfig)
+    std::shared_ptr<rclcpp::Node> &nodeHandle,
+    const GeneralParameters &generalConfig)
     : nodeHandle_(nodeHandle),
       // transformListener_(std::make_shared<tf2_ros::TransformListener>(*transformBuffer_)),
       // ignorePointsUpperThreshold_(std::numeric_limits<double>::infinity()),
@@ -59,7 +59,7 @@ SensorProcessorBase::SensorProcessorBase(
 
 SensorProcessorBase::~SensorProcessorBase() = default;
 
-bool SensorProcessorBase::readParameters(std::string& inputSourceName) {
+bool SensorProcessorBase::readParameters(std::string &inputSourceName) {
   Parameters parameters;
 
   // TODO: Add parameter validation
@@ -69,12 +69,12 @@ bool SensorProcessorBase::readParameters(std::string& inputSourceName) {
   nodeHandle_->declare_parameter(
       inputSourceName + ".sensor_processor.ignore_points_below",
       rclcpp::ParameterValue(-std::numeric_limits<double>::infinity()));
-  nodeHandle_->declare_parameter(
-      inputSourceName + ".sensor_processor.apply_voxelgrid_filter",
-      rclcpp::ParameterValue(false));
-  nodeHandle_->declare_parameter(
-      inputSourceName + ".sensor_processor.voxelgrid_filter_size",
-      rclcpp::ParameterValue(0.0));
+  nodeHandle_->declare_parameter(inputSourceName +
+                                     ".sensor_processor.apply_voxelgrid_filter",
+                                 rclcpp::ParameterValue(false));
+  nodeHandle_->declare_parameter(inputSourceName +
+                                     ".sensor_processor.voxelgrid_filter_size",
+                                 rclcpp::ParameterValue(0.0));
 
   nodeHandle_->declare_parameter(
       inputSourceName + ".sensor_processor.ignore_points_inside_min_x", 0.0);
@@ -89,38 +89,38 @@ bool SensorProcessorBase::readParameters(std::string& inputSourceName) {
   nodeHandle_->declare_parameter(
       inputSourceName + ".sensor_processor.ignore_points_inside_max_z", 0.0);
 
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.ignore_points_above",
-      parameters.ignorePointsUpperThreshold_);
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.ignore_points_below",
-      parameters.ignorePointsLowerThreshold_);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.ignore_points_above",
+                             parameters.ignorePointsUpperThreshold_);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.ignore_points_below",
+                             parameters.ignorePointsLowerThreshold_);
 
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.ignore_points_inside_min_x",
-      parameters.ignorePointsInsideMinX_);
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.ignore_points_inside_max_x",
-      parameters.ignorePointsInsideMaxX_);
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.ignore_points_inside_min_y",
-      parameters.ignorePointsInsideMinY_);
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.ignore_points_inside_max_y",
-      parameters.ignorePointsInsideMaxY_);
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.ignore_points_inside_min_z",
-      parameters.ignorePointsInsideMinZ_);
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.ignore_points_inside_max_z",
-      parameters.ignorePointsInsideMaxZ_);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.ignore_points_inside_min_x",
+                             parameters.ignorePointsInsideMinX_);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.ignore_points_inside_max_x",
+                             parameters.ignorePointsInsideMaxX_);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.ignore_points_inside_min_y",
+                             parameters.ignorePointsInsideMinY_);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.ignore_points_inside_max_y",
+                             parameters.ignorePointsInsideMaxY_);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.ignore_points_inside_min_z",
+                             parameters.ignorePointsInsideMinZ_);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.ignore_points_inside_max_z",
+                             parameters.ignorePointsInsideMaxZ_);
 
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.apply_voxelgrid_filter",
-      parameters.applyVoxelGridFilter_);
-  nodeHandle_->get_parameter(
-      inputSourceName + ".sensor_processor.voxelgrid_filter_size",
-      sensorParameters_["voxelgrid_filter_size"]);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.apply_voxelgrid_filter",
+                             parameters.applyVoxelGridFilter_);
+  nodeHandle_->get_parameter(inputSourceName +
+                                 ".sensor_processor.voxelgrid_filter_size",
+                             sensorParameters_["voxelgrid_filter_size"]);
 
   parameters_.setData(parameters);
   return true;
@@ -128,8 +128,8 @@ bool SensorProcessorBase::readParameters(std::string& inputSourceName) {
 
 bool SensorProcessorBase::process(
     const PointCloudType::ConstPtr pointCloudInput,
-    const Eigen::Matrix<double, 6, 6>& robotPoseCovariance,
-    const PointCloudType::Ptr pointCloudMapFrame, Eigen::VectorXf& variances,
+    const Eigen::Matrix<double, 6, 6> &robotPoseCovariance,
+    const PointCloudType::Ptr pointCloudMapFrame, Eigen::VectorXf &variances,
     std::string sensorFrame) {
   sensorFrameId_ = sensorFrame;
   // RCLCPP_DEBUG(rclcpp::get_logger("sensor_processor"), "Sensor Processor
@@ -171,7 +171,7 @@ bool SensorProcessorBase::process(
                           variances);
 }
 
-bool SensorProcessorBase::updateTransformations(const rclcpp::Time& timeStamp) {
+bool SensorProcessorBase::updateTransformations(const rclcpp::Time &timeStamp) {
   try {
     geometry_msgs::msg::TransformStamped transformGeom;
     // FIXME: lookupTransform sometimes takes long
@@ -182,8 +182,7 @@ bool SensorProcessorBase::updateTransformations(const rclcpp::Time& timeStamp) {
 
     transformGeom = transformBuffer_->lookupTransform(
         generalParameters_.robotBaseFrameId_, sensorFrameId_, timeStamp,
-        rclcpp::Duration::from_seconds(
-            1.0));  // TODO(max): Why wrong direction?
+        rclcpp::Duration::from_seconds(1.0)); // TODO(max): Why wrong direction?
     Eigen::Quaterniond rotationQuaternion;
     tf2::fromMsg(transformGeom.transform.rotation, rotationQuaternion);
     rotationBaseToSensor_.setMatrix(rotationQuaternion.toRotationMatrix());
@@ -194,8 +193,7 @@ bool SensorProcessorBase::updateTransformations(const rclcpp::Time& timeStamp) {
     transformGeom = transformBuffer_->lookupTransform(
         generalParameters_.mapFrameId_, generalParameters_.robotBaseFrameId_,
         timeStamp,
-        rclcpp::Duration::from_seconds(
-            1.0));  // TODO(max): Why wrong direction?
+        rclcpp::Duration::from_seconds(1.0)); // TODO(max): Why wrong direction?
     tf2::fromMsg(transformGeom.transform.rotation, rotationQuaternion);
     rotationMapToBase_.setMatrix(rotationQuaternion.toRotationMatrix());
     tf2::fromMsg(transformGeom.transform.translation, translationVector);
@@ -206,7 +204,7 @@ bool SensorProcessorBase::updateTransformations(const rclcpp::Time& timeStamp) {
     }
 
     return true;
-  } catch (tf2::TransformException& ex) {
+  } catch (tf2::TransformException &ex) {
     if (!firstTfAvailable_) {
       return false;
     }
@@ -217,7 +215,7 @@ bool SensorProcessorBase::updateTransformations(const rclcpp::Time& timeStamp) {
 
 bool SensorProcessorBase::transformPointCloud(
     PointCloudType::ConstPtr pointCloud,
-    PointCloudType::Ptr pointCloudTransformed, const std::string& targetFrame) {
+    PointCloudType::Ptr pointCloudTransformed, const std::string &targetFrame) {
   rclcpp::Time timeStamp = rclcpp::Time(1000 * pointCloud->header.stamp);
   const std::string inputFrameId(pointCloud->header.frame_id);
 
@@ -225,7 +223,7 @@ bool SensorProcessorBase::transformPointCloud(
     geometry_msgs::msg::TransformStamped transformGeom;
     transformGeom = transformBuffer_->lookupTransform(
         targetFrame, inputFrameId, timeStamp,
-        rclcpp::Duration(0, 1000));  // FIXME: missing 0.001 retry duration
+        rclcpp::Duration(0, 1000)); // FIXME: missing 0.001 retry duration
     Eigen::Affine3d transform = tf2::transformToEigen(transformGeom);
     pcl::transformPointCloud(*pointCloud, *pointCloudTransformed,
                              transform.cast<float>());
@@ -236,7 +234,7 @@ bool SensorProcessorBase::transformPointCloud(
     // RCLCPP_DEBUG_THROTTLE(nodeHandle_->get_logger(), clock, 5, "Point cloud
     // transformed to frame %s for time stamp %f.", targetFrame.c_str(),
     //                  pointCloudTransformed->header.stamp / 1000.0);
-  } catch (tf2::TransformException& ex) {
+  } catch (tf2::TransformException &ex) {
     // RCLCPP_ERROR(nodeHandle_->get_logger(), "%s", ex.what());
     return false;
   }
@@ -246,7 +244,7 @@ bool SensorProcessorBase::transformPointCloud(
 
 void SensorProcessorBase::removePointsOutsideLimits(
     PointCloudType::ConstPtr reference,
-    std::vector<PointCloudType::Ptr>& pointClouds) {
+    std::vector<PointCloudType::Ptr> &pointClouds) {
   const Parameters parameters{parameters_.getData()};
   // TODO: Update condition to include ignore inside
   if (!std::isfinite(parameters.ignorePointsLowerThreshold_) &&
@@ -262,7 +260,7 @@ void SensorProcessorBase::removePointsOutsideLimits(
   pcl::PassThrough<pcl::PointXYZRGBConfidenceRatio> passThroughFilter(true);
   passThroughFilter.setInputCloud(reference);
   passThroughFilter.setFilterFieldName(
-      "z");  // TODO(max): Should this be configurable?
+      "z"); // TODO(max): Should this be configurable?
   double relativeLowerThreshold = translationMapToBaseInMapFrame_.z() +
                                   parameters.ignorePointsLowerThreshold_;
   double relativeUpperThreshold = translationMapToBaseInMapFrame_.z() +
@@ -272,7 +270,7 @@ void SensorProcessorBase::removePointsOutsideLimits(
   pcl::IndicesPtr insideIndeces(new std::vector<int>);
   passThroughFilter.filter(*insideIndeces);
 
-  for (auto& pointCloud : pointClouds) {
+  for (auto &pointCloud : pointClouds) {
     pcl::ExtractIndices<pcl::PointXYZRGBConfidenceRatio> extractIndicesFilter;
     extractIndicesFilter.setInputCloud(pointCloud);
     extractIndicesFilter.setIndices(insideIndeces);
@@ -286,9 +284,9 @@ void SensorProcessorBase::removePointsOutsideLimits(
 
   // TODO: It would be beneficial to remove points in robot_frame, not map_frame
   pcl::CropBox<pcl::PointXYZRGBConfidenceRatio> cropBoxFilter(
-      true);  // true-returns indices
+      true); // true-returns indices
   cropBoxFilter.setInputCloud(pointClouds[0]);
-  cropBoxFilter.setNegative(true);  // remove points inside the box
+  cropBoxFilter.setNegative(true); // remove points inside the box
   cropBoxFilter.setMin(Eigen::Vector4f(
       parameters.ignorePointsInsideMinX_ + translationMapToBaseInMapFrame_.x(),
       parameters.ignorePointsInsideMinY_ + translationMapToBaseInMapFrame_.y(),
@@ -302,7 +300,7 @@ void SensorProcessorBase::removePointsOutsideLimits(
   pcl::IndicesPtr insideIndecesCropBox(new std::vector<int>);
   cropBoxFilter.filter(*insideIndecesCropBox);
 
-  for (auto& pointCloud : pointClouds) {
+  for (auto &pointCloud : pointClouds) {
     pcl::ExtractIndices<pcl::PointXYZRGBConfidenceRatio> extractIndicesFilter;
     extractIndicesFilter.setInputCloud(pointCloud);
     extractIndicesFilter.setIndices(insideIndecesCropBox);

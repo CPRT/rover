@@ -11,13 +11,13 @@
 #include "ros_phoenix/msg/motor_control.hpp"
 #include "ros_phoenix/msg/motor_status.hpp"
 
-#define Phoenix_No_WPI  // remove WPI dependencies
+#define Phoenix_No_WPI // remove WPI dependencies
 #include "ctre/Phoenix.h"
 
 namespace ros_phoenix {
 
 class PhoenixSystem : public hardware_interface::SystemInterface {
- public:
+public:
   static const std::string PERCENT_OUTPUT;
   static const std::string POSITION;
   static const std::string VELOCITY;
@@ -30,26 +30,26 @@ class PhoenixSystem : public hardware_interface::SystemInterface {
 
   ~PhoenixSystem() = default;
 
-  hardware_interface::CallbackReturn on_init(
-      const hardware_interface::HardwareInfo &info);
+  hardware_interface::CallbackReturn
+  on_init(const hardware_interface::HardwareInfo &info);
 
   std::vector<hardware_interface::StateInterface> export_state_interfaces();
 
   std::vector<hardware_interface::CommandInterface> export_command_interfaces();
 
-  hardware_interface::CallbackReturn on_activate(
-      const rclcpp_lifecycle::State & /*previous_state*/);
+  hardware_interface::CallbackReturn
+  on_activate(const rclcpp_lifecycle::State & /*previous_state*/);
 
-  hardware_interface::CallbackReturn on_deactivate(
-      const rclcpp_lifecycle::State & /*previous_state*/);
+  hardware_interface::CallbackReturn
+  on_deactivate(const rclcpp_lifecycle::State & /*previous_state*/);
 
   hardware_interface::return_type read(const rclcpp::Time &time,
                                        const rclcpp::Duration &period) override;
 
-  hardware_interface::return_type write(
-      const rclcpp::Time &time, const rclcpp::Duration &period) override;
+  hardware_interface::return_type
+  write(const rclcpp::Time &time, const rclcpp::Duration &period) override;
 
- private:
+private:
   struct JointInfo {
     hardware_interface::ComponentInfo info;
     BaseNode::SharedPtr node;
@@ -74,5 +74,5 @@ class PhoenixSystem : public hardware_interface::SystemInterface {
       subscribers_;
 };
 
-}  // namespace ros_phoenix
-#endif  // ROS_PHOENIX_PHOENIX_SYSTEM
+} // namespace ros_phoenix
+#endif // ROS_PHOENIX_PHOENIX_SYSTEM

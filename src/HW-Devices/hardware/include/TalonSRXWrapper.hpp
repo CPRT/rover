@@ -21,7 +21,7 @@
 #include "ros_phoenix/msg/motor_status.hpp"
 
 class TalonSRXWrapper {
- public:
+public:
   // Constructor
   TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
                   std::shared_ptr<rclcpp::Node> debug_node);
@@ -43,7 +43,7 @@ class TalonSRXWrapper {
 
   static void setup();
 
- private:
+private:
   const hardware_interface::ComponentInfo info_;
 
   // Parameters

@@ -29,7 +29,7 @@ float intAsFloat(const uint32_t input) {
   std::memcpy(&output, &input, sizeof(uint32_t));
   return output;
 }
-}  // namespace
+} // namespace
 
 namespace elevation_mapping {
 
@@ -45,17 +45,11 @@ ElevationMap::ElevationMap(std::shared_ptr<rclcpp::Node> nodeHandle)
       postprocessorPool_(
           nodeHandle_->get_parameter("postprocessor_num_threads").as_int(),
           nodeHandle_),
-      hasUnderlyingMap_(false),
-      minVariance_(0.000009),
-      maxVariance_(0.0009),
-      mahalanobisDistanceThreshold_(1.5),
-      multiHeightNoise_(0.000009),
-      minHorizontalVariance_(0.0001),
-      maxHorizontalVariance_(0.05),
-      enableVisibilityCleanup_(true),
-      enableContinuousCleanup_(false),
-      visibilityCleanupDuration_(0.0),
-      scanningDuration_(1.0) {
+      hasUnderlyingMap_(false), minVariance_(0.000009), maxVariance_(0.0009),
+      mahalanobisDistanceThreshold_(1.5), multiHeightNoise_(0.000009),
+      minHorizontalVariance_(0.0001), maxHorizontalVariance_(0.05),
+      enableVisibilityCleanup_(true), enableContinuousCleanup_(false),
+      visibilityCleanupDuration_(0.0), scanningDuration_(1.0) {
   rawMap_.setBasicLayers({"elevation", "variance"});
   fusedMap_.setBasicLayers({"elevation", "upper_bound", "lower_bound"});
   clear();
@@ -81,9 +75,9 @@ ElevationMap::ElevationMap(std::shared_ptr<rclcpp::Node> nodeHandle)
 ElevationMap::~ElevationMap() = default;
 
 bool ElevationMap::add(const PointCloudType::Ptr pointCloud,
-                       Eigen::VectorXf& pointCloudVariances,
-                       const rclcpp::Time& timestamp,
-                       const Eigen::Affine3d& transformationSensorToMap) {
+                       Eigen::VectorXf &pointCloudVariances,
+                       const rclcpp::Time &timestamp,
+                       const Eigen::Affine3d &transformationSensorToMap) {
   if (static_cast<unsigned int>(pointCloud->size()) !=
       static_cast<unsigned int>(pointCloudVariances.size())) {
     RCLCPP_ERROR(nodeHandle_->get_logger(),
@@ -114,49 +108,49 @@ bool ElevationMap::add(const PointCloudType::Ptr pointCloud,
   // Store references for efficient interaction.
   // RCLCPP_INFO(nodeHandle_->get_logger(), "ElevationMap::add: Storing
   // references.");
-  auto& elevationLayer = rawMap_["elevation"];
-  auto& varianceLayer = rawMap_["variance"];
-  auto& horizontalVarianceXLayer = rawMap_["horizontal_variance_x"];
-  auto& horizontalVarianceYLayer = rawMap_["horizontal_variance_y"];
-  auto& horizontalVarianceXYLayer = rawMap_["horizontal_variance_xy"];
-  auto& colorLayer = rawMap_["color"];
-  auto& timeLayer = rawMap_["time"];
-  auto& dynamicTimeLayer = rawMap_["dynamic_time"];
-  auto& lowestScanPointLayer = rawMap_["lowest_scan_point"];
-  auto& sensorXatLowestScanLayer = rawMap_["sensor_x_at_lowest_scan"];
-  auto& sensorYatLowestScanLayer = rawMap_["sensor_y_at_lowest_scan"];
-  auto& sensorZatLowestScanLayer = rawMap_["sensor_z_at_lowest_scan"];
+  auto &elevationLayer = rawMap_["elevation"];
+  auto &varianceLayer = rawMap_["variance"];
+  auto &horizontalVarianceXLayer = rawMap_["horizontal_variance_x"];
+  auto &horizontalVarianceYLayer = rawMap_["horizontal_variance_y"];
+  auto &horizontalVarianceXYLayer = rawMap_["horizontal_variance_xy"];
+  auto &colorLayer = rawMap_["color"];
+  auto &timeLayer = rawMap_["time"];
+  auto &dynamicTimeLayer = rawMap_["dynamic_time"];
+  auto &lowestScanPointLayer = rawMap_["lowest_scan_point"];
+  auto &sensorXatLowestScanLayer = rawMap_["sensor_x_at_lowest_scan"];
+  auto &sensorYatLowestScanLayer = rawMap_["sensor_y_at_lowest_scan"];
+  auto &sensorZatLowestScanLayer = rawMap_["sensor_z_at_lowest_scan"];
 
   std::vector<Eigen::Ref<const grid_map::Matrix>> basicLayers_;
-  for (const std::string& layer : rawMap_.getBasicLayers()) {
+  for (const std::string &layer : rawMap_.getBasicLayers()) {
     basicLayers_.push_back(rawMap_.get(layer));
   }
 
   for (unsigned int i = 0; i < pointCloud->size(); ++i) {
-    auto& point = pointCloud->points[i];
+    auto &point = pointCloud->points[i];
     grid_map::Index index;
     grid_map::Position position(
-        point.x, point.y);  // NOLINT(cppcoreguidelines-pro-type-union-access)
+        point.x, point.y); // NOLINT(cppcoreguidelines-pro-type-union-access)
     // RCLCPP_INFO(nodeHandle_->get_logger(), "Position in grid map: %f, %f",
     // position.x(), position.y());
     if (!rawMap_.getIndex(position, index)) {
-      continue;  // Skip this point if it does not lie within the elevation map.
+      continue; // Skip this point if it does not lie within the elevation map.
     }
 
-    auto& elevation = elevationLayer(index(0), index(1));
-    auto& variance = varianceLayer(index(0), index(1));
-    auto& horizontalVarianceX = horizontalVarianceXLayer(index(0), index(1));
-    auto& horizontalVarianceY = horizontalVarianceYLayer(index(0), index(1));
-    auto& horizontalVarianceXY = horizontalVarianceXYLayer(index(0), index(1));
-    auto& color = colorLayer(index(0), index(1));
-    auto& time = timeLayer(index(0), index(1));
-    auto& dynamicTime = dynamicTimeLayer(index(0), index(1));
-    auto& lowestScanPoint = lowestScanPointLayer(index(0), index(1));
-    auto& sensorXatLowestScan = sensorXatLowestScanLayer(index(0), index(1));
-    auto& sensorYatLowestScan = sensorYatLowestScanLayer(index(0), index(1));
-    auto& sensorZatLowestScan = sensorZatLowestScanLayer(index(0), index(1));
+    auto &elevation = elevationLayer(index(0), index(1));
+    auto &variance = varianceLayer(index(0), index(1));
+    auto &horizontalVarianceX = horizontalVarianceXLayer(index(0), index(1));
+    auto &horizontalVarianceY = horizontalVarianceYLayer(index(0), index(1));
+    auto &horizontalVarianceXY = horizontalVarianceXYLayer(index(0), index(1));
+    auto &color = colorLayer(index(0), index(1));
+    auto &time = timeLayer(index(0), index(1));
+    auto &dynamicTime = dynamicTimeLayer(index(0), index(1));
+    auto &lowestScanPoint = lowestScanPointLayer(index(0), index(1));
+    auto &sensorXatLowestScan = sensorXatLowestScanLayer(index(0), index(1));
+    auto &sensorYatLowestScan = sensorYatLowestScanLayer(index(0), index(1));
+    auto &sensorZatLowestScan = sensorZatLowestScanLayer(index(0), index(1));
 
-    const float& pointVariance = 1e-11 * pointCloudVariances(i);
+    const float &pointVariance = 1e-11 * pointCloudVariances(i);
     bool isValid =
         std::all_of(basicLayers_.begin(), basicLayers_.end(),
                     [&](Eigen::Ref<const grid_map::Matrix> layer) {
@@ -166,7 +160,7 @@ bool ElevationMap::add(const PointCloudType::Ptr pointCloud,
       // No prior information in elevation map, use measurement.
       // RCLCPP_INFO(nodeHandle_->get_logger(), "No prior information in
       // elevation map, using measurement.");
-      elevation = point.z;  // NOLINT(cppcoreguidelines-pro-type-union-access)
+      elevation = point.z; // NOLINT(cppcoreguidelines-pro-type-union-access)
       // RCLCPP_INFO(nodeHandle_->get_logger(), "Elevation is %f", elevation);
       variance = pointVariance;
       horizontalVarianceX = minHorizontalVariance_;
@@ -181,7 +175,7 @@ bool ElevationMap::add(const PointCloudType::Ptr pointCloud,
     // in one cell.
     const double mahalanobisDistance =
         fabs(point.z - elevation) /
-        sqrt(variance);  // NOLINT(cppcoreguidelines-pro-type-union-access)
+        sqrt(variance); // NOLINT(cppcoreguidelines-pro-type-union-access)
     // RCLCPP_INFO(nodeHandle_->get_logger(), "Mahalanobis Distance: %f",
     // mahalanobisDistance);
     if (mahalanobisDistance > mahalanobisDistanceThreshold_) {
@@ -189,7 +183,7 @@ bool ElevationMap::add(const PointCloudType::Ptr pointCloud,
       // threshold.");
       if (scanTimeSinceInitialization - time <= scanningDuration_ &&
           elevation >
-              point.z) {  // NOLINT(cppcoreguidelines-pro-type-union-access)
+              point.z) { // NOLINT(cppcoreguidelines-pro-type-union-access)
         // RCLCPP_INFO(nodeHandle_->get_logger(), "Ignoring point, lower than
         // existing elevation and within scanning duration.");
         // Ignore point if measurement is from the same point cloud (time
@@ -198,7 +192,7 @@ bool ElevationMap::add(const PointCloudType::Ptr pointCloud,
       } else if (scanTimeSinceInitialization - time <= scanningDuration_) {
         // RCLCPP_INFO(nodeHandle_->get_logger(), "Point is higher, updating
         // elevation and variance."); If point is higher.
-        elevation = point.z;  // NOLINT(cppcoreguidelines-pro-type-union-access)
+        elevation = point.z; // NOLINT(cppcoreguidelines-pro-type-union-access)
         variance = pointVariance;
 
       } else {
@@ -214,8 +208,8 @@ bool ElevationMap::add(const PointCloudType::Ptr pointCloud,
         point.z +
         3.0 *
             sqrt(
-                pointVariance);  // 3 sigma. //
-                                 // NOLINT(cppcoreguidelines-pro-type-union-access)
+                pointVariance); // 3 sigma. //
+                                // NOLINT(cppcoreguidelines-pro-type-union-access)
     if (std::isnan(lowestScanPoint) ||
         pointHeightPlusUncertainty < lowestScanPoint) {
       // RCLCPP_INFO(nodeHandle_->get_logger(), "Updating lowest scan point.");
@@ -232,7 +226,7 @@ bool ElevationMap::add(const PointCloudType::Ptr pointCloud,
     elevation =
         (variance * point.z + pointVariance * elevation) /
         (variance +
-         pointVariance);  // NOLINT(cppcoreguidelines-pro-type-union-access)
+         pointVariance); // NOLINT(cppcoreguidelines-pro-type-union-access)
     variance = (pointVariance * variance) / (pointVariance + variance);
     // TODO(max): Add color fusion.
     grid_map::colorVectorToValue(point.getRGBVector3i(), color);
@@ -255,7 +249,7 @@ bool ElevationMap::add(const PointCloudType::Ptr pointCloud,
 
   clean();
   rawMap_.setTimestamp(
-      timestamp.nanoseconds());  // Point cloud stores time in microseconds.
+      timestamp.nanoseconds()); // Point cloud stores time in microseconds.
 
   const std::chrono::duration<double> duration =
       std::chrono::system_clock::now() - methodStartTime;
@@ -264,14 +258,14 @@ bool ElevationMap::add(const PointCloudType::Ptr pointCloud,
   return true;
 }
 
-bool ElevationMap::update(const grid_map::Matrix& varianceUpdate,
-                          const grid_map::Matrix& horizontalVarianceUpdateX,
-                          const grid_map::Matrix& horizontalVarianceUpdateY,
-                          const grid_map::Matrix& horizontalVarianceUpdateXY,
-                          const rclcpp::Time& time) {
+bool ElevationMap::update(const grid_map::Matrix &varianceUpdate,
+                          const grid_map::Matrix &horizontalVarianceUpdateX,
+                          const grid_map::Matrix &horizontalVarianceUpdateY,
+                          const grid_map::Matrix &horizontalVarianceUpdateXY,
+                          const rclcpp::Time &time) {
   boost::recursive_mutex::scoped_lock scopedLock(rawMapMutex_);
 
-  const auto& size = rawMap_.getSize();
+  const auto &size = rawMap_.getSize();
 
   if (!((grid_map::Index(varianceUpdate.rows(), varianceUpdate.cols()) == size)
             .all() &&
@@ -299,8 +293,8 @@ bool ElevationMap::update(const grid_map::Matrix& varianceUpdate,
   return true;
 }
 
-bool ElevationMap::fuse(const grid_map::Index& topLeftIndex,
-                        const grid_map::Index& size) {
+bool ElevationMap::fuse(const grid_map::Index &topLeftIndex,
+                        const grid_map::Index &size) {
   RCLCPP_DEBUG(nodeHandle_->get_logger(), "Fusing elevation map...");
 
   // Nothing to do.
@@ -350,11 +344,11 @@ bool ElevationMap::fuse(const grid_map::Index& topLeftIndex,
     }
 
     // Get size of error ellipse.
-    const float& sigmaXsquare =
+    const float &sigmaXsquare =
         rawMapCopy.at("horizontal_variance_x", *areaIterator);
-    const float& sigmaYsquare =
+    const float &sigmaYsquare =
         rawMapCopy.at("horizontal_variance_y", *areaIterator);
-    const float& sigmaXYsquare =
+    const float &sigmaXYsquare =
         rawMapCopy.at("horizontal_variance_xy", *areaIterator);
 
     Eigen::Matrix2d covarianceMatrix;
@@ -362,7 +356,7 @@ bool ElevationMap::fuse(const grid_map::Index& topLeftIndex,
         sigmaYsquare;
     // 95.45% confidence ellipse which is 2.486-sigma for 2 dof problem.
     // http://www.reid.ai/2012/09/chi-squared-distribution-table-with.html
-    const double uncertaintyFactor = 2.486;  // sqrt(6.18)
+    const double uncertaintyFactor = 2.486; // sqrt(6.18)
     Eigen::EigenSolver<Eigen::Matrix2d> solver(covarianceMatrix);
     Eigen::Array2d eigenvalues(solver.eigenvalues().real().cwiseAbs());
 
@@ -481,9 +475,9 @@ bool ElevationMap::fuse(const grid_map::Index& topLeftIndex,
     lowerBoundDistribution.compute();
     upperBoundDistribution.compute();
     fusedMap_.at("lower_bound", *areaIterator) =
-        lowerBoundDistribution.quantile(0.01);  // TODO(max):
+        lowerBoundDistribution.quantile(0.01); // TODO(max):
     fusedMap_.at("upper_bound", *areaIterator) =
-        upperBoundDistribution.quantile(0.99);  // TODO(max):
+        upperBoundDistribution.quantile(0.99); // TODO(max):
     // TODO(max): Add fusion of colors.
     fusedMap_.at("color", *areaIterator) =
         rawMapCopy.at("color", *areaIterator);
@@ -499,7 +493,7 @@ bool ElevationMap::fuse(const grid_map::Index& topLeftIndex,
   return true;
 }
 
-void ElevationMap::visibilityCleanup(const rclcpp::Time& updatedTime) {
+void ElevationMap::visibilityCleanup(const rclcpp::Time &updatedTime) {
   // Get current time to compute calculation time.
   const auto methodStartTime = std::chrono::system_clock::now();
   const double timeSinceInitialization = (updatedTime - initialTime_).seconds();
@@ -522,13 +516,13 @@ void ElevationMap::visibilityCleanup(const rclcpp::Time& updatedTime) {
     if (!visibilityCleanupMap_.isValid(*iterator)) {
       continue;
     }
-    const auto& lowestScanPoint =
+    const auto &lowestScanPoint =
         visibilityCleanupMap_.at("lowest_scan_point", *iterator);
-    const auto& sensorXatLowestScan =
+    const auto &sensorXatLowestScan =
         visibilityCleanupMap_.at("sensor_x_at_lowest_scan", *iterator);
-    const auto& sensorYatLowestScan =
+    const auto &sensorYatLowestScan =
         visibilityCleanupMap_.at("sensor_y_at_lowest_scan", *iterator);
-    const auto& sensorZatLowestScan =
+    const auto &sensorZatLowestScan =
         visibilityCleanupMap_.at("sensor_z_at_lowest_scan", *iterator);
     if (std::isnan(lowestScanPoint)) {
       continue;
@@ -559,7 +553,7 @@ void ElevationMap::visibilityCleanup(const rclcpp::Time& updatedTime) {
         const float maxHeightPoint =
             lowestScanPoint + (sensorZatLowestScan - lowestScanPoint) /
                                   distanceToPoint * distanceToCell;
-        auto& cellMaxHeight = visibilityCleanupMap_.at("max_height", *iterator);
+        auto &cellMaxHeight = visibilityCleanupMap_.at("max_height", *iterator);
         if (std::isnan(cellMaxHeight) || cellMaxHeight > maxHeightPoint) {
           cellMaxHeight = maxHeightPoint;
         }
@@ -574,13 +568,13 @@ void ElevationMap::visibilityCleanup(const rclcpp::Time& updatedTime) {
     if (!visibilityCleanupMap_.isValid(*iterator)) {
       continue;
     }
-    const auto& time = visibilityCleanupMap_.at("time", *iterator);
+    const auto &time = visibilityCleanupMap_.at("time", *iterator);
     if (timeSinceInitialization - time > scanningDuration_) {
       // Only remove cells that have not been updated during the last scan
       // duration. This prevents a.o. removal of overhanging objects.
-      const auto& elevation = visibilityCleanupMap_.at("elevation", *iterator);
-      const auto& variance = visibilityCleanupMap_.at("variance", *iterator);
-      const auto& maxHeight = visibilityCleanupMap_.at("max_height", *iterator);
+      const auto &elevation = visibilityCleanupMap_.at("elevation", *iterator);
+      const auto &variance = visibilityCleanupMap_.at("variance", *iterator);
+      const auto &maxHeight = visibilityCleanupMap_.at("max_height", *iterator);
       if (!std::isnan(maxHeight) &&
           elevation - 3.0 * sqrt(variance) > maxHeight) {
         grid_map::Position position;
@@ -592,7 +586,7 @@ void ElevationMap::visibilityCleanup(const rclcpp::Time& updatedTime) {
 
   // Remove points in current raw map.
   scopedLockForRawData.lock();
-  for (const auto& cellPosition : cellPositionsToRemove) {
+  for (const auto &cellPosition : cellPositionsToRemove) {
     grid_map::Index index;
     if (!rawMap_.getIndex(cellPosition, index)) {
       continue;
@@ -619,7 +613,7 @@ void ElevationMap::visibilityCleanup(const rclcpp::Time& updatedTime) {
   }
 }
 
-void ElevationMap::move(const Eigen::Vector2d& position) {
+void ElevationMap::move(const Eigen::Vector2d &position) {
   boost::recursive_mutex::scoped_lock scopedLockForRawData(rawMapMutex_);
   std::vector<grid_map::BufferRegion> newRegions;
 
@@ -630,7 +624,7 @@ void ElevationMap::move(const Eigen::Vector2d& position) {
 
     // The "dynamic_time" layer is meant to be interpreted as integer values,
     // therefore nan:s need to be zeroed.
-    grid_map::Matrix& dynTime{rawMap_.get("dynamic_time")};
+    grid_map::Matrix &dynTime{rawMap_.get("dynamic_time")};
     dynTime = dynTime.array().isNaN().select(grid_map::Matrix::Scalar(0.0f),
                                              dynTime.array());
 
@@ -640,7 +634,7 @@ void ElevationMap::move(const Eigen::Vector2d& position) {
   }
 }
 
-void ElevationMap::setRawSubmapHeight(const grid_map::Position& initPosition,
+void ElevationMap::setRawSubmapHeight(const grid_map::Position &initPosition,
                                       float mapHeight, double lengthInXSubmap,
                                       double lengthInYSubmap, double margin) {
   // Set a submap area (lengthInYSubmap + margin, lengthInXSubmap + margin) with
@@ -663,8 +657,8 @@ void ElevationMap::setRawSubmapHeight(const grid_map::Position& initPosition,
   const Eigen::Array2i submapBufferSize(lengthInYSubmapI, lengthInXSubmapI);
 
   // Iterate through submap and fill height values.
-  grid_map::Matrix& elevationData = rawMap_["elevation"];
-  grid_map::Matrix& varianceData = rawMap_["variance"];
+  grid_map::Matrix &elevationData = rawMap_["elevation"];
+  grid_map::Matrix &varianceData = rawMap_["variance"];
   for (grid_map::SubmapIterator iterator(rawMap_, submapTopLeftIndex,
                                          submapBufferSize);
        !iterator.isPastEnd(); ++iterator) {
@@ -774,9 +768,9 @@ bool ElevationMap::clear() {
   return true;
 }
 
-void ElevationMap::setGeometry(const grid_map::Length& length,
-                               const double& resolution,
-                               const grid_map::Position& position) {
+void ElevationMap::setGeometry(const grid_map::Length &length,
+                               const double &resolution,
+                               const grid_map::Position &position) {
   boost::recursive_mutex::scoped_lock scopedLockForRawData(rawMapMutex_);
   boost::recursive_mutex::scoped_lock scopedLockForFusedData(fusedMapMutex_);
   rawMap_.setGeometry(length, resolution, position);
@@ -797,7 +791,7 @@ bool ElevationMap::hasFusedMapSubscribers() const {
 }
 
 // sets frame id for both maps.
-void ElevationMap::setFrameId(const std::string& frameId) {
+void ElevationMap::setFrameId(const std::string &frameId) {
   rawMap_.setFrameId(frameId);
   fusedMap_.setFrameId(frameId);
 }
@@ -809,7 +803,7 @@ void ElevationMap::setTimestamp(rclcpp::Time timestamp) {
 }
 
 // gets frame id from map raw.
-const std::string& ElevationMap::getFrameId() { return rawMap_.getFrameId(); }
+const std::string &ElevationMap::getFrameId() { return rawMap_.getFrameId(); }
 
 bool ElevationMap::hasRawMapSubscribers() const {
   return postprocessorPool_.pipelineHasSubscribers();
@@ -844,8 +838,8 @@ bool ElevationMap::fuseAll() {
   return fuse(grid_map::Index(0, 0), fusedMap_.getSize());
 }
 
-bool ElevationMap::fuseArea(const Eigen::Vector2d& position,
-                            const Eigen::Array2d& length) {
+bool ElevationMap::fuseArea(const Eigen::Vector2d &position,
+                            const Eigen::Array2d &length) {
   RCLCPP_DEBUG(nodeHandle_->get_logger(),
                "Requested to fuse an area of the elevation map with center at "
                "(%f, %f) and side lengths (%f, %f)",
@@ -870,16 +864,16 @@ bool ElevationMap::fuseArea(const Eigen::Vector2d& position,
   return fuse(topLeftIndex, submapBufferSize);
 }
 
-grid_map::GridMap& ElevationMap::getRawGridMap() { return rawMap_; }
+grid_map::GridMap &ElevationMap::getRawGridMap() { return rawMap_; }
 
-void ElevationMap::setRawGridMap(const grid_map::GridMap& map) {
+void ElevationMap::setRawGridMap(const grid_map::GridMap &map) {
   boost::recursive_mutex::scoped_lock scopedLockForRawData(rawMapMutex_);
   rawMap_ = map;
 }
 
-grid_map::GridMap& ElevationMap::getFusedGridMap() { return fusedMap_; }
+grid_map::GridMap &ElevationMap::getFusedGridMap() { return fusedMap_; }
 
-void ElevationMap::setFusedGridMap(const grid_map::GridMap& map) {
+void ElevationMap::setFusedGridMap(const grid_map::GridMap &map) {
   boost::recursive_mutex::scoped_lock scopedLockForFusedData(fusedMapMutex_);
   fusedMap_ = map;
 }
@@ -893,10 +887,10 @@ rclcpp::Time ElevationMap::getTimeOfLastFusion() {
   return rclcpp::Time(fusedMap_.getTimestamp(), RCL_ROS_TIME);
 }
 
-const kindr::HomTransformQuatD& ElevationMap::getPose() { return pose_; }
+const kindr::HomTransformQuatD &ElevationMap::getPose() { return pose_; }
 
 bool ElevationMap::getPosition3dInRobotParentFrame(
-    const Eigen::Array2i& index, kindr::Position3D& position) {
+    const Eigen::Array2i &index, kindr::Position3D &position) {
   kindr::Position3D positionInGridFrame;
   if (!rawMap_.getPosition3("elevation", index, positionInGridFrame.vector())) {
     return false;
@@ -905,10 +899,10 @@ bool ElevationMap::getPosition3dInRobotParentFrame(
   return true;
 }
 
-boost::recursive_mutex& ElevationMap::getFusedDataMutex() {
+boost::recursive_mutex &ElevationMap::getFusedDataMutex() {
   return fusedMapMutex_;
 }
 
-boost::recursive_mutex& ElevationMap::getRawDataMutex() { return rawMapMutex_; }
+boost::recursive_mutex &ElevationMap::getRawDataMutex() { return rawMapMutex_; }
 
-}  // namespace elevation_mapping
+} // namespace elevation_mapping

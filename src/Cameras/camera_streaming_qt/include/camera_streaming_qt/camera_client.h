@@ -29,12 +29,12 @@
  * used to display the video feeds.
  */
 class CameraClient : public rclcpp::Node {
- public:
+public:
   typedef struct GstData {
-    GstElement* pipeline;
-    GstElement* source;
-    GstElement* convert;
-    GstElement* sink;
+    GstElement *pipeline;
+    GstElement *source;
+    GstElement *convert;
+    GstElement *sink;
     WId winId;
   } GstData;
 
@@ -52,7 +52,7 @@ class CameraClient : public rclcpp::Node {
   void start_video(int num_sources,
                    std::vector<interfaces::msg::VideoSource> sources);
 
- private:
+private:
   /**
    * @brief Creates gstreamer pipeline and widget to hold the gstreamer sink
    * data.
@@ -62,8 +62,8 @@ class CameraClient : public rclcpp::Node {
   /**
    * @brief Links the gstreamer sink to the widget.
    */
-  GstBusSyncReply bus_sync_handler(GstBus* bus, GstMessage* message,
-                                   GstData* data);
+  GstBusSyncReply bus_sync_handler(GstBus *bus, GstMessage *message,
+                                   GstData *data);
 
   /**
    * @brief Waits for the result from the service. If no result after

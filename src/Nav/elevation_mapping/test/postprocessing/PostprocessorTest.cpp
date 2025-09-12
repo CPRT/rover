@@ -24,7 +24,7 @@ class RosFixture : public ::testing::Test {
 
   void TearDown() override { ros::shutdown(); }
 
- public:
+public:
   static void checkAcceptedTasks(uint poolSize,
                                  uint timeBetweenConsecutiveTasks,
                                  std::vector<bool> expectedAcceptanceOutcomes) {
@@ -51,26 +51,26 @@ class RosFixture : public ::testing::Test {
   }
 };
 
-TEST_F(RosFixture, FiveTasksOneThreadSimultaneously) {  // NOLINT
+TEST_F(RosFixture, FiveTasksOneThreadSimultaneously) { // NOLINT
   checkAcceptedTasks(1, 0, {true, false, false, false, false});
 }
 
-TEST_F(RosFixture, FiveTasksTwoThreadSimultaneously) {  // NOLINT
+TEST_F(RosFixture, FiveTasksTwoThreadSimultaneously) { // NOLINT
   checkAcceptedTasks(2, 0, {true, true, false, false, false});
 }
 
-TEST_F(RosFixture, EnoughTimeToProcess) {  // NOLINT
+TEST_F(RosFixture, EnoughTimeToProcess) { // NOLINT
   checkAcceptedTasks(1, 200, {true, true, true, true, true});
 }
 
-TEST_F(RosFixture, EnoughTimeToProcessWithTwoThreads) {  // NOLINT
+TEST_F(RosFixture, EnoughTimeToProcessWithTwoThreads) { // NOLINT
   checkAcceptedTasks(2, 100, {true, true, true, true, true});
 }
 
-TEST_F(RosFixture, ProcessEverySecond) {  // NOLINT
+TEST_F(RosFixture, ProcessEverySecond) { // NOLINT
   checkAcceptedTasks(1, 100, {true, false, true, false, true});
 }
 
-TEST_F(RosFixture, TwoThreadsWithMiss) {  // NOLINT
+TEST_F(RosFixture, TwoThreadsWithMiss) { // NOLINT
   checkAcceptedTasks(2, 60, {true, true, false, true, true, false});
 }

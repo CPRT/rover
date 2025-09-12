@@ -12,7 +12,7 @@
 #include <gtest/gtest.h>
 
 // Run all the tests that were declared with TEST()
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
   int initValue = static_cast<int>(time(nullptr));
   std::cout << "Init value for random number generator: " << initValue

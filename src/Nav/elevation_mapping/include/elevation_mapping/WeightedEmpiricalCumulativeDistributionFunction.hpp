@@ -14,9 +14,8 @@
 
 namespace elevation_mapping {
 
-template <typename Type>
-class WeightedEmpiricalCumulativeDistributionFunction {
- public:
+template <typename Type> class WeightedEmpiricalCumulativeDistributionFunction {
+public:
   WeightedEmpiricalCumulativeDistributionFunction()
       : totalWeight_(0.0), isComputed_(false) {}
 
@@ -65,10 +64,10 @@ class WeightedEmpiricalCumulativeDistributionFunction {
     //    }
 
     double cumulativeWeight =
-        -data_.begin()->second;  // Smallest observation corresponds to a
-                                 // probability of 0.
+        -data_.begin()->second; // Smallest observation corresponds to a
+                                // probability of 0.
     const double adaptedTotalWeight = totalWeight_ - data_.begin()->second;
-    for (const auto& point : data_) {
+    for (const auto &point : data_) {
       cumulativeWeight += point.second;
       inverseDistribution_.insert(
           inverseDistribution_.end(),
@@ -102,21 +101,21 @@ class WeightedEmpiricalCumulativeDistributionFunction {
     if (probability >= 1.0) {
       return inverseDistribution_.rbegin()->second;
     }
-    const auto& up = inverseDistribution_.lower_bound(
-        probability);  // First element that is not less than key.
-    auto low = up;     // Copy.
+    const auto &up = inverseDistribution_.lower_bound(
+        probability); // First element that is not less than key.
+    auto low = up;    // Copy.
     --low;
     return low->second + (probability - low->first) *
                              (up->second - low->second) /
                              (up->first - low->first);
   }
 
-  friend std::ostream& operator<<(
-      std::ostream& out,
-      const WeightedEmpiricalCumulativeDistributionFunction& wecdf) {
+  friend std::ostream &
+  operator<<(std::ostream &out,
+             const WeightedEmpiricalCumulativeDistributionFunction &wecdf) {
     unsigned int i = 0;
     out << "Data points:" << std::endl;
-    for (const auto& point : wecdf.data_) {
+    for (const auto &point : wecdf.data_) {
       out << "[" << i << "] Value: " << point.first
           << " Weight: " << point.second << std::endl;
       ++i;
@@ -124,7 +123,7 @@ class WeightedEmpiricalCumulativeDistributionFunction {
 
     i = 0;
     out << "Cumulative distribution function:" << std::endl;
-    for (const auto& point : wecdf.distribution_) {
+    for (const auto &point : wecdf.distribution_) {
       out << "[" << i << "] Value: " << point.first
           << " Prob.: " << point.second << std::endl;
       ++i;
@@ -132,7 +131,7 @@ class WeightedEmpiricalCumulativeDistributionFunction {
 
     i = 0;
     out << "Inverse distribution function:" << std::endl;
-    for (const auto& point : wecdf.inverseDistribution_) {
+    for (const auto &point : wecdf.inverseDistribution_) {
       out << "[" << i << "] Prob.: " << point.first
           << " Value: " << point.second << std::endl;
       ++i;
@@ -141,7 +140,7 @@ class WeightedEmpiricalCumulativeDistributionFunction {
     return out;
   }
 
- private:
+private:
   //! Data points stored as value/weight pair (histogram).
   std::map<Type, double> data_;
 

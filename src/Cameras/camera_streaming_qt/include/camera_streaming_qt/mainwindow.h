@@ -25,17 +25,17 @@
 class MainWindow : public QMainWindow {
   Q_OBJECT
 
- public:
-  MainWindow(CameraClient* camera_client = nullptr, QWidget* parent = nullptr);
+public:
+  MainWindow(CameraClient *camera_client = nullptr, QWidget *parent = nullptr);
   ~MainWindow();
 
- signals:
+signals:
   /**
    * @brief Gets the source names of all the cameras from CameraClient
    */
   void request_source_names();
 
- private slots:
+private slots:
   /**
    * @brief Gets source names from the CameraClient
    */
@@ -46,8 +46,8 @@ class MainWindow : public QMainWindow {
    */
   void receive_preset(std::vector<interfaces::msg::VideoSource> preset);
 
- private:
-  CameraClient* camera_client_;
-  MainWidget* main_widget_;
+private:
+  CameraClient *camera_client_;
+  MainWidget *main_widget_;
 };
-#endif  // MAINWINDOW_H
+#endif // MAINWINDOW_H

@@ -35,7 +35,7 @@ namespace elevation_mapping {
  * etc.
  */
 class ElevationMap {
- public:
+public:
   /*!
    * Constructor.
    */
@@ -55,8 +55,8 @@ class ElevationMap {
    * frame [m].
    * @return true if successful.
    */
-  void setGeometry(const grid_map::Length& length, const double& resolution,
-                   const grid_map::Position& position);
+  void setGeometry(const grid_map::Length &length, const double &resolution,
+                   const grid_map::Position &position);
 
   /*!
    * Add new measurements to the elevation map.
@@ -68,8 +68,8 @@ class ElevationMap {
    * @return true if successful.
    */
   bool add(const PointCloudType::Ptr pointCloud,
-           Eigen::VectorXf& pointCloudVariances, const rclcpp::Time& timeStamp,
-           const Eigen::Affine3d& transformationSensorToMap);
+           Eigen::VectorXf &pointCloudVariances, const rclcpp::Time &timeStamp,
+           const Eigen::Affine3d &transformationSensorToMap);
 
   /*!
    * Update the elevation map with variance update data.
@@ -83,11 +83,11 @@ class ElevationMap {
    * @param time the time of the update.
    * @return true if successful.
    */
-  bool update(const grid_map::Matrix& varianceUpdate,
-              const grid_map::Matrix& horizontalVarianceUpdateX,
-              const grid_map::Matrix& horizontalVarianceUpdateY,
-              const grid_map::Matrix& horizontalVarianceUpdateXY,
-              const rclcpp::Time& time);
+  bool update(const grid_map::Matrix &varianceUpdate,
+              const grid_map::Matrix &horizontalVarianceUpdateX,
+              const grid_map::Matrix &horizontalVarianceUpdateY,
+              const grid_map::Matrix &horizontalVarianceUpdateXY,
+              const rclcpp::Time &time);
 
   /*!
    * Triggers the fusion of the entire elevation map.
@@ -101,7 +101,7 @@ class ElevationMap {
    * @param length the sides lengths of the area to fuse.
    * @return true if successful.
    */
-  bool fuseArea(const Eigen::Vector2d& position, const Eigen::Array2d& length);
+  bool fuseArea(const Eigen::Vector2d &position, const Eigen::Array2d &length);
 
   /*!
    * Clears all data of the elevation map (data and time).
@@ -114,13 +114,13 @@ class ElevationMap {
    * @param transformationSensorToMap
    * @param updatedTime
    */
-  void visibilityCleanup(const rclcpp::Time& updatedTime);
+  void visibilityCleanup(const rclcpp::Time &updatedTime);
 
   /*!
    * Move the grid map w.r.t. to the grid map frame.
    * @param position the new location of the elevation map in the map frame.
    */
-  void move(const Eigen::Vector2d& position);
+  void move(const Eigen::Vector2d &position);
 
   /*!
    * Publishes the (latest) raw elevation map. Optionally, if a postprocessing
@@ -146,25 +146,25 @@ class ElevationMap {
    * Gets a reference to the raw grid map.
    * @return the raw grid map.
    */
-  grid_map::GridMap& getRawGridMap();
+  grid_map::GridMap &getRawGridMap();
 
   /*!
    * Sets a raw grid map.
    * @param map The input raw grid map to set.
    */
-  void setRawGridMap(const grid_map::GridMap& map);
+  void setRawGridMap(const grid_map::GridMap &map);
 
   /*!
    * Gets a reference to the fused grid map.
    * @return the fused grid map.
    */
-  grid_map::GridMap& getFusedGridMap();
+  grid_map::GridMap &getFusedGridMap();
 
   /*!
    * Sets a fused grid map.
    * @param map The input fused grid map to set.
    */
-  void setFusedGridMap(const grid_map::GridMap& map);
+  void setFusedGridMap(const grid_map::GridMap &map);
 
   /*!
    * Gets the time of last map update.
@@ -184,7 +184,7 @@ class ElevationMap {
    * @return pose of the elevation map frame w.r.t. the parent frame of the
    * robot.
    */
-  const kindr::HomTransformQuatD& getPose();
+  const kindr::HomTransformQuatD &getPose();
 
   /*!
    * Gets the position of a raw data point (x, y of cell position & height of
@@ -194,32 +194,32 @@ class ElevationMap {
    * robot.
    * @return true if successful, false if no valid data available.
    */
-  bool getPosition3dInRobotParentFrame(const Eigen::Array2i& index,
-                                       kindr::Position3D& position);
+  bool getPosition3dInRobotParentFrame(const Eigen::Array2i &index,
+                                       kindr::Position3D &position);
 
   /*!
    * Gets the fused data mutex.
    * @return reference to the fused data mutex.
    */
-  boost::recursive_mutex& getFusedDataMutex();
+  boost::recursive_mutex &getFusedDataMutex();
 
   /*!
    * Gets the raw data mutex.
    * @return reference to the raw data mutex.
    */
-  boost::recursive_mutex& getRawDataMutex();
+  boost::recursive_mutex &getRawDataMutex();
 
   /*!
    * Set the frame id.
    * @param frameId the frame id.
    */
-  void setFrameId(const std::string& frameId);
+  void setFrameId(const std::string &frameId);
 
   /*!
    * Get the frame id.
    * @return the frameId.
    */
-  const std::string& getFrameId();
+  const std::string &getFrameId();
 
   /*!
    * Set the timestamp of the raw and fused elevation map.
@@ -256,20 +256,20 @@ class ElevationMap {
    * @param lengthInYSubmap Length of the submap in Y direction.
    * @param margin Extra margin that gets added to the submap boundaries.
    */
-  void setRawSubmapHeight(const grid_map::Position& initPosition,
+  void setRawSubmapHeight(const grid_map::Position &initPosition,
                           float mapHeight, double lengthInXSubmap,
                           double lengthInYSubmap, double margin);
 
   friend class ElevationMapping;
 
- private:
+private:
   /*!
    * Fuses a region of the map.
    * @param topLeftIndex the top left index of the region.
    * @param size the size (in number of cells) of the region.
    * @return true if successful.
    */
-  bool fuse(const grid_map::Index& topLeftIndex, const grid_map::Index& size);
+  bool fuse(const grid_map::Index &topLeftIndex, const grid_map::Index &size);
 
   /*!
    * Cleans the elevation map data to stay within the specified bounds.
@@ -355,4 +355,4 @@ class ElevationMap {
   double scanningDuration_;
 };
 
-}  // namespace elevation_mapping
+} // namespace elevation_mapping

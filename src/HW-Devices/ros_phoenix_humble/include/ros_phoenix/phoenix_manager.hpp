@@ -14,24 +14,24 @@ using namespace rclcpp;
 namespace ros_phoenix {
 
 class PhoenixManager : public rclcpp_components::ComponentManager {
- public:
-  static std::shared_ptr<PhoenixManager> getInstance(
-      std::weak_ptr<rclcpp::Executor> exec);
+public:
+  static std::shared_ptr<PhoenixManager>
+  getInstance(std::weak_ptr<rclcpp::Executor> exec);
 
   static bool instanceCreated();
 
   static const std::string PARAMETER_PERIOD_MS;
   static const std::string PARAMETER_WATCHDOG_MS;
 
-  rcl_interfaces::msg::SetParametersResult reconfigure(
-      const std::vector<rclcpp::Parameter> &params);
+  rcl_interfaces::msg::SetParametersResult
+  reconfigure(const std::vector<rclcpp::Parameter> &params);
 
- protected:
+protected:
   PhoenixManager(
       std::weak_ptr<rclcpp::Executor> exec,
       const rclcpp::NodeOptions &node_options = rclcpp::NodeOptions());
 
- private:
+private:
   static std::mutex singleton_mutex_;
   static std::shared_ptr<PhoenixManager> singleton_;
 
@@ -43,6 +43,6 @@ class PhoenixManager : public rclcpp_components::ComponentManager {
   int watchdog_ms_ = -1;
 };
 
-}  // namespace ros_phoenix
+} // namespace ros_phoenix
 
-#endif  // ROS_PHOENIX_PHOENIX_MANAGER
+#endif // ROS_PHOENIX_PHOENIX_MANAGER

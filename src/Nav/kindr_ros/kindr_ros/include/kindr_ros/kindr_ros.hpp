@@ -42,4 +42,4 @@
 #include "kindr_ros/RosGeometryMsgTwist.hpp"
 #include "kindr_ros/RosTfPose.hpp"
 
-#endif  // KINDR_ROS__KINDR_ROS_HPP_
+#endif // KINDR_ROS__KINDR_ROS_HPP_

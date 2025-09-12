@@ -14,7 +14,7 @@
 #include <rclcpp/rclcpp.hpp>
 
 // Run all the tests that were declared with TEST()
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
   rclcpp::init(argc, argv);
   int initValue = static_cast<int>(time(nullptr));

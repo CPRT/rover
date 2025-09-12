@@ -29,7 +29,7 @@ enum class Method {
  */
 template <typename T>
 class PreserveCostInflationFilter : public filters::FilterBase<T> {
- public:
+public:
   /**
    * Constructor
    */
@@ -66,7 +66,7 @@ class PreserveCostInflationFilter : public filters::FilterBase<T> {
   void radialInflateSerial(grid_map::GridMap &mapOut,
                            const Eigen::Vector2d &position, const float value);
 
- private:
+private:
   // Input layer name to inflate.
   std::string inputLayer_;
 
@@ -85,8 +85,8 @@ class PreserveCostInflationFilter : public filters::FilterBase<T> {
   // Decay rate
   double decayRate_;
 
-};  // class PreserveCostInflationFilter
+}; // class PreserveCostInflationFilter
 
-}  // namespace grid_map
+} // namespace grid_map
 
-#endif  // CPRTGRIDMAPFILTERS_PRESERVECOSTINFLATIONFILTER_HPP_
+#endif // CPRTGRIDMAPFILTERS_PRESERVECOSTINFLATIONFILTER_HPP_

@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 
 namespace elevation_mapping {
 
-ElevationMapNode::ElevationMapNode(const rclcpp::NodeOptions& opt)
+ElevationMapNode::ElevationMapNode(const rclcpp::NodeOptions &opt)
     : Node("elevation_mapping", opt) {
   declare_parameter("num_callback_threads", 5);
   declare_parameter("postprocessor_num_threads", 1);
@@ -23,9 +23,9 @@ ElevationMapNode::ElevationMapNode(const rclcpp::NodeOptions& opt)
     elevationMapping_ = std::make_unique<ElevationMapping>(shared_from_this());
   });
 }
-}  // namespace elevation_mapping
+} // namespace elevation_mapping
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<elevation_mapping::ElevationMapNode>();
   rclcpp::executors::MultiThreadedExecutor executor(

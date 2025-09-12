@@ -17,10 +17,10 @@ namespace elevation_mapping {
 
 Input::Input(std::shared_ptr<rclcpp::Node> nh) : nodeHandle_(nh) {}
 
-bool Input::configure(std::string& inputSourceName,
-                      const std::string& sourceConfigurationName,
-                      const SensorProcessorBase::GeneralParameters&
-                          generalSensorProcessorParameters) {
+bool Input::configure(std::string &inputSourceName,
+                      const std::string &sourceConfigurationName,
+                      const SensorProcessorBase::GeneralParameters
+                          &generalSensorProcessorParameters) {
   // TODO: make nicer add checkes
   // TODO: sourceConfigurationName not used
 
@@ -107,9 +107,9 @@ std::string Input::getSubscribedTopic() const {
 }
 
 bool Input::configureSensorProcessor(
-    std::string& inputSourceName, const std::string& sensorType,
-    const SensorProcessorBase::GeneralParameters&
-        generalSensorProcessorParameters) {
+    std::string &inputSourceName, const std::string &sensorType,
+    const SensorProcessorBase::GeneralParameters
+        &generalSensorProcessorParameters) {
   if (sensorType == "structured_light") {
     sensorProcessor_.reset(new StructuredLightSensorProcessor(
         nodeHandle_, generalSensorProcessorParameters));
@@ -131,4 +131,4 @@ bool Input::configureSensorProcessor(
   return sensorProcessor_->readParameters(inputSourceName);
 }
 
-}  // namespace elevation_mapping
+} // namespace elevation_mapping
