@@ -15,18 +15,16 @@ jobs:
       # Python Formatting and Linting
       - name: Install Python dependencies
         run: |
-          pip install black pylint
-      - name: Run Pylint
-        run: |
-          pylint $(find . -name "*.py") --exit-zero
-        env:
-          PYLINT_SCORE_THRESHOLD: 10.0  # You can implement stricter checks here
+          pip install black
       - name: Run Black
-        run: black --check .
+        run: black --check . --exclude "src/third-party/"
 
       # C++ Formatting
       - name: Install Clang-format
         run: sudo apt-get install -y clang-format
       - name: Run Clang-format
         run: |
-          find . -name "*.h" -o -name "*.hpp" -o -name "*.cpp" -print | xargs clang-format --dry-run --Werror
+          find ./src \
+            -path ./src/third-party -prune -o \
+            \( -name "*.h" -o -name "*.hpp" -o -name "*.cpp" \) -print \
+          | xargs clang-format --dry-run --Werror
