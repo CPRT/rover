@@ -62,7 +62,7 @@ class ZEDArucoDetector(Node):
         )
 
     def camera_info_callback(self, msg: CameraInfo):
-        # Gets camera intrinsic parameters
+        # Sets camera intrinsic parameters
         self.fx = msg.k[0]  # Focal length in x-direction
         self.fy = msg.k[4]  # Focal length in y-direction
         self.cx = msg.k[2]  # Principal point x-coordinate
