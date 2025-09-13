@@ -68,8 +68,10 @@ fi
 if [ "$MODE" == "--push" ]; then
   echo "Push detected: building multi-arch gstreamer image"
   PLATFORMS="linux/amd64,linux/arm64"
+  CACHE="cache-both"
 else
   PLATFORMS=$TARGETARCH
+  CACHE=$TARGETARCH
 fi
 
 # --- Gstreamer image ---
@@ -78,7 +80,7 @@ docker buildx build \
   -t cprtsoftware/rover-gstreamer:latest \
   -t cprtsoftware/rover-gstreamer:$GIT_SHA \
   --platform $PLATFORMS \
-  --cache-from type=registry,ref=cprtsoftware/rover-gstreamer:cache \
-  --cache-to type=registry,ref=cprtsoftware/rover-gstreamer:cache,mode=max \
+  --cache-from type=registry,ref=cprtsoftware/rover-gstreamer:$CACHE \
+  --cache-to type=registry,ref=cprtsoftware/rover-gstreamer:$CACHE,mode=max \
   $MODE \
   .
