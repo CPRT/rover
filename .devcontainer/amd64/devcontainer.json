@@ -9,7 +9,9 @@
     "--volume=/sys:/sys",
     "--volume=/etc/timezone:/etc/timezone",
     "--ipc=host",
-    "--shm-size=2g"
+    "--shm-size=2g",
+    "--group-add=video",
+    "--group-add=render"
   ],
   "mounts": [
     "source=${env:SSH_AUTH_SOCK},target=/ssh-agent,type=bind",
