@@ -9,6 +9,7 @@
     "--volume=/sys:/sys",
     "--volume=/etc/timezone:/etc/timezone",
     "--ipc=host",
+    "--shm-size=2g",
     "--group-add=video",
     "--group-add=render"
   ],
