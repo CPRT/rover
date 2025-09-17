@@ -78,7 +78,8 @@ class PanoramicNode(Node):
         rclpy.spin_until_future_complete(self, future)
 
         result = future.result()
-        if result is None:
+
+        if result is None or not result.success or len(result.image.data) == 0:
             self.get_logger().error("Failed to capture image")
             return None
 
