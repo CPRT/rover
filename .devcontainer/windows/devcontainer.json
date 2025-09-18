@@ -4,7 +4,6 @@
 
   "runArgs": [],
   "mounts": [
-    "type=bind,source=${localEnv:USERPROFILE}\\.ssh,target=/home/vscode/.ssh,readonly"
   ],
   "containerEnv": {
     "SSH_AUTH_SOCK": "/ssh-agent",
