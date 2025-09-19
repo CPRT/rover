@@ -19,7 +19,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <tf2/LinearMath/Transform.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include <boost/bind.hpp>
 #include <boost/thread/recursive_mutex.hpp>
@@ -40,10 +40,9 @@ namespace elevation_mapping {
 
 ElevationMapping::ElevationMapping(std::shared_ptr<rclcpp::Node> nodeHandle)
     : nodeHandle_(nodeHandle), inputSources_(nodeHandle_),
-      robotPoseCacheSize_(200),
-      // transformListener_(transformBuffer_),
-      map_(nodeHandle), robotMotionMapUpdater_(nodeHandle),
-      ignoreRobotMotionUpdates_(false), updatesEnabled_(true),
+      robotPoseCacheSize_(200), map_(nodeHandle),
+      robotMotionMapUpdater_(nodeHandle), ignoreRobotMotionUpdates_(false),
+      updatesEnabled_(true),
       maxNoUpdateDuration_(rclcpp::Duration::from_seconds(0.0)),
       timeTolerance_(rclcpp::Duration::from_seconds(0.0)),
       fusedMapPublishTimerDuration_(rclcpp::Duration::from_seconds(0.0)),
@@ -77,35 +76,18 @@ ElevationMapping::ElevationMapping(std::shared_ptr<rclcpp::Node> nodeHandle)
   RCLCPP_INFO(nodeHandle_->get_logger(), "Successfully launched node.");
 }
 
-void ElevationMapping::setupSubscribers() { // Handle deprecated
-                                            // point_cloud_topic and
-                                            // input_sources configuration.
+void ElevationMapping::setupSubscribers() {
   auto res = nodeHandle_->get_topic_names_and_types();
   for (auto a : res) {
     RCLCPP_INFO(nodeHandle_->get_logger(), "topic: %s", a.first.c_str());
   }
 
-  const bool configuredInputSources =
-      inputSources_.configureFromRos("input_sources");
-  const bool hasDeprecatedPointcloudTopic =
-      nodeHandle_->get_parameter("point_cloud_topic", pointCloudTopic_);
-  if (hasDeprecatedPointcloudTopic) {
-    RCLCPP_WARN(nodeHandle_->get_logger(),
-                "Parameter 'point_cloud_topic' is deprecated, please use "
-                "'input_sources' instead.");
-  }
-  /*if (!configuredInputSources && hasDeprecatedPointcloudTopic) {
-    pointCloudSubscriber_ =
-  nodeHandle_->create_subscription<sensor_msgs::msg::PointCloud2>(
-        pointCloudTopic_, 1, [&](sensor_msgs::msg::PointCloud2::ConstSharedPtr
-  msg) {pointCloudCallback(msg, true, sensorProcessor_);});
-  }*/
+  const bool configuredInputSources = inputSources_.configureFromRos();
+
   if (configuredInputSources) {
     inputSources_.registerCallbacks(
         *this,
         std::make_pair("pointcloud", &ElevationMapping::pointCloudCallback));
-    // inputSources_.registerCallbacks(*this, std::make_pair("pointcloud",
-    // pointCloudCallback));
   } else {
     RCLCPP_ERROR(nodeHandle_->get_logger(), "Input sources not configured!");
   }
@@ -172,29 +154,19 @@ void ElevationMapping::setupServices() {
 }
 
 void ElevationMapping::setupTimers() {
-  // TODO: mapUpdateTimer_ is originally single shot and autostart is set to
-  // false mapUpdateTimer_ = rclcpp::create_timer(nodeHandle_,
-  // nodeHandle_->get_clock(), maxNoUpdateDuration_,
-  // &ElevationMapping::mapUpdateTimerCallback);
-
   if (fusedMapPublishTimerDuration_.seconds() != 0.0) {
     fusedMapPublishTimer_ = rclcpp::create_timer(
         nodeHandle_, nodeHandle_->get_clock(), fusedMapPublishTimerDuration_,
         std::bind(&ElevationMapping::publishFusedMapCallback, this));
   }
 
-  // Multi-threading for visibility cleanup. Visibility clean-up does not help
-  // when continuous clean-up is enabled.
+  // Visibility clean-up does not help when continuous clean-up is enabled.
   if (map_.enableVisibilityCleanup_ &&
       (visibilityCleanupTimerDuration_.seconds() != 0.0) &&
       !map_.enableContinuousCleanup_) {
     visibilityCleanupTimer_ = rclcpp::create_timer(
         nodeHandle_, nodeHandle_->get_clock(), visibilityCleanupTimerDuration_,
         std::bind(&ElevationMapping::visibilityCleanupCallback, this));
-    // visibilityCleanupTimer_->cancel(); //TODO:foxy does not have timer
-    // autostart flag implemented, fix in future version
-    // TODO: timer reset issue: https://github.com/ros2/rclcpp/issues/1012
-    // TODO: run cleanup in a separate thread
   }
 }
 
@@ -206,32 +178,15 @@ ElevationMapping::~ElevationMapping() {
     fusionTriggerService_.reset();
     fusedSubmapService_.reset();
     fusedMapPublishTimer_->cancel();
-
-    // fusionServiceQueue_.disable();
-    // fusionServiceQueue_.clear();
   }
 
-  { // Visibility cleanup queue
-    visibilityCleanupTimer_->cancel();
-
-    // visibilityCleanupQueue_.disable();
-    // visibilityCleanupQueue_.clear();
-  }
+  { visibilityCleanupTimer_->cancel(); }
 
   rclcpp::shutdown();
-
-  // Join threads.
-  /*if (fusionServiceThread_.joinable()) {
-    fusionServiceThread_.join();
-  }*/
-  /*if (visibilityCleanupThread_.joinable()) {
-    visibilityCleanupThread_.join();
-  }*/
 }
 
 bool ElevationMapping::readParameters() {
   // ElevationMapping parameters.
-  nodeHandle_->declare_parameter("point_cloud_topic", "");
   // FIXME: Fix for case when robot pose is not defined
   nodeHandle_->declare_parameter("robot_pose_with_covariance_topic",
                                  std::string("/pose"));
@@ -241,7 +196,6 @@ bool ElevationMapping::readParameters() {
   nodeHandle_->declare_parameter("track_point_z", 0.0);
   nodeHandle_->declare_parameter("robot_pose_cache_size", 200);
 
-  // nodeHandle_->get_parameter("point_cloud_topic", pointCloudTopic_);
   nodeHandle_->get_parameter("robot_pose_with_covariance_topic",
                              robotPoseTopic_);
   nodeHandle_->get_parameter("track_point_frame_id", trackPointFrameId_);
@@ -378,30 +332,6 @@ bool ElevationMapping::readParameters() {
 
   nodeHandle_->declare_parameter("robot_base_frame_id", std::string("/robot"));
 
-  // SensorProcessor parameters. Deprecated, use the sensorProcessor from within
-  // input sources instead!
-  /*std::string sensorType;
-  nodeHandle_->declare_parameter("sensor_processor/type",
-  std::string("structured_light"));
-  nodeHandle_->get_parameter("sensor_processor/type", sensorType);
-
-  SensorProcessorBase::GeneralParameters
-  generalSensorProcessorConfig{nodeHandle_->get_parameter("robot_base_frame_id").as_string(),
-  mapFrameId_}; if (sensorType == "structured_light") {
-    sensorProcessor_.reset(new StructuredLightSensorProcessor(nodeHandle_,
-  generalSensorProcessorConfig)); // ERROR } else if (sensorType == "stereo") {
-    sensorProcessor_.reset(new StereoSensorProcessor(nodeHandle_,
-  generalSensorProcessorConfig)); } else if (sensorType == "laser") {
-    sensorProcessor_.reset(new LaserSensorProcessor(nodeHandle_,
-  generalSensorProcessorConfig)); } else if (sensorType == "perfect") {
-    sensorProcessor_.reset(new PerfectSensorProcessor(nodeHandle_,
-  generalSensorProcessorConfig)); } else {
-    RCLCPP_ERROR(nodeHandle_->get_logger(), "The sensor type %s is not
-  available.", sensorType.c_str());
-  }
-  if (!sensorProcessor_->readParameters()) {
-    return false;
-  }*/
   if (!robotMotionMapUpdater_.readParameters()) {
     return false;
   }
@@ -412,51 +342,20 @@ bool ElevationMapping::readParameters() {
 bool ElevationMapping::initialize() {
   RCLCPP_INFO(nodeHandle_->get_logger(),
               "Elevation mapping node initializing ... ");
-
   fusionServiceGroup_ =
       nodeHandle_->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
 
-  // fusionServiceThread_ =
-  // std::thread(boost::bind(&ElevationMapping::runFusionServiceThread, this));
-  rclcpp::sleep_for(
-      std::chrono::seconds(1)); // Need this to get the TF caches fill up.
-  // resetMapUpdateTimer();
+  // Sleep while TF caches fill up.
+  rclcpp::sleep_for(std::chrono::seconds(1));
   fusedMapPublishTimer_->reset();
-  // visibilityCleanupThread_ =
-  // boost::thread(boost::bind(&ElevationMapping::visibilityCleanupThread,
-  // this)); visibilityCleanupTimer_.reset();  //TODO:foxy does not have timer
-  // autostart flag implemented, fix in future version
   initializeElevationMap();
   return true;
 }
 
-/*void ElevationMapping::runFusionServiceThread() {
-  rclcpp::Rate loopRate(20);
-
-  while (rclcpp::ok()) {
-    fusionServiceQueue_.callAvailable();
-
-    // Sleep until the next execution.
-    loopRate.sleep();
-  }
-}*/
-
-/*void ElevationMapping::visibilityCleanupThread() {
-  rclcpp::Rate loopRate(20);
-
-  while (rclcpp::ok()) {
-    visibilityCleanupQueue_.callAvailable();
-
-    // Sleep until the next execution.
-    loopRate.sleep();
-  }
-}*/
-
 void ElevationMapping::pointCloudCallback(
     sensor_msgs::msg::PointCloud2::ConstSharedPtr pointCloudMsg,
     bool publishPointCloud, const SensorProcessorBase::Ptr &sensorProcessor_) {
-  // RCLCPP_INFO(nodeHandle_->get_logger(), "Processing data from: %s",
-  // pointCloudMsg->header.frame_id.c_str());
+
   if (!updatesEnabled_) {
     auto clock = nodeHandle_->get_clock();
     RCLCPP_WARN_THROTTLE(nodeHandle_->get_logger(), *(clock), 10,
@@ -490,8 +389,6 @@ void ElevationMapping::pointCloudCallback(
     }
   }
 
-  // stopMapUpdateTimer();
-
   // Convert the sensor_msgs/PointCloud2 data to pcl/PointCloud.
   // TODO(max): Double check with http://wiki.ros.org/hydro/Migration
   pcl::PCLPointCloud2 pcl_pc;
@@ -502,8 +399,6 @@ void ElevationMapping::pointCloudCallback(
   lastPointCloudUpdateTime_ =
       rclcpp::Time(1000 * pointCloud->header.stamp, RCL_ROS_TIME);
 
-  // RCLCPP_INFO(nodeHandle_->get_logger(), "ElevationMap received a point cloud
-  // (%i points) for elevation mapping.", static_cast<int>(pointCloud->size()));
   RCLCPP_DEBUG(
       nodeHandle_->get_logger(),
       "ElevationMap received a point cloud (%i points) for elevation mapping.",
@@ -532,15 +427,11 @@ void ElevationMapping::pointCloudCallback(
       }
       return;
     }
-    // std::cout<<poseMessage->pose.covariance.data()<<std::endl;
     robotPoseCovariance = Eigen::Map<const Eigen::MatrixXd>(
         poseMessage->pose.covariance.data(), 6, 6);
-    // robotPoseCovariance.Zero();
   }
 
   // Process point cloud.
-  // RCLCPP_INFO_STREAM(nodeHandle_->get_logger(),"Variance
-  // is:"<<robotPoseCovariance);
   PointCloudType::Ptr pointCloudProcessed(new PointCloudType);
   Eigen::VectorXf measurementVariances;
   if (!sensorProcessor_->process(pointCloud, robotPoseCovariance,
@@ -553,27 +444,19 @@ void ElevationMapping::pointCloudCallback(
                            "(Message is throttled, 10s.)");
       return;
     }
-    RCLCPP_ERROR(
-        nodeHandle_->get_logger(),
-        "Point cloud could not be processed."); // TODO: what causes this issue
-    // resetMapUpdateTimer();
+    // TODO: identify what causes this issue
+    RCLCPP_ERROR(nodeHandle_->get_logger(),
+                 "Point cloud could not be processed.");
     return;
   }
 
-  // RCLCPP_INFO_STREAM(nodeHandle_->get_logger(),"Variance
-  // is:"<<measurementVariances[0]<<" , "<<measurementVariances[10]<<" ,
-  // "<<measurementVariances[100]<<" , "<<measurementVariances[110]<<" ,
-  // "<<measurementVariances[120]);
-
   boost::recursive_mutex::scoped_lock scopedLock(map_.getRawDataMutex());
 
-  // Update map location.
   updateMapLocation();
 
   // Update map from motion prediction.
   if (!updatePrediction(lastPointCloudUpdateTime_)) {
     RCLCPP_ERROR(nodeHandle_->get_logger(), "Updating process noise failed.");
-    // resetMapUpdateTimer();
     return;
   }
 
@@ -590,7 +473,6 @@ void ElevationMapping::pointCloudCallback(
           Eigen::Affine3d(sensorProcessor_->transformationSensorToMap_))) {
     RCLCPP_ERROR(nodeHandle_->get_logger(),
                  "Adding point cloud to elevation map failed.");
-    // resetMapUpdateTimer();
     return;
   }
 
@@ -603,51 +485,6 @@ void ElevationMapping::pointCloudCallback(
       map_.publishFusedElevationMap();
     }
   }
-
-  // resetMapUpdateTimer();
-}
-
-void ElevationMapping::mapUpdateTimerCallback() {
-  if (!updatesEnabled_) {
-    rclcpp::Clock clock;
-    RCLCPP_WARN_THROTTLE(nodeHandle_->get_logger(), clock, 10,
-                         "Updating of elevation map is disabled. (Warning "
-                         "message is throttled, 10s.)");
-    map_.setTimestamp(nodeHandle_->get_clock()->now());
-    map_.postprocessAndPublishRawElevationMap();
-    return;
-  }
-
-  rclcpp::Time time = rclcpp::Clock(RCL_ROS_TIME).now();
-  if ((lastPointCloudUpdateTime_ - time) <=
-      maxNoUpdateDuration_) { // there were updates from sensordata, no need to
-                              // force an update.
-    return;
-  }
-  rclcpp::Clock clock;
-  RCLCPP_WARN_THROTTLE(nodeHandle_->get_logger(), clock, 5,
-                       "Elevation map is updated without data from the sensor. "
-                       "(Warning message is throttled, 5s.)");
-
-  boost::recursive_mutex::scoped_lock scopedLock(map_.getRawDataMutex());
-
-  // stopMapUpdateTimer();
-
-  // Update map from motion prediction.
-  if (!updatePrediction(time)) {
-    RCLCPP_ERROR(nodeHandle_->get_logger(), "Updating process noise failed.");
-    // resetMapUpdateTimer();
-    return;
-  }
-
-  // Publish elevation map.
-  map_.postprocessAndPublishRawElevationMap();
-  if (isFusingEnabled()) {
-    map_.fuseAll();
-    map_.publishFusedElevationMap();
-  }
-
-  // resetMapUpdateTimer();
 }
 
 void ElevationMapping::publishFusedMapCallback() {
@@ -1016,20 +853,5 @@ bool ElevationMapping::loadMapServiceCallback(
   map_.postprocessAndPublishRawElevationMap();
   return static_cast<bool>(response->success);
 }
-
-// void ElevationMapping::resetMapUpdateTimer() {
-//   mapUpdateTimer_->cancel();
-//   rclcpp::Duration periodSinceLastUpdate = nodeHandle_->get_clock()->now() -
-//   map_.getTimeOfLastUpdate(); if (periodSinceLastUpdate >
-//   maxNoUpdateDuration_) {
-//     periodSinceLastUpdate = rclcpp::Duration::from_seconds(0.0);
-//   }
-//   mapUpdateTimer_.setPeriod(maxNoUpdateDuration_ - periodSinceLastUpdate);
-//   mapUpdateTimer_.start();
-// }
-
-// void ElevationMapping::stopMapUpdateTimer() {
-//   mapUpdateTimer_->cancel();
-// }
 
 } // namespace elevation_mapping
