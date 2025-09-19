@@ -123,7 +123,8 @@ bool ElevationMap::add(const PointCloudType::Ptr pointCloud,
   for (unsigned int i = 0; i < pointCloud->size(); ++i) {
     auto &point = pointCloud->points[i];
     grid_map::Index index;
-    grid_map::Position position(point.x, point.y);
+    grid_map::Position position(
+        point.x, point.y); // NOLINT(cppcoreguidelines-pro-type-union-access)
     if (!rawMap_.getIndex(position, index)) {
       continue; // Skip this point if it does not lie within the elevation map.
     }
