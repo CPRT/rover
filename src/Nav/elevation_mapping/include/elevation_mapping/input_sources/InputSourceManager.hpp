@@ -94,7 +94,7 @@ bool InputSourceManager::registerCallbacks(
         callbackRegistered = true;
       }
     }
-    if (not callbackRegistered) {
+    if (!callbackRegistered) {
       RCLCPP_WARN(
           nodeHandle_->get_logger(),
           "The configuration contains input sources of an unknown type: %s",
