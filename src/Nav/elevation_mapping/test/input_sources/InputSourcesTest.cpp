@@ -18,10 +18,8 @@ assertSuccessAndNumberOfSources(const std::string &inputConfiguration,
                                 uint32_t numberOfExpectedInputSources) {
   elevation_mapping::InputSourceManager inputSourceManager(
       rclcpp::Node::make_shared("_"));
-  bool success = inputSourceManager.configureFromRos(inputConfiguration);
-  // ASSERT_EQ(success, successExpected) << "Configuration was:\n"
-  // << ros::NodeHandle("~").param<XmlRpc::XmlRpcValue>(inputConfiguration, "not
-  // set").toXml() << "\n";
+  bool success = inputSourceManager.configureFromRos();
+
   ASSERT_EQ(inputSourceManager.getNumberOfSources(),
             numberOfExpectedInputSources);
 }
@@ -81,7 +79,7 @@ TEST(InputSources, ConfigurationQueueSizeIsNegative) { // NOLINT
 TEST(InputSources, UnknownType) { // NOLINT
   auto nodeHandle = rclcpp::Node::make_shared("_");
   elevation_mapping::InputSourceManager inputSourceManager(nodeHandle);
-  inputSourceManager.configureFromRos("unknown_type");
+  inputSourceManager.configureFromRos();
 
   elevation_mapping::ElevationMapping map{nodeHandle};
 

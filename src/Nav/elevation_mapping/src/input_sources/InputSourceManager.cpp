@@ -16,8 +16,7 @@ InputSourceManager::InputSourceManager(
     const std::shared_ptr<rclcpp::Node> &nodeHandle)
     : nodeHandle_(nodeHandle) {}
 
-bool InputSourceManager::configureFromRos(
-    const std::string &inputSourcesNamespace) {
+bool InputSourceManager::configureFromRos() {
   nodeHandle_->declare_parameter("inputs", std::vector<std::string>());
 
   // Configure the visualizations from a configuration stored on the parameter
@@ -27,17 +26,15 @@ bool InputSourceManager::configureFromRos(
     RCLCPP_WARN(
         nodeHandle_->get_logger(),
         "Could not load the input sources configuration from parameter\n "
-        "%s, are you sure it was pushed to the parameter server? Assuming\n "
-        "that you meant to leave it empty. Not subscribing to any inputs!\n",
-        inputSourcesNamespace.c_str());
+        "are you sure it was pushed to the parameter server? Assuming\n "
+        "that you meant to leave it empty. Not subscribing to any inputs!\n");
     return false;
   }
 
-  return configure(inputSourcesConfiguration, inputSourcesNamespace);
+  return configure(inputSourcesConfiguration);
 }
 
-bool InputSourceManager::configure(const std::vector<std::string> &config,
-                                   const std::string &sourceConfigurationName) {
+bool InputSourceManager::configure(const std::vector<std::string> &config) {
   if (config.size() == 0) { // Use Empty array as special case to explicitly
                             // configure no inputs.
     return true;
@@ -50,12 +47,6 @@ bool InputSourceManager::configure(const std::vector<std::string> &config,
       nodeHandle_->get_parameter("map_frame_id").as_string()};
   // Configure all input sources in the list.
   for (auto inputConfig : config) {
-    // FIXME: fix namespace and subnode
-    // return leading / ->
-    // rclcpp::expand_topic_or_service_name(sourceConfigurationName + "/" +
-    // inputConfig, nodeHandle_->get_name(), nodeHandle_->get_namespace() auto
-    // subnode = nodeHandle_->create_sub_node(sourceConfigurationName + "/" +
-    // inputConfig);
     Input source = Input(nodeHandle_);
 
     bool configured =

@@ -82,8 +82,7 @@ void ElevationMapping::setupSubscribers() {
     RCLCPP_INFO(nodeHandle_->get_logger(), "topic: %s", a.first.c_str());
   }
 
-  const bool configuredInputSources =
-      inputSources_.configureFromRos("input_sources");
+  const bool configuredInputSources = inputSources_.configureFromRos();
 
   if (configuredInputSources) {
     inputSources_.registerCallbacks(
@@ -854,6 +853,5 @@ bool ElevationMapping::loadMapServiceCallback(
   map_.postprocessAndPublishRawElevationMap();
   return static_cast<bool>(response->success);
 }
-
 
 } // namespace elevation_mapping
