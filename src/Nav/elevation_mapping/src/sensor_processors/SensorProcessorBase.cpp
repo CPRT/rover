@@ -44,12 +44,6 @@ SensorProcessorBase::SensorProcessorBase(
   pcl::console::setVerbosityLevel(pcl::console::L_ERROR);
   transformationSensorToMap_.setIdentity();
   generalParameters_ = generalConfig;
-  // RCLCPP_DEBUG(nodeHandle_->get_logger(),
-  //     "Sensor processor general parameters are:"
-  //     "\n\t- robot_base_frame_id: %s"
-  //     "\n\t- map_frame_id: %s",
-  //     generalConfig.robotBaseFrameId_.c_str(),
-  //     generalConfig.mapFrameId_.c_str());
 }
 
 SensorProcessorBase::~SensorProcessorBase() = default;
@@ -127,8 +121,6 @@ bool SensorProcessorBase::process(
     const PointCloudType::Ptr pointCloudMapFrame, Eigen::VectorXf &variances,
     std::string sensorFrame) {
   sensorFrameId_ = sensorFrame;
-  // RCLCPP_DEBUG(rclcpp::get_logger("sensor_processor"), "Sensor Processor
-  // processing for frame %s", sensorFrameId_.c_str());
 
   // Update transformation at timestamp of pointcloud
   rclcpp::Time timeStamp = rclcpp::Time(1000 * pointCloudInput->header.stamp);
@@ -138,12 +130,7 @@ bool SensorProcessorBase::process(
 
   // Transform into sensor frame.
   PointCloudType::Ptr pointCloudSensorFrame(new PointCloudType);
-  // FIXME: transformPointCloud seems to be useless since it transfroms from
-  // pointcloud frame to the same frame
-  //       sensorFrame is inputpointcloud frame
   *pointCloudSensorFrame = *pointCloudInput;
-  // transformPointCloud(pointCloudInput, pointCloudSensorFrame,
-  // sensorFrameId_);
 
   // Remove Nans (optional voxel grid filter)
   filterPointCloud(pointCloudSensorFrame);
@@ -225,10 +212,6 @@ bool SensorProcessorBase::transformPointCloud(
     pointCloudTransformed->header.frame_id = targetFrame;
     rclcpp::Clock clock;
 
-    // FIXME: get_logger() causes SEGFAULT
-    // RCLCPP_DEBUG_THROTTLE(nodeHandle_->get_logger(), clock, 5, "Point cloud
-    // transformed to frame %s for time stamp %f.", targetFrame.c_str(),
-    //                  pointCloudTransformed->header.stamp / 1000.0);
   } catch (tf2::TransformException &ex) {
     // RCLCPP_ERROR(nodeHandle_->get_logger(), "%s", ex.what());
     return false;
@@ -246,14 +229,6 @@ void SensorProcessorBase::removePointsOutsideLimits(
       !std::isfinite(parameters.ignorePointsUpperThreshold_)) {
     return;
   }
-  // FIXME: get_logger segfault
-  /*
-  RCLCPP_DEBUG(nodeHandle_->get_logger(),
-               "Limiting point cloud to the height
-               interval of [%f, %f] relative to the robot base.",
-               ignorePointsLowerThreshold_,
-               ignorePointsUpperThreshold_);
-  */
 
   pcl::PassThrough<pcl::PointXYZRGBConfidenceRatio> passThroughFilter(true);
   passThroughFilter.setInputCloud(reference);
@@ -276,12 +251,6 @@ void SensorProcessorBase::removePointsOutsideLimits(
     extractIndicesFilter.filter(tempPointCloud);
     pointCloud->swap(tempPointCloud);
   }
-  /*
-  RCLCPP_DEBUG(
-      rclcpp::get_logger("sensor_processor"),
-      "removePointsOutsideLimits() pass reduced point cloud to %i points.",
-      (int)pointClouds[0]->size());
-  */
 
   // TODO: It would be beneficial to remove points in robot_frame, not map_frame
   pcl::CropBox<pcl::PointXYZRGBConfidenceRatio> cropBoxFilter(true);
@@ -308,12 +277,6 @@ void SensorProcessorBase::removePointsOutsideLimits(
     extractIndicesFilter.filter(tempPointCloud);
     pointCloud->swap(tempPointCloud);
   }
-  /*
-  RCLCPP_DEBUG(
-      rclcpp::get_logger("sensor_processor"),
-      "removePointsOutsideLimits() box reduced point cloud to %i points.",
-      (int)pointClouds[0]->size());
-  */
 }
 
 bool SensorProcessorBase::filterPointCloud(
@@ -340,10 +303,6 @@ bool SensorProcessorBase::filterPointCloud(
     pointCloud->swap(tempPointCloud);
   }
   rclcpp::Clock clock;
-  // FIXME: get_logger causes SEGFAULT
-  // RCLCPP_DEBUG_THROTTLE(nodeHandle_->get_logger(), clock, 2,
-  // "cleanPointCloud() reduced point cloud to %i points.",
-  // static_cast<int>(pointCloud->size()));
   return true;
 }
 
