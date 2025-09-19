@@ -35,12 +35,7 @@ namespace elevation_mapping {
 SensorProcessorBase::SensorProcessorBase(
     std::shared_ptr<rclcpp::Node> &nodeHandle,
     const GeneralParameters &generalConfig)
-    : nodeHandle_(nodeHandle),
-      // transformListener_(std::make_shared<tf2_ros::TransformListener>(*transformBuffer_)),
-      // ignorePointsUpperThreshold_(std::numeric_limits<double>::infinity()),
-      // ignorePointsLowerThreshold_(-std::numeric_limits<double>::infinity()),
-      // applyVoxelGridFilter_(false),
-      firstTfAvailable_(false) {
+    : nodeHandle_(nodeHandle), firstTfAvailable_(false) {
   transformBuffer_ =
       std::make_shared<tf2_ros::Buffer>(nodeHandle_->get_clock());
   transformListener_ =
@@ -252,15 +247,18 @@ void SensorProcessorBase::removePointsOutsideLimits(
     return;
   }
   // FIXME: get_logger segfault
-  // RCLCPP_DEBUG(nodeHandle_->get_logger(), "Limiting point cloud to the height
-  // interval of [%f, %f] relative to the robot base.",
-  // ignorePointsLowerThreshold_,
-  //          ignorePointsUpperThreshold_);
+  /*
+  RCLCPP_DEBUG(nodeHandle_->get_logger(),
+               "Limiting point cloud to the height
+               interval of [%f, %f] relative to the robot base.",
+               ignorePointsLowerThreshold_,
+               ignorePointsUpperThreshold_);
+  */
 
   pcl::PassThrough<pcl::PointXYZRGBConfidenceRatio> passThroughFilter(true);
   passThroughFilter.setInputCloud(reference);
-  passThroughFilter.setFilterFieldName(
-      "z"); // TODO(max): Should this be configurable?
+  // TODO(max): Should this be configurable?
+  passThroughFilter.setFilterFieldName("z");
   double relativeLowerThreshold = translationMapToBaseInMapFrame_.z() +
                                   parameters.ignorePointsLowerThreshold_;
   double relativeUpperThreshold = translationMapToBaseInMapFrame_.z() +
@@ -278,13 +276,15 @@ void SensorProcessorBase::removePointsOutsideLimits(
     extractIndicesFilter.filter(tempPointCloud);
     pointCloud->swap(tempPointCloud);
   }
-  // RCLCPP_DEBUG(rclcpp::get_logger("sensor_processor"),
-  // "removePointsOutsideLimits() pass reduced point cloud to %i points.",
-  // (int)pointClouds[0]->size());
+  /*
+  RCLCPP_DEBUG(
+      rclcpp::get_logger("sensor_processor"),
+      "removePointsOutsideLimits() pass reduced point cloud to %i points.",
+      (int)pointClouds[0]->size());
+  */
 
   // TODO: It would be beneficial to remove points in robot_frame, not map_frame
-  pcl::CropBox<pcl::PointXYZRGBConfidenceRatio> cropBoxFilter(
-      true); // true-returns indices
+  pcl::CropBox<pcl::PointXYZRGBConfidenceRatio> cropBoxFilter(true);
   cropBoxFilter.setInputCloud(pointClouds[0]);
   cropBoxFilter.setNegative(true); // remove points inside the box
   cropBoxFilter.setMin(Eigen::Vector4f(
@@ -308,9 +308,12 @@ void SensorProcessorBase::removePointsOutsideLimits(
     extractIndicesFilter.filter(tempPointCloud);
     pointCloud->swap(tempPointCloud);
   }
-  // RCLCPP_DEBUG(rclcpp::get_logger("sensor_processor"),
-  // "removePointsOutsideLimits() box reduced point cloud to %i points.",
-  // (int)pointClouds[0]->size());
+  /*
+  RCLCPP_DEBUG(
+      rclcpp::get_logger("sensor_processor"),
+      "removePointsOutsideLimits() box reduced point cloud to %i points.",
+      (int)pointClouds[0]->size());
+  */
 }
 
 bool SensorProcessorBase::filterPointCloud(

@@ -79,14 +79,6 @@ public:
       bool publishPointCloud, const SensorProcessorBase::Ptr &sensorProcessor_);
 
   /*!
-   * Callback function for the update timer. Forces an update of the map from
-   * the robot's motion if no new measurements are received for a certain time
-   * period.
-   *
-   */
-  void mapUpdateTimerCallback();
-
-  /*!
    * Callback function for the fused map publish timer. Publishes the fused map
    * based on configurable duration.
    *
@@ -252,11 +244,6 @@ private:
   void runFusionServiceThread();
 
   /*!
-   * Separate thread for visibility cleanup.
-   */
-  void visibilityCleanupThread();
-
-  /*!
    * Update the elevation map from the robot motion up to a certain time.
    *
    * @param time    Time to which the map is updated to.
@@ -271,16 +258,6 @@ private:
    * @return true if successful.
    */
   bool updateMapLocation();
-
-  /*!
-   * Reset and start the map update timer.
-   */
-  void resetMapUpdateTimer();
-
-  /*!
-   * Stop the map update timer.
-   */
-  void stopMapUpdateTimer();
 
   /*!
    * Initializes a submap around the robot of the elevation map with a constant
@@ -300,8 +277,6 @@ protected:
   //! Input sources.
   InputSourceManager inputSources_;
   //! ROS subscribers.
-  rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr
-      pointCloudSubscriber_; //!< Deprecated, use input_source instead.
   message_filters::Subscriber<nav_msgs::msg::Odometry> robotPoseSubscriber_;
 
   //! ROS service servers.
@@ -341,7 +316,6 @@ protected:
   std::string trackPointFrameId_;
 
   //! ROS topics for subscriptions.
-  std::string pointCloudTopic_; //!< Deprecated, use input_source instead.
   std::string robotPoseTopic_;
 
   //! Elevation map.
@@ -386,12 +360,6 @@ protected:
 
   //! Duration for the raytracing cleanup timer.
   rclcpp::Duration visibilityCleanupTimerDuration_;
-
-  //! Callback qroup for raytracing cleanup thread.
-  rclcpp::CallbackGroup::SharedPtr visibilityCleanupGroup_;
-
-  //! Callback thread for raytracing cleanup.
-  boost::thread visibilityCleanupThread_;
 
   //! Becomes true when corresponding poses and point clouds can be found
   bool receivedFirstMatchingPointcloudAndPose_;

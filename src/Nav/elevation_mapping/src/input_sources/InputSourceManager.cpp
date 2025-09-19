@@ -58,8 +58,8 @@ bool InputSourceManager::configure(const std::vector<std::string> &config,
     // inputConfig);
     Input source = Input(nodeHandle_);
 
-    bool configured = source.configure(inputConfig, sourceConfigurationName,
-                                       generalSensorProcessorConfig);
+    bool configured =
+        source.configure(inputConfig, generalSensorProcessorConfig);
     if (!configured) {
       successfulConfiguration = false;
       continue;
