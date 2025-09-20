@@ -17,12 +17,15 @@
   ],
   "mounts": [
     "source=${env:SSH_AUTH_SOCK},target=/ssh-agent,type=bind",
-    "source=${env:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,consistency=cached"
+    "source=${env:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,consistency=cached",
+    "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind",
+    "source=${env:HOME}/.Xauthority,target=/home/vscode/.Xauthority,type=bind"
   ],
   "containerEnv": {
     "SSH_AUTH_SOCK": "/ssh-agent",
     "NVIDIA_VISIBLE_DEVICES": "all",
-    "NVIDIA_DRIVER_CAPABILITIES": "all"
+    "NVIDIA_DRIVER_CAPABILITIES": "all",
+    "DISPLAY": "unix:0"
   },
   "remoteUser": "vscode",
   "containerUser": "vscode",
