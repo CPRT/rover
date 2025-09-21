@@ -8,6 +8,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from interfaces.srv import MoveServo
 from interfaces.srv import VideoCapture
+from threading import Event
 
 
 class PanoramicNode(Node):
@@ -74,11 +75,24 @@ class PanoramicNode(Node):
             return
         request = VideoCapture.Request()
         request.source = self.camera_name
+        # Use an Event to wait for the async call to complete
+        # Using ros2 executor blocking calls creates deadlock after first call
+        event = Event()
+
+        def done_callback(future):
+            nonlocal event
+            event.set()
+
         future = self.video_cli.call_async(request)
-        rclpy.spin_until_future_complete(self, future)
+        future.add_done_callback(done_callback)
+        event.wait(10)  # wait for max 10 seconds
+        if not future.done():
+            self.get_logger().error("Video capture service call timed out")
+            return None
 
         result = future.result()
-        if result is None:
+
+        if result is None or not result.success or len(result.image.data) == 0:
             self.get_logger().error("Failed to capture image")
             return None
 

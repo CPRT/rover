@@ -85,6 +85,9 @@ RUN if ! pkg-config --exists opencv4; then \
             -D BUILD_EXAMPLES=OFF \
             -D BUILD_TESTS=OFF \
             -D BUILD_PERF_TESTS=OFF \
+            -D WITH_QT=OFF \
+            -D WITH_GTK=OFF \
+            -D WITH_GTK_2_X=OFF \
             /opt/opencv && \
       make -j"$(nproc)" && make install; \
     else \
