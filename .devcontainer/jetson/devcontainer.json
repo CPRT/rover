@@ -11,7 +11,6 @@
     "--runtime=nvidia",
     "--gpus=all",
     "--ipc=host",
-    "--shm-size=2g",
     "--group-add=video",
     "--group-add=render"
   ],
