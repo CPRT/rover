@@ -40,13 +40,13 @@ ENV LD_LIBRARY_PATH=/target/opt/gstreamer/lib:$LD_LIBRARY_PATH
 ENV LIBRARY_PATH=/target/opt/gstreamer/lib:$LIBRARY_PATH
 ENV PKG_CONFIG_PATH=/target/opt/gstreamer/lib/pkgconfig:$PKG_CONFIG_PATH
 
-RUN git clone --branch gstreamer-${gstreamer_version} --depth 1 https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs.git . \
-    && cargo cbuild -p gst-plugin-webrtc --prefix=/opt/gstreamer --release \
-    && cargo cbuild -p gst-plugin-rtp    --prefix=/opt/gstreamer --release \
-    && cargo cinstall -p gst-plugin-webrtc --prefix=/opt/gstreamer --destdir /target --libdir=lib --release \
-    && cargo cinstall -p gst-plugin-rtp    --prefix=/opt/gstreamer --destdir /target --libdir=lib --release \
+RUN git clone --branch 0.14 --depth 1 https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs.git .
+RUN cargo cbuild -p gst-plugin-webrtc --prefix=/opt/gstreamer --release
+RUN cargo cbuild -p gst-plugin-rtp    --prefix=/opt/gstreamer --release 
+RUN cargo cinstall -p gst-plugin-webrtc --prefix=/opt/gstreamer --destdir /target --libdir=lib --release 
+RUN cargo cinstall -p gst-plugin-rtp    --prefix=/opt/gstreamer --destdir /target --libdir=lib --release 
     # Remove static libs to save space
-    && rm -f /target/opt/gstreamer/lib/gstreamer-1.0/*.a \
+RUN rm -f /target/opt/gstreamer/lib/gstreamer-1.0/*.a \
     && rm -rf ./target
 
 ############################

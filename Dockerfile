@@ -52,7 +52,7 @@ COPY requirements.txt .
 RUN pip3 install --break-system-packages --no-cache-dir -r requirements.txt
 
 ############################
-# Stage 4: Collect package.xml files
+# Stage 2: Collect package.xml files
 ############################
 FROM alpine:latest AS package_xml_collector
 WORKDIR /src
@@ -60,6 +60,19 @@ COPY src/ .
 
 RUN find . -name 'package.xml' -exec mkdir -p /collected/{} \; \
     && find . -name 'package.xml' -exec cp {} /collected/{} \;
+
+############################
+# Stage 3: Create rosdep installation script
+############################
+FROM ros2_humble-base AS rosdep-creator
+WORKDIR /
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+COPY --from=package_xml_collector /collected /src
+RUN source /opt/ros/humble/setup.bash \
+    && rosdep init \
+    && rosdep update \
+    && rosdep install -i -y -r --from-paths -s src > /install_script.sh \
+    && chmod +x /install_script.sh
 
 ############################
 # Stage 4: OpenCV Build
@@ -106,21 +119,27 @@ ENV LD_LIBRARY_PATH=/opt/gstreamer/lib:$LD_LIBRARY_PATH
 ENV PKG_CONFIG_PATH=/opt/gstreamer/lib/pkgconfig:$PKG_CONFIG_PATH
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-WORKDIR /temporary
+WORKDIR /
 # Build kindr
 RUN git clone https://github.com/ANYbotics/kindr.git \
     && cd kindr && mkdir build && cd build \
     && cmake .. -DUSE_CMAKE=true \
     && make install \
-    && rm -rf /temporary/kindr
+    && rm -rf /kindr
 
-COPY --from=package_xml_collector /collected /temporary/src/
-RUN source /opt/ros/humble/setup.bash \
-    && apt-get update \
-    && rosdep init \
-    && rosdep update \
-    && rosdep install -i -y -r --from-paths src \
-    && rm -rf /var/lib/apt/lists/* src /root/.ros/rosdep/*
+COPY --from=rosdep-creator /install_script.sh /
+RUN apt-get update \
+    && bash /install_script.sh \
+    && rm -rf /var/lib/apt/lists/* /install_script.sh
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libsrt1.4-openssl \
+    lsb-release \
+    gnupg2 libssl-dev libpng16-16 \
+    zlib1g-dev libffi-dev \
+    libglib2.0-dev libmount-dev
+
+ENV GST_PLUGIN_PATH=/opt/gstreamer/lib/gstreamer-1.0:/usr/lib/aarch64-linux-gnu/gstreamer-1.0
 
 ############################
 # Stage 6: Dev Environment
@@ -131,11 +150,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ros-humble-ament-cmake python3-colcon-common-extensions \
         python3-colcon-ros clang-format cuda-compiler-12-6 \
         cuda-cudart-dev-12-6 cuda-driver-dev-12-6 libpng-dev ccache \
+        libc6-dev libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-ENV CMAKE_PREFIX_PATH=/opt/ros/humble:/usr/share/eigen3/cmake:$CMAKE_PREFIX_PATH
-ENV CMAKE_INCLUDE_PATH=/usr/include/eigen3:$CMAKE_INCLUDE_PATH
-ENV CMAKE_LIBRARY_PATH=/opt/ros/humble/lib:$CMAKE_LIBRARY_PATH
+RUN [ "$(uname -m)" = "aarch64" ] && ln -sf /usr/lib/aarch64-linux-gnu/libdl.so.2 /usr/lib/aarch64-linux-gnu/libdl.so && ldconfig || true
+ENV CMAKE_PREFIX_PATH=/opt/ros/humble:/opt/ros/humble/cmake:/usr/share/eigen3/cmake
+ENV CMAKE_INCLUDE_PATH=/opt/ros/humble/include:/usr/include/eigen3
+ENV CMAKE_LIBRARY_PATH=/opt/ros/humble/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/aarch64-linux-gnu
 ENV LD_LIBRARY_PATH=/opt/ros/humble/lib:$LD_LIBRARY_PATH
 ENV PKG_CONFIG_PATH=/opt/ros/humble/lib/pkgconfig:$PKG_CONFIG_PATH
 
@@ -144,8 +165,8 @@ RUN echo "source /opt/ros/humble/setup.bash" >> /etc/profile.d/ros.sh
 RUN useradd -ms /bin/bash -u 1000 vscode \
     && usermod -aG zed vscode \
     && echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+RUN chmod -R a+r /usr/local/lib/python3.10/dist-packages/
 USER vscode
-RUN sudo chmod -R a+r /usr/local/lib/python3.10/dist-packages/
 WORKDIR /
 CMD ["/bin/bash"]
 
@@ -155,17 +176,12 @@ CMD ["/bin/bash"]
 FROM dev AS builder
 WORKDIR /rover
 COPY src/ ./src
+COPY aarch64_toolchain.cmake ./aarch64_toolchain.cmake
 ARG BUILD_FLAGS=""
 
-ENV CC="ccache gcc"
-ENV CXX="ccache g++"
-RUN ccache --max-size=1G
-
 RUN source /opt/ros/humble/setup.bash \
-    && colcon build --symlink-install \
-       --continue-on-error \
-       ${BUILD_FLAGS} \
-    && rm -rf build log
+    && colcon build --continue-on-error \
+       ${BUILD_FLAGS}
 
 ############################
 # Stage 8: Runtime Application
@@ -173,7 +189,11 @@ RUN source /opt/ros/humble/setup.bash \
 FROM runtime AS rover
 WORKDIR /rover
 COPY --from=builder /rover/install /rover/install
-RUN echo 'source /opt/ros/humble/setup.bash' >> /etc/profile.d/ros.sh \
-    && echo "if [ -f /rover/install/setup.bash ]; then source /rover/install/setup.bash; fi" >> /etc/profile.d/ros.sh
+COPY --from=builder /rover/build /rover/build
+RUN echo 'source /opt/ros/humble/setup.bash' >> /ros.sh \
+    && echo "if [ -f /rover/install/setup.bash ]; then source /rover/install/setup.bash; fi" >> /ros.sh
+RUN chmod +x /ros.sh
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+ENTRYPOINT ["/bin/bash", "-c", "source /ros.sh && exec \"$@\"", "--"]
 
 CMD ["/bin/bash"]
