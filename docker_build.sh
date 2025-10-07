@@ -12,6 +12,7 @@ OVERRIDE_ARCH=""
 GST=FALSE
 BUILD_WORKERS=$(nproc)
 BUILD_TYPE="release"
+DOCKER_TMP=""
 
 # Parse args
 while [[ $# -gt 0 ]]; do
@@ -22,6 +23,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --load)
       MODE="--load"
+      shift
+      ;;
+    --test)
+      MODE="--test"
       shift
       ;;
     --arch)
@@ -38,6 +43,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --build-type)
       BUILD_TYPE="$2"
+      shift 2
+      ;;
+    --docker_tmp)
+      export DOCKER_TMP="$2"
       shift 2
       ;;
     *)
@@ -93,6 +102,15 @@ DEV_SHA_TAG=${IMAGE_NAME}:dev-${GIT_SHA}-${TARGETARCH}
 APP_TAG=${IMAGE_NAME}:${TARGETARCH}
 APP_SHA_TAG=${IMAGE_NAME}:${GIT_SHA}-${TARGETARCH}
 
+if [ "$MODE" = "--test" ]; then
+  MODE=""
+fi
+
+if [ "$DOCKER_TMP" != "" ]; then
+  export DOCKER_TMPDIR="$DOCKER_TMP"
+  export TMPDIR="$DOCKER_TMP"
+fi
+
 # --- DEV image ---
 echo "Starting dev image (base: $BASE_IMAGE)"
 docker buildx build \
@@ -102,8 +120,6 @@ docker buildx build \
   --target dev \
   -t $DEV_TAG \
   -t $DEV_SHA_TAG \
-  --cache-from type=registry,ref=$IMAGE_NAME:$TARGETARCH-dev-cache \
-  --cache-to type=registry,ref=$IMAGE_NAME:$TARGETARCH-dev-cache,mode=max \
   $MODE \
   .
 
