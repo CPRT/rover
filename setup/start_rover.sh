@@ -1,6 +1,9 @@
 #!/bin/bash
-source ~/gstreamer/setupGstreamer.sh
-source /opt/ros/humble/setup.bash
-source /opt/ros/humble/cprt_setup.bash
 sudo enablecan.sh
-ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+
+echo "Starting the container launcher..."
+
+docker run --rm \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -p 8080:8080 \
+    cprtsoftware/container-launcher:latest
