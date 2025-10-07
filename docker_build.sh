@@ -81,15 +81,7 @@ esac
 echo "Building for architecture: $TARGETARCH with mode $MODE"
 
 # --- Create a persistent buildx builder with QEMU if not exists ---
-BUILDER_NAME="roverbuilder"
-if ! docker buildx inspect "$BUILDER_NAME" >/dev/null 2>&1; then
-  echo "Creating persistent buildx builder '$BUILDER_NAME' with QEMU support..."
-  docker buildx create --name "$BUILDER_NAME" --use --driver docker-container --bootstrap
-  # Register QEMU emulators
-  docker run --rm --privileged tonistiigi/binfmt --install all
-else
-  docker buildx use "$BUILDER_NAME"
-fi
+docker run --rm --privileged tonistiigi/binfmt --install all
 
 if [ "$GST" = TRUE ]; then
   echo "Building GStreamer image first..."
@@ -123,6 +115,12 @@ docker buildx build \
   $MODE \
   .
 
+
+TOOLCHAIN=""
+if { [ "$ARCH" != "$(uname -m)" ] && { [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; }; }; then
+  TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=/rover/aarch64_toolchain.cmake"
+fi
+
 # --- APP (rover) image ---
 echo "Starting rover image (base: $BASE_IMAGE)"
 docker buildx build \
@@ -133,8 +131,8 @@ docker buildx build \
   -t $APP_TAG \
   -t $APP_SHA_TAG \
   --build-arg BUILD_FLAGS="--parallel-workers $BUILD_WORKERS\
-              --cmake-args -DCMAKE_BUILD_TYPE=$BUILD_TYPE" \
-  --cache-from type=registry,ref=$IMAGE_NAME:$TARGETARCH-cache \
-  --cache-to type=registry,ref=$IMAGE_NAME:$TARGETARCH-cache,mode=max \
+              --cmake-args \
+                 $TOOLCHAIN \
+                -DCMAKE_BUILD_TYPE=$BUILD_TYPE" \
   $MODE \
   .
