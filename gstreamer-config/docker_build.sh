@@ -28,8 +28,12 @@ while [[ $# -gt 0 ]]; do
       OVERRIDE_ARCH="$2"
       shift 2
       ;;
+    --test)
+      MODE=""
+      shift
+      ;;
     *)
-      echo "Usage: $0 [--push|--load (default)] [--arch <amd64|arm64> (optional for emulation)]"
+      echo "Usage: $0 [--push|--load (default)] [--arch <amd64|arm64> (optional for emulation)] [--test (to test the image build)]"
       exit 1
       ;;
   esac
@@ -65,7 +69,7 @@ fi
 
 # Define tags
 
-if [ "$MODE" == "--push" ]; then
+if [ "$MODE" != "--load" ]; then
   echo "Push detected: building multi-arch gstreamer image"
   PLATFORMS="linux/amd64,linux/arm64"
   CACHE="cache-both"

@@ -8,7 +8,7 @@ on:
 
 jobs:
   gstreamer-build:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,11 +29,11 @@ jobs:
           if [ "${{ github.event_name }}" = "push" ]; then
             ./gstreamer-config/docker_build.sh --push
           else
-            ./gstreamer-config/docker_build.sh
+            ./gstreamer-config/docker_build.sh --test
           fi
 
   build-rover-amd64:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
     needs: gstreamer-build
     steps:
       - name: Checkout
@@ -56,7 +56,7 @@ jobs:
           fi
 
   build-rover-arm64:
-    runs-on: [self-hosted, ARM64]
+    runs-on: [self-hosted]
     needs: gstreamer-build
     steps:
       - name: Checkout
@@ -73,7 +73,7 @@ jobs:
         run: |
           echo "Building for ARM64"
           if [ "${{ github.event_name }}" = "push" ]; then
-            ./docker_build.sh --arch arm64 --push --workers 2
+            ./docker_build.sh --arch arm64 --push
           else
-            ./docker_build.sh --arch arm64 --workers 2
+            ./docker_build.sh --arch arm64
           fi
