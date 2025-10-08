@@ -28,8 +28,12 @@ ekf_profiles = {
         "local": "gps_ekf_local.yaml",
         "global": "gps_ekf_global.yaml",
     },
+    "only_zed": {
+        "local": "only_zed_local.yaml",
+        "global": "only_zed_global.yaml",
+    },
 }
-default_profile = "gps"
+default_profile = "only_zed"
 
 
 def launch_setup(context):
