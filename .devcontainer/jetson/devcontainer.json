@@ -5,9 +5,10 @@
 
   "runArgs": [
     "--network=host",
-    "--volume=/dev:/dev",
+    "--privileged",
     "--volume=/sys:/sys",
     "--volume=/etc/timezone:/etc/timezone",
+    "--volume=/tmp/argus_socket:/tmp/argus_socket",
     "--runtime=nvidia",
     "--gpus=all",
     "--ipc=host",

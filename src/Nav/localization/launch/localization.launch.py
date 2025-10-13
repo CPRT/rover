@@ -13,6 +13,7 @@ def generate_launch_description():
 
     # Get package directory
     pkg_localization = get_package_share_directory("localization")
+    pkg_gps = get_package_share_directory("gps")
 
     # Declare launch arguments
     use_sim_time = LaunchConfiguration("use_sim_time", default="False")
@@ -49,7 +50,7 @@ def generate_launch_description():
         condition=IfCondition(launch_rviz),
     )
 
-    gps_launch_file_path = Path(pkg_localization) / "launch" / "gps.launch.py"
+    gps_launch_file_path = Path(pkg_gps) / "launch" / "rover.launch.py"
     gps_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(str(gps_launch_file_path)),
         condition=IfCondition(launch_gps),

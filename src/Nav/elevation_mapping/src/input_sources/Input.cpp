@@ -18,11 +18,9 @@ namespace elevation_mapping {
 Input::Input(std::shared_ptr<rclcpp::Node> nh) : nodeHandle_(nh) {}
 
 bool Input::configure(std::string &inputSourceName,
-                      const std::string &sourceConfigurationName,
                       const SensorProcessorBase::GeneralParameters
                           &generalSensorProcessorParameters) {
   // TODO: make nicer add checkes
-  // TODO: sourceConfigurationName not used
 
   Parameters parameters;
 
@@ -74,8 +72,7 @@ bool Input::configure(std::string &inputSourceName,
                  "sensor_processor was given.",
                  inputSourceName.c_str());
   }
-  // RCLCPP_INFO(nodeHandle_->get_logger(), "Configured
-  // %s!!!!\n",parameters.publishOnUpdate_ );
+
   parameters.name_ = inputSourceName;
 
   parameters_.setData(parameters);

@@ -44,7 +44,6 @@ public:
    * @return True if configuring was successful.
    */
   bool configure(std::string &inputSourceName,
-                 const std::string &sourceConfigurationName,
                  const SensorProcessorBase::GeneralParameters
                      &generalSensorProcessorParameters);
 
@@ -85,10 +84,7 @@ private:
                                     &generalSensorProcessorParameters);
 
   // ROS connection.
-  // rclcpp::Subscription<MsgT>::SharedPtr subscriber_;
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscriber_;
-  // rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr
-  // dummy_subscriber_;
   std::shared_ptr<rclcpp::Node> nodeHandle_;
 
   //! Sensor processor
