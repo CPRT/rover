@@ -6,6 +6,8 @@
   "runArgs": [
     "--network=host",
     "--privileged",
+    "--volume=/dev/v4l/by-id:/dev/v4l/by-id",
+    "--volume=/dev/serial/by-id:/dev/serial/by-id",
     "--volume=/sys:/sys",
     "--volume=/etc/timezone:/etc/timezone",
     "--volume=/tmp/argus_socket:/tmp/argus_socket",
