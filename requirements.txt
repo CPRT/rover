@@ -13,3 +13,4 @@ RPi.GPIO
 rpi-hardware-pwm
 Jetson.GPIO
 python-can
+matplotlib
