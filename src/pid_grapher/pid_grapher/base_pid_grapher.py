@@ -10,8 +10,7 @@ matplotlib.use("TkAgg")  # make sure we have an interactive backend
 
 import matplotlib.pyplot as plt
 from sensor_msgs.msg import Joy
-from rclpy.executors import MultiThreadedExecutor
-
+from sensor_msgs.msg import JointState
 """
 For running this, there are some things you may want to note:
     - You have to start the Joy node with ros2 run joy joy_node
@@ -22,13 +21,12 @@ For running this, there are some things you may want to note:
 
 
 class BasePIDGrapher(Node):
-    motor_list_id = 0
-
+    initiated = False
     def __init__(self):
         self.joystickVelocity = 0.0
         super().__init__("base_pid_grapher")
         self.subscription = self.create_subscription(
-            MotorStatus,
+            JointState,
             "/joint_states",
             self.plotter_callback,
             10,
@@ -36,7 +34,6 @@ class BasePIDGrapher(Node):
         self.subscription = self.create_subscription(
             Joy, "/joy", self.joystick_callback, 10
         )
-        motor_list_id
 
         print("TEST - Maybe found callback? Also running node")
         self.targetVelocity = 10
@@ -45,9 +42,24 @@ class BasePIDGrapher(Node):
 
         plt.rcParams["toolbar"] = "none"
 
-        self.fig, self.ax = plt.subplots()
-        self.x_data, self.y_data = [], []
-        self.x_data2, self.y_data2 = [], []
+        self.names = []
+        self.figs = []
+        self.axs = []
+        self.velocities = [[],[],[],[],[],[]]
+        self.times = [[],[],[],[],[],[]]
+        self.targetVelocities = [[],[],[],[],[],[]]
+        self.line1s = []#TODO make this actually work im too fucking lazy right now
+        self.line2s = []
+        
+        for i in range(0, len(self.times)):
+            fig, ax = plt.subplots()
+            self.figs.append(fig)
+            self.axs.append(ax)
+
+        
+        for i in range(0,len(self.times)):
+            self.line1s.append(self.ax.plot(self.times[i], self.velocities[i], "b-"))
+            self.line2s.append(self.ax.plot(self.times[i], self.targetVelocities[i], "b-"))
 
         (self.line1,) = self.ax.plot(self.x_data, self.y_data, "b-")
         (self.line2,) = self.ax.plot(self.x_data2, self.y_data2, "b-")
@@ -58,34 +70,39 @@ class BasePIDGrapher(Node):
 
         self.beginning = self.get_clock().now()
 
-    def plotGraph(self, x, y, setpoint):
+    def plotGraph(self, x, y, setpoint,motor_id):
         print("Graphing")
-        self.x_data.append(x)
-        self.y_data.append(y)
-        self.x_data2.append(x)
-        self.y_data2.append(setpoint)
+        self.times[motor_id].append(x)
+        self.velocities[motor_id].append(y)
+        self.targetVelocities[motor_id].append(setpoint)
 
-        self.line1.set_xdata(self.x_data)
-        self.line1.set_ydata(self.y_data)
-        self.line2.set_xdata(self.x_data2)
-        self.line2.set_ydata(self.y_data2)
+        self.line1s[motor_id].set_xdata(self.times[motor_id])
+        self.line2s[motor_id].set_xdata(self.times[motor_id])
 
-        self.ax.relim()
-        self.ax.autoscale_view()
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
+        self.line1s[motor_id].set_ydata(self.velocities[motor_id])
+        self.line2s[motor_id].set_ydata(self.targetVelocities[motor_id])
+
+        self.axs[motor_id].relim()
+        self.axs[motor_id].autoscale_view()
+        self.figs[motor_id].canvas.draw()
+        self.figs[motor_id].canvas.flush_events()
 
         plt.pause(0.001)
 
     def plotter_callback(self, msg):
-        self.get_logger().info(f"Velocity recieved: {msg.velo}")
+        self.get_logger().info(f"Velocity recieved: {msg.velocities[0]}")
         now = self.get_clock().now()
+        
+        if (self.initiated == False):
+            self.names = msg.names
+            for i in msg.names:
+                self.axs[i].set_title(i)
 
         print("There is something running in the callback")
         delta = now - self.beginning
         x = delta.nanoseconds / 1e9
-
-        self.plotGraph(x, float(msg.velocity), self.targetVelocity)
+        for i in range(0,len(msg.names)):
+            self.plotGraph(x, float(msg.velocities[i]), self.targetVelocities[i],i)
 
     def joystick_callback(self, stick):
         self.joystickVelocity = stick.axes[1]
