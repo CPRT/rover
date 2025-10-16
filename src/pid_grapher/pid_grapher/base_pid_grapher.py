@@ -18,21 +18,26 @@ For running this, there are some things you may want to note:
     - This is specifically for the base motor
     - If you close the window, the program stops because python lkw just like that
 """
+# NOTE PLEASE REFACTOR WITH WHAT CONNOR SAID (YOU ARE GOING TO GET LISTS AND STUFF)
 
 
 class BasePIDGrapher(Node):
+    motor_list_id = 0
+
     def __init__(self):
         self.joystickVelocity = 0.0
         super().__init__("base_pid_grapher")
         self.subscription = self.create_subscription(
             MotorStatus,
-            "/base/status",
+            "/joint_states",
             self.plotter_callback,
             10,
         )
         self.subscription = self.create_subscription(
             Joy, "/joy", self.joystick_callback, 10
         )
+        motor_list_id
+
         print("TEST - Maybe found callback? Also running node")
         self.targetVelocity = 10
 
@@ -73,7 +78,7 @@ class BasePIDGrapher(Node):
         plt.pause(0.001)
 
     def plotter_callback(self, msg):
-        self.get_logger().info(f"Velocity recieved: {msg.velocity}")
+        self.get_logger().info(f"Velocity recieved: {msg.velo}")
         now = self.get_clock().now()
 
         print("There is something running in the callback")
