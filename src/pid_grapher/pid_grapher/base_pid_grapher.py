@@ -20,14 +20,6 @@ import os
 plt.rcParams["toolbar"] = "none"
 
 
-"""
-For running this, there are some things you may want to note:
-    - You have to start the Joy node with ros2 run joy joy_node
-    - This is specifically for the base motor
-    - If you close the window, the program stops because python lkw just like that
-"""
-# NOTE PLEASE REFACTOR WITH WHAT CONNOR SAID (YOU ARE GOING TO GET LISTS AND STUFF)
-
 
 class JointData:
     def __init__(self, name, ax):
@@ -168,11 +160,6 @@ class BasePIDGrapher(Node):
         save_path = os.path.join(plots_dir, "joint_plot.png")
         plt.savefig(save_path, bbox_inches='tight', dpi=300)
         print(f"Plot saved to {save_path}")
-    """
-    TODO this mapping is very fucked but I don't have it in me right now so ill figure this logic out later
-    perhaps a dictionary? Oh wait, that's actually not a bad idea but I would have to init everything after the names come in?
-    Fuck it, that's a good idea, sounds like a future me problem, I have midterms to study for
-    """
 
 
 def main(args=None):
