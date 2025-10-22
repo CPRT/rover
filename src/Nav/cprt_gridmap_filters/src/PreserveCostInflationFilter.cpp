@@ -81,6 +81,28 @@ template <typename T> bool PreserveCostInflationFilter<T>::configure() {
     return false;
   }
 
+  // max size of lookup table
+  maxDx_ = static_cast<int>(std::ceil(decayInflationRadius_));
+  maxDy_ = static_cast<int>(std::ceil(decayInflationRadius_)); 
+
+  // prepare array
+  decayTable_.resize(maxDx_ + 1, std::vector<double>(maxDy_ + 1, 0.0));
+
+  //fill up tables with values
+  for (int dx = 0; dx <= maxDx_; ++dx) {
+    for (int dy = 0; dy <= maxDy_; ++dy) {
+      double distance = std::sqrt(dx * dx + dy * dy);
+      if (distance <= coreInflationRadius_) { // inside inflation radius so no decay
+        decayTable_[dx][dy] = 1.0;
+      } else if (distance <= decayInflationRadius_) { //outside core but inside decay
+        double exponent = -decayRate_ * (distance - coreInflationRadius_);
+        decayTable_[dx][dy] = std::exp(exponent);
+      } else { // too far for any decay
+        decayTable_[dx][dy] = 0.0;
+      }
+    }
+  }
+
   return true;
 }
 
@@ -137,6 +159,25 @@ void PreserveCostInflationFilter<T>::computeWithSimpleSerialMethod(
 }
 
 template <typename T>
+inline double PreserveCostInflationFilter<T>::getDecay(int dx, int dy) const {
+
+  if (dx < 0 || dy < 0) {
+    return 0.0;
+  }  
+  if (dx < dy) {
+    std::swap(dx, dy);
+  }
+  if (dx > maxDx_) {
+    dx = maxDx_;
+  }
+  if (dy > maxDy_) {
+    dy = maxDy_;
+  }
+
+  return decayTable_[dx][dy];
+}
+
+template <typename T>
 void PreserveCostInflationFilter<T>::radialInflateSerial(
     grid_map::GridMap &mapOut, const grid_map::Position &position,
     const float value) {
@@ -155,10 +196,12 @@ void PreserveCostInflationFilter<T>::radialInflateSerial(
     if (distance <= this->coreInflationRadius_) {
       cellValue = std::max(cellValue, value);
     } else if (distance <= this->decayInflationRadius_) {
-      const double decayedValue =
-          value *
-          std::exp(-this->decayRate_ * (distance - this->coreInflationRadius_));
+      int dx = static_cast<int>(
+          std::round(std::abs(cellPosition.x() - position.x()) / mapOut.getResolution()));
+      int dy = static_cast<int>(
+          std::round(std::abs(cellPosition.y() - position.y()) / mapOut.getResolution()));
 
+      const double decayedValue = value * getDecay(dx, dy);
       cellValue = std::max(cellValue, static_cast<float>(decayedValue));
     }
   }
