@@ -96,7 +96,7 @@ class pidControll(Node):
             self.initiated = True
 
         if self.initiated:
-            for i in range(1, len(self.names) + 1):
+            for i in range(0, len(self.names)):
                 if msg.buttons[i] == 0 and self.button_states_prev[i] == 1:
                     motor_name = self.names[i - 1]
                     delta = msg.axes[2] * 0.1  # Scale the joystick input
