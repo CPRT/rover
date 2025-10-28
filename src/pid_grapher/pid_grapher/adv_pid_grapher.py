@@ -80,7 +80,7 @@ class advPIDGrapher(Node):
                 self.Joints[key].target = data[key]
 
     def on_key(self, event):
-        if event.key == "s":
+        if event.key == "p":
             script_dir = os.path.join(os.getcwd(), "pid_grapher")
             plots_dir = os.path.join(script_dir, "plots")
             os.makedirs(plots_dir, exist_ok=True)
