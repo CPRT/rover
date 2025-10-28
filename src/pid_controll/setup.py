@@ -1,6 +1,8 @@
 from setuptools import find_packages, setup
+import os
+from glob import glob
 
-package_name = "pid_grapher"
+package_name = "pid_controll"
 
 setup(
     name=package_name,
@@ -9,8 +11,9 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
         ("share/" + package_name, ["package.xml"]),
+        (os.path.join("share", package_name, "launch"), glob("launch/*.py")),
     ],
-    install_requires=["setuptools", "matplotlib"],
+    install_requires=["setuptools"],
     zip_safe=True,
     maintainer="vscode",
     maintainer_email="PSPuttaguna@gmail.com",
@@ -18,9 +21,6 @@ setup(
     license="TODO: License declaration",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": [
-            "base_pid_grapher=pid_grapher.base_pid_grapher:main",
-            "pid_grapher=pid_grapher.adv_pid_grapher:main",
-        ],
+        "console_scripts": ["pid_controll = pid_controll.pid_controll:main"],
     },
 )
