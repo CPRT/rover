@@ -1,0 +1,47 @@
+class JointData:
+    def __init__(self, name, ax):
+        self.name = name
+        # self.number = int(name.split("_")[1]) - 1
+        self.time = 0
+        self.target = 0
+        self.state = 0
+        self.times = []
+        self.states = []
+        self.targetsHistory = []
+        self.ax = ax
+        self.ax.set_xlabel("Time (s)")
+        self.ax.set_ylabel("State")
+        self.ax.set_title(name)
+        self.ax.legend(["State", "Target"])
+        self.ax.grid()
+        self.line1 = self.ax.plot([], [], "-", label="State")[0]
+        self.line2 = self.ax.plot([], [], "--", label="Target")[0]
+
+        seconds = 30  # Number of seconds to display on the graph
+
+        self.MAX_POINTS = (
+            seconds * 10
+        ) - 50  # Maximum number of points to display on the graph
+
+        self.ax.legend()
+
+        # self.fig.show()
+
+    def plotGraph(self):
+        self.targetsHistory.append(self.target)
+        self.times.append(self.time)
+        self.states.append(self.state)
+
+        if len(self.times) > self.MAX_POINTS:
+            self.times.pop(0)
+            self.states.pop(0)
+            self.targetsHistory.pop(0)
+
+        self.line1.set_xdata(self.times)
+        self.line2.set_xdata(self.times)
+
+        self.line1.set_ydata(self.states)
+        self.line2.set_ydata(self.targetsHistory)
+
+        self.ax.relim()
+        self.ax.autoscale_view()

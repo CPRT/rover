@@ -2,6 +2,7 @@
 install*/
 log/
 build*/
+src/kindr
 *.vscode
 raman/
 
