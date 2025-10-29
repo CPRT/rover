@@ -96,9 +96,9 @@ class pidControll(Node):
             self.initiated = True
 
         if self.initiated:
-            for i in range(0, len(self.names)):
+            for i in range(6, len(self.names)+6):
                 if msg.buttons[i] == 0 and self.button_states_prev[i] == 1:
-                    motor_name = self.names[i - 1]
+                    motor_name = self.names[i - 6]
                     delta = msg.axes[2] * 0.1  # Scale the joystick input
                     self.motors[motor_name].request_state_update(delta)
                     self.get_logger().info(
@@ -106,7 +106,7 @@ class pidControll(Node):
                     )
 
         else:
-            if msg.buttons[0] == 0 and self.button_states_prev[0] == 1:
+            if msg.buttons[6] == 0 and self.button_states_prev[6] == 1:
                 for key in self.motors:
                     self.motors[key].init_state = self.motors[key].current_state
                     self.motors[key].initialize()
