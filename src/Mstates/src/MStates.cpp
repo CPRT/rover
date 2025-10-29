@@ -32,7 +32,8 @@ public:
                                      std::bind(&MStates::timer_callback, this));
 
     for (size_t i = 0; i < subs.size(); ++i) {
-      printf("Subscribing to /%s/status\n", names[i].c_str());
+      RCLCPP_INFO(this->get_logger(), "Subscribing to /%s/status",
+                  names[i].c_str());
       subs[i] = this->create_subscription<ros_phoenix::msg::MotorStatus>(
           "/" + names[i] + "/status", 10,
           [i, this](ros_phoenix::msg::MotorStatus::SharedPtr msg) {

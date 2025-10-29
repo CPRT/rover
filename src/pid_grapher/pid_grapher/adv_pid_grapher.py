@@ -25,7 +25,22 @@ class advPIDGrapher(Node):
         plt.pause(0.000000001)
 
     def __init__(self):
+
         super().__init__("base_pid_grapher")
+
+        self.declare_parameter("mode", 1)
+        modeInt = self.get_parameter("mode").get_parameter_value().integer_value
+
+        if modeInt == 1:
+            self.mode = "position"
+        elif modeInt == 2:
+            self.mode = "velocity"
+        else:
+            self.get_logger().error("Invalid mode parameter, defaulting to position")
+            self.mode = "position"
+
+        self.get_logger().info(f"Operating in {self.mode} mode.")
+
         self.subscription = self.create_subscription(
             String,
             "/mStates/" + self.mode,

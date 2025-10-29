@@ -35,7 +35,21 @@ class pidControll(Node):
 
     def __init__(self):
         super().__init__("position_tuner")
-        self.get_logger().info("Position Tuner Node has been started.")
+        self.get_logger().info("Tuner Node has been started.")
+
+        self.declare_parameter("mode", 1)
+        modeInt = self.get_parameter("mode").get_parameter_value().integer_value
+
+        if modeInt == 1:
+            self.mode = "position"
+        elif modeInt == 2:
+            self.mode = "velocity"
+        else:
+            self.get_logger().error("Invalid mode parameter, defaulting to position")
+            self.mode = "position"
+
+        self.get_logger().info(f"Operating in {self.mode} mode.")
+
         for name in self.names:
             publisher = self.create_publisher(MotorControl, "/" + name + "/set", 10)
             self.state_publishers[name] = publisher
