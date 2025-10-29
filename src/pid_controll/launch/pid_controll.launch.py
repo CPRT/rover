@@ -3,6 +3,7 @@ from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
+from launch.substitutions import LaunchConfiguration
 import os
 
 
@@ -13,7 +14,10 @@ def generate_launch_description():
             os.path.join(
                 get_package_share_directory("arm_srdf"), "launch", "talon.launch.py"
             )
-        )
+        ),
+        launch_arguments={
+            "base_input_type": LaunchConfiguration("control_mode", default=1)
+        }.items(),
     )
 
     # 2️⃣ Launch MStates node
@@ -30,6 +34,7 @@ def generate_launch_description():
         executable="pid_controll",  # this is the console_script entry or script name
         name="pid_controll_node",
         output="screen",
+        parameters=[{"mode": LaunchConfiguration("control_mode", default=1)}],
     )
 
     # 4️⃣ Launch joy node

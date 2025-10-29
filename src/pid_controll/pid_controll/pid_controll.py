@@ -35,7 +35,21 @@ class pidControll(Node):
 
     def __init__(self):
         super().__init__("position_tuner")
-        self.get_logger().info("Position Tuner Node has been started.")
+        self.get_logger().info("Tuner Node has been started.")
+
+        self.declare_parameter("mode", 1)
+        modeInt = self.get_parameter("mode").get_parameter_value().integer_value
+
+        if modeInt == 1:
+            self.mode = "position"
+        elif modeInt == 2:
+            self.mode = "velocity"
+        else:
+            self.get_logger().error("Invalid mode parameter, defaulting to position")
+            self.mode = "position"
+
+        self.get_logger().info(f"Operating in {self.mode} mode.")
+
         for name in self.names:
             publisher = self.create_publisher(MotorControl, "/" + name + "/set", 10)
             self.state_publishers[name] = publisher
@@ -96,7 +110,7 @@ class pidControll(Node):
             self.initiated = True
 
         if self.initiated:
-            for i in range(6, len(self.names)+6):
+            for i in range(6, len(self.names) + 6):
                 if msg.buttons[i] == 0 and self.button_states_prev[i] == 1:
                     motor_name = self.names[i - 6]
                     delta = msg.axes[2] * 0.1  # Scale the joystick input
