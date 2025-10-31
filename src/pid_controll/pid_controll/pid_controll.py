@@ -49,6 +49,8 @@ class pidControll(Node):
             self.mode = "position"
 
         self.get_logger().info(f"Operating in {self.mode} mode.")
+        
+        self.button_states_prev = [0] * (6 + len(self.names))
 
         for name in self.names:
             publisher = self.create_publisher(MotorControl, "/" + name + "/set", 10)
@@ -128,7 +130,7 @@ class pidControll(Node):
                         f"Initialized {key} to {self.motors[key].current_state}"
                     )
 
-        self.button_states_prev = msg.buttons.copy()
+        self.button_states_prev = list(msg.buttons)
 
         # I need a fuction to run an on release type deal here
 
