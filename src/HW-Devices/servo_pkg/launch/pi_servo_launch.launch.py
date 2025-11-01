@@ -6,7 +6,8 @@ from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
     pkg_servo = get_package_share_directory("servo_pkg")
-    parameters_file = os.path.join(pkg_servo, "config", "pi_controller.yaml")
+    child_params = os.path.join(pkg_servo, "config", "pi_controller.yaml")
+    parent_params = os.path.join(pkg_servo, "config", "parent_config.yaml")
 
     return launch.LaunchDescription(
         [
@@ -14,7 +15,7 @@ def generate_launch_description():
                 package="servo_pkg",
                 executable="pi_Servo",
                 name="pi_Servo_node",
-                parameters=[parameters_file],
+                parameters=[parent_params, child_params],
                 remappings=[("servo_service", "science_servo_service")],
             ),
             # for example client

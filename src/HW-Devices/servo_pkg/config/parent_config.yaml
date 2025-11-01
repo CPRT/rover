@@ -1,0 +1,23 @@
+Parent_config:
+    ros__parameters:
+      # this is the highest servo number
+      max_num_servo: 3
+      servo_num: 1
+      # Tilt
+      servo0:
+        name: "tilt"
+        min: 350.0
+        max: 2500.0
+        rom: 6.2832
+      # PAN
+      servo1:
+        name: "pan"
+        min: 350.0
+        max: 2500.0
+        rom: 6.2832
+      # GRIPPER
+      servo3:
+        name: "gripper"
+        min: 500.0
+        max: 2500.0
+        rom: 3.1415
