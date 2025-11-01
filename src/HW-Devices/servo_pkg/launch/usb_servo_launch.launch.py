@@ -6,7 +6,9 @@ from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
     pkg_servo = get_package_share_directory("servo_pkg")
-    parameters_file = os.path.join(pkg_servo, "config", "usb_controller.yaml")
+    child_params = os.path.join(pkg_servo, "config", "usb_controller.yaml")
+    parent_params = os.path.join(pkg_servo, "config", "parent_config.yaml")
+    client_params = os.path.join(pkg_servo, "config", "servo_client.yaml")
 
     return launch.LaunchDescription(
         [
@@ -14,13 +16,13 @@ def generate_launch_description():
                 package="servo_pkg",
                 executable="USB_Servo",
                 name="USB_Servo_node",
-                parameters=[parameters_file],
+                parameters=[parent_params, child_params],
             ),
-            # for example client
-            # launch_ros.actions.Node(
-            #     package="servo_pkg",
-            #     executable="servo_client",
-            #     name="servo_client_node",
-            # ),
+            launch_ros.actions.Node(
+                package="servo_pkg",
+                executable="servo_client",
+                name="Servo_Client_node",
+                parameters=[client_params],
+            ),
         ]
     )
