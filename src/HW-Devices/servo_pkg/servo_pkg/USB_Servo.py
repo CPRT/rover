@@ -49,7 +49,6 @@ class USB_Servo(Parent_Config):
 
         self.check_valid_servo(port)
         servo_info = self.servo_info[port]
-        total_range = servo_info.max - servo_info.min
         target_value = convert_from_radians(msg.data, servo_info)
         self.get_logger().info(f"Target value: {target_value}")
         current_position = convert_to_radians(

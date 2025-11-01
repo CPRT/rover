@@ -18,13 +18,6 @@ def generate_launch_description():
                 executable="USB_Servo",
                 name="USB_Servo_node",
                 parameters=[parent_params, child_params],
-            ),
-            # if you wanted to run client as well
-            # launch_ros.actions.Node(
-            #    package="servo_pkg",
-            #    executable="servo_client",
-            #    name="Servo_Client_node",
-            #    parameters=[client_params],
-            # ),
+            )
         ]
     )
