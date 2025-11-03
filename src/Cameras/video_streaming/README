@@ -1,8 +1,8 @@
 # Video Streaming
-This is currently under development. For now continue using th camera_streaming package.
+This is currently under development. For now continue using the camera_streaming package.
 
 ## Architecture:
-This package is broken down into ros2 components. Each component runs a gsteamer pipeline to preform some video processing task. Interpipe elements developed by RidgeRun are used to efficiently (no-copy) pass buffers between components. This requrires that all components that shae buffers are run inside the same process (Ros2 container).
+This package is broken down into ros2 components. Each component runs a GStreamer pipeline to perform some video processing task. Interpipe elements developed by RidgeRun are used to efficiently (no-copy) pass buffers between components. This requires that all components that share buffers are run inside the same process (Ros2 container).
 
 ## Components
 

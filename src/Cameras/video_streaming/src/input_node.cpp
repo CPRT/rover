@@ -100,7 +100,7 @@ void InputNode::video_cb(
     response->success = false;
     return;
   }
-  RCLCPP_INFO(this->get_logger(), "Recieved request");
+  RCLCPP_INFO(this->get_logger(), "Received request");
   {
     std::lock_guard<std::mutex> lock(pipeline_mutex_);
     gst_element_set_state(pipeline_, GST_STATE_PAUSED);

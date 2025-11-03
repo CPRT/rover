@@ -50,26 +50,5 @@ bool BaseVideoNode::start_pipeline() {
     }
   }
   RCLCPP_INFO(get_logger(), "BaseVideoNode: pipeline started.");
-  if (!pipeline_ || !GST_IS_PIPELINE(pipeline_)) {
-    RCLCPP_ERROR(get_logger(), "Invalid pipeline constructed by subclass.");
-    if (pipeline_) {
-      gst_object_unref(pipeline_);
-      pipeline_ = nullptr;
-    }
-    throw std::runtime_error("BaseVideoNode: invalid pipeline");
-  }
-  {
-    std::lock_guard<std::mutex> lock(pipeline_mutex_);
-    if (gst_element_set_state(pipeline_, GST_STATE_PLAYING) ==
-        GST_STATE_CHANGE_FAILURE) {
-      RCLCPP_ERROR(get_logger(), "Failed to set pipeline to PLAYING.");
-      gst_element_set_state(pipeline_, GST_STATE_NULL);
-      gst_object_unref(pipeline_);
-      pipeline_ = nullptr;
-      throw std::runtime_error("BaseVideoNode: PLAYING failed");
-    }
-  }
-
-  RCLCPP_INFO(get_logger(), "BaseVideoNode: pipeline started.");
   return true;
 }
