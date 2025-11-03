@@ -49,6 +49,17 @@ RUN cargo cinstall -p gst-plugin-rtp    --prefix=/opt/gstreamer --destdir /targe
 RUN rm -f /target/opt/gstreamer/lib/gstreamer-1.0/*.a \
     && rm -rf ./target
 
+RUN ln -s /target/opt/gstreamer /opt/gstreamer
+
+
+# Build Interpipe from source
+WORKDIR /interpipe
+RUN git clone --branch master --depth 1 https://github.com/RidgeRun/gst-interpipe.git . \
+    && meson setup builddir --prefix=/opt/gstreamer --libdir=lib --buildtype=release -Denable-gtk-doc=false\
+    && meson compile -C builddir \
+    && meson install -C builddir --destdir /target \
+    && rm -rf builddir
+
 ############################
 # Final Stage: Copy to final image
 ############################
