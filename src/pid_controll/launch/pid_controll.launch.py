@@ -37,4 +37,18 @@ def generate_launch_description():
         parameters=[{"mode": LaunchConfiguration("control_mode", default=1)}],
     )
 
-    return LaunchDescription([talon_launch, mstates_node, pid_controll_node])
+    joy_node = Node(
+        package="joy",
+        executable="joy_node",
+        name="joy_node",
+        output="screen",
+        parameters=[
+            {
+                "dev": "/dev/input/js0",  # path to joystick device
+                "deadzone": 0.05,
+                "autorepeat_rate": 20.0,
+            }
+        ],
+    )
+
+    return LaunchDescription([talon_launch, mstates_node, joy_node, pid_controll_node])

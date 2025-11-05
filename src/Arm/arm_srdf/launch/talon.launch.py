@@ -12,7 +12,8 @@ PUBLISH_PERIOD = 1
 
 def generate_launch_description():
     """Generate launch description with multiple components."""
-    base_input_type = LaunchConfiguration("base_input_type", default=1)
+    # base_input_type = LaunchConfiguration("base_input_type", default=1) + 1
+    base_input_type = 2
 
     container = ComposableNodeContainer(
         name="PhoenixContainerArm",
@@ -27,7 +28,7 @@ def generate_launch_description():
                 name="base",
                 parameters=[
                     {"id": 10},
-                    {"P": 12.0},
+                    {"P": 40.0},
                     {"I": 0.0},
                     {"D": 0.0},
                     {"sensor_multiplier": (2 * pi / 4096)},
@@ -64,8 +65,8 @@ def generate_launch_description():
                 name="act2",
                 parameters=[
                     {"id": 14},
-                    {"P": 100.0},
-                    {"I": 0.0},
+                    {"P": 10.0},
+                    {"I": 0.01},
                     {"D": 3.0},
                     {"input_type": base_input_type},
                     {"invert": True},
@@ -139,5 +140,5 @@ def generate_launch_description():
     )
 
     return launch.LaunchDescription(
-        [LogInfo(msg=["Running with control mode: ", base_input_type]), container]
+        [LogInfo(msg=["Running with control mode: 2"]), container]
     )
