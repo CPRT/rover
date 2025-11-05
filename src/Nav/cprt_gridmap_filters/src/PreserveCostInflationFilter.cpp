@@ -14,6 +14,7 @@
 #include <string>
 
 #include "grid_map_cv/utilities.hpp"
+typedef unsigned int uint;
 
 namespace grid_map {
 
@@ -80,32 +81,10 @@ template <typename T> bool PreserveCostInflationFilter<T>::configure() {
         "PreserveCostInflationFilter parameter 'decay_rate' must be >= 0.0.");
     return false;
   }
-
-  // max size of lookup table 
-  maxDx_ = static_cast<int>(std::ceil(decayInflationRadius_)/mapOut.getResolution()); 
-
-  // prepare table (square)
-  std::vector<std::vector<float>> decayTable_;
-  decayTable_.resize(maxDx_ + 1, std::vector<float>(maxDx_ + 1, 0.0));
-
-  //fill up tables with values
-  for (int dx = 0; dx <= maxDx_; ++dx) {
-    for (int dy = 0; dy <= maxDx_; ++dy) {
-      float distance = std::sqrt(dx * dx + dy * dy) * mapOut.getResolution()
-      if (distance <= coreInflationRadius_) { // inside inflation radius so no decay
-        decayTable_[dx][dy] = 1.0;
-      } else if (distance <= decayInflationRadius_) { //outside core but inside decay
-        float exponent = -decayRate_ * (distance - coreInflationRadius_);
-        decayTable_[dx][dy] = std::exp(exponent);
-      } else { // too far for any decay
-        decayTable_[dx][dy] = 0.0;
-      }
-    }
-  }
-
   return true;
 }
 
+std::vector<std::vector<float>> decayTable_;
 template <typename T>
 bool PreserveCostInflationFilter<T>::update(const T &mapIn, T &mapOut) {
   mapOut = mapIn;
@@ -120,6 +99,29 @@ bool PreserveCostInflationFilter<T>::update(const T &mapIn, T &mapOut) {
   }
 
   mapOut.add(this->outputLayer_);
+  // max size of lookup table
+  int maxDx_ = static_cast<int>(std::ceil(decayInflationRadius_) /
+                                mapOut.getResolution());
+
+  // prepare table (square)
+  decayTable_.resize(maxDx_ + 1, std::vector<float>(maxDx_ + 1, 0.0));
+
+  // fill up tables with values
+  for (int dx = 0; dx <= maxDx_; ++dx) {
+    for (int dy = 0; dy <= maxDx_; ++dy) {
+      float distance = std::sqrt(dx * dx + dy * dy) * mapOut.getResolution();
+      if (distance <=
+          coreInflationRadius_) { // inside inflation radius so no decay
+        decayTable_[dx][dy] = 1.0;
+      } else if (distance <=
+                 decayInflationRadius_) { // outside core but inside decay
+        float exponent = -decayRate_ * (distance - coreInflationRadius_);
+        decayTable_[dx][dy] = std::exp(exponent);
+      } else { // too far for any decay
+        decayTable_[dx][dy] = 0.0;
+      }
+    }
+  }
 
   this->computeWithSimpleSerialMethod(mapIn, mapOut);
 
@@ -163,48 +165,18 @@ inline double PreserveCostInflationFilter<T>::getDecay(uint dx, uint dy) const {
 
   if (dx < 0 || dy < 0) {
     return 0.0;
-  }  
+  }
   if (dx < dy) {
     std::swap(dx, dy);
   }
   if (dx > maxDx_) {
     dx = maxDx_;
   }
-  if (dy > maxDy_) {
-    dy = maxDy_;
+  if (dy > maxDx_) {
+    dy = maxDx_;
   }
 
   return decayTable_[dx][dy];
-}
-
-template <typename T>
-void PreserveCostInflationFilter<T>::radialInflateSerial(
-    grid_map::GridMap &mapOut, const grid_map::Position &position,
-    const float value) {
-  for (grid_map::CircleIterator iterator(mapOut, position,
-                                         this->decayInflationRadius_);
-       !iterator.isPastEnd(); ++iterator) {
-    auto &cellValue = mapOut.at(this->outputLayer_, *iterator);
-
-    if (!std::isfinite(cellValue)) {
-      cellValue = 0.0;
-    }
-
-    grid_map::Position cellPosition;
-    mapOut.getPosition(*iterator, cellPosition);
-    const double distance = (cellPosition - position).norm();
-    if (distance <= this->coreInflationRadius_) {
-      cellValue = std::max(cellValue, value);
-    } else if (distance <= this->decayInflationRadius_) {
-      int dx = static_cast<float>(
-          std::abs(cellPosition.x() - position.x()) / mapOut.getResolution());
-      int dy = static_cast<float>(
-          std::abs(cellPosition.y() - position.y()) / mapOut.getResolution());
-
-      const double decayedValue = value * getDecay(dx, dy);
-      cellValue = std::max(cellValue, static_cast<float>(decayedValue));
-    }
-  }
 }
 
 } // namespace grid_map

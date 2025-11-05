@@ -14,6 +14,7 @@
 #include <grid_map_core/grid_map_core.hpp>
 #include <string>
 #include <vector>
+typedef unsigned int uint;
 
 namespace grid_map {
 
@@ -66,6 +67,9 @@ public:
   void radialInflateSerial(grid_map::GridMap &mapOut,
                            const Eigen::Vector2d &position, const float value);
 
+  // function to get decay values
+  double getDecay(uint, uint) const;
+
 private:
   // Input layer name to inflate.
   std::string inputLayer_;
@@ -84,6 +88,12 @@ private:
 
   // Decay rate
   double decayRate_;
+
+  // lookup table for decay values
+  std::vector<std::vector<float>> decayTable_;
+
+  // maximum size of decay lookup table (square)
+  uint maxDx_;
 
 }; // class PreserveCostInflationFilter
 
