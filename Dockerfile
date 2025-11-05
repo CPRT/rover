@@ -153,7 +153,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libc6-dev libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN [ "$(uname -m)" = "aarch64" ] && ln -sf /usr/lib/aarch64-linux-gnu/libdl.so.2 /usr/lib/aarch64-linux-gnu/libdl.so && ldconfig || true
 ENV CMAKE_PREFIX_PATH=/opt/ros/humble:/opt/ros/humble/cmake:/usr/share/eigen3/cmake
 ENV CMAKE_INCLUDE_PATH=/opt/ros/humble/include:/usr/include/eigen3
 ENV CMAKE_LIBRARY_PATH=/opt/ros/humble/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/aarch64-linux-gnu
