@@ -49,7 +49,7 @@ class pidControll(Node):
             self.mode = "position"
 
         self.get_logger().info(f"Operating in {self.mode} mode.")
-        
+
         self.button_states_prev = [0] * (6 + len(self.names))
 
         for name in self.names:
@@ -115,7 +115,7 @@ class pidControll(Node):
             for i in range(6, len(self.names) + 6):
                 if msg.buttons[i] == 0 and self.button_states_prev[i] == 1:
                     motor_name = self.names[i - 6]
-                    delta = msg.axes[2] * 0.1  # Scale the joystick input
+                    delta = round(msg.axes[2],1) * 0.1  # Scale the joystick input
                     self.motors[motor_name].request_state_update(delta)
                     self.get_logger().info(
                         f"Updated {motor_name} requested state to {self.motors[motor_name].requested_state}"

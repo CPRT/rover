@@ -28,9 +28,9 @@ class JointData:
         # self.fig.show()
 
     def plotGraph(self):
-        self.targetsHistory.append(self.target)
-        self.times.append(self.time)
-        self.states.append(self.state)
+        self.targetsHistory.append(round(self.target, 2))
+        self.times.append(round(self.time, 2))
+        self.states.append(round(self.state, 2))
 
         if len(self.times) > self.MAX_POINTS:
             self.times.pop(0)
