@@ -31,7 +31,7 @@
         <param name="kF">100</param>
         <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">3.14</param>
+        <param name="sensor_offset">5.125</param>
         <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">false</param>
         <param name="invert_sensor">true</param>
@@ -41,13 +41,13 @@
       </joint>
       <joint name="Joint_3">
         <param name="can_id">14</param>
-        <param name="kP">30.0</param>
+        <param name="kP">1.0</param>
         <param name="kI">0.0</param>
-        <param name="kD">3.0</param>
-        <param name="kF">125</param>
+        <param name="kD">0.0</param>
+        <param name="kF">60.0</param>
         <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">2.85</param>
+        <param name="sensor_offset">3.35</param>
         <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">true</param>
         <param name="invert_sensor">false</param>
@@ -63,7 +63,7 @@
         <param name="kF">5.0</param>
         <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">1.021</param>
+        <param name="sensor_offset">0.0</param>
         <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">false</param>
         <param name="invert_sensor">false</param>
@@ -79,7 +79,7 @@
         <param name="kF">7.8</param>
         <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">2.48</param>
+        <param name="sensor_offset">6.05</param>
         <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">true</param>
         <param name="invert_sensor">true</param>

@@ -56,6 +56,8 @@ class pidControll(Node):
             publisher = self.create_publisher(MotorControl, "/" + name + "/set", 10)
             self.state_publishers[name] = publisher
 
+        self.button_states_prev = [0] * (6 + len(self.names))
+
         self.state_target_publisher = self.create_publisher(
             String, "/targets/" + self.mode, 10
         )
@@ -105,6 +107,7 @@ class pidControll(Node):
 
     def joy_callback(self, msg: Joy):
 
+        self.get_logger().info(str(msg.buttons))  # ROS2
         for key in self.motors:
             if not self.motors[key].initialized:
                 self.initiated = False
@@ -122,7 +125,8 @@ class pidControll(Node):
                     )
 
         else:
-            if msg.buttons[6] == 0 and self.button_states_prev[6] == 1:
+            if self.button_states_prev[6] == 1:
+                print("Initializing motors...")
                 for key in self.motors:
                     self.motors[key].init_state = self.motors[key].current_state
                     self.motors[key].initialize()
@@ -131,8 +135,6 @@ class pidControll(Node):
                     )
 
         self.button_states_prev = list(msg.buttons)
-
-        # I need a fuction to run an on release type deal here
 
 
 def main(args=None):

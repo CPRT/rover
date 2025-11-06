@@ -37,7 +37,6 @@ def generate_launch_description():
         parameters=[{"mode": LaunchConfiguration("control_mode", default=1)}],
     )
 
-    # 4️⃣ Launch joy node
     joy_node = Node(
         package="joy",
         executable="joy_node",
