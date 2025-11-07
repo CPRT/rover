@@ -52,14 +52,16 @@ def generate_launch_description():
     )
 
     # Include traversability mapping if enabled
-    if (launch_zed and launch_ouster):
+    if launch_zed and launch_ouster:
         config = "all"
-    elif (launch_zed):
+    elif launch_zed:
         config = "zed_only"
-    elif (launch_ouster):
+    elif launch_ouster:
         config = "ouster_only"
     else:
-        print("Warning: Both ZED and Ouster launch are disabled; traversability mapping will not run.")
+        print(
+            "Warning: Both ZED and Ouster launch are disabled; traversability mapping will not run."
+        )
         config = "none"
 
     traversability_cmd = IncludeLaunchDescription(
