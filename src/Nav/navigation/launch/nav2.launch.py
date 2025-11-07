@@ -39,7 +39,7 @@ def generate_launch_description():
     autostart = LaunchConfiguration("autostart")
     params_file = LaunchConfiguration("params_file")
     use_composition = LaunchConfiguration("use_composition")
-    container_name = LaunchConfiguration("container_name")
+    container_name = LaunchConfiguration("nav2_container_name")
     use_respawn = LaunchConfiguration("use_respawn")
     cmd_vel_topic = LaunchConfiguration("cmd_vel_topic")
     default_bt_xml_filename = LaunchConfiguration("default_nav_to_pose_bt_xml")
@@ -116,7 +116,7 @@ def generate_launch_description():
     )
 
     declare_container_name_cmd = DeclareLaunchArgument(
-        "container_name",
+        "nav2_container_name",
         default_value="nav2_container",
         description="the name of container that nodes will load in if use composition",
     )
