@@ -65,9 +65,9 @@ def generate_launch_description():
                 name="act2",
                 parameters=[
                     {"id": 14},
-                    {"P": 10.0},
+                    {"P": 20.0},
                     {"I": 0.01},
-                    {"D": 3.0},
+                    {"D": 8.0},
                     {"input_type": base_input_type},
                     {"invert": True},
                     {"sensor_multiplier": (2 * pi / 4096)},
@@ -101,7 +101,7 @@ def generate_launch_description():
                 name="wristTilt",
                 parameters=[
                     {"id": 12},
-                    {"P": 20.0},
+                    {"P": 0.1},
                     {"I": 0.0},
                     {"D": 0.0},
                     {"max_voltage": 22.0},
