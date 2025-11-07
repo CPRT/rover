@@ -67,10 +67,15 @@ public:
   void radialInflateSerial(grid_map::GridMap &mapOut,
                            const Eigen::Vector2d &position, const float value);
 
-  // function to get decay values
-  double getDecay(uint, uint) const;
-
 private:
+  // function to get decay values
+  float getDecay(uint, uint) const;
+
+  /* Builds the lookup table for decay values if uninitiallized, map resolution
+   * changes, or inflation parameters change
+   */
+  void create_lookup_table(const T &mapOut);
+
   // Input layer name to inflate.
   std::string inputLayer_;
 

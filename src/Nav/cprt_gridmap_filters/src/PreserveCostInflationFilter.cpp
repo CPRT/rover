@@ -84,25 +84,14 @@ template <typename T> bool PreserveCostInflationFilter<T>::configure() {
   return true;
 }
 
-std::vector<std::vector<float>> decayTable_;
 template <typename T>
-bool PreserveCostInflationFilter<T>::update(const T &mapIn, T &mapOut) {
-  mapOut = mapIn;
+void PreserveCostInflationFilter<T>::create_lookup_table(const T &mapOut) {
 
-  // Check if layer exists.
-  if (!mapOut.exists(this->inputLayer_)) {
-    RCLCPP_ERROR(this->logging_interface_->get_logger(),
-                 "Layer %s does not exist. Unable to apply preserve cost "
-                 "inflation filter.",
-                 this->inputLayer_.c_str());
-    return false;
-  }
-
-  mapOut.add(this->outputLayer_);
-  // max size of lookup table
   int maxDx_ = static_cast<int>(std::ceil(decayInflationRadius_) /
                                 mapOut.getResolution());
-
+  if (maxDx_ + 1 == decayTable_.size()) {
+    return;
+  }
   // prepare table (square)
   decayTable_.resize(maxDx_ + 1, std::vector<float>(maxDx_ + 1, 0.0));
 
@@ -122,6 +111,22 @@ bool PreserveCostInflationFilter<T>::update(const T &mapIn, T &mapOut) {
       }
     }
   }
+}
+
+template <typename T>
+bool PreserveCostInflationFilter<T>::update(const T &mapIn, T &mapOut) {
+  mapOut = mapIn;
+
+  // Check if layer exists.
+  if (!mapOut.exists(this->inputLayer_)) {
+    RCLCPP_ERROR(this->logging_interface_->get_logger(),
+                 "Layer %s does not exist. Unable to apply preserve cost "
+                 "inflation filter.",
+                 this->inputLayer_.c_str());
+    return false;
+  }
+
+  mapOut.add(this->outputLayer_);
 
   this->computeWithSimpleSerialMethod(mapIn, mapOut);
 
@@ -161,22 +166,45 @@ void PreserveCostInflationFilter<T>::computeWithSimpleSerialMethod(
 }
 
 template <typename T>
-inline double PreserveCostInflationFilter<T>::getDecay(uint dx, uint dy) const {
-
-  if (dx < 0 || dy < 0) {
-    return 0.0;
-  }
+inline float PreserveCostInflationFilter<T>::getDecay(uint dx, uint dy) const {
   if (dx < dy) {
     std::swap(dx, dy);
   }
-  if (dx > maxDx_) {
-    dx = maxDx_;
-  }
-  if (dy > maxDx_) {
-    dy = maxDx_;
+  if (dx > maxDx_ || dy > maxDx_) {
+    return 0.0;
   }
 
   return decayTable_[dx][dy];
+}
+
+template <typename T>
+void PreserveCostInflationFilter<T>::radialInflateSerial(
+    grid_map::GridMap &mapOut, const grid_map::Position &position,
+    const float value) {
+  for (grid_map::CircleIterator iterator(mapOut, position,
+                                         this->decayInflationRadius_);
+       !iterator.isPastEnd(); ++iterator) {
+    auto &cellValue = mapOut.at(this->outputLayer_, *iterator);
+
+    if (!std::isfinite(cellValue)) {
+      cellValue = 0.0;
+    }
+
+    grid_map::Position cellPosition;
+    mapOut.getPosition(*iterator, cellPosition);
+    const double distance = (cellPosition - position).norm();
+    if (distance <= this->coreInflationRadius_) {
+      cellValue = std::max(cellValue, value);
+    } else if (distance <= this->decayInflationRadius_) {
+      int dx = static_cast<float>(std::abs(cellPosition.x() - position.x()) /
+                                  mapOut.getResolution());
+      int dy = static_cast<float>(std::abs(cellPosition.y() - position.y()) /
+                                  mapOut.getResolution());
+
+      const double decayedValue = value * getDecay(dx, dy);
+      cellValue = std::max(cellValue, static_cast<float>(decayedValue));
+    }
+  }
 }
 
 } // namespace grid_map
