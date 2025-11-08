@@ -1,0 +1,22 @@
+#Types: 0 for v4l2, 1 for test source, Other types are not supported yet
+
+input_node:
+  ros__parameters:
+    camera_name:
+    - "Drive"
+    - "EndEffector"
+    - "Bottom"
+    - "Test"
+    Drive:
+      path: "/dev/v4l/by-id/usb-Arducam_Arducam_B0495__USB3_2.3MP_-video-index0"
+      type: 0
+    EndEffector:
+      path: "/dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._USB_2.0_Camera_SN5100-video-index0"
+      type: 0
+      encoded: true
+    Bottom:
+      path: "/dev/v4l/by-id/usb-HD_Camera_Manufacturer_USB_2.0_Camera-video-index0"
+      type: 0
+      encoded: true
+    Test:
+      type: 1
