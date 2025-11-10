@@ -7,7 +7,7 @@ elevation_mapping_node:
     checker_layer: 'elevation'                # layer name for checking the validity of the cell.
     initialized_variance: 10.0                     # initial variance for each cell.    
     resolution: 0.1                                # resolution in m.  
-    map_length: 20.0                                 # map's size in m.
+    map_length: 40.0                                 # map's size in m.
     sensor_noise_factor: 0.05                       # point's noise is sensor_noise_factor*z^2 (z is distance from sensor).
     mahalanobis_thresh: 2.0                         # points outside this distance is outlier.
     outlier_variance: 0.01                          # if point is outlier, add this value to the cell.
@@ -76,7 +76,7 @@ elevation_mapping_node:
     initialize_tf_offset: [0.0, 0.0, 0.0, 0.0]                          # z direction. Should be same number as initialize_frame_id.
     dilation_size_initialize: 2                                         # dilation size after the init.
     initialize_tf_grid_size: 1.0                                        # This is not used if number of tf is more than 3.
-    use_initializer_at_start: true                                      # Use initializer when the node starts.
+    use_initializer_at_start: false                                      # Use initializer when the node starts.
 
     #### Default Plugins ########
     plugin_config_file: '$(find-pkg-share navigation)/config/cupy_elevation_mapping/plugin_config.yaml'
