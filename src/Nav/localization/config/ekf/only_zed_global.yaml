@@ -21,7 +21,7 @@ global_ekf:
     base_link_frame: base_link
     world_frame: map
 
-    pose0: /zed/zed_node/pose_with_covariance
+    pose0: /static_zed_pose
     pose0_config: [
         # position
         true, true, true,

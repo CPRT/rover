@@ -35,6 +35,7 @@ setup(
             "repub_odom = localization.republish_odometry:main",
             "lidar_mask_tool = localization.lidar_mask_tool:main",
             "timer_test_node = localization.timer_test:main",
+            "publish_zed_origin = localization.publish_zed_origin:main",
         ],
     },
 )
