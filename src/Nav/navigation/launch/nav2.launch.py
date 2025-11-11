@@ -20,7 +20,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch_ros.actions import LoadComposableNodes
+from launch_ros.actions import LoadComposableNodes, ComposableNodeContainer
 from launch_ros.actions import Node
 from launch_ros.descriptions import ComposableNode
 from nav2_common.launch import RewrittenYaml
@@ -234,9 +234,11 @@ def generate_launch_description():
 
     # Node to create the container for composed nodes
     # This node needs to be launched when use_composition is true
-    container = Node(
+    container = ComposableNodeContainer(
+        namespace="",
         package="rclcpp_components",
-        executable="component_container",
+        executable="component_container_isolated",
+        arguments=["--use_multi_threaded_executor"],
         name=container_name,
         output="screen",
         condition=IfCondition(use_composition),
