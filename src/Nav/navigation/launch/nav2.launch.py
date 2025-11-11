@@ -111,7 +111,7 @@ def generate_launch_description():
 
     declare_use_composition_cmd = DeclareLaunchArgument(
         "use_composition",
-        default_value="False",
+        default_value="True",
         description="Use composed bringup if True",
     )
 
@@ -235,13 +235,13 @@ def generate_launch_description():
     # Node to create the container for composed nodes
     # This node needs to be launched when use_composition is true
     container = ComposableNodeContainer(
-        namespace="",
+        namespace=namespace,
         package="rclcpp_components",
         executable="component_container_isolated",
-        arguments=["--use_multi_threaded_executor"],
         name=container_name,
         output="screen",
         condition=IfCondition(use_composition),
+        parameters=[configured_params],
     )
 
     # Group of actions to load composable nodes when composition is enabled
@@ -253,60 +253,42 @@ def generate_launch_description():
                 package="nav2_controller",
                 plugin="nav2_controller::ControllerServer",
                 name="controller_server",
-                parameters=[
-                    configured_params,
-                    {"use_intra_process_comms": use_intra_process_comms},
-                ],
+                parameters=[configured_params],
                 remappings=remappings,
             ),
             ComposableNode(
                 package="nav2_smoother",
                 plugin="nav2_smoother::SmootherServer",
                 name="smoother_server",
-                parameters=[
-                    configured_params,
-                    {"use_intra_process_comms": use_intra_process_comms},
-                ],
+                parameters=[configured_params],
                 remappings=remappings,
             ),
             ComposableNode(
                 package="nav2_planner",
                 plugin="nav2_planner::PlannerServer",
                 name="planner_server",
-                parameters=[
-                    configured_params,
-                    {"use_intra_process_comms": use_intra_process_comms},
-                ],
+                parameters=[configured_params],
                 remappings=remappings,
             ),
             ComposableNode(
                 package="nav2_behaviors",
                 plugin="behavior_server::BehaviorServer",
                 name="behavior_server",
-                parameters=[
-                    configured_params,
-                    {"use_intra_process_comms": use_intra_process_comms},
-                ],
+                parameters=[configured_params],
                 remappings=remappings,
             ),
             ComposableNode(
                 package="nav2_bt_navigator",
                 plugin="nav2_bt_navigator::BtNavigator",
                 name="bt_navigator",
-                parameters=[
-                    configured_params,
-                    {"use_intra_process_comms": use_intra_process_comms},
-                ],
+                parameters=[configured_params],
                 remappings=remappings,
             ),
             ComposableNode(
                 package="nav2_waypoint_follower",
                 plugin="nav2_waypoint_follower::WaypointFollower",
                 name="waypoint_follower",
-                parameters=[
-                    configured_params,
-                    {"use_intra_process_comms": use_intra_process_comms},
-                ],
+                parameters=[configured_params],
                 remappings=remappings,
             ),
             ComposableNode(
@@ -326,10 +308,7 @@ def generate_launch_description():
                 package="nav2_velocity_smoother",
                 plugin="nav2_velocity_smoother::VelocitySmoother",
                 name="velocity_smoother",
-                parameters=[
-                    configured_params,
-                    {"use_intra_process_comms": use_intra_process_comms},
-                ],
+                parameters=[configured_params],
             ),
         ],
     )
