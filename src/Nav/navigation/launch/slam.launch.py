@@ -27,7 +27,9 @@ def generate_launch_description():
     declare_traversability = DeclareLaunchArgument(
         "launch_traversability", default_value="True"
     )
-    declare_localization = DeclareLaunchArgument("launch_localization", default_value="True")
+    declare_localization = DeclareLaunchArgument(
+        "launch_localization", default_value="True"
+    )
     declare_zed = DeclareLaunchArgument("launch_zed", default_value="True")
     declare_ouster = DeclareLaunchArgument("launch_ouster", default_value="False")
     declare_svo_path = DeclareLaunchArgument(
