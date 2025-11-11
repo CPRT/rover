@@ -36,7 +36,7 @@ def launch_setup(context):
     # This function is executed at launch time
 
     use_sim_time = LaunchConfiguration("use_sim_time").perform(context)
-    profile = LaunchConfiguration("profile").perform(context)
+    profile = LaunchConfiguration("ekf_profile").perform(context)
 
     if profile not in ekf_profiles:
         raise ValueError(
@@ -106,7 +106,7 @@ def generate_launch_description():
     )
 
     profile_cmd = DeclareLaunchArgument(
-        "profile",
+        "ekf_profile",
         default_value=default_profile,
         description="Select the EKF profile to use (gps, lidar)",
     )
