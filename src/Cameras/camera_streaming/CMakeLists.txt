@@ -16,7 +16,6 @@ pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0)
 pkg_check_modules(GST_APP REQUIRED gstreamer-app-1.0)
 pkg_check_modules(GST_VIDEO REQUIRED gstreamer-video-1.0)
 
-add_subdirectory(gst-plugins)
 
 # Include the necessary directories for GStreamer
 include_directories(
@@ -71,13 +70,6 @@ install(DIRECTORY launch
 # Install configuration files (if any)
 install(DIRECTORY config
   DESTINATION share/${PROJECT_NAME}
-)
-
-# Install environment hooks so they are sourced by setup.bash
-# The path provided to ament_environment_hooks is relative to the source directory.
-# Ensure 'hooks/my_custom_env_hook.sh' exists and is executable.
-ament_environment_hooks(
-  hooks/gst_env_hook.sh
 )
 
 ament_export_include_directories("include/${PROJECT_NAME}")
