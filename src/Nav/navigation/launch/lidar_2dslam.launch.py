@@ -1,12 +1,10 @@
 import os
-from pathlib import Path
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-from launch.conditions import IfCondition
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 
@@ -59,7 +57,7 @@ def generate_launch_description():
                         "angle_max": 3.14159,
                         "angle_increment": 0.01227184630308513,  # ouster in 512x10 mode so use 2*pi/512
                         "scan_time": 0.1,  # matches 10 Hz
-                        "range_min": 1.5,  # avoids accidently picking up the rover itself
+                        "range_min": 1.5,  # avoids accidentally picking up the rover itself
                         "range_max": 20.0,
                         "use_inf": True,
                         "inf_epsilon": 1.0,
