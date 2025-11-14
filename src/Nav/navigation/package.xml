@@ -20,6 +20,8 @@
   <depend>navigation2</depend>
   <depend>nav2_smac_planner</depend>
   <depend>nav2_regulated_pure_pursuit_controller</depend>
+  <depend>pointcloud_to_laserscan</depend>
+  <depend>slam_toolbox</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

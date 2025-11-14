@@ -20,6 +20,7 @@ def generate_launch_description():
     launch_rviz = LaunchConfiguration("launch_rviz", default="False")
     launch_gps = LaunchConfiguration("launch_gps", default="True")
     launch_desc = LaunchConfiguration("launch_desc", default="True")
+    ekf_profile = LaunchConfiguration("ekf_profile", default="default")
 
     # Launch argument declarations
     use_sim_time_cmd = DeclareLaunchArgument(
@@ -35,6 +36,11 @@ def generate_launch_description():
     )
     launch_desc_cmd = DeclareLaunchArgument(
         "launch_desc", description="Launch description if True", default_value="True"
+    )
+    ekf_profile_cmd = DeclareLaunchArgument(
+        "ekf_profile",
+        description="Select the EKF profile to use",
+        default_value="default",
     )
 
     rviz_config = os.path.join(
@@ -74,7 +80,10 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(pkg_localization, "launch", "ekf.launch.py")
         ),
-        launch_arguments={"use_sim_time": use_sim_time}.items(),
+        launch_arguments={
+            "use_sim_time": use_sim_time,
+            "ekf_profile": ekf_profile,
+        }.items(),
     )
 
     config_dir = os.path.join(get_package_share_directory("localization"), "config")
@@ -104,6 +113,7 @@ def generate_launch_description():
             launch_rviz_cmd,
             launch_gps_cmd,
             launch_desc_cmd,
+            ekf_profile_cmd,
             rviz_cmd,
             gps_cmd,
             # slam_cmd,

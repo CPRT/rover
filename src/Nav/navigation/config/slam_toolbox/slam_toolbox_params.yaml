@@ -1,0 +1,100 @@
+slam_toolbox:
+  ros__parameters:
+    # If these values don't work try the values here: https://github.com/medhansh-rath/rock_e/blob/438e4ae3d668c1247f21d733da635a91530f0656/config/mapper_params_online_async.yaml#L5
+
+    # ========================================
+    # SOLVER CONFIGURATION
+    # ========================================
+    # These control the optimization backend
+    solver_plugin: solver_plugins::CeresSolver
+    ceres_linear_solver: SPARSE_NORMAL_CHOLESKY  # Good for medium-sized problems
+    ceres_preconditioner: SCHUR_JACOBI           # Faster convergence for SLAM
+    ceres_trust_strategy: LEVENBERG_MARQUARDT    # Robust optimization strategy
+    ceres_dogleg_type: TRADITIONAL_DOGLEG        # Classical approach
+    ceres_loss_function: None                    # No robust loss function
+
+    # ========================================
+    # BASIC ROS PARAMETERS
+    # ========================================
+    odom_frame: odom
+    map_frame: map
+    base_frame: base_link
+    scan_topic: /2d_ouster_scan
+    mode: mapping
+    
+    # Optional: For continuing existing maps
+    #map_file_name: your_map_name
+    #map_start_pose: [0.0, 0.0, 0.0]
+    #map_start_at_dock: true
+
+    # ========================================
+    # PERFORMANCE & TIMING PARAMETERS
+    # ========================================
+    debug_logging: false
+    throttle_scans: 1                    # Process every scan (10Hz is manageable)
+    transform_publish_period: 0.02       # 50Hz transform publishing
+    map_update_interval: 0.5              # Update map every 0.5 seconds
+    resolution: 0.03                     # Fine resolution
+    max_laser_range: 20.0                # Match your sensor's max range
+    minimum_time_interval: 0.1           # Fast updates for 10Hz scans
+    transform_timeout: 0.2
+    tf_buffer_duration: 30.0
+    stack_size_to_use: 40000000
+    enable_interactive_mode: true
+
+    # ========================================
+    # MOTION & KEYFRAME PARAMETERS
+    # ========================================
+    # These control when new keyframes are created
+    use_scan_matching: true
+    use_scan_barycenter: true
+    minimum_travel_distance: 0.3         # Smaller for better detail (was 0.5)
+    minimum_travel_heading: 0.3          # Smaller angle threshold (was 0.5)
+    scan_buffer_size: 20                 # Larger buffer for 10Hz (was 10)
+    scan_buffer_maximum_scan_distance: 20.0  # Match max range
+
+    # ========================================
+    # SCAN MATCHING PARAMETERS
+    # ========================================
+    # Controls local scan-to-scan alignment
+    link_match_minimum_response_fine: 0.15   # Slightly higher for reliability
+    link_scan_maximum_distance: 2.0         # Increased for rover speeds
+    
+    # ========================================
+    # LOOP CLOSURE PARAMETERS
+    # ========================================
+    # Controls global loop detection and closure
+    loop_search_maximum_distance: 4.0
+    do_loop_closing: true 
+    loop_match_minimum_chain_size: 15       # More conservative (was 10)          
+    loop_match_maximum_variance_coarse: 2.5 # Tighter constraint (was 3.0)
+    loop_match_minimum_response_coarse: 0.4 # Higher threshold (was 0.35)   
+    loop_match_minimum_response_fine: 0.5   # Higher threshold (was 0.45)
+
+    # ========================================
+    # CORRELATION SEARCH PARAMETERS
+    # ========================================
+    # Local scan matching search space
+    correlation_search_space_dimension: 0.8    # Larger search for rover movement
+    correlation_search_space_resolution: 0.01  # Fine resolution
+    correlation_search_space_smear_deviation: 0.1 
+
+    # Loop closure search space  
+    loop_search_space_dimension: 10.0
+    loop_search_space_resolution: 0.05
+    loop_search_space_smear_deviation: 0.03
+
+    # ========================================
+    # PENALTY PARAMETERS
+    # ========================================
+    # Control optimization weighting
+    distance_variance_penalty: 0.4
+    angle_variance_penalty: 1.2
+
+    # Angular search parameters
+    fine_search_angle_offset: 0.012        # Match your angular resolution
+    coarse_search_angle_offset: 0.24       # 20x fine resolution
+    coarse_angle_resolution: 0.024         # 2x fine resolution       
+    minimum_angle_penalty: 0.9
+    minimum_distance_penalty: 0.5
+    use_response_expansion: true
