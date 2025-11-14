@@ -1,4 +1,5 @@
 #include "gstarucomarker.hpp"
+GST_DEBUG_CATEGORY_STATIC(aruco_debug);
 
 struct _GstArucoMarker {
   GstVideoFilter parent;
@@ -25,38 +26,40 @@ G_DEFINE_TYPE(GstArucoMarker, gst_arucomarker, GST_TYPE_VIDEO_FILTER)
 
 static GstStaticPadTemplate sink_template = GST_STATIC_PAD_TEMPLATE(
     "sink", GST_PAD_SINK, GST_PAD_ALWAYS,
-    GST_STATIC_CAPS("video/x-raw, format=(string)BGR, "
+    GST_STATIC_CAPS("video/x-raw, format=(string)RGB, "
                     "framerate=(fraction)[0/1, 2147483647/1]"));
 
 static GstStaticPadTemplate src_template = GST_STATIC_PAD_TEMPLATE(
     "src", GST_PAD_SRC, GST_PAD_ALWAYS,
-    GST_STATIC_CAPS("video/x-raw, format=(string)BGR, "
+    GST_STATIC_CAPS("video/x-raw, format=(string)RGB, "
                     "framerate=(fraction)[0/1, 2147483647/1]"));
 
-static GstFlowReturn gst_arucomarker_transform_frame(GstVideoFilter *filter,
-                                                     GstVideoFrame *inframe,
-                                                     GstVideoFrame *outframe) {
+static GstFlowReturn gst_arucomarker_transform_frame_ip(GstVideoFilter *filter,
+                                                        GstVideoFrame *frame) {
   GstArucoMarker *self = GST_ARUCOMARKER(filter);
   self->frame_count++;
 
-  cv::Mat frame(inframe->info.height, inframe->info.width, CV_8UC3,
-                GST_VIDEO_FRAME_PLANE_DATA(inframe, 0));
+  cv::Mat mat(frame->info.height, frame->info.width, CV_8UC3,
+              GST_VIDEO_FRAME_PLANE_DATA(frame, 0),
+              GST_VIDEO_FRAME_PLANE_STRIDE(frame, 0));
+
   auto &ids = self->ids;
   auto &corners = self->corners;
 
   if (self->frame_count % self->detect_every == 0) {
     ids.clear();
     corners.clear();
-    self->detector.detectMarkers(frame, corners, ids);
+    cv::Mat gray;
+    cv::cvtColor(mat, gray, cv::COLOR_RGB2GRAY);
+    self->detector.detectMarkers(gray, corners, ids);
     for (const int &id : ids) {
       g_signal_emit_by_name(self, "marker-detected", id);
+      GST_INFO_OBJECT(self, "Marker detected: id=%d", id);
     }
   }
   if (!ids.empty() && self->draw_markers) {
-    cv::aruco::drawDetectedMarkers(frame, corners, ids);
+    cv::aruco::drawDetectedMarkers(mat, corners, ids);
   }
-  frame.copyTo(cv::Mat(outframe->info.height, outframe->info.width, CV_8UC3,
-                       GST_VIDEO_FRAME_PLANE_DATA(outframe, 0)));
   return GST_FLOW_OK;
 }
 
@@ -94,6 +97,8 @@ static void gst_arucomarker_get_property(GObject *object, guint prop_id,
 }
 
 static void gst_arucomarker_class_init(GstArucoMarkerClass *klass) {
+  GST_DEBUG_CATEGORY_INIT(aruco_debug, "arucomarker", 0,
+                          "Aruco Marker Detection");
   GObjectClass *gobject_class = G_OBJECT_CLASS(klass);
   gobject_class->set_property = gst_arucomarker_set_property;
   gobject_class->get_property = gst_arucomarker_get_property;
@@ -111,7 +116,7 @@ static void gst_arucomarker_class_init(GstArucoMarkerClass *klass) {
   gst_element_class_add_pad_template(
       element_class, gst_static_pad_template_get(&src_template));
 
-  vfilter_class->transform_frame = gst_arucomarker_transform_frame;
+  vfilter_class->transform_frame_ip = gst_arucomarker_transform_frame_ip;
 
   g_signal_new("marker-detected", G_TYPE_FROM_CLASS(klass), G_SIGNAL_RUN_LAST,
                0, nullptr, nullptr, g_cclosure_marshal_VOID__INT, G_TYPE_NONE,
