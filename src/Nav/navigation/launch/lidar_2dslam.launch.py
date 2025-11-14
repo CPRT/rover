@@ -119,6 +119,7 @@ def generate_launch_description():
         launch_arguments={
             "use_sim_time": use_sim_time,
             "ekf_profile": "lidar_2dslam",
+            "launch_gps": "false",
         }.items(),
     )
 
