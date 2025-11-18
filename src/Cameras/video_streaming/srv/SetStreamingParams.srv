@@ -1,0 +1,8 @@
+# request
+int32 latency
+int32 iframe_interval
+int32 framerate
+---
+#respond 
+bool success
+string message
