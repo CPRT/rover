@@ -35,10 +35,12 @@ public:
    * @brief Construct a new WheelControl object.
    * @param wheel_name The name of the wheel (e.g., "frontLeft", "backRight").
    * @param node A pointer to the ROS node for creating publishers.
+   * @param is_open_loop Whether to use open loop (PERCENT_OUTPUT) or closed loop (VELOCITY) control.
+   * @param open_loop_scalar Scalar multiplier for velocity commands when in open loop mode.
    * @throws std::invalid_argument if the wheel name doesn't include "Left" or
    * "Right".
    */
-  WheelControl(std::string wheel_name, rclcpp::Node *node);
+  WheelControl(std::string wheel_name, rclcpp::Node *node, bool is_open_loop, double open_loop_scalar);
 
   /**
    * @brief Set the velocity of the wheel.
@@ -102,6 +104,16 @@ private:
    * @brief Publisher for sending motor control messages.
    */
   rclcpp::Publisher<MotorControl>::SharedPtr pub_;
+
+  /**
+   * @brief Whether the wheel is operating in open loop mode (true) or closed loop mode (false).
+   */
+  bool is_open_loop_;
+
+  /**
+   * @brief Scalar multiplier applied to velocity commands when in open loop mode.
+   */
+  double open_loop_scalar_;
 };
 
 #endif // WHEEL_CONTROL_HPP

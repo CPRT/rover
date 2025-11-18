@@ -38,6 +38,11 @@ TalonDriveController::TalonDriveController(const rclcpp::NodeOptions &options)
   this->declare_parameter("low_latency_mode", true);
   low_latency_mode_ = this->get_parameter("low_latency_mode").as_bool();
 
+  this->declare_parameter("is_open_loop", true);
+  bool is_open_loop = this->get_parameter("is_open_loop").as_bool();
+  this->declare_parameter("open_loop_scalar", 0.5);
+  double open_loop_scalar = this->get_parameter("open_loop_scalar").as_double();
+
   this->declare_parameter("wheels",
                           std::vector<std::string>{"frontRight", "frontLeft",
                                                    "backRight", "backLeft"});
@@ -45,7 +50,7 @@ TalonDriveController::TalonDriveController(const rclcpp::NodeOptions &options)
       this->get_parameter("wheels").as_string_array();
 
   for (const auto &wheel_name : wheel_names) {
-    wheels_.emplace_back(WheelControl(wheel_name, this));
+    wheels_.emplace_back(WheelControl(wheel_name, this, is_open_loop, open_loop_scalar));
     if (pubOdom_) {
       statusSubs_.emplace_back(this->create_subscription<MotorStatus>(
           wheel_name + "/status", 10,
