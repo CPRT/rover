@@ -1,11 +1,9 @@
 Servo_Client_node:
   ros__parameters:
-    servo_num: 1
+    servo_num: 1 # the servo currently being used
     servo0:
       name: "tilt"
-    # PAN
     servo1:
       name: "pan"
-    # GRIPPER
     servo3:
       name: "gripper"

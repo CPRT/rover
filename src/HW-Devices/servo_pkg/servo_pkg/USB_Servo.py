@@ -47,7 +47,7 @@ class USB_Servo(Parent_Config):
 
     def set_position(self, msg):
         port = self.servo_num
-        
+
         self.check_valid_servo(port)
         servo_info = self.servo_info[port]
         total_range = servo_info.max - servo_info.min
@@ -69,7 +69,9 @@ class USB_Servo(Parent_Config):
             current_position = convert_to_radians(
                 self.servo_controller.getPosition(port), servo_info
             )
-            self.get_logger().info(f"Servo {port} moved to angle: {current_position} with PWM {target_value}")
+            self.get_logger().info(
+                f"Servo {port} moved to angle: {current_position} with PWM {target_value}"
+            )
 
 
 def main(args=None):
