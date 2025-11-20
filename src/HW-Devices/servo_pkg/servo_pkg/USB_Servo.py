@@ -28,7 +28,7 @@ class USB_Servo(Parent_Config):
         self.get_logger().info(f"{self.servo_info[self.servo_num].motor_name}")
         self.sub = self.create_subscription(
             Float32,
-            f"{self.servo_info[self.servo_num].motor_name}",
+            f"/{self.servo_info[self.servo_num].motor_name}",
             self.set_position,
             3,
         )
