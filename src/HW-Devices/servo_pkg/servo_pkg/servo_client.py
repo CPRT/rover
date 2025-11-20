@@ -21,26 +21,21 @@ class Servo_Client(Node):
             .get_parameter_value()
             .string_value
         )
-        self.get_logger().info(f"motor name is {self.motor_name}")
 
         # publish angle with topic as motor name
-        self.pub = self.create_publisher(Float32, f"{self.motor_name}", 3)
-        timer_period = 0.5
+        self.pub = self.create_publisher(Float32, f"{self.motor_name}", 10)
+        timer_period = 1.5
         self.timer = self.create_timer(timer_period, self.servo_tester)
 
     def servo_pub(self, req_pos) -> None:
-        self.get_logger().info(f"Publishing: {req_pos} to {self.motor_name}")
         self.pub.publish(req_pos)
 
     def servo_tester(self) -> None:
         msg = Float32()
         # random value
-        msg.data = random.uniform(0, math.pi)
+        msg.data = random.choice([2.6652457674418604, math.pi])
         # set value
-        # msg.data = math.pi / 4
-        self.get_logger().info(
-            f"Sending position: {msg.data} to {self.motor_name}"
-        )
+        self.get_logger().info(f"Sending position: {msg.data} to {self.motor_name}")
         self.servo_pub(msg)
 
 
