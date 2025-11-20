@@ -94,6 +94,10 @@ private:
   int8_t kSimpleForward;  ///< Button to move the end effector forward
   int8_t kSimpleBackward; ///< Button to move the end effector backward
 
+  // constants for radians
+  const double PI = 3.14159265358979323846;
+  const double rad_multiplier = PI/180;
+
   // Publishers
   rclcpp::Publisher<control_msgs::msg::JointJog>::SharedPtr
       joint_pub_; ///< Publisher for joint jog messages.

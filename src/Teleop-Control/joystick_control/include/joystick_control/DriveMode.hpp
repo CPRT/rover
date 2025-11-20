@@ -65,6 +65,8 @@ private:
    *
    * @param joystickMsg A shared pointer to the sensor_msgs::msg::Joy message.
    */
+  
+  void findServoTopic()
   void handlePWM(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
 
   /**
@@ -78,12 +80,15 @@ private:
   /**
    * @brief Sets the position of the servo.
    *
-   * @param port The servo port number.
+   * @param name The servo name.
    * @param position The target position for the servo.
    */
-  void setServoPosition(int port, int position) const;
+  void setServoPosition(std::string name, float position) const;
 
   void loadParameters();
+
+  // pi constant for radians
+  const double PI = 3.14159265358979323846;
 
   // Parameters
   int8_t kForwardAxis;   ///< Axis for forward movement.
@@ -95,8 +100,8 @@ private:
   int8_t kLightsDown;    ///< Button for switching to the previous camera.
   int8_t kCruiseControl; ///< Button for enabling cruise control.
   int8_t kThrottleAxis;  ///< Axis for throttle control.
-  int8_t kCamTiltPort;   ///< Port for camera tilt servo.
-  int8_t kCamPanPort;    ///< Port for camera pan servo.
+  int8_t kCamTiltMotor;   ///< Motor name for camera tilt servo.
+  int8_t kCamPanMotor;    ///< Motor name for camera pan servo.
 
   double kThrottleMax;           ///< Maximum throttle value from joystick.
   double kThrottleMin;           ///< Minimum throttle value from joystick.
@@ -104,13 +109,15 @@ private:
   double kMaxAngular;            ///< Maximum angular velocity.
   double kMaxIncrement;          ///< Maximum increment for speed changes.
   double kMinSpeed;              ///< Minimum speed value.
-  double kDefaultCamPan = 90.0;  ///< Default camera pan position.
-  double kDefaultCamTilt = 90.0; ///< Default camera tilt position.
+  double kDefaultCamPan = PI/4;  ///< Default camera pan position.
+  double kDefaultCamTilt = PI/4; ///< Default camera tilt position.
   double kCameraSpeed = 1.0;     ///< Speed for camera movement.
 
   double current_light_pwm_; ///< Current PWM value for lights.
 
   bool camera_service_available_;
+
+  std::vector<std::string> motor_names; ///< Vector for motor names.
 
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr
       twist_pub_; ///< Publisher for Twist messages.
@@ -118,6 +125,9 @@ private:
       servo_client_; ///< Client for servo control.
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr
       pwm_pub_; ///< Publisher for video messages.
+
+  std::map<std::string, rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr>
+      motor_pubs; ///< Map that maps motor names to publishers
 };
 
 #endif // JOYSTICK_CONTROL__DRIVEMODE_HPP_

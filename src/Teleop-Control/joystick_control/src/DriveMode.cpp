@@ -6,10 +6,14 @@ DriveMode::DriveMode(rclcpp::Node *node)
     : Mode("Drive", node), camera_service_available_(false) {
   RCLCPP_INFO(node_->get_logger(), "Drive Mode");
   loadParameters();
+  std::vector<std::string> motor_names = {kCamPanMotor, kCamTiltMotor}
   twist_pub_ =
       node_->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
-  servo_client_ =
-      node_->create_client<interfaces::srv::MoveServo>("servo_service");
+  
+  for (const auto &topic: motor_names){
+    topic_name = "/" + topic
+    motor_pubs[topic] = node_->create_publisher<std_msgs::msg::Float32>(topic_name, 10)
+  }
   pwm_pub_ =
       node_->create_publisher<std_msgs::msg::Float32>("servo_pwm_control", 10);
 
@@ -86,11 +90,12 @@ void DriveMode::handleCam(
   }
   double current_time = node_->now().seconds();
   if (current_time - timestamp > 0.2) {
-    pan_pos = std::max(0.0, std::min(360.0, pan_pos));
-    tilt_pos = std::max(0.0, std::min(360.0, tilt_pos));
+    pan_pos = std::max(0.0, std::min(2*PI, pan_pos));
+    tilt_pos = std::max(0.0, std::min(2*PI, tilt_pos));
     timestamp = current_time;
-    setServoPosition(kCamTiltPort, tilt_pos);
-    setServoPosition(kCamPanPort, pan_pos);
+
+    setServoPosition(kCamTiltMotor, tilt_pos); // Change depending on which you are using
+    setServoPosition(kCamPanMotor, pan_pos);
   }
 }
 
@@ -110,14 +115,11 @@ void DriveMode::handlePWM(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   }
 }
 
-void DriveMode::setServoPosition(int port, int position) const {
-  if (camera_service_available_) {
-    auto request = std::make_shared<interfaces::srv::MoveServo::Request>();
-    request->port = port;
-    request->pos = position;
+void DriveMode::setServoPosition(std::string name, float position) const { // port name?
+  auto servo_msg = std::msgs::msg::Float32();
+  servo_msg.data = position;
+  motor_pubs[name]->publish(servo_msg);
 
-    servo_client_->async_send_request(request);
-  }
 }
 
 void DriveMode::handleVideo(
@@ -126,6 +128,7 @@ void DriveMode::handleVideo(
 }
 
 void DriveMode::declareParameters(rclcpp::Node *node) {
+
   node->declare_parameter("drive_mode.forward_axis", 1);
   node->declare_parameter("drive_mode.yaw_axis", 2);
   node->declare_parameter("drive_mode.cam_tilt_axis", 3);
@@ -141,11 +144,11 @@ void DriveMode::declareParameters(rclcpp::Node *node) {
   node->declare_parameter("drive_mode.throttle.axis", 0);
   node->declare_parameter("drive_mode.throttle.max", 1.0);
   node->declare_parameter("drive_mode.throttle.min", -1.0);
-  node->declare_parameter("drive_mode.cam_tilt_port", 0);
-  node->declare_parameter("drive_mode.cam_pan_port", 1);
-  node->declare_parameter("drive_mode.default_pan", 90.0);
-  node->declare_parameter("drive_mode.default_tilt", 90.0);
+  node->declare_parameter("drive_mode.default_pan", PI/4);
+  node->declare_parameter("drive_mode.default_tilt", PI/4);
   node->declare_parameter("drive_mode.camera_speed", 1.0);
+  node->declare_parameter("drive_mode.cam_tilt_servo", "tilt");
+  node->declare_parameter("drive_mode.cam_pan_servo", "pan");
 }
 
 void DriveMode::loadParameters() {
@@ -164,8 +167,8 @@ void DriveMode::loadParameters() {
   node_->get_parameter("drive_mode.throttle.axis", kThrottleAxis);
   node_->get_parameter("drive_mode.throttle.max", kThrottleMax);
   node_->get_parameter("drive_mode.throttle.min", kThrottleMin);
-  node_->get_parameter("drive_mode.cam_tilt_port", kCamTiltPort);
-  node_->get_parameter("drive_mode.cam_pan_port", kCamPanPort);
+  node_->get_parameter("drive_mode.cam_tilt_servo", kCamTiltMotor);
+  node_->get_parameter("drive_mode.cam_pan_servo", kCamPanMotor);
   node_->get_parameter("drive_mode.default_pan", kDefaultCamPan);
   node_->get_parameter("drive_mode.default_tilt", kDefaultCamTilt);
   node_->get_parameter("drive_mode.camera_speed", kCameraSpeed);

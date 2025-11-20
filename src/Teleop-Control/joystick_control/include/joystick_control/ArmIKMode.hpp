@@ -65,6 +65,10 @@ private:
   bool buttonPressed_;
   bool swapButton_;
   std::string frame_to_publish_;
+
+  // constants for radians
+  const double PI = 3.14159265358979323846;
+  const double rad_multiplier = PI/180;
 };
 
 #endif // JOYSTICK_CONTROL__ARMIK_MODE_HPP_

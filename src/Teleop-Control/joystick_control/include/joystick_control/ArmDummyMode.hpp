@@ -104,6 +104,9 @@ private:
 
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr
       twist_pub_; ///< Publisher for Twist messages.
+  
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr 
+      servo_pub_; ///< Publisher for servo
 
   // MotorControl Messages
   mutable ros_phoenix::msg::MotorControl base_;
@@ -113,19 +116,22 @@ private:
   mutable ros_phoenix::msg::MotorControl wristTilt_;
   mutable ros_phoenix::msg::MotorControl wristTurn_;
 
-  // Servo Members
-  mutable rclcpp::Client<interfaces::srv::MoveServo>::SharedPtr servo_client_;
+
 
   // Servo Constants
-  int8_t kServoPort;
-  int8_t kServoMin;
-  int8_t kServoMax;
-  int8_t kClawMax;
-  int8_t kClawMin;
+  std::string servoName;
+  double kServoMin;
+  double kServoMax;
+  double kClawMax;
+  double kClawMin;
   mutable double act1Scaler;
   mutable double act2Scaler;
   mutable int8_t servoPos;
   mutable bool buttonPressed;
+
+  // constants for radians
+  const double PI = 3.14159265358979323846;
+  const double rad_multiplier = PI/180;
 };
 
 #endif // JOYSTICK_CONTROL__ARMDUMMY_MODE_HPP_
