@@ -47,21 +47,15 @@ class USB_Servo(Parent_Config):
 
     def set_position(self, msg):
         port = self.servo_num
-        self.get_logger().info(f"Port is {port}")
+        
         self.check_valid_servo(port)
         servo_info = self.servo_info[port]
         total_range = servo_info.max - servo_info.min
-        self.get_logger().info(f"Float is {msg.data}")
-        self.get_logger().info(f"Total Range: {total_range}")
         target_value = convert_from_radians(msg.data, servo_info)
-        self.get_logger().info(f"PWM target is {target_value}")
         self.get_logger().info(f"Target value: {target_value}")
         current_position = convert_to_radians(
             self.servo_controller.getPosition(port), servo_info
         )
-
-        self.get_logger().info(f"Total Range: {total_range}")
-        self.get_logger().info(f"Radian value: {current_position}")
 
         if not (servo_info.min <= target_value <= servo_info.max):
             self.get_logger().warning(
@@ -75,7 +69,7 @@ class USB_Servo(Parent_Config):
             current_position = convert_to_radians(
                 self.servo_controller.getPosition(port), servo_info
             )
-            self.get_logger().info(f"Servo {port} moved to angle: {current_position}")
+            self.get_logger().info(f"Servo {port} moved to angle: {current_position} with PWM {target_value}")
 
 
 def main(args=None):
