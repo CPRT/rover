@@ -17,9 +17,9 @@ from launch_ros.descriptions import ComposableNode
 from moveit_configs_utils import MoveItConfigsBuilder
 from moveit_configs_utils.launch_utils import DeclareBooleanLaunchArg
 from moveit_configs_utils.launches import (
-    generate_rsp_launch,
     generate_move_group_launch,
     generate_spawn_controllers_launch,
+    generate_moveit_rviz_launch,
 )
 
 
@@ -60,9 +60,6 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
     use_composition = LaunchConfiguration("use_composition")
     use_intra_process_comms = LaunchConfiguration("use_intra_process_comms")
 
-    # Robot state publisher
-    ld.add_action(generate_rsp_launch(moveit_config))
-
     # Move group
     ld.add_action(generate_move_group_launch(moveit_config))
 
@@ -83,11 +80,12 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
         {
             "moveit_servo": servo_yaml,
             "use_intra_process_comms": use_intra_process_comms,
+            "publish_frequency": 15.0,
         },
         moveit_config.robot_description,
         moveit_config.robot_description_semantic,
         moveit_config.robot_description_kinematics,
-        str(moveit_config.package_path / "config/ros2_controllers.yaml"),
+        str(launch_package_path / "config/ros2_controllers.yaml"),
     ]
 
     # Non-composed nodes
@@ -98,7 +96,6 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
                 package="controller_manager",
                 executable="ros2_control_node",
                 output="screen",
-                respawn_delay=2.0,
                 parameters=parameters,
                 remappings=[
                     ("/controller_manager/robot_description", "/robot_description")
@@ -112,7 +109,7 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
             ),
             Node(
                 package="robot_state_publisher",
-                executable="robot_state_publisher::robot_state_publisher",
+                executable="robot_state_publisher",
                 name="robot_state_publisher",
                 parameters=parameters,
             ),
