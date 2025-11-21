@@ -3,12 +3,8 @@ import yaml
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import (
-    GroupAction,
-    IncludeLaunchDescription,
-)
+from launch.actions import GroupAction
 from launch.conditions import IfCondition
-from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
 
 from launch_ros.actions import (
@@ -20,6 +16,11 @@ from launch_ros.descriptions import ComposableNode
 
 from moveit_configs_utils import MoveItConfigsBuilder
 from moveit_configs_utils.launch_utils import DeclareBooleanLaunchArg
+from moveit_configs_utils.launches import (
+    generate_rsp_launch,
+    generate_move_group_launch,
+    generate_spawn_controllers_launch,
+)
 
 
 def load_yaml(package_name: str, file_path: str):
@@ -39,7 +40,6 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
     Launch a self-contained MoveIt demo.
 
     Includes:
-      * static_virtual_joint_tfs
       * robot_state_publisher
       * move_group
       * moveit_rviz
@@ -60,52 +60,20 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
     use_composition = LaunchConfiguration("use_composition")
     use_intra_process_comms = LaunchConfiguration("use_intra_process_comms")
 
-    # If there are virtual joints, broadcast static tf by including virtual_joints launch
-    virtual_joints_launch = (
-        launch_package_path / "launch/static_virtual_joint_tfs.launch.py"
-    )
-
-    if virtual_joints_launch.exists():
-        ld.add_action(
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(str(virtual_joints_launch)),
-            )
-        )
-
     # Robot state publisher
-    ld.add_action(
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                str(launch_package_path / "launch/rsp.launch.py")
-            ),
-        )
-    )
+    ld.add_action(generate_rsp_launch(moveit_config))
 
     # Move group
-    ld.add_action(
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                str(launch_package_path / "launch/move_group.launch.py")
-            )
-        )
-    )
+    ld.add_action(generate_move_group_launch(moveit_config))
+
+    # Controllers
+    ld.add_action(generate_spawn_controllers_launch(moveit_config))
 
     # RViz (optional)
     ld.add_action(
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                str(launch_package_path / "launch/moveit_rviz.launch.py")
-            ),
+        GroupAction(
             condition=IfCondition(LaunchConfiguration("use_rviz")),
-        )
-    )
-
-    # Controllers
-    ld.add_action(
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                str(launch_package_path / "launch/spawn_controllers.launch.py")
-            )
+            actions=[generate_moveit_rviz_launch(moveit_config)],
         )
     )
 
