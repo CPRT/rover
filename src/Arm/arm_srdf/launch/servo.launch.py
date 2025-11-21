@@ -1,28 +1,29 @@
-from moveit_configs_utils import MoveItConfigsBuilder
-from launch_ros.actions import ComposableNodeContainer, LoadComposableNodes
-from launch_ros.descriptions import ComposableNode
-from launch.actions import GroupAction
-from launch.substitutions import PythonExpression
 import os
 import yaml
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import (
+    GroupAction,
     IncludeLaunchDescription,
 )
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
 
-from launch_ros.actions import Node
-
-from moveit_configs_utils.launch_utils import (
-    DeclareBooleanLaunchArg,
+from launch_ros.actions import (
+    Node,
+    ComposableNodeContainer,
+    LoadComposableNodes,
 )
+from launch_ros.descriptions import ComposableNode
+
+from moveit_configs_utils import MoveItConfigsBuilder
+from moveit_configs_utils.launch_utils import DeclareBooleanLaunchArg
 
 
-def load_yaml(package_name, file_path):
+def load_yaml(package_name: str, file_path: str):
+    """Load a YAML file from a package's share directory."""
     package_path = get_package_share_directory(package_name)
     absolute_file_path = os.path.join(package_path, file_path)
 
@@ -33,29 +34,32 @@ def load_yaml(package_name, file_path):
         return None
 
 
-def test_launch(moveit_config, launch_package_path=None):
+def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
     """
-    Launches a self contained demo
+    Launch a self-contained MoveIt demo.
 
-    launch_package_path is optional to use different launch and config packages
-
-    Includes
-     * static_virtual_joint_tfs
-     * robot_state_publisher
-     * move_group
-     * moveit_rviz
-     * ros2_control_node + controller spawners
+    Includes:
+      * static_virtual_joint_tfs
+      * robot_state_publisher
+      * move_group
+      * moveit_rviz
+      * ros2_control_node + controller spawners
     """
-    if launch_package_path == None:
+    if launch_package_path is None:
         launch_package_path = moveit_config.package_path
 
     ld = LaunchDescription()
 
+    # Launch arguments
     ld.add_action(DeclareBooleanLaunchArg("use_composition", default_value=True))
     ld.add_action(
         DeclareBooleanLaunchArg("use_intra_process_comms", default_value=True)
     )
     ld.add_action(DeclareBooleanLaunchArg("use_rviz", default_value=False))
+
+    use_composition = LaunchConfiguration("use_composition")
+    use_intra_process_comms = LaunchConfiguration("use_intra_process_comms")
+
     # If there are virtual joints, broadcast static tf by including virtual_joints launch
     virtual_joints_launch = (
         launch_package_path / "launch/static_virtual_joint_tfs.launch.py"
@@ -68,7 +72,7 @@ def test_launch(moveit_config, launch_package_path=None):
             )
         )
 
-    # Given the published joint states, publish tf for the robot links
+    # Robot state publisher
     ld.add_action(
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
@@ -77,15 +81,16 @@ def test_launch(moveit_config, launch_package_path=None):
         )
     )
 
+    # Move group
     ld.add_action(
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 str(launch_package_path / "launch/move_group.launch.py")
-            ),
+            )
         )
     )
 
-    # Run Rviz and load the default config to see the state of the move_group node
+    # RViz (optional)
     ld.add_action(
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
@@ -95,16 +100,16 @@ def test_launch(moveit_config, launch_package_path=None):
         )
     )
 
+    # Controllers
     ld.add_action(
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 str(launch_package_path / "launch/spawn_controllers.launch.py")
-            ),
+            )
         )
     )
 
-    use_composition = LaunchConfiguration("use_composition")
-    use_intra_process_comms = LaunchConfiguration("use_intra_process_comms")
+    # Common parameters
     servo_yaml = load_yaml("arm_srdf", "config/arm_config.yaml")
     parameters = [
         {
@@ -117,6 +122,7 @@ def test_launch(moveit_config, launch_package_path=None):
         str(moveit_config.package_path / "config/ros2_controllers.yaml"),
     ]
 
+    # Non-composed nodes
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(["not ", use_composition])),
         actions=[
@@ -144,6 +150,8 @@ def test_launch(moveit_config, launch_package_path=None):
             ),
         ],
     )
+
+    # Composable container
     container_name = "arm_container"
     container = ComposableNodeContainer(
         namespace="",
@@ -154,7 +162,7 @@ def test_launch(moveit_config, launch_package_path=None):
         condition=IfCondition(use_composition),
     )
 
-    # Group of actions to load composable nodes when composition is enabled
+    # Composable nodes (loaded into container when composition is enabled)
     load_composable_nodes = LoadComposableNodes(
         condition=IfCondition(use_composition),
         target_container=container_name,
@@ -172,7 +180,7 @@ def test_launch(moveit_config, launch_package_path=None):
                 package="moveit_servo",
                 plugin="moveit_servo::ServoNode",
                 name="servo_server",
-                parameters=parameters
+                parameters=parameters,
             ),
             ComposableNode(
                 package="robot_state_publisher",
@@ -183,16 +191,17 @@ def test_launch(moveit_config, launch_package_path=None):
         ],
     )
 
+    # Add actions to launch description
     ld.add_action(load_nodes)
-    ld.add_action(load_composable_nodes)
     ld.add_action(container)
+    ld.add_action(load_composable_nodes)
     return ld
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     moveit_config = (
         MoveItConfigsBuilder("arm_urdf", package_name="arm_srdf")
         .robot_description(file_path="config/arm_urdf.urdf.xacro")
         .to_moveit_configs()
     )
-    return test_launch(moveit_config)
+    return arm_launch(moveit_config)
