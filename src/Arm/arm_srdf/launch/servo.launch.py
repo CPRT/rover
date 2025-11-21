@@ -87,20 +87,19 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
         moveit_config.robot_description_kinematics,
         str(launch_package_path / "config/ros2_controllers.yaml"),
     ]
+    # Control Node does not implement a component option
+    control_node = Node(
+        package="controller_manager",
+        executable="ros2_control_node",
+        output="screen",
+        parameters=parameters,
+        remappings=[("/controller_manager/robot_description", "/robot_description")],
+    )
 
     # Non-composed nodes
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(["not ", use_composition])),
         actions=[
-            Node(
-                package="controller_manager",
-                executable="ros2_control_node",
-                output="screen",
-                parameters=parameters,
-                remappings=[
-                    ("/controller_manager/robot_description", "/robot_description")
-                ],
-            ),
             Node(
                 package="moveit_servo",
                 executable="servo_node_main",
@@ -121,7 +120,7 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
     container = ComposableNodeContainer(
         namespace="",
         package="rclcpp_components",
-        executable="component_container_mt",
+        executable="component_container_isolated",
         name=container_name,
         output="screen",
         condition=IfCondition(use_composition),
@@ -133,18 +132,9 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
         target_container=container_name,
         composable_node_descriptions=[
             ComposableNode(
-                package="controller_manager",
-                plugin="controller_manager::ControllerManager",
-                name="controller_server",
-                parameters=parameters,
-                remappings=[
-                    ("/controller_manager/robot_description", "/robot_description")
-                ],
-            ),
-            ComposableNode(
                 package="moveit_servo",
                 plugin="moveit_servo::ServoNode",
-                name="servo_server",
+                name="servo_node",
                 parameters=parameters,
             ),
             ComposableNode(
@@ -157,6 +147,7 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
     )
 
     # Add actions to launch description
+    ld.add_action(control_node)
     ld.add_action(load_nodes)
     ld.add_action(container)
     ld.add_action(load_composable_nodes)
