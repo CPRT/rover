@@ -214,11 +214,11 @@ void TalonSRXWrapper::configure() {
     break;
   }
   int real_ticks = 0;
+  int offset_ticks =
+      static_cast<int>(sensor_offset_ * sensor_ticks_ / (2.0 * M_PI));
   if (sensor_type_ == SensorType::PWM) {
     auto &sc = talon_controller_->GetSensorCollection();
     int current_ticks = sc.GetPulseWidthPosition() & 0xFFF;
-    int offset_ticks =
-        static_cast<int>(sensor_offset_ * sensor_ticks_ / (2.0 * M_PI));
     real_ticks = current_ticks - offset_ticks;
   } else if (sensor_type_ == SensorType::RELATIVE) {
     real_ticks = offset_ticks;
@@ -230,8 +230,9 @@ void TalonSRXWrapper::configure() {
 
   talon_controller_->SetNeutralMode(NeutralMode::Brake);
   talon_controller_->ConfigSelectedFeedbackCoefficient(1.0);
-  // Talon's virtualize a QuadEncoder from the PWM signal if no quad encoder is
-  // present. The absolute part is set at the beginning from the
+
+  // The Talons virtualize a QuadEncoder from the PWM signal if no quad encoder
+  // is present. The absolute part is set at the beginning from the
   // SetSelectedSensorPosition
   talon_controller_->ConfigSelectedFeedbackSensor(FeedbackDevice::QuadEncoder,
                                                   0, 0);
