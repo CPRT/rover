@@ -15,7 +15,6 @@
 
 #include "grid_map_cv/utilities.hpp"
 
-
 namespace grid_map {
 
 template <typename T>
@@ -166,7 +165,8 @@ void PreserveCostInflationFilter<T>::computeWithSimpleSerialMethod(
 }
 
 template <typename T>
-inline float PreserveCostInflationFilter<T>::getDecay(uint16_t dx, uint16_t dy) const {
+inline float PreserveCostInflationFilter<T>::getDecay(uint16_t dx,
+                                                      uint16_t dy) const {
   if (dx > maxDx_ || dy > maxDx_) {
     return 0.0;
   }
