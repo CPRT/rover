@@ -230,8 +230,9 @@ void TalonSRXWrapper::configure() {
 
   talon_controller_->SetNeutralMode(NeutralMode::Brake);
   talon_controller_->ConfigSelectedFeedbackCoefficient(1.0);
-  // Talon's virtualize a QuadEncoder from the PWM signal if no quad encoder is present. 
-  // The absolute part is set at the beginning from the SetSelectedSensorPosition
+  // Talon's virtualize a QuadEncoder from the PWM signal if no quad encoder is
+  // present. The absolute part is set at the beginning from the
+  // SetSelectedSensorPosition
   talon_controller_->ConfigSelectedFeedbackSensor(FeedbackDevice::QuadEncoder,
                                                   0, 0);
   talon_controller_->EnableVoltageCompensation(true);

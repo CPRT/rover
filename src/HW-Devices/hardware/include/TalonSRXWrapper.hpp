@@ -45,11 +45,7 @@ public:
 
 private:
   const hardware_interface::ComponentInfo info_;
-  enum class SensorType {
-    PWM,
-    RELATIVE,
-    ANALOG
-  }; 
+  enum class SensorType { PWM, RELATIVE, ANALOG };
 
   // Parameters
   int id_;
