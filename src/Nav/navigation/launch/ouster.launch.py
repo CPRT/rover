@@ -25,7 +25,6 @@ def generate_launch_description():
     Generate launch description for running ouster_ros components separately each
     component will run in a separate process).
     """
-    ouster_ros_pkg_dir = get_package_share_directory("ouster_ros")
     params_file = os.path.join(
         get_package_share_directory("navigation"),
         "config",
