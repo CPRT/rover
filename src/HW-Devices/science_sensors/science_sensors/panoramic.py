@@ -3,7 +3,6 @@ import numpy as np
 import cv2
 import time
 from rclpy.node import Node
-from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from interfaces.srv import MoveServo

@@ -1,4 +1,4 @@
-from stellarnet_driverLibs import stellarnet_driver3 as sn
+from science_sensors.stellarnet_driverLibs import stellarnet_driver3 as sn
 
 # For Windows ONLY: Must be run in administrator mode
 # Only need to run it one time after switch back from the SpectraWiz. Or manually run InstallDriver.exe located in stellarnet_driverLis/windows_only

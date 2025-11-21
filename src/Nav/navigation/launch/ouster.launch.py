@@ -3,20 +3,16 @@
 
 """Launch a sensor node along with os_cloud and os_"""
 
-from pathlib import Path
 import launch
 import lifecycle_msgs.msg
 from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import LifecycleNode
 from launch.actions import (
     DeclareLaunchArgument,
-    IncludeLaunchDescription,
     RegisterEventHandler,
     EmitEvent,
     LogInfo,
 )
-from launch.conditions import IfCondition
-from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch.events import matches_action
 from launch_ros.events.lifecycle import ChangeState
