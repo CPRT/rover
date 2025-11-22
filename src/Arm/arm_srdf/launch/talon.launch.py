@@ -1,3 +1,5 @@
+# This launch file is deprecated. Use only for testing/debugging.
+
 import launch
 import launch_ros.actions
 from launch_ros.actions import ComposableNodeContainer
