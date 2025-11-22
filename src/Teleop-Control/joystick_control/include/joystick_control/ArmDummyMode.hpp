@@ -47,12 +47,9 @@ public:
 
   /**
    * @brief Wrapper for servo control
-   * @param req_port The servo port number
-   * @param req_pos The target position
-   * @param req_min The minimum position limit
-   * @param req_max The maximum position limit
+   * @param position The target position
    */
-  void servoRequest(int req_port, int req_pos, int req_min, int req_max) const;
+  void setServoPosition(double position) const;
 
 private:
   /**
@@ -126,7 +123,7 @@ private:
   double kClawMin;
   mutable double act1Scaler;
   mutable double act2Scaler;
-  mutable int8_t servoPos;
+  mutable double servoPos;
   mutable bool buttonPressed;
 
   // constants for radians

@@ -65,9 +65,9 @@ private:
    *
    * @param joystickMsg A shared pointer to the sensor_msgs::msg::Joy message.
    */
-  
-  void findServoTopic()
-  void handlePWM(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
+
+  void findServoTopic() void handlePWM(
+      std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
 
   /**
    * @brief Gets the throttle value from the joystick input.
@@ -83,7 +83,7 @@ private:
    * @param name The servo name.
    * @param position The target position for the servo.
    */
-  void setServoPosition(std::string name, float position) const;
+  void setServoPosition(std::string name, double position) const;
 
   void loadParameters();
 
@@ -91,27 +91,27 @@ private:
   const double PI = 3.14159265358979323846;
 
   // Parameters
-  int8_t kForwardAxis;   ///< Axis for forward movement.
-  int8_t kYawAxis;       ///< Axis for yaw (rotation).
-  int8_t kCamTiltAxis;   ///< Axis for camera tilt.
-  int8_t kCamPanAxis;    ///< Axis for camera pan.
-  int8_t kCamReset;      ///< Button for resetting the camera.
-  int8_t kLightsUp;      ///< Button for switching to the next camera.
-  int8_t kLightsDown;    ///< Button for switching to the previous camera.
-  int8_t kCruiseControl; ///< Button for enabling cruise control.
-  int8_t kThrottleAxis;  ///< Axis for throttle control.
-  int8_t kCamTiltMotor;   ///< Motor name for camera tilt servo.
-  int8_t kCamPanMotor;    ///< Motor name for camera pan servo.
+  int8_t kForwardAxis;      ///< Axis for forward movement.
+  int8_t kYawAxis;          ///< Axis for yaw (rotation).
+  int8_t kCamTiltAxis;      ///< Axis for camera tilt.
+  int8_t kCamPanAxis;       ///< Axis for camera pan.
+  int8_t kCamReset;         ///< Button for resetting the camera.
+  int8_t kLightsUp;         ///< Button for switching to the next camera.
+  int8_t kLightsDown;       ///< Button for switching to the previous camera.
+  int8_t kCruiseControl;    ///< Button for enabling cruise control.
+  int8_t kThrottleAxis;     ///< Axis for throttle control.
+  std::string camTiltMotor; ///< Motor name for camera tilt servo.
+  std::string camPanMotor;  ///< Motor name for camera pan servo.
 
-  double kThrottleMax;           ///< Maximum throttle value from joystick.
-  double kThrottleMin;           ///< Minimum throttle value from joystick.
-  double kMaxLinear;             ///< Maximum linear velocity.
-  double kMaxAngular;            ///< Maximum angular velocity.
-  double kMaxIncrement;          ///< Maximum increment for speed changes.
-  double kMinSpeed;              ///< Minimum speed value.
-  double kDefaultCamPan = PI/4;  ///< Default camera pan position.
-  double kDefaultCamTilt = PI/4; ///< Default camera tilt position.
-  double kCameraSpeed = 1.0;     ///< Speed for camera movement.
+  double kThrottleMax;             ///< Maximum throttle value from joystick.
+  double kThrottleMin;             ///< Minimum throttle value from joystick.
+  double kMaxLinear;               ///< Maximum linear velocity.
+  double kMaxAngular;              ///< Maximum angular velocity.
+  double kMaxIncrement;            ///< Maximum increment for speed changes.
+  double kMinSpeed;                ///< Minimum speed value.
+  double kDefaultCamPan = PI / 4;  ///< Default camera pan position.
+  double kDefaultCamTilt = PI / 4; ///< Default camera tilt position.
+  double kCameraSpeed = 1.0;       ///< Speed for camera movement.
 
   double current_light_pwm_; ///< Current PWM value for lights.
 

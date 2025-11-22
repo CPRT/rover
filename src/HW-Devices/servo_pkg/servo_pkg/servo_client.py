@@ -1,7 +1,5 @@
 import rclpy
 from rclpy.node import Node
-import rclpy.logging
-import rclpy.time
 from std_msgs.msg import Float32
 import random
 import math
@@ -23,7 +21,7 @@ class Servo_Client(Node):
         )
 
         # publish angle with topic as motor name
-        self.pub = self.create_publisher(Float32, f"{self.motor_name}", 10)
+        self.pub = self.create_publisher(Float32, f"/{self.motor_name}", 10)
         timer_period = 1.5
         self.timer = self.create_timer(timer_period, self.servo_tester)
 

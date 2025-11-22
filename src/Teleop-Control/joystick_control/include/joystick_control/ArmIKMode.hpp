@@ -34,22 +34,21 @@ public:
 
   /**
    * @brief Wrapper for servo control
-   * @param req_port The servo port number
-   * @param req_pos The target position
+   * @param position The target position
    */
-  void servoRequest(int req_port, int req_pos) const;
+  void setServoPosition(double position) const;
 
 private:
   // Servo Members
   rclcpp::Client<interfaces::srv::MoveServo>::SharedPtr servo_client_;
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr servo_pub_;
 
   // Servo Constants
-  int8_t kServoPort;
-  int8_t kServoMin;
-  int8_t kServoMax;
-  int8_t kClawMax;
-  int8_t kClawMin;
+  double kServoMin;
+  double kServoMax;
+  double kClawMax;
+  double kClawMin;
   int8_t kxAxis;
   int8_t kyAxis;
   int8_t kUpBut;
@@ -61,9 +60,10 @@ private:
   int8_t kEEF;
   int8_t kClawOpen;
   int8_t kClawClose;
-  int8_t servoPos_;
+  double servoPos_;
   bool buttonPressed_;
   bool swapButton_;
+  std::string servoName;
   std::string frame_to_publish_;
 
   // constants for radians

@@ -11,6 +11,8 @@ ArmManualMode::ArmManualMode(rclcpp::Node *node) : Mode("Manual Arm", node) {
       "/servo_node/delta_joint_cmds", 10);
   servo_client_ =
       node_->create_client<interfaces::srv::MoveServo>("servo_service");
+  servo_pub_ =
+      node_->create_publisher<std_msgs::msg::Float32>("/" + servoName, 10);
   if (!ArmHelpers::start_moveit_servo(node_)) {
     RCLCPP_ERROR(
         node_->get_logger(),
@@ -23,10 +25,10 @@ ArmManualMode::ArmManualMode(rclcpp::Node *node) : Mode("Manual Arm", node) {
   msg.data = true;
   stop_hw_interface_pub->publish(msg);
 
-  kServoMin = 0;
-  kServoMax = 180;
-  kClawMax = 63;
-  kClawMin = 8;
+  kServoMin = 0.0;
+  kServoMax = PI;
+  kClawMax = 63 * rad_multiplier;
+  kClawMin = 8 * rad_multiplier;
   servoPos_ = kClawMax;
   buttonPressed_ = false;
   joint_msg_ = control_msgs::msg::JointJog();
@@ -105,20 +107,20 @@ void ArmManualMode::handleTwist(
 
   // Gripper. Will cycle between open, half open, and close on button release.
   if (joystickMsg->buttons[kClawOpen] == 1 && !buttonPressed_) {
-    if (servoPos_ + ((kClawMax - kClawMin) / 2) < kClawMax + 1) {
+    if (servoPos_ + ((kClawMax - kClawMin) / 2) < kClawMax + rad_multiplier) {
       buttonPressed_ = true;
       servoPos_ = servoPos_ + ((kClawMax - kClawMin) / 2);
-      servoRequest(kServoPort, servoPos_);
+      setServoPosition(servoPos_);
     } else {
       buttonPressed_ = true;
       RCLCPP_INFO(node_->get_logger(), "Max Open");
       RCLCPP_INFO(node_->get_logger(), "%d", servoPos_);
     }
   } else if (joystickMsg->buttons[kClawClose] == 1 && !buttonPressed_) {
-    if (servoPos_ - ((kClawMax - kClawMin) / 2) > kClawMin - 1) {
+    if (servoPos_ - ((kClawMax - kClawMin) / 2) > kClawMin - rad_multiplier) {
       buttonPressed_ = true;
       servoPos_ = servoPos_ - ((kClawMax - kClawMin) / 2);
-      servoRequest(kServoPort, servoPos_);
+      setServoPosition(servoPos_);
     } else {
       buttonPressed_ = true;
       RCLCPP_INFO(node_->get_logger(), "Max Close");
@@ -144,7 +146,7 @@ void ArmManualMode::declareParameters(rclcpp::Node *node) {
   node->declare_parameter("arm_manual_mode.claw_close", 9);
   node->declare_parameter("arm_manual_mode.simple_forward", 10);
   node->declare_parameter("arm_manual_mode.simple_backward", 11);
-  node->declare_parameter("arm_manual_mode.servo_port", 12);
+  node->declare_parameter("arm_manual_mode.servo_name", "manual");
   node->declare_parameter("arm_manual_mode.throttle.axis", 7);
   node->declare_parameter("arm_manual_mode.throttle.min", -1.0);
   node->declare_parameter("arm_manual_mode.throttle.max", 1.0);
@@ -162,35 +164,15 @@ void ArmManualMode::loadParameters() {
   node_->get_parameter("arm_manual_mode.claw_close", kClawClose);
   node_->get_parameter("arm_manual_mode.simple_forward", kSimpleForward);
   node_->get_parameter("arm_manual_mode.simple_backward", kSimpleBackward);
-  node_->get_parameter("arm_manual_mode.servo_port", kServoPort);
+  node_->get_parameter("arm_manual_mode.servo_name", servoName);
   node_->get_parameter("arm_manual_mode.throttle.axis", kThrottleAxis);
   node_->get_parameter("arm_manual_mode.throttle.max", kThrottleMax);
   node_->get_parameter("arm_manual_mode.throttle.min", kThrottleMin);
 }
 
-void ArmManualMode::servoRequest(int req_port, int req_pos) const {
-  auto request = std::make_shared<interfaces::srv::MoveServo::Request>();
-  request->port = req_port;
-  request->pos = req_pos;
-
-  if (!servo_client_->wait_for_service(std::chrono::seconds(1))) {
-    RCLCPP_WARN(node_->get_logger(), "Service not available");
-    return;
-  }
-
-  // Simple callback that just logs errors
-  auto callback =
-      [this](rclcpp::Client<interfaces::srv::MoveServo>::SharedFuture future) {
-        try {
-          auto response = future.get();
-          if (!response->status) {
-            RCLCPP_ERROR(node_->get_logger(), "Servo move failed");
-          }
-        } catch (const std::exception &e) {
-          RCLCPP_ERROR(node_->get_logger(), "Service call failed: %s",
-                       e.what());
-        }
-      };
-
-  servo_client_->async_send_request(request, callback);
+void ArmDummyMode::setServoPosition(double position)
+    const {
+  auto servo_msg = std::msgs::msg::Float32();
+  servo_msg.data = position;
+  servo_pub_->publish(servo_msg);
 }

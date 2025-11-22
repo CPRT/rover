@@ -2,7 +2,6 @@ import rclpy
 from std_msgs.msg import Float32
 from servo_pkg import maestro
 from servo_pkg.parent_config import Parent_Config
-from servo_pkg.parent_config import Servo_Info
 
 
 def convert_from_radians(angle, servo_info):
@@ -28,7 +27,7 @@ class USB_Servo(Parent_Config):
         self.get_logger().info(f"{self.servo_info[self.servo_num].motor_name}")
         self.sub = self.create_subscription(
             Float32,
-            f"{self.servo_info[self.servo_num].motor_name}",
+            f"/{self.servo_info[self.servo_num].motor_name}",
             self.set_position,
             3,
         )
@@ -47,7 +46,7 @@ class USB_Servo(Parent_Config):
 
     def set_position(self, msg):
         port = self.servo_num
-        
+
         self.check_valid_servo(port)
         servo_info = self.servo_info[port]
         total_range = servo_info.max - servo_info.min
@@ -69,7 +68,9 @@ class USB_Servo(Parent_Config):
             current_position = convert_to_radians(
                 self.servo_controller.getPosition(port), servo_info
             )
-            self.get_logger().info(f"Servo {port} moved to angle: {current_position} with PWM {target_value}")
+            self.get_logger().info(
+                f"Servo {port} moved to angle: {current_position} with PWM {target_value}"
+            )
 
 
 def main(args=None):

@@ -52,7 +52,7 @@ public:
    * @param req_min The minimum position limit
    * @param req_max The maximum position limit
    */
-  void servoRequest(int req_port, int req_pos) const;
+  void setServoPosition(double position) const;
 
 private:
   /**
@@ -96,27 +96,27 @@ private:
 
   // constants for radians
   const double PI = 3.14159265358979323846;
-  const double rad_multiplier = PI/180;
+  const double rad_multiplier = PI / 180;
 
   // Publishers
   rclcpp::Publisher<control_msgs::msg::JointJog>::SharedPtr
       joint_pub_; ///< Publisher for joint jog messages.
 
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr
+      servo_pub_; ///< Publisher for servo
+
   // Message Messages
   control_msgs::msg::JointJog joint_msg_;
 
-  // Servo Members
-  rclcpp::Client<interfaces::srv::MoveServo>::SharedPtr servo_client_;
-
   // Servo Constants
-  int8_t kServoPort;
-  int8_t kServoMin;
-  int8_t kServoMax;
-  int8_t kClawMax;
-  int8_t kClawMin;
+  std::string servoName;
+  double kServoMin;
+  double kServoMax;
+  double kClawMax;
+  double kClawMin;
   double act1Scaler_;
   double act2Scaler_;
-  int8_t servoPos_;
+  double servoPos_;
   bool buttonPressed_;
 };
 

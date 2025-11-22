@@ -20,7 +20,8 @@ ArmDummyMode::ArmDummyMode(rclcpp::Node *node) : Mode("Dummy Arm", node) {
       "/wristTilt/set", 10);
   wristTurn_pub_ = node_->create_publisher<ros_phoenix::msg::MotorControl>(
       "/wristTurn/set", 10);
-  servo_pub_ = node_->create_publisher<std_msgs::msg::Float32>("/" + servoName, 10);
+  servo_pub_ =
+      node_->create_publisher<std_msgs::msg::Float32>("/" + servoName, 10);
   auto stop_hw_interface_pub =
       node_->create_publisher<std_msgs::msg::Bool>("/arm_active", 10);
   auto msg = std_msgs::msg::Bool();
@@ -29,8 +30,8 @@ ArmDummyMode::ArmDummyMode(rclcpp::Node *node) : Mode("Dummy Arm", node) {
 
   kServoMin = 0.0;
   kServoMax = PI;
-  kClawMax = 63*rad_multiplier;
-  kClawMin = 8*rad_multiplier;
+  kClawMax = 63 * rad_multiplier;
+  kClawMin = 8 * rad_multiplier;
   servoPos = kClawMax;
   buttonPressed = false;
 }
@@ -100,13 +101,12 @@ void ArmDummyMode::handleTwist(
 
   // Wrist Turn
   wristTurn_.value = -joystickMsg->axes[kWristRoll] * throttle;
-  deg_in_rad = PI/180
   // Gripper. Will cycle between open, half open, and close on button release.
   if (joystickMsg->buttons[kClawOpen] == 1 && !buttonPressed) {
     if (servoPos + ((kClawMax - kClawMin) / 2) < kClawMax + rad_multiplier) {
       buttonPressed = true;
       servoPos = servoPos + ((kClawMax - kClawMin) / 2);
-      send_servo_position(servoName, servoPos);
+      setServoPosition(servoPos);
     } else {
       buttonPressed = true;
       RCLCPP_INFO(node_->get_logger(), "Max Open");
@@ -116,7 +116,7 @@ void ArmDummyMode::handleTwist(
     if (servoPos - ((kClawMax - kClawMin) / 2) > kClawMin - rad_multiplier) {
       buttonPressed = true;
       servoPos = servoPos - ((kClawMax - kClawMin) / 2);
-      send_servo_position(servoName, servoPos);
+      setServoPosition(servoPos);
     } else {
       buttonPressed = true;
       RCLCPP_INFO(node_->get_logger(), "Max Close");
@@ -198,8 +198,9 @@ ArmDummyMode::sendRequest(int port, int pos, int min, int max) const {
   return *future.get();
 }
 
-void ArmDummyMode::send_servo_position(std::string motor_name, float req_pos) const { // doesn't use max and min, set config on servo correctly
+void ArmDummyMode::setServoPosition(double position)
+    const {
   auto servo_msg = std::msgs::msg::Float32();
-  servo_msg.data = req_pos;
+  servo_msg.data = position;
   servo_pub_->publish(servo_msg);
 }
