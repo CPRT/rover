@@ -93,6 +93,12 @@ class BasePIDGrapher(Node):
         if event.key == "s":
             self.save()
             print("Saved plot")
+    def on_key(self, event):
+        if event.key == "r":
+            for j in self.Joints.values():
+                j.reset()
+            self.beginning = self.get_clock().now()
+            print("Reset data")
 
     def save(self):
         # OR force the src directory like this:

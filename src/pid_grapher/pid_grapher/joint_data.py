@@ -45,3 +45,7 @@ class JointData:
 
         self.ax.relim()
         self.ax.autoscale_view()
+    def reset(self):
+        self.times = []
+        self.states = []
+        self.targetsHistory = []

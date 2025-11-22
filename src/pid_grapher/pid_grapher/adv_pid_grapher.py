@@ -105,6 +105,13 @@ class advPIDGrapher(Node):
 
             plt.savefig(save_path, bbox_inches="tight", dpi=300)
             print(f"Plot saved to {save_path}")
+        elif event.key == "r":
+            for j in self.Joints.values():
+                j.reset()
+            self.beginning = self.get_clock().now()
+            print("Reset data")
+
+
 
 
 def main(args=None):
