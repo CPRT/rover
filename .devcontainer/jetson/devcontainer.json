@@ -11,6 +11,7 @@
     "--volume=/sys:/sys",
     "--volume=/etc/timezone:/etc/timezone",
     "--volume=/tmp/argus_socket:/tmp/argus_socket",
+    "--volume=/usr/local/zed:/usr/local/zed",
     "--runtime=nvidia",
     "--gpus=all",
     "--ipc=host",

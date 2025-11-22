@@ -318,7 +318,7 @@
       link="Link_6" />
     <axis
       xyz="0 -1 0" />
-    <limit effort="100.0" velocity="1.0" lower="-1.599417185" upper="1.1678841562"/>
+    <limit effort="100.0" velocity="1.0" lower="-1.371" upper="0.828"/>
   </joint>
   <link
     name="Link_7">

@@ -41,7 +41,7 @@ profiles = {
     },
 }
 
-default_profile = "all"
+default_profile = "zed_only"
 
 
 def launch_setup(context):
