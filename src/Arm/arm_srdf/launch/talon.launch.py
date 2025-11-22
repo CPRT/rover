@@ -25,7 +25,7 @@ def generate_launch_description():
             ComposableNode(
                 package="ros_phoenix",
                 plugin="ros_phoenix::TalonSRX",
-                name="base",
+                name="base", #PID values tuned for position
                 parameters=[
                     {"id": 10},
                     {"P": 40.0},
@@ -43,7 +43,7 @@ def generate_launch_description():
             ComposableNode(
                 package="ros_phoenix",
                 plugin="ros_phoenix::TalonSRX",
-                name="act1",
+                name="act1", #PID values tuned for position
                 parameters=[
                     {"id": 11},
                     {"P": 70.0},
@@ -62,7 +62,7 @@ def generate_launch_description():
             ComposableNode(
                 package="ros_phoenix",
                 plugin="ros_phoenix::TalonSRX",
-                name="act2",
+                name="act2", #PID values tuned for position
                 parameters=[
                     {"id": 14},
                     {"P": 20.0},
@@ -81,7 +81,7 @@ def generate_launch_description():
             ComposableNode(
                 package="ros_phoenix",
                 plugin="ros_phoenix::TalonSRX",
-                name="elbow",
+                name="elbow", 
                 parameters=[
                     {"id": 15},
                     {"P": 4.0},
