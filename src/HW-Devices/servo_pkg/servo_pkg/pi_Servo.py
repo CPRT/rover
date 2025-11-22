@@ -5,14 +5,6 @@ from std_msgs.msg import Float32
 from servo_pkg.parent_config import Servo_Info
 
 
-def to_channel(pin):
-    if pin == 18:
-        return 0
-    elif pin == 19:
-        return 1
-    raise ValueError(f"Entered non PWM pin: {pin}")
-
-
 class pi_Servo_info:
     def __init__(self, channel, servo_info, frequency):
         self.servo_info = servo_info
@@ -59,18 +51,9 @@ class pi_Servo(Parent_Config):
                 .get_parameter_value()
                 .integer_value
             )
-            self.declare_parameter(f"servo{servo}.out_pin", 0)
-            outpin = (
-                self.get_parameter(f"servo{servo}.out_pin")
-                .get_parameter_value()
-                .integer_value
-            )
-            if outpin < 0:
-                self.get_logger().error(f"Invalid pin number for port {servo}")
-                raise ValueError(f"Invalid pin number for port {servo}")
 
             self.servo_list[servo] = pi_Servo_info(
-                channel=to_channel(outpin),
+                channel=servo,
                 servo_info=self.servo_info[servo],
                 frequency=frequency,
             )
