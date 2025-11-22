@@ -50,7 +50,8 @@ TalonDriveController::TalonDriveController(const rclcpp::NodeOptions &options)
       this->get_parameter("wheels").as_string_array();
 
   for (const auto &wheel_name : wheel_names) {
-    wheels_.emplace_back(WheelControl(wheel_name, this, is_open_loop, open_loop_scalar));
+    wheels_.emplace_back(
+        WheelControl(wheel_name, this, is_open_loop, open_loop_scalar));
     if (pubOdom_) {
       statusSubs_.emplace_back(this->create_subscription<MotorStatus>(
           wheel_name + "/status", 10,
