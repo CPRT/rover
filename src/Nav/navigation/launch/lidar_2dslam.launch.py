@@ -5,7 +5,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import ComposableNodeContainer
+from launch_ros.actions import ComposableNodeContainer, Node
 from launch_ros.descriptions import ComposableNode
 
 
@@ -31,7 +31,7 @@ def generate_launch_description():
         description="Path to slam_toolbox parameters file",
     )
 
-    # Create a composable container for SLAM components
+    # Create a composable container for pointcloud to laserscan conversion
     slam_container = ComposableNodeContainer(
         name="slam_container",
         namespace="",
@@ -45,14 +45,14 @@ def generate_launch_description():
                 name="pointcloud_to_laserscan",
                 remappings=[
                     ("cloud_in", "/ouster/points"),
-                    ("scan", "/2d_ouster_scan"),
+                    ("scan", "/ouster_2d_scan"),
                 ],
                 parameters=[
                     {
                         "target_frame": "lidar_link",
                         "transform_tolerance": 0.01,
                         "min_height": -0.3,  # ouster is 0.425m above ground
-                        "max_height": 0.5,
+                        "max_height": 0.1,
                         "angle_min": -3.14159,
                         "angle_max": 3.14159,
                         "angle_increment": 0.01227184630308513,  # ouster in 512x10 mode so use 2*pi/512
@@ -65,25 +65,27 @@ def generate_launch_description():
                     }
                 ],
             ),
-            # SLAM Toolbox
-            ComposableNode(
-                package="slam_toolbox",
-                plugin="slam_toolbox::OnlineAsyncSlamToolbox",
-                name="slam_toolbox",
-                parameters=[
-                    slam_params_file,
-                    {
-                        "use_sim_time": use_sim_time,
-                        "publish_tf": False,  # False: Disable slam_toolbox publishing odom and map tf frames
-                    },
-                ],
-                remappings=[
-                    ("scan", "/2d_ouster_scan"),
-                    ("pose", "/2dslam_pose"),
-                ],
-            ),
         ],
         output="screen",
+    )
+
+    # SLAM Toolbox as standalone node (easier to debug)
+    slam_toolbox_node = Node(
+        package="slam_toolbox",
+        executable="async_slam_toolbox_node",
+        name="slam_toolbox",
+        output="screen",
+        parameters=[
+            slam_params_file,
+            {
+                "use_sim_time": use_sim_time,
+                "publish_tf": False,  # False: Disable slam_toolbox publishing odom and map tf frames
+            },
+        ],
+        remappings=[
+            ("scan", "/ouster_2d_scan"),
+            ("pose", "/slam_2d_pose"),
+        ],
     )
 
     # Launch Ouster with the SLAM container as target
@@ -127,7 +129,8 @@ def generate_launch_description():
             declare_slam_params_file,
             slam_container,
             ouster_cmd,
-            slam_cmd,
-            localization_cmd,
+            slam_toolbox_node,
+            # slam_cmd,
+            # localization_cmd,
         ]
     )

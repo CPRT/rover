@@ -21,7 +21,8 @@ global_ekf:
     base_link_frame: base_link
     world_frame: map
 
-    pose0: /2dslam_pose
+    # Initial pose to bootstrap the system (high covariance, only used at startup)
+    pose0: /ekf_initial_pose
     pose0_config: [
         # position
         true, true, false,
@@ -34,12 +35,27 @@ global_ekf:
         # lineal acc
         false, false, false,
       ]
-    # pose0_queue_size: 2
-    # pose0_nodelay: false
     pose0_differential: false
     pose0_relative: false
-    pose0_pose_rejection_threshold: 5.0 # Mahalanobis Distance
-    # pose0_twist_rejection_threshold: 1.0
+    pose0_pose_rejection_threshold: 100.0  # Very high - accept anything at startup
+
+    # SLAM pose (will override initial pose once available)
+    pose1: /slam_2d_pose
+    pose1_config: [
+        # position
+        true, true, false,
+        # orientation
+        false, false, true,
+        # lineal vel 
+        false, false, false,
+        # angular vel
+        false, false, false,
+        # lineal acc
+        false, false, false,
+      ]
+    pose1_differential: false
+    pose1_relative: false
+    pose1_pose_rejection_threshold: 5.0  # Normal threshold for SLAM
 
     odom0: /drive/odom
     odom0_config: [

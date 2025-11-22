@@ -19,7 +19,7 @@ slam_toolbox:
     odom_frame: odom
     map_frame: map
     base_frame: base_link
-    scan_topic: /2d_ouster_scan
+    # scan_topic is handled by remapping in launch file
     mode: mapping
     
     # Optional: For continuing existing maps
@@ -30,14 +30,15 @@ slam_toolbox:
     # ========================================
     # PERFORMANCE & TIMING PARAMETERS
     # ========================================
-    debug_logging: false
+    debug_logging: true                  # Enable to see what's happening
     throttle_scans: 1                    # Process every scan (10Hz is manageable)
     transform_publish_period: 0.02       # 50Hz transform publishing
     map_update_interval: 0.5              # Update map every 0.5 seconds
     resolution: 0.03                     # Fine resolution
     max_laser_range: 20.0                # Match your sensor's max range
+    min_laser_range: 1.5                 # Match pointcloud_to_laserscan range_min
     minimum_time_interval: 0.1           # Fast updates for 10Hz scans
-    transform_timeout: 0.2
+    transform_timeout: 2.0               # Further increased timeout for transform lookups
     tf_buffer_duration: 30.0
     stack_size_to_use: 40000000
     enable_interactive_mode: true

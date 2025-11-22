@@ -69,7 +69,7 @@ def generate_launch_description():
             params_file,
             {
                 "auto_start": auto_start,
-                "mask_path": mask_file,
+                # "mask_path": mask_file,
                 "use_intra_process_comms": True,
             },
         ],

@@ -2,7 +2,7 @@
   ros__parameters:
     # sensor_hostname[required]: hostname or IP address of the sensor (IP4 or
     # IP6).
-    sensor_hostname: 'os-122335000064.local'
+    sensor_hostname: '192.168.0.32' # mDNS lookups are bad within docker so 'os-122335000064.local' doesn't work
     # udp_dest[optional]: hostname or multicast group IP where the sensor will
     # send UDP data packets.
     udp_dest: ''

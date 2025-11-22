@@ -106,6 +106,26 @@ def generate_launch_description():
         arguments=["--ros-args", "--log-level", "Warn"],
     )
 
+    # Initial pose publisher to bootstrap EKF and break circular dependency
+    initial_pose_node = launch_ros.actions.Node(
+        package="localization",
+        executable="initial_pose_publisher",
+        name="initial_pose_publisher",
+        output="screen",
+        parameters=[
+            {
+                "use_sim_time": use_sim_time,
+                "frame_id": "map",
+                "publish_count": 5,
+                "publish_rate": 2.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "yaw": 0.0,
+            }
+        ],
+    )
+
     # Assemble the LaunchDescription and return
     return LaunchDescription(
         [
@@ -117,6 +137,7 @@ def generate_launch_description():
             rviz_cmd,
             gps_cmd,
             # slam_cmd,
+            initial_pose_node,  # Publish initial pose first
             ekf_cmd,
             desc_cmd,
             navsat_node,
