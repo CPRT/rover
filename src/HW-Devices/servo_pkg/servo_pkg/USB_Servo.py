@@ -2,7 +2,6 @@ import rclpy
 from std_msgs.msg import Float32
 from servo_pkg import maestro
 from servo_pkg.parent_config import Parent_Config
-from servo_pkg.parent_config import Servo_Info
 
 
 def convert_from_radians(angle, servo_info):

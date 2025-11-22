@@ -2,7 +2,6 @@ import rclpy
 from rpi_hardware_pwm import HardwarePWM
 from servo_pkg.parent_config import Parent_Config
 from std_msgs.msg import Float32
-from servo_pkg.parent_config import Servo_Info
 
 
 class pi_Servo_info:
