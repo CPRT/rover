@@ -1,5 +1,6 @@
 import rclpy
 import numpy as np
+import numpy.typing as npt
 import cv2
 import time
 from rclpy.node import Node
@@ -68,7 +69,7 @@ class PanoramicNode(Node):
         self.move_servo(self.pan_port, pan_angle)
         self.move_servo(self.tilt_port, tilt_angle)
 
-    def capture_image(self) -> np.ndarray:
+    def capture_image(self) -> npt.NDArray[np.uint8] | None:
         if not self.video_cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().error("Video capture service not available, exiting...")
             return None
