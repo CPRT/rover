@@ -31,7 +31,6 @@ def generate_launch_description():
     DEFAULT_BT_XML_FILENAME = "bt_dynamic_replanning.xml"
 
     # Get the launch directory
-    bringup_dir = get_package_share_directory("nav2_bringup")
     pkg_dir = get_package_share_directory("navigation")
 
     namespace = LaunchConfiguration("namespace")
