@@ -1,9 +1,9 @@
 import rclpy
 import numpy as np
+import numpy.typing as npt
 import cv2
 import time
 from rclpy.node import Node
-from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from interfaces.srv import MoveServo
@@ -69,10 +69,10 @@ class PanoramicNode(Node):
         self.move_servo(self.pan_port, pan_angle)
         self.move_servo(self.tilt_port, tilt_angle)
 
-    def capture_image(self) -> np.ndarray:
+    def capture_image(self) -> npt.NDArray[np.uint8] | None:
         if not self.video_cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().error("Video capture service not available, exiting...")
-            return
+            return None
         request = VideoCapture.Request()
         request.source = self.camera_name
         # Use an Event to wait for the async call to complete

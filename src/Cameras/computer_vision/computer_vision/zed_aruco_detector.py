@@ -81,7 +81,7 @@ class ZEDArucoDetector(Node):
         colour_image = self.colour_image[:, :, :3]
 
         # Detect ArUco markers in the image
-        corners, ids, rejectedImgPoints = cv2.aruco.detectMarkers(
+        corners, ids, _ = cv2.aruco.detectMarkers(
             colour_image, self._aruco_dict, parameters=self._aruco_detector_params
         )
 

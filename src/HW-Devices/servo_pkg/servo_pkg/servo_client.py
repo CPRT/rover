@@ -21,7 +21,7 @@ class Servo_Client(Node):
         req = MoveServo.Request()
         req.port = port
         req.pos = pos
-        future = self.cli.call_async(req)
+        self.cli.call_async(req)
 
     def servo_request(self, req_port, req_pos) -> None:
         Servo_Client.get_logger(self).info("Sending Request for: %s" % (req_pos))

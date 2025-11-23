@@ -7,7 +7,6 @@ from pyubx2 import (
     UBX_PROTOCOL,
 )
 from .ubx_io_manager import UbxIoManager
-import os
 
 
 class HeadingNode(Node):
