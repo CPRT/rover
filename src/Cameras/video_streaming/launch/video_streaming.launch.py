@@ -33,19 +33,16 @@ def generate_launch_description():
         namespace="",
         parameters=[],
     )
-    
+
     srt_node = ComposableNode(
         package="video_streaming",
-        plugin="video_streaming::SrtNode", 
+        plugin="video_streaming::SrtNode",
         name="srt_node",
         namespace="",
-        parameters=[{
-            "srt_uri": "srt://127.0.0.1:12345",
-            "latency": 100,          
-            "iframe_interval": 30    
-        }],
+        parameters=[
+            {"srt_uri": "srt://127.0.0.1:12345", "latency": 100, "iframe_interval": 30}
+        ],
     )
-
 
     # Create a container for all 3 components
     container = ComposableNodeContainer(
