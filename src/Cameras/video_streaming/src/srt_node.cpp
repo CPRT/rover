@@ -1,165 +1,145 @@
 #include "srt_node.hpp"
-#include <rclcpp_components/register_node_macro.hpp>
-#include <glib.h>
-#include "std_msgs/msg/int32.hpp"
 #include "std_msgs/msg/empty.hpp"
+#include "std_msgs/msg/int32.hpp"
+#include <glib.h>
+#include <rclcpp_components/register_node_macro.hpp>
 
-namespace video_streaming 
+namespace video_streaming
 {
 
-SrtNode::SrtNode(const rclcpp::NodeOptions &options)
-  : BaseVideoNode("srt_node", options) 
+SrtNode::SrtNode(const rclcpp::NodeOptions & options) : BaseVideoNode("srt_node", options)
 {
-    RCLCPP_INFO(this->get_logger(), "Initializing SrtNode...");
+  RCLCPP_INFO(this->get_logger(), "Initializing SrtNode...");
 
-    // Start up
-   // latency , iframe_interval
-    this->declare_parameter<std::string>("srt_uri", "srt://127.0.0.1:12345");
-    this->declare_parameter<int>("latency", 100);
-    this->declare_parameter<int>("iframe_interval", 0);
-    
+  // Start up
+  // latency , iframe_interval
+  this->declare_parameter<std::string>("srt_uri", "srt://127.0.0.1:12345");
+  this->declare_parameter<int>("latency", 100);
+  this->declare_parameter<int>("iframe_interval", 0);
 
-    param_callback_handle_ = this->add_on_set_parameters_callback(
-        std::bind(&SrtNode::on_parameter_change, this, std::placeholders::_1));
+  param_callback_handle_ = this->add_on_set_parameters_callback(
+    std::bind(&SrtNode::on_parameter_change, this, std::placeholders::_1));
 
-    bitrate_sub_ = this->create_subscription<std_msgs::msg::Int32>(
-        "~/set_bitrate", 10,
-        std::bind(&SrtNode::on_bitrate_received, this, std::placeholders::_1));
+  bitrate_sub_ = this->create_subscription<std_msgs::msg::Int32>(
+    "~/set_bitrate", 10, std::bind(&SrtNode::on_bitrate_received, this, std::placeholders::_1));
 
-    iframe_sub_ = this->create_subscription<std_msgs::msg::Empty>(
-        "~/trigger_iframe", 10,
-        std::bind(&SrtNode::on_iframe_trigger, this, std::placeholders::_1));
+  iframe_sub_ = this->create_subscription<std_msgs::msg::Empty>(
+    "~/trigger_iframe", 10, std::bind(&SrtNode::on_iframe_trigger, this, std::placeholders::_1));
 
-    /* ==================================================================
-     * TODO: FUTURE FEATURE - SRT STATISTICS
-     * Waiting for Srtstat.msg to be defined in the interfaces package.
-     * ==================================================================
-     */
-    // stats_pub_ = this->create_publisher<video_streaming::msg::Srtstat>("~/srt_stats", 10);
-
-    // params_srv_ = this->create_service<video_streaming::srv::SetStreamingParams>(
-    //     "~/set_params",
-    //     std::bind(&SrtNode::on_set_params, this, std::placeholders::_1, std::placeholders::_2));
-
-    if (!start_pipeline()) {
-        RCLCPP_FATAL(get_logger(), "SrtNode: failed to start pipeline.");
-        throw std::runtime_error("SrtNode: pipeline start failed");
-    }
-    RCLCPP_INFO(get_logger(), "SrtNode constructed and pipeline started.");
+  if (!start_pipeline()) {
+    RCLCPP_FATAL(get_logger(), "SrtNode: failed to start pipeline.");
+    throw std::runtime_error("SrtNode: pipeline start failed");
+  }
+  RCLCPP_INFO(get_logger(), "SrtNode constructed and pipeline started.");
 }
-
 
 bool SrtNode::create_pipeline()
 {
-    std::string srt_uri = this->get_parameter("srt_uri").as_string();
-    int latency_val = this->get_parameter("latency").as_int();
+  std::string srt_uri = this->get_parameter("srt_uri").as_string();
+  int latency_val = this->get_parameter("latency").as_int();
 
+  // ✅ PRODUCTION MODE (NVIDIA Jetson)
+  // Added comma correctly below
+  gchar * desc = g_strdup_printf(
+    "interpipesrc listen-to=detect ! "
+    "nvvidconv ! "
+    "nvv4l2av1enc name=av1_enc ! "
+    "rtpav1pay ! queue ! "
+    "srtsink name=srt_sink uri=%s latency=%d mode=1",
+    srt_uri.c_str(), latency_val);
 
+  /* // [MAC TEST MODE]
     gchar *desc = g_strdup_printf(
-        "interpipesrc listen-to=detect ! "
-        "nvvidconv ! "
-        "nvv4l2av1enc name=av1_enc ! "
-        "rtpav1pay ! queue ! "
-        "srtsink name=srt_sink uri=%s mode=1",
-        srt_uri.c_str()
+        "videotestsrc is-live=true ! video/x-raw,width=640,height=480 ! "
+        "videoconvert ! "
+        "x264enc tune=zerolatency bitrate=2000 speed-preset=ultrafast name=av1_enc ! "
+        "rtph264pay ! queue ! "
+        "srtsink name=srt_sink uri=%s latency=%d mode=1",
+        srt_uri.c_str(),
         latency_val
     );
+    */
 
-    // [MAC TEST MODE]
-    // gchar *desc = g_strdup_printf(
-    //     "videotestsrc is-live=true ! video/x-raw,width=640,height=480 ! "
-    //     "videoconvert ! "
-    //     "x264enc tune=zerolatency bitrate=2000 speed-preset=ultrafast name=av1_enc ! " 
-    //     "rtph264pay ! queue ! "
-    //     "srtsink name=srt_sink uri=%s latency=%d mode=1",
-    //     srt_uri.c_str(),
-    //     latency_val
-    // );
-    
-    RCLCPP_INFO(this->get_logger(), "Using MAC pipeline description: %s", desc);
+  RCLCPP_INFO(this->get_logger(), "Using PRODUCTION pipeline description: %s", desc);
 
-    // same as webrtc_node.cpp
-    GError *err = nullptr;
-    GstElement *p = gst_parse_launch(desc, &err);
-    g_free(desc); 
+  GError * err = nullptr;
+  GstElement * p = gst_parse_launch(desc, &err);
+  g_free(desc);
 
-    if (err || !p) {
-        RCLCPP_ERROR(get_logger(), "gst_parse_launch failed: %s",
-                     err ? err->message : "unknown");
-        if (err) g_error_free(err);
-        return false;
-    }
-    if (!GST_IS_PIPELINE(p)) {
-        RCLCPP_ERROR(get_logger(), "Parsed element is not a pipeline.");
-        gst_object_unref(p);
-        return false;
-    }
-    pipeline_ = p; 
+  if (err || !p) {
+    RCLCPP_ERROR(get_logger(), "gst_parse_launch failed: %s", err ? err->message : "unknown");
+    if (err) g_error_free(err);
+    return false;
+  }
+  if (!GST_IS_PIPELINE(p)) {
+    RCLCPP_ERROR(get_logger(), "Parsed element is not a pipeline.");
+    gst_object_unref(p);
+    return false;
+  }
+  pipeline_ = p;
 
-    av1_encoder_ = this->get_element("av1_enc");
-    srt_sink_ = this->get_element("srt_sink");
+  av1_encoder_ = this->get_element("av1_enc");
+  srt_sink_ = this->get_element("srt_sink");
 
-    if (!av1_encoder_ || !srt_sink_) {
-        RCLCPP_ERROR(get_logger(), "Failed to get elements by name");
-        return false;
-    }
+  if (!av1_encoder_ || !srt_sink_) {
+    RCLCPP_ERROR(get_logger(), "Failed to get elements by name");
+    return false;
+  }
 
-
-    RCLCPP_INFO(this->get_logger(), "Pipeline parsed and elements retrieved successfully.");
-    return true;
-    
+  RCLCPP_INFO(this->get_logger(), "Pipeline parsed and elements retrieved successfully.");
+  return true;
 }
-rcl_interfaces::msg::SetParametersResult SrtNode::on_parameter_change(
-    const std::vector<rclcpp::Parameter> &parameters)
-{
-    rcl_interfaces::msg::SetParametersResult result;
-    result.successful = true;
-    result.reason = "success";
 
-    for (const auto &param : parameters)
-    {
-        if (param.get_name() == "latency" && srt_sink_) {
-            int val = param.as_int();
-            g_object_set(srt_sink_, "latency", val, NULL);
-            RCLCPP_INFO(this->get_logger(), "Param Update: Latency set to %d", val);
-        }
-        else if (param.get_name() == "iframe_interval" && av1_encoder_) {
-            int val = param.as_int();
-            g_object_set(av1_encoder_, "iframeinterval", val, NULL); 
-            RCLCPP_INFO(this->get_logger(), "Param Update: IFrame Interval set to %d (Check encoder property name)", val);
-        }
+rcl_interfaces::msg::SetParametersResult SrtNode::on_parameter_change(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  result.reason = "success";
+
+  for (const auto & param : parameters) {
+    if (param.get_name() == "latency" && srt_sink_) {
+      int val = param.as_int();
+      g_object_set(srt_sink_, "latency", val, NULL);
+      RCLCPP_INFO(this->get_logger(), "Param Update: Latency set to %d", val);
+    } else if (param.get_name() == "iframe_interval" && av1_encoder_) {
+      int val = param.as_int();
+      // ✅ Production property name: iframeinterval
+      g_object_set(av1_encoder_, "iframeinterval", val, NULL);
+      RCLCPP_INFO(this->get_logger(), "Param Update: IFrame Interval set to %d", val);
     }
-    return result;
+  }
+  return result;
 }
 
 void SrtNode::on_bitrate_received(const std_msgs::msg::Int32::SharedPtr msg)
 {
-    if (av1_encoder_) {
-        g_object_set(av1_encoder_, "bitrate", msg->data, NULL);
-        RCLCPP_INFO(this->get_logger(), "Bitrate set to %d", msg->data);
-    }
+  if (av1_encoder_) {
+    g_object_set(av1_encoder_, "bitrate", msg->data, NULL);
+    RCLCPP_INFO(this->get_logger(), "Bitrate set to %d", msg->data);
+  }
 }
 
 void SrtNode::on_iframe_trigger(const std_msgs::msg::Empty::SharedPtr msg)
 {
-    (void)msg;
-    if (av1_encoder_) {
-        // nvv4l2av1enc  'force-key-unit' )
-        g_signal_emit_by_name(av1_encoder_, "force-key-unit", NULL);
-        RCLCPP_INFO(this->get_logger(), "I-Frame triggered");
-    }
+  (void)msg;
+  if (av1_encoder_) {
+    g_signal_emit_by_name(av1_encoder_, "force-key-unit", NULL);
+    RCLCPP_INFO(this->get_logger(), "I-Frame triggered");
+  }
 }
 
 /* ==================================================================================
-     * TODO: FUTURE FEATURE - SRT STATISTICS & SERVICE
-     * * The following code implements SRT statistics publishing and a custom service.
-     * Per feedback, we are currently pausing this functionality to focus on the video 
-     * pipeline and using ROS 2 Parameters for control.
-     * * Once custom .msg and .srv files are added to the interfaces package, 
-     * uncomment this block and the corresponding headers.
-     * ==================================================================================
-     */
+ * TODO: FUTURE FEATURE - SRT STATISTICS & SERVICE
+ * * The following code implements SRT statistics publishing and a custom service.
+ * * Per feedback, we are currently pausing this functionality to focus on the video
+ * * pipeline and using ROS 2 Parameters for control.
+ * * Once custom .msg and .srv files are added to the interfaces package,
+ * * uncomment this block and the corresponding headers.
+ * ==================================================================================
+ */
 
+/*
 // void SrtNode::on_srt_stats(GstElement * element, GstStructure * stats, gpointer user_data)
 // {
 //     SrtNode* node = static_cast<SrtNode*>(user_data);
@@ -220,7 +200,8 @@ void SrtNode::on_iframe_trigger(const std_msgs::msg::Empty::SharedPtr msg)
 
 //     node->stats_pub_->publish(stats_msg);
 // }
+*/
+
 }  // namespace video_streaming
-  
 
 RCLCPP_COMPONENTS_REGISTER_NODE(video_streaming::SrtNode)
