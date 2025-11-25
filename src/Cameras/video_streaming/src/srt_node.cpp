@@ -39,36 +39,37 @@ bool SrtNode::create_pipeline() {
   int latency_val = this->get_parameter("latency").as_int();
 
   bool test_mode = false;
-  try{
+  try {
     test_mode = this->get_parameter("test_mode").as_bool();
-  } catch(...) {
+  } catch (...) {
     test_mode = this->declare_parameter<bool>("test_mode", false);
   }
 
   gchar *desc;
 
-  if(test_mode){
-    desc = g_strdup_printf("videotestsrc is-live=true ! video/x-raw,width=640,height=480 ! "
-                           "videoconvert ! "
-                           "x264enc tune=zerolatency bitrate=2000 speed-preset=ultrafast name=av1_enc ! "
-                           "rtph264pay ! queue ! "
-                           "srtsink name=srt_sink uri=%s latency=%d mode=1",
-                           srt_uri.c_str(), latency_val);
-    RCLCPP_WARN(this->get_logger(), "Using MAC TEST pipeline description: %s", desc);
+  if (test_mode) {
+    desc = g_strdup_printf(
+        "videotestsrc is-live=true ! video/x-raw,width=640,height=480 ! "
+        "videoconvert ! "
+        "x264enc tune=zerolatency bitrate=2000 speed-preset=ultrafast "
+        "name=av1_enc ! "
+        "rtph264pay ! queue ! "
+        "srtsink name=srt_sink uri=%s latency=%d mode=1",
+        srt_uri.c_str(), latency_val);
+    RCLCPP_WARN(this->get_logger(), "Using MAC TEST pipeline description: %s",
+                desc);
 
   } else {
     desc = g_strdup_printf("interpipesrc listen-to=detect ! "
                            "nvvidconv ! "
                            "nvv4l2av1enc name=av1_enc ! "
                            "rtpav1pay ! queue ! "
-                      "srtsink name=srt_sink uri=%s latency=%d mode=1",
-                      srt_uri.c_str(), latency_val);
+                           "srtsink name=srt_sink uri=%s latency=%d mode=1",
+                           srt_uri.c_str(), latency_val);
     RCLCPP_INFO(this->get_logger(), "Using PRODUCTION pipeline description: %s",
-                 desc);
-    }
-    RCLCPP_INFO(this->get_logger(), "Pipeline description: %s",
                 desc);
-
+  }
+  RCLCPP_INFO(this->get_logger(), "Pipeline description: %s", desc);
 
   GError *err = nullptr;
   GstElement *p = gst_parse_launch(desc, &err);

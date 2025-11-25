@@ -35,7 +35,6 @@ private:
 
   rcl_interfaces::msg::SetParametersResult
   on_parameter_change(const std::vector<rclcpp::Parameter> &parameters);
-
 };
 
 } // namespace video_streaming
