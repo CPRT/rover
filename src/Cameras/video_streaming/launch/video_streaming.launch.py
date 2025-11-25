@@ -40,7 +40,7 @@ def generate_launch_description():
         name="srt_node",
         namespace="",
         parameters=[
-            {"srt_uri": "srt://127.0.0.1:12345", "latency": 100, "iframe_interval": 30}
+            {"srt_uri": "srt://127.0.0.1:7001", "latency": 100, "iframe_interval": 30}
         ],
     )
 

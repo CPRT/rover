@@ -7,27 +7,17 @@
   <maintainer email="connor.needham2015@gmail.com">connor</maintainer>
   <license>Apache-2.0</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
-  <!-- <buildtool_depend>rosidl_default_generators</buildtool_depend> -->
+<buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>pkg-config</buildtool_depend>
 
-  <build_depend>rclcpp</build_depend>
-  <build_depend>rclcpp_components</build_depend>
-  <build_depend>std_msgs</build_depend>
-  <!-- <build_depend>std_srvs</build_depend> -->
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+  <depend>std_msgs</depend>
+  <!-- <depend>std_srvs</depend> -->
+  <depend>gstreamer-1.0</depend>
+  <depend>glib-2.0</depend>
+
   <build_depend>interfaces</build_depend>
-  <build_depend>gstreamer-1.0</build_depend>
-  <build_depend>glib-2.0</build_depend>
-
-  <exec_depend>rclcpp</exec_depend>
-  <exec_depend>rclcpp_components</exec_depend>
-  <exec_depend>std_msgs</exec_depend>
-  <exec_depend>std_srvs</exec_depend>
-  <!-- <exec_depend>rosidl_default_runtime</exec_depend> -->
-  <exec_depend>gstreamer-1.0</exec_depend>
-  <exec_depend>glib-2.0</exec_depend>
-
-  <!-- <member_of_group>rosidl_interface_packages</member_of_group> -->
 
   <export>
     <build_type>ament_cmake</build_type>

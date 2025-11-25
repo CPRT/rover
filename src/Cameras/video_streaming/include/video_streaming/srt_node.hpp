@@ -36,27 +36,6 @@ private:
   rcl_interfaces::msg::SetParametersResult
   on_parameter_change(const std::vector<rclcpp::Parameter> &parameters);
 
-  /* =========================================================
-   * TODO: FUTURE FEATURE - SRT STATISTICS
-   * Uncomment these when Srtstat.msg is available.
-   * =========================================================
-   */
-  // static void on_srt_stats(GstElement * element, GstStructure * stats,
-  // gpointer user_data);
-  // rclcpp::Publisher<video_streaming::msg::Srtstat>::SharedPtr stats_pub_;
-
-  /* =========================================================
-   * REFERENCE: CUSTOM SERVICE (Replaced by ROS 2 Parameters)
-   * Kept for reference in case specific service control is needed later.
-   * =========================================================
-   */
-  // void on_set_params(
-  //   const std::shared_ptr<video_streaming::srv::SetStreamingParams::Request>
-  //   request,
-  //   std::shared_ptr<video_streaming::srv::SetStreamingParams::Response>
-  //   response);
-  // rclcpp::Service<video_streaming::srv::SetStreamingParams>::SharedPtr
-  // params_srv_;
 };
 
 } // namespace video_streaming
