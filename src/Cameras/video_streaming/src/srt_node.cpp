@@ -12,9 +12,10 @@ SrtNode::SrtNode(const rclcpp::NodeOptions &options)
 
   // Start up
   // latency , iframe_interval
-  this->declare_parameter<std::string>("srt_uri", "srt://127.0.0.1:7001");
+  this->declare_parameter<std::string>("srt_uri", "srt://:7001");
   this->declare_parameter<int>("latency", 100);
   this->declare_parameter<int>("iframe_interval", 0);
+  this->declare_parameter<bool>("test_mode", false);
 
   param_callback_handle_ = this->add_on_set_parameters_callback(
       std::bind(&SrtNode::on_parameter_change, this, std::placeholders::_1));
@@ -38,12 +39,7 @@ bool SrtNode::create_pipeline() {
   std::string srt_uri = this->get_parameter("srt_uri").as_string();
   int latency_val = this->get_parameter("latency").as_int();
 
-  bool test_mode = false;
-  try {
-    test_mode = this->get_parameter("test_mode").as_bool();
-  } catch (...) {
-    test_mode = this->declare_parameter<bool>("test_mode", false);
-  }
+  bool test_mode = this->get_parameter("test_mode").as_bool();
 
   gchar *desc;
 
