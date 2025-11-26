@@ -51,11 +51,11 @@ def generate_launch_description():
                     {
                         "target_frame": "lidar_link",
                         "transform_tolerance": 0.01,
-                        "min_height": -0.3,  # ouster is 0.425m above ground
+                        "min_height": -0.1,  # ouster is 0.425m above ground
                         "max_height": 0.1,
                         "angle_min": -3.14159,
                         "angle_max": 3.14159,
-                        "angle_increment": 0.01227184630308513,  # ouster in 512x10 mode so use 2*pi/512
+                        "angle_increment": 0.006135923,  # ouster in 1024x10 mode so use 2*pi/1024
                         "scan_time": 0.1,  # matches 10 Hz
                         "range_min": 1.5,  # avoids accidentally picking up the rover itself
                         "range_max": 20.0,
@@ -79,7 +79,7 @@ def generate_launch_description():
             slam_params_file,
             {
                 "use_sim_time": use_sim_time,
-                "publish_tf": False,  # False: Disable slam_toolbox publishing odom and map tf frames
+                "publish_tf": True,  # False: Disable slam_toolbox publishing odom and map tf frames
             },
         ],
         remappings=[
@@ -129,8 +129,8 @@ def generate_launch_description():
             declare_slam_params_file,
             slam_container,
             ouster_cmd,
-            slam_toolbox_node,
-            # slam_cmd,
-            # localization_cmd,
+            # slam_toolbox_node,
+            slam_cmd,
+            localization_cmd,
         ]
     )

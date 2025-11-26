@@ -4,7 +4,7 @@ global_ekf:
     # sensor_timeout: 20.0
     use_sim_time: false
 
-    two_d_mode: false
+    two_d_mode: true
 
     # transform_time_offset: 0.25
     # transform_timeout: 3.0
@@ -14,7 +14,7 @@ global_ekf:
 
     permit_corrected_publication: false
     publish_acceleration: true
-    publish_tf: true
+    publish_tf: false
 
     map_frame: map
     odom_frame: odom

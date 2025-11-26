@@ -137,7 +137,7 @@ def generate_launch_description():
             rviz_cmd,
             gps_cmd,
             # slam_cmd,
-            initial_pose_node,  # Publish initial pose first
+            # initial_pose_node,  # Publish initial pose first
             ekf_cmd,
             desc_cmd,
             navsat_node,

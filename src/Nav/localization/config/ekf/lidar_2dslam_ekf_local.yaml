@@ -4,7 +4,7 @@ local_ekf:
     # sensor_timeout: 20.0
     use_sim_time: false
 
-    two_d_mode: false
+    two_d_mode: true
 
     # transform_time_offset: 0.25
     # transform_timeout: 3.0
@@ -43,9 +43,9 @@ local_ekf:
     pose1: /slam_2d_pose
     pose1_config: [
         # position
-        true, true, false,
+        false, false, false,
         # orientation
-        false, false, true,
+        false, false, false,
         # lineal vel 
         false, false, false,
         # angular vel

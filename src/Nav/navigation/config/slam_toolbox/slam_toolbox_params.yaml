@@ -21,6 +21,8 @@ slam_toolbox:
     base_frame: base_link
     # scan_topic is handled by remapping in launch file
     mode: mapping
+    publish_tf: true
+    use_sim_time: false
     
     # Optional: For continuing existing maps
     #map_file_name: your_map_name
@@ -30,15 +32,15 @@ slam_toolbox:
     # ========================================
     # PERFORMANCE & TIMING PARAMETERS
     # ========================================
-    debug_logging: true                  # Enable to see what's happening
+    debug_logging: false                  # Enable to see what's happening
     throttle_scans: 1                    # Process every scan (10Hz is manageable)
     transform_publish_period: 0.02       # 50Hz transform publishing
     map_update_interval: 0.5              # Update map every 0.5 seconds
-    resolution: 0.03                     # Fine resolution
+    resolution: 0.05                      # Fine resolution
     max_laser_range: 20.0                # Match your sensor's max range
     min_laser_range: 1.5                 # Match pointcloud_to_laserscan range_min
-    minimum_time_interval: 0.1           # Fast updates for 10Hz scans
-    transform_timeout: 2.0               # Further increased timeout for transform lookups
+    minimum_time_interval: 0.2           # Fast updates for 10Hz scans
+    transform_timeout: 0.2               # Further increased timeout for transform lookups
     tf_buffer_duration: 30.0
     stack_size_to_use: 40000000
     enable_interactive_mode: true
@@ -49,9 +51,9 @@ slam_toolbox:
     # These control when new keyframes are created
     use_scan_matching: true
     use_scan_barycenter: true
-    minimum_travel_distance: 0.3         # Smaller for better detail (was 0.5)
-    minimum_travel_heading: 0.3          # Smaller angle threshold (was 0.5)
-    scan_buffer_size: 20                 # Larger buffer for 10Hz (was 10)
+    minimum_travel_distance: 0.1         # Smaller for better detail (was 0.5)
+    minimum_travel_heading: 0.1          # Smaller angle threshold (was 0.5)
+    scan_buffer_size: 30                 # Larger buffer for 10Hz (was 10)
     scan_buffer_maximum_scan_distance: 20.0  # Match max range
 
     # ========================================
