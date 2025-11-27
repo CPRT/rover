@@ -38,6 +38,7 @@ SrtNode::SrtNode(const rclcpp::NodeOptions &options)
 bool SrtNode::create_pipeline() {
   std::string srt_uri = this->get_parameter("srt_uri").as_string();
   int latency_val = this->get_parameter("latency").as_int();
+  int iframe_interval_val = this->get_parameter("iframe_interval").as_int();
 
   bool test_mode = this->get_parameter("test_mode").as_bool();
 
@@ -50,18 +51,21 @@ bool SrtNode::create_pipeline() {
         "x264enc tune=zerolatency bitrate=2000 speed-preset=ultrafast "
         "name=av1_enc ! "
         "rtph264pay ! queue ! "
-        "srtsink name=srt_sink uri=%s latency=%d mode=1",
+        "srtsink name=srt_sink uri=%s latency=%d",
         srt_uri.c_str(), latency_val);
     RCLCPP_WARN(this->get_logger(), "Using MAC TEST pipeline description: %s",
                 desc);
 
   } else {
-    desc = g_strdup_printf("interpipesrc listen-to=detect ! "
-                           "nvvidconv ! "
-                           "nvv4l2av1enc name=av1_enc ! "
-                           "rtpav1pay ! queue ! "
-                           "srtsink name=srt_sink uri=%s latency=%d mode=1",
-                           srt_uri.c_str(), latency_val);
+    desc = g_strdup_printf(
+        "interpipesrc listen-to=detect ! "
+        "nvvidconv ! "
+        "nvv4l2av1enc name=av1_enc insert-seq-hdr=true iframeinterval=%d ! "
+        " av1parse ! capsfilter caps=\"video/x-av1, "
+        "alignment=obu, parsed=true\" ! "
+        "queue ! "
+        "srtsink name=srt_sink uri=%s latency=%d",
+        iframe_interval_val, srt_uri.c_str(), latency_val);
     RCLCPP_INFO(this->get_logger(), "Using PRODUCTION pipeline description: %s",
                 desc);
   }
@@ -131,7 +135,7 @@ void SrtNode::on_bitrate_received(const std_msgs::msg::Int32::SharedPtr msg) {
 void SrtNode::on_iframe_trigger(const std_msgs::msg::Empty::SharedPtr msg) {
   (void)msg;
   if (av1_encoder_) {
-    g_signal_emit_by_name(av1_encoder_, "force-key-unit", NULL);
+    g_signal_emit_by_name(av1_encoder_, "force-IDR", NULL);
     RCLCPP_INFO(this->get_logger(), "I-Frame triggered");
   }
 }
