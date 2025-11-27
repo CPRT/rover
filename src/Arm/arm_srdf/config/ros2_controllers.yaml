@@ -20,7 +20,7 @@ rover_arm_controller:
       - Joint_5
       - Joint_6
     command_interfaces:
-      - velocity
+      - position
     state_interfaces:
       - position
       - velocity
