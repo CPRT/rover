@@ -3,6 +3,8 @@ from rclpy.node import Node
 DEFAULT_MIN = 512.0
 DEFAULT_MAX = 2400.0
 DEFAULT_MAX_ANGLE = 3.1415
+NUM_PORTS = 12
+
 
 
 class Servo_Info:
@@ -28,13 +30,8 @@ class Parent_Config(Node):
         self.servo_num = (
             self.get_parameter("servo_num").get_parameter_value().integer_value
         )
-        # This should be the highest number servo
-        self.declare_parameter("max_num_servo", 0)
-        self.max_num_servo = (
-            self.get_parameter("max_num_servo").get_parameter_value().integer_value
-        )
-        for servo in range(self.max_num_servo + 1):
-            self.declare_parameter(f"servo{servo}.name", f"{servo}")
+        for servo in range(NUM_PORTS):
+            self.declare_parameter(f"servo{servo}.name", f"/motor{servo}")
             motor_name = (
                 self.get_parameter(f"servo{servo}.name")
                 .get_parameter_value()
@@ -61,7 +58,7 @@ class Parent_Config(Node):
             self.servo_info[servo] = Servo_Info(motor_name, min_pwm, max_pwm, rom)
 
     def check_valid_servo(self, channel):
-        if self.max_num_servo < 0:
+        if self.servo_num < 0:
             raise ValueError("Invalid max servo number")
         if channel not in self.servo_info:
             self.get_logger().error("Invalid servo")

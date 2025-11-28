@@ -17,12 +17,6 @@ def generate_launch_description():
                 name="pi_Servo_node",
                 parameters=[parent_params, child_params],
                 remappings=[("servo_service", "science_servo_service")],
-            ),
-            # for example client
-            # launch_ros.actions.Node(
-            #     package="servo_pkg",
-            #     executable="servo_client",
-            #     name="servo_client_node",
-            # ),
+            )
         ]
     )
