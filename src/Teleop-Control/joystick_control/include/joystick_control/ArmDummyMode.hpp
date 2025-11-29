@@ -1,6 +1,8 @@
 #ifndef JOYSTICK_CONTROL__ARMDUMMY_MODE_HPP_
 #define JOYSTICK_CONTROL__ARMDUMMY_MODE_HPP_
 
+#include <cmath>
+
 #include "Mode.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "interfaces/srv/move_servo.hpp"
@@ -101,8 +103,8 @@ private:
 
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr
       twist_pub_; ///< Publisher for Twist messages.
-  
-  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr 
+
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr
       servo_pub_; ///< Publisher for servo
 
   // MotorControl Messages
@@ -112,8 +114,6 @@ private:
   mutable ros_phoenix::msg::MotorControl elbow_;
   mutable ros_phoenix::msg::MotorControl wristTilt_;
   mutable ros_phoenix::msg::MotorControl wristTurn_;
-
-
 
   // Servo Constants
   std::string servoName;
@@ -126,9 +126,8 @@ private:
   mutable double servoPos;
   mutable bool buttonPressed;
 
-  // constants for radians
-  const double PI = 3.14159265358979323846;
-  const double rad_multiplier = PI/180;
+  // constant for radians
+  const double rad_multiplier = M_PI / 180;
 };
 
 #endif // JOYSTICK_CONTROL__ARMDUMMY_MODE_HPP_

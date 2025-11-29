@@ -6,16 +6,23 @@
 ArmIKMode::ArmIKMode(rclcpp::Node *node) : Mode("IK Arm", node) {
   RCLCPP_INFO(node_->get_logger(), "IK Arm Mode");
   loadParameters();
-
-  servo_pub_ = node_->create_publisher<std_msgs::msg::Float32>("/" + servoName,
-                                                               10) twist_pub_ =
+  servo_client_ =
+      node_->create_client<interfaces::srv::MoveServo>("servo_service");
+  twist_pub_ = node_->create_publisher<geometry_msgs::msg::TwistStamped>(
+      "/servo_node/delta_twist_cmds", 10);
+  if (!ArmHelpers::start_moveit_servo(node_)) {
+    RCLCPP_ERROR(node_->get_logger(),
+                 "Failed to start MoveIt servo service, IK mode will not work");
+  }
+  servo_pub_ = node_->create_publisher<std_msgs::msg::Float32>(
+      "/" + servoName, rclcpp::QoS(rclcpp::KeepLast(10)).reliable())
+                   twist_pub_ =
       node_->create_publisher<geometry_msgs::msg::TwistStamped>(
           "/servo_node/delta_twist_cmds", 10);
-  // probably not needed w/ pub/sub
-  // if (!ArmHelpers::start_moveit_servo(node_)) {
-  //  RCLCPP_ERROR(node_->get_logger(),
-  //             "Failed to start MoveIt servo service, IK mode will not work");
-  // }
+  if (!ArmHelpers::start_moveit_servo(node_)) {
+    RCLCPP_ERROR(node_->get_logger(),
+                 "Failed to start MoveIt servo service, IK mode will not work");
+  }
 
   auto stop_hw_interface_pub =
       node_->create_publisher<std_msgs::msg::Bool>("/arm_active", 10);
@@ -25,7 +32,7 @@ ArmIKMode::ArmIKMode(rclcpp::Node *node) : Mode("IK Arm", node) {
 
   frame_to_publish_ = CAM_FRAME_ID;
   kServoMin = 0.0;
-  kServoMax = PI;
+  kServoMax = M_PI;
   kClawMax = 63 * rad_multiplier;
   kClawMin = 8 * rad_multiplier;
   servoPos_ = kClawMax;
@@ -106,7 +113,7 @@ void ArmIKMode::declareParameters(rclcpp::Node *node) {
   node->declare_parameter("arm_ik_mode.close_claw", 8);
   node->declare_parameter("arm_ik_mode.base_frame", 9);
   node->declare_parameter("arm_ik_mode.eef_frame", 10);
-  node->declare_parameter("arm_ik_mode.servo_name", "ik");
+  node->declare_parameter("arm_ik_mode.servo_name", "arm");
 }
 
 void ArmIKMode::loadParameters() {

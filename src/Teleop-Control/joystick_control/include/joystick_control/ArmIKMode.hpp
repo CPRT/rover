@@ -1,6 +1,7 @@
 #ifndef JOYSTICK_CONTROL__ARMIK_MODE_HPP_
 #define JOYSTICK_CONTROL__ARMIK_MODE_HPP_
 
+#include <cmath>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 
 #include "Mode.hpp"
@@ -66,9 +67,8 @@ private:
   std::string servoName;
   std::string frame_to_publish_;
 
-  // constants for radians
-  const double PI = 3.14159265358979323846;
-  const double rad_multiplier = PI/180;
+  // constant for radians
+  const double rad_multiplier = M_PI / 180;
 };
 
 #endif // JOYSTICK_CONTROL__ARMIK_MODE_HPP_

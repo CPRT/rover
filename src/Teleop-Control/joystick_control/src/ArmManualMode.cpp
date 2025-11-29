@@ -11,8 +11,8 @@ ArmManualMode::ArmManualMode(rclcpp::Node *node) : Mode("Manual Arm", node) {
       "/servo_node/delta_joint_cmds", 10);
   servo_client_ =
       node_->create_client<interfaces::srv::MoveServo>("servo_service");
-  servo_pub_ =
-      node_->create_publisher<std_msgs::msg::Float32>("/" + servoName, 10);
+  servo_pub_ = node_->create_publisher<std_msgs::msg::Float32>(
+      "/" + servoName, rclcpp::QoS(rclcpp::KeepLast(10)).reliable());
   if (!ArmHelpers::start_moveit_servo(node_)) {
     RCLCPP_ERROR(
         node_->get_logger(),
@@ -26,7 +26,7 @@ ArmManualMode::ArmManualMode(rclcpp::Node *node) : Mode("Manual Arm", node) {
   stop_hw_interface_pub->publish(msg);
 
   kServoMin = 0.0;
-  kServoMax = PI;
+  kServoMax = M_PI;
   kClawMax = 63 * rad_multiplier;
   kClawMin = 8 * rad_multiplier;
   servoPos_ = kClawMax;
@@ -146,7 +146,7 @@ void ArmManualMode::declareParameters(rclcpp::Node *node) {
   node->declare_parameter("arm_manual_mode.claw_close", 9);
   node->declare_parameter("arm_manual_mode.simple_forward", 10);
   node->declare_parameter("arm_manual_mode.simple_backward", 11);
-  node->declare_parameter("arm_manual_mode.servo_name", "manual");
+  node->declare_parameter("arm_manual_mode.servo_name", "arm");
   node->declare_parameter("arm_manual_mode.throttle.axis", 7);
   node->declare_parameter("arm_manual_mode.throttle.min", -1.0);
   node->declare_parameter("arm_manual_mode.throttle.max", 1.0);
@@ -170,8 +170,7 @@ void ArmManualMode::loadParameters() {
   node_->get_parameter("arm_manual_mode.throttle.min", kThrottleMin);
 }
 
-void ArmDummyMode::setServoPosition(double position)
-    const {
+void ArmDummyMode::setServoPosition(double position) const {
   auto servo_msg = std::msgs::msg::Float32();
   servo_msg.data = position;
   servo_pub_->publish(servo_msg);

@@ -9,10 +9,11 @@ DriveMode::DriveMode(rclcpp::Node *node)
   std::vector<std::string> motor_names = {kCamPanMotor, kCamTiltMotor};
   twist_pub_ =
       node_->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
-  
-  for (const auto &topic: motor_names){
+
+  for (const auto &topic : motor_names) {
     topic_name = "/" + topic;
-    motor_pubs[topic] = node_->create_publisher<std_msgs::msg::Float32>(topic_name, 10);
+    motor_pubs[topic] = node_->create_publisher<std_msgs::msg::Float32>(
+        topic_name, rclcpp::QoS(rclcpp::KeepLast(10)).reliable());
   }
   pwm_pub_ =
       node_->create_publisher<std_msgs::msg::Float32>("servo_pwm_control", 10);
@@ -90,8 +91,8 @@ void DriveMode::handleCam(
   }
   double current_time = node_->now().seconds();
   if (current_time - timestamp > 0.2) {
-    pan_pos = std::max(0.0, std::min(2*PI, pan_pos));
-    tilt_pos = std::max(0.0, std::min(2*PI, tilt_pos));
+    pan_pos = std::max(0.0, std::min(2 * M_PI, pan_pos));
+    tilt_pos = std::max(0.0, std::min(2 * M_PI, tilt_pos));
     timestamp = current_time;
 
     setServoPosition(camTiltMotor, tilt_pos);
@@ -115,11 +116,11 @@ void DriveMode::handlePWM(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   }
 }
 
-void DriveMode::setServoPosition(std::string name, double position) const { // port name?
+void DriveMode::setServoPosition(std::string name,
+                                 double position) const { // port name?
   auto servo_msg = std::msgs::msg::Float32();
   servo_msg.data = position;
   motor_pubs[name]->publish(servo_msg);
-
 }
 
 void DriveMode::handleVideo(
@@ -144,8 +145,8 @@ void DriveMode::declareParameters(rclcpp::Node *node) {
   node->declare_parameter("drive_mode.throttle.axis", 0);
   node->declare_parameter("drive_mode.throttle.max", 1.0);
   node->declare_parameter("drive_mode.throttle.min", -1.0);
-  node->declare_parameter("drive_mode.default_pan", PI/4);
-  node->declare_parameter("drive_mode.default_tilt", PI/4);
+  node->declare_parameter("drive_mode.default_pan", M_PI / 4);
+  node->declare_parameter("drive_mode.default_tilt", M_PI / 4);
   node->declare_parameter("drive_mode.camera_speed", 1.0);
   node->declare_parameter("drive_mode.cam_tilt_servo", "tilt");
   node->declare_parameter("drive_mode.cam_pan_servo", "pan");

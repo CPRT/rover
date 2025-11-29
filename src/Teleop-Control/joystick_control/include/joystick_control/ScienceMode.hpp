@@ -1,6 +1,8 @@
 #ifndef JOYSTICK_CONTROL__SCIENCEMODE_HPP_
 #define JOYSTICK_CONTROL__SCIENCEMODE_HPP_
 
+#include <cmath>
+
 #include "Mode.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "interfaces/srv/move_servo.hpp"
@@ -33,9 +35,8 @@ private:
 
   void loadParameters();
 
-  // constants for radians
-  const double PI = 3.14159265358979323846;
-  const double rad_multiplier = PI / 180;
+  // constant for radians
+  const double rad_multiplier = M_PI / 180;
 
   int8_t kPlatformAxis;
   int8_t kDrillButton;
@@ -55,10 +56,11 @@ private:
 
   rclcpp::Publisher<ros_phoenix::msg::MotorControl>::SharedPtr platform_pub_;
   rclcpp::Publisher<ros_phoenix::msg::MotorControl>::SharedPtr drill_pub_;
-  // rclcpp::Client<interfaces::srv::MoveServo>::SharedPtr servo_client_;
   rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr led_client_;
+
+  // Map that maps motor names to publishers
   std::map<std::string, rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr>
-      motor_pubs; ///< Map that maps motor names to publishers
+      motor_pubs;
 };
 
 #endif

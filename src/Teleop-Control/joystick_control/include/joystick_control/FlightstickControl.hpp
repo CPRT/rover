@@ -1,6 +1,8 @@
 #ifndef FLIGHTSTICK_CONTROL_HPP
 #define FLIGHTSTICK_CONTROL_HPP
 
+#include <cmath>
+
 #include "ArmDummyMode.hpp"
 #include "ArmIKMode.hpp"
 #include "ArmManualMode.hpp"
@@ -79,9 +81,6 @@ private:
   uint8_t kArmDummyButton;
 
   uint8_t kTeleopLightMode; ///< Button index for teleoperation light mode.
-
-  // pi constant for radians
-  const double PI = 3.14159265358979323846;
 
   ModeType currentMode_; ///< The current control mode of the rover.
 

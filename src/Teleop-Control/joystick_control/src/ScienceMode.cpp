@@ -3,7 +3,7 @@
 ScienceMode::ScienceMode(rclcpp::Node *node) : Mode("Science", node) {
   RCLCPP_INFO(node_->get_logger(), "Science Mode");
   loadParameters();
-  
+
   platform_pub_ = node_->create_publisher<ros_phoenix::msg::MotorControl>(
       "/platform/set", 10);
   drill_pub_ =
@@ -11,9 +11,10 @@ ScienceMode::ScienceMode(rclcpp::Node *node) : Mode("Science", node) {
 
   std::vector<std::string> motor_names = {collectionServo, microscopeServo};
 
-  for (const auto &topic: motor_names){
+  for (const auto &topic : motor_names) {
     topic_name = "/" + topic;
-    motor_pubs[topic] = node_->create_publisher<std_msgs::msg::Float32>(topic_name, 10);
+    motor_pubs[topic] = node_->create_publisher<std_msgs::msg::Float32>(
+        topic_name, rclcpp::QoS(rclcpp::KeepLast(10)).reliable());
   }
   led_client_ =
       node_->create_client<std_srvs::srv::SetBool>("/microscope_light");
@@ -52,7 +53,7 @@ void ScienceMode::handleMicroscope(
     std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const {
   // Process input and output linear component
   static double position;
-  double value = joystickMsg->axes[kMicroscopeAxis]*rad_multiplier;
+  double value = joystickMsg->axes[kMicroscopeAxis] * rad_multiplier;
   if (value != 0) {
     position += value;
     setServoPosition(microscopeServo, position);
@@ -81,6 +82,18 @@ void ScienceMode::setServoPosition(std::string name, double position) const {
   motor_pubs[name]->publish(servo_msg);
 }
 
+void ScienceMode::toggleLights() const {
+  static bool light_on = false;
+  auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
+  request->data = !light_on;
+  light_on = !light_on;
+  if (!led_client_->wait_for_service(std::chrono::seconds(1))) {
+    RCLCPP_WARN(node_->get_logger(), "Service not available after waiting");
+    return;
+  }
+  led_client_->async_send_request(request);
+}
+
 void ScienceMode::declareParameters(rclcpp::Node *node) {
   node->declare_parameter("science_mode.platform_axis", 1);
   node->declare_parameter("science_mode.drill_button", 2);
@@ -93,9 +106,9 @@ void ScienceMode::declareParameters(rclcpp::Node *node) {
   node->declare_parameter("science_mode.collection_servo_name", "collection");
   node->declare_parameter("science_mode.microscope_servo_name", "microscope");
   node->declare_parameter("science_mode.collection_open", 0);
-  node->declare_parameter("science_mode.collection_dump", 90);
-  node->declare_parameter("science_mode.collection_lock", 180);
-  node->declare_parameter("science_mode.collection_test", 180);
+  node->declare_parameter("science_mode.collection_dump", M_PI / 2);
+  node->declare_parameter("science_mode.collection_lock", M_PI);
+  node->declare_parameter("science_mode.collection_test", M_PI);
 }
 
 void ScienceMode::loadParameters() {

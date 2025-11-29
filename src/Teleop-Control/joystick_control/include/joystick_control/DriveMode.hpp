@@ -1,6 +1,8 @@
 #ifndef JOYSTICK_CONTROL__DRIVEMODE_HPP_
 #define JOYSTICK_CONTROL__DRIVEMODE_HPP_
 
+#include <cmath>
+
 #include "Mode.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "interfaces/srv/move_servo.hpp"
@@ -87,9 +89,6 @@ private:
 
   void loadParameters();
 
-  // pi constant for radians
-  const double PI = 3.14159265358979323846;
-
   // Parameters
   int8_t kForwardAxis;      ///< Axis for forward movement.
   int8_t kYawAxis;          ///< Axis for yaw (rotation).
@@ -103,15 +102,15 @@ private:
   std::string camTiltMotor; ///< Motor name for camera tilt servo.
   std::string camPanMotor;  ///< Motor name for camera pan servo.
 
-  double kThrottleMax;             ///< Maximum throttle value from joystick.
-  double kThrottleMin;             ///< Minimum throttle value from joystick.
-  double kMaxLinear;               ///< Maximum linear velocity.
-  double kMaxAngular;              ///< Maximum angular velocity.
-  double kMaxIncrement;            ///< Maximum increment for speed changes.
-  double kMinSpeed;                ///< Minimum speed value.
-  double kDefaultCamPan = PI / 4;  ///< Default camera pan position.
-  double kDefaultCamTilt = PI / 4; ///< Default camera tilt position.
-  double kCameraSpeed = 1.0;       ///< Speed for camera movement.
+  double kThrottleMax;               ///< Maximum throttle value from joystick.
+  double kThrottleMin;               ///< Minimum throttle value from joystick.
+  double kMaxLinear;                 ///< Maximum linear velocity.
+  double kMaxAngular;                ///< Maximum angular velocity.
+  double kMaxIncrement;              ///< Maximum increment for speed changes.
+  double kMinSpeed;                  ///< Minimum speed value.
+  double kDefaultCamPan = M_PI / 4;  ///< Default camera pan position.
+  double kDefaultCamTilt = M_PI / 4; ///< Default camera tilt position.
+  double kCameraSpeed = 1.0;         ///< Speed for camera movement.
 
   double current_light_pwm_; ///< Current PWM value for lights.
 

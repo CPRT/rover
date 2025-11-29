@@ -20,8 +20,8 @@ ArmDummyMode::ArmDummyMode(rclcpp::Node *node) : Mode("Dummy Arm", node) {
       "/wristTilt/set", 10);
   wristTurn_pub_ = node_->create_publisher<ros_phoenix::msg::MotorControl>(
       "/wristTurn/set", 10);
-  servo_pub_ =
-      node_->create_publisher<std_msgs::msg::Float32>("/" + servoName, 10);
+  servo_pub_ = node_->create_publisher<std_msgs::msg::Float32>(
+      "/" + servoName, rclcpp::QoS(rclcpp::KeepLast(10)).reliable());
   auto stop_hw_interface_pub =
       node_->create_publisher<std_msgs::msg::Bool>("/arm_active", 10);
   auto msg = std_msgs::msg::Bool();
@@ -29,7 +29,7 @@ ArmDummyMode::ArmDummyMode(rclcpp::Node *node) : Mode("Dummy Arm", node) {
   stop_hw_interface_pub->publish(msg);
 
   kServoMin = 0.0;
-  kServoMax = PI;
+  kServoMax = M_PI;
   kClawMax = 63 * rad_multiplier;
   kClawMin = 8 * rad_multiplier;
   servoPos = kClawMax;
@@ -198,8 +198,7 @@ ArmDummyMode::sendRequest(int port, int pos, int min, int max) const {
   return *future.get();
 }
 
-void ArmDummyMode::setServoPosition(double position)
-    const {
+void ArmDummyMode::setServoPosition(double position) const {
   auto servo_msg = std::msgs::msg::Float32();
   servo_msg.data = position;
   servo_pub_->publish(servo_msg);
