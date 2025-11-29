@@ -6,7 +6,6 @@ DEFAULT_MAX_ANGLE = 3.1415
 NUM_PORTS = 12
 
 
-
 class Servo_Info:
     def __init__(
         self, motor_name: str, min_pwm: float, max_pwm: float, max_angle: float
