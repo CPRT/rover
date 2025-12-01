@@ -17,12 +17,14 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(geographic_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ArucoMarkers.msg"
   "msg/VideoSource.msg"
   "msg/SystemTelemetry.msg"
   "msg/GasSensorReading.msg"
+  "msg/SrtStats.msg"
   "srv/NavToGPSGeopose.srv"
   "srv/VideoOut.srv"
   "srv/MoveServo.srv"
@@ -34,6 +36,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   geometry_msgs 
   geographic_msgs # Add packages that above messages depend on
   sensor_msgs
+  std_msgs
  )
 
 ament_export_dependencies(rosidl_default_runtime)

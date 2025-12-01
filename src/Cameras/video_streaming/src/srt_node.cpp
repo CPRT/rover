@@ -1,7 +1,10 @@
 #include "srt_node.hpp"
+#include "interfaces/msg/srt_stats.hpp"
 #include "std_msgs/msg/empty.hpp"
 #include "std_msgs/msg/int32.hpp"
 #include <glib.h>
+#include <gst/gststructure.h>
+#include <gst/video/video-event.h>
 #include <rclcpp_components/register_node_macro.hpp>
 
 namespace video_streaming {
@@ -27,6 +30,13 @@ SrtNode::SrtNode(const rclcpp::NodeOptions &options)
   iframe_sub_ = this->create_subscription<std_msgs::msg::Empty>(
       "~/trigger_iframe", 10,
       std::bind(&SrtNode::on_iframe_trigger, this, std::placeholders::_1));
+
+  srt_stats_pub_ =
+      this->create_publisher<interfaces::msg::SrtStats>("~/srt_stats", 10);
+
+  srt_stats_timer_ =
+      this->create_wall_timer(std::chrono::milliseconds(1000),
+                              std::bind(&SrtNode::publish_srt_stats, this));
 
   if (!start_pipeline()) {
     RCLCPP_FATAL(get_logger(), "SrtNode: failed to start pipeline.");
@@ -135,8 +145,62 @@ void SrtNode::on_bitrate_received(const std_msgs::msg::Int32::SharedPtr msg) {
 void SrtNode::on_iframe_trigger(const std_msgs::msg::Empty::SharedPtr msg) {
   (void)msg;
   if (av1_encoder_) {
-    g_signal_emit_by_name(av1_encoder_, "force-IDR", NULL);
-    RCLCPP_INFO(this->get_logger(), "I-Frame triggered");
+    GstEvent *event = gst_video_event_new_downstream_force_key_unit(
+        GST_CLOCK_TIME_NONE, GST_CLOCK_TIME_NONE, GST_CLOCK_TIME_NONE, TRUE, 0);
+
+    if (gst_element_send_event(av1_encoder_, event)) {
+      RCLCPP_INFO(this->get_logger(), "I-Frame triggered (Event sent)");
+    } else {
+      RCLCPP_WARN(this->get_logger(), "Failed to trigger I-Frame");
+    }
+  }
+}
+
+void SrtNode::publish_srt_stats() {
+  if (!srt_sink_)
+    return;
+
+  GstStructure *stats = nullptr;
+  g_object_get(srt_sink_, "stats", &stats, NULL);
+
+  if (stats) {
+    auto msg = interfaces::msg::SrtStats();
+    msg.header.stamp = this->now();
+
+    // 1. RTT: seconds
+    int rtt_ms = 0;
+    if (gst_structure_get_int(stats, "rtt-ms", &rtt_ms)) {
+      msg.rtt = static_cast<double>(rtt_ms) / 1000.0;
+    }
+
+    // 2. Bandwidth: Mbps -> bits/sec
+    double bw_mbps = 0.0;
+    if (gst_structure_get_double(stats, "bandwidth-mbps", &bw_mbps)) {
+      msg.bandwidth = bw_mbps * 1e6;
+    }
+
+    // 3. Packets Sent
+    int64_t val_64 = 0;
+    if (gst_structure_get_int64(stats, "packets-sent", &val_64)) {
+      msg.packets_sent = val_64;
+    }
+
+    // 4. Packets Lost
+    int val_int = 0;
+    if (gst_structure_get_int(stats, "packets-lost", &val_int) ||
+        gst_structure_get_int(stats, "pkt-snd-loss-total", &val_int)) {
+      msg.packets_lost = val_int;
+    }
+
+    // 5. Packets Retransmitted
+    int ret_int = 0;
+    if (gst_structure_get_int(stats, "packets-retransmitted", &ret_int) ||
+        gst_structure_get_int(stats, "pkt-ret", &ret_int)) {
+      msg.packets_retransmitted = ret_int;
+    }
+
+    srt_stats_pub_->publish(msg);
+    gst_structure_free(stats); // Free the structure after use
   }
 }
 
