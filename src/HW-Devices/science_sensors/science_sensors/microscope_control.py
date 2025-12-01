@@ -49,7 +49,7 @@ class microscope_control(Node):
         req.pos = pos
         req.min = min
         req.max = max
-        future = self.cli.call_async(req)
+        self.cli.call_async(req)
 
 
 def main(args=None):

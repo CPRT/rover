@@ -67,6 +67,14 @@ public:
                            const Eigen::Vector2d &position, const float value);
 
 private:
+  // function to get decay values
+  float getDecay(uint16_t, uint16_t) const;
+
+  /* Builds the lookup table for decay values if uninitiallized, map resolution
+   * changes, or inflation parameters change
+   */
+  void create_lookup_table(const T &mapOut);
+
   // Input layer name to inflate.
   std::string inputLayer_;
 
@@ -84,6 +92,12 @@ private:
 
   // Decay rate
   double decayRate_;
+
+  // lookup table for decay values
+  std::vector<std::vector<float>> decayTable_;
+
+  // maximum size of decay lookup table (square)
+  uint16_t maxDx_;
 
 }; // class PreserveCostInflationFilter
 

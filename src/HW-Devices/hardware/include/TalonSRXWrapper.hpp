@@ -45,6 +45,7 @@ public:
 
 private:
   const hardware_interface::ComponentInfo info_;
+  enum class SensorType { PWM, RELATIVE, ANALOG };
 
   // Parameters
   int id_;
@@ -53,7 +54,7 @@ private:
   double kD_;
   double kF_;
   ctre::phoenix::motorcontrol::ControlMode control_type_;
-  ctre::phoenix::motorcontrol::TalonSRXFeedbackDevice sensor_type_;
+  SensorType sensor_type_;
   int sensor_ticks_;
   double sensor_offset_;
   bool crossover_mode_;

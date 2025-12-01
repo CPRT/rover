@@ -1,8 +1,6 @@
 import launch
-import launch_ros.actions
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
-import subprocess
 
 
 def generate_launch_description():
