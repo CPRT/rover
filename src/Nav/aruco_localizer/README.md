@@ -7,6 +7,7 @@ Complete ROS2 package for camera publishing and ArUco board-based localization.
 This package provides:
 1. **Camera Publisher Node**: Publishes camera images and calibration info from USB cameras
 2. **ArUco Board Detector Node**: Detects pairs of ArUco markers as boards for precise pose estimation
+3. **ArUco Board Localizer Node**: Uses detected boards to estimate robot position in map frame
 
 ## Quick Start
 
@@ -33,6 +34,9 @@ ros2 launch aruco_localizer camera_publisher.launch.py
 
 # Just ArUco detector (expects camera already running)
 ros2 launch aruco_localizer aruco_board_detector.launch.py
+
+# Just ArUco localizer (expects detector and odometry running)
+ros2 launch aruco_localizer aruco_board_localizer.launch.py
 ```
 
 ## Nodes
@@ -53,6 +57,13 @@ ros2 launch aruco_localizer aruco_board_detector.launch.py
 - Reads board configs from `config/aruco_boards/`
 
 [Full Documentation](README_BOARD_DETECTOR.md)
+
+### 3. aruco_board_localizer_node
+- Uses detected ArUco boards to estimate robot position in map frame
+- Automatically discovers and validates board locations
+- Publishes pose estimates to `/aruco_pose_estimate`
+- Integrates with robot odometry and TF tree
+- Maintains database of known board positions
 
 ## Configuration
 
@@ -81,6 +92,8 @@ config/aruco_boards/
 | `/aruco_boards` | interfaces/ArucoBoard | Detected board poses |
 | `/aruco_debug` | sensor_msgs/Image | Visualization with markers and axes |
 | `/aruco_markers_viz` | visualization_msgs/MarkerArray | 3D markers for RViz2 visualization |
+| `/aruco_pose_estimate` | geometry_msgs/PoseWithCovarianceStamped | Robot pose estimates from boards |
+| `/odometry/filtered/global` | nav_msgs/Odometry | Robot odometry in map frame (input) |
 
 ## Common Commands
 
@@ -94,12 +107,19 @@ ros2 run rqt_image_view rqt_image_view /aruco_debug
 # Monitor detected boards
 ros2 topic echo /aruco_boards
 
+# Monitor pose estimates from localizer
+ros2 topic echo /aruco_pose_estimate
+
+# Monitor robot odometry
+ros2 topic echo /odometry/filtered/global
+
 # Check camera info
 ros2 topic echo /camera/camera_info
 
 # View 3D markers in RViz2
 rviz2
 # Then add MarkerArray display for /aruco_markers_viz topic
+# Add PoseWithCovariance display for /aruco_pose_estimate
 
 # List available cameras
 ls -l /dev/video*
@@ -162,7 +182,7 @@ ros2 launch aruco_localizer aruco_board_detector.launch.py \
 ## Dependencies
 
 - ROS2 Humble or later
-- OpenCV 4.12+ with ArUco module
+- OpenCV 4.5
 - cv_bridge
 - tf_transformations
 - PyYAML
@@ -174,16 +194,19 @@ ros2 launch aruco_localizer aruco_board_detector.launch.py \
 aruco_localizer/
 ├── aruco_localizer/
 │   ├── aruco_board_detector_node.py
+│   ├── aruco_board_localizer_node.py
 │   ├── camera_publisher_node.py
 │   └── aruco_localizer_node.py (old)
 ├── config/
 │   ├── aruco_boards/           # Board configuration YAMLs
 │   ├── camera_intrinsics/      # Camera calibration YAMLs
 │   ├── aruco_board_params.yaml
+│   ├── aruco_board_localizer_params.yaml
 │   └── camera_params.yaml
 ├── launch/
 │   ├── aruco_camera_pipeline.launch.py  # Combined launch
 │   ├── aruco_board_detector.launch.py
+│   ├── aruco_board_localizer.launch.py
 │   └── camera_publisher.launch.py
 ├── old_design/                 # Reference implementation
 ├── README.md

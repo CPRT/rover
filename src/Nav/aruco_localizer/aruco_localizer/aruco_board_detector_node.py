@@ -341,7 +341,7 @@ class ArucoBoardDetectorNode(Node):
                 for board_config in self.boards:
                     detected_corners = []
                     detected_ids = []
-                    
+
                     # Match markers to board
                     for i, marker_id in enumerate(marker_ids):
                         if marker_id in board_config.marker_ids:
@@ -359,13 +359,20 @@ class ArucoBoardDetectorNode(Node):
                             )
 
                             cv2.aruco.drawAxis(
-                                debug_image, self.intrinsic_mat, self.distortion,
-                                rvec, tvec, board_config.tag_size,
+                                debug_image,
+                                self.intrinsic_mat,
+                                self.distortion,
+                                rvec,
+                                tvec,
+                                board_config.tag_size,
                             )
 
                             if ros_pose_data:
                                 markers = self.create_tag_center_markers(
-                                    board_config, ros_pose_data, img_msg.header, marker_id_counter
+                                    board_config,
+                                    ros_pose_data,
+                                    img_msg.header,
+                                    marker_id_counter,
                                 )
                                 marker_array.markers.extend(markers)
                                 marker_id_counter += len(markers)
@@ -390,7 +397,8 @@ class ArucoBoardDetectorNode(Node):
                 board_config.board,
                 self.intrinsic_mat,
                 self.distortion,
-                None, None
+                None,
+                None,
             )
 
             if num_markers > 0 and rvec is not None and tvec is not None:
@@ -416,7 +424,7 @@ class ArucoBoardDetectorNode(Node):
             msg.marker_ids = [int(x) for x in detected_ids]
 
             rot_mat_cv, _ = cv2.Rodrigues(rvec)
-            
+
             # --- FIXED TRANSFORMATION MATRIX ---
             # Input (CV): X(Right), Y(Down), Z(Forward)
             # Output (ROS): X(Forward), Y(Left), Z(Up)
@@ -424,15 +432,13 @@ class ArucoBoardDetectorNode(Node):
             # ROS_X = CV_Z
             # ROS_Y = -CV_X
             # ROS_Z = -CV_Y
-            T_cv_to_ros = np.array([
-                [ 0,  0,  1],
-                [-1,  0,  0],
-                [ 0, -1,  0]
-            ], dtype=np.float32)
-            
+            T_cv_to_ros = np.array(
+                [[0, 0, 1], [-1, 0, 0], [0, -1, 0]], dtype=np.float32
+            )
+
             # 1. Transform Position
             tvec_ros = T_cv_to_ros @ tvec
-            
+
             # 2. Transform Rotation
             # We apply T to the rotation result from CV to align it with ROS axes
             rot_mat_ros = T_cv_to_ros @ rot_mat_cv
@@ -466,18 +472,20 @@ class ArucoBoardDetectorNode(Node):
                     msg.corners_3d.append(point)
 
             self.board_pub.publish(msg)
-            
+
             return {
-                'rot_mat_ros': rot_mat_ros,
-                'tvec_ros': tvec_ros,
-                'T_cv_to_ros': T_cv_to_ros
+                "rot_mat_ros": rot_mat_ros,
+                "tvec_ros": tvec_ros,
+                "T_cv_to_ros": T_cv_to_ros,
             }
 
         except Exception as e:
             self.get_logger().error(f"Error publishing board pose: {e}")
             return None
 
-    def create_tag_center_markers(self, board_config, ros_pose_data, header, marker_id_start):
+    def create_tag_center_markers(
+        self, board_config, ros_pose_data, header, marker_id_start
+    ):
         """
         Creates markers in the ROS2 Body Frame (X-Fwd) using the result from publish_board_pose.
         """
@@ -486,9 +494,9 @@ class ArucoBoardDetectorNode(Node):
             return markers
 
         try:
-            rot_mat_ros = ros_pose_data['rot_mat_ros']
-            tvec_ros = ros_pose_data['tvec_ros']
-            T_cv_to_ros = ros_pose_data['T_cv_to_ros']
+            rot_mat_ros = ros_pose_data["rot_mat_ros"]
+            tvec_ros = ros_pose_data["tvec_ros"]
+            T_cv_to_ros = ros_pose_data["T_cv_to_ros"]
 
             for i, (marker_id, marker_corners_3d) in enumerate(
                 zip(board_config.marker_ids, board_config.obj_points)
@@ -500,23 +508,23 @@ class ArucoBoardDetectorNode(Node):
                 c0 = marker_corners_3d[0].reshape(3, 1)
                 c1 = marker_corners_3d[1].reshape(3, 1)
                 c3 = marker_corners_3d[3].reshape(3, 1)
-                
+
                 x_axis = c1 - c0
                 x_axis /= np.linalg.norm(x_axis)
                 y_axis = c3 - c0
                 y_axis /= np.linalg.norm(y_axis)
                 z_axis = np.cross(x_axis.flatten(), y_axis.flatten()).reshape(3, 1)
                 z_axis /= np.linalg.norm(z_axis)
-                
+
                 # Orientation of the specific marker relative to the board
                 rot_local = np.column_stack([x_axis, y_axis, z_axis])
-                
+
                 # 3. Transform to ROS Body Frame
                 # Position: Apply the Board Pose (which is already in ROS frame)
-                # Note: We need to be careful here. 
+                # Note: We need to be careful here.
                 # rot_mat_ros takes a vector from BOARD frame and puts it in BODY frame.
                 center_ros = rot_mat_ros @ center_local + tvec_ros
-                
+
                 # Rotation: The board pose rotation applied to the marker local rotation
                 rot_final = rot_mat_ros @ rot_local
 
@@ -547,11 +555,14 @@ class ArucoBoardDetectorNode(Node):
                 cube.scale.x = float(tag_w)
                 cube.scale.y = float(tag_h)
                 cube.scale.z = self.marker_thickness
-                
-                if i == 0: color = (0.0, 1.0, 0.0)
-                elif i == 1: color = (0.0, 0.5, 1.0)
-                else: color = (1.0, 1.0, 0.0)
-                
+
+                if i == 0:
+                    color = (0.0, 1.0, 0.0)
+                elif i == 1:
+                    color = (0.0, 0.5, 1.0)
+                else:
+                    color = (1.0, 1.0, 0.0)
+
                 cube.color = ColorRGBA(r=color[0], g=color[1], b=color[2], a=0.6)
                 markers.append(cube)
 
@@ -568,9 +579,9 @@ class ArucoBoardDetectorNode(Node):
                 arrow.type = Marker.ARROW
                 arrow.action = Marker.ADD
                 arrow.pose.position = cube.pose.position
-                
+
                 # Rotation logic: Rotate +90 degrees around Y to align Arrow-X with Marker-Z
-                rot_y_90 = Rotation.from_euler('y', 90, degrees=True)
+                rot_y_90 = Rotation.from_euler("y", 90, degrees=True)
                 current_rot = Rotation.from_quat(quat)
                 final_arrow_rot = current_rot * rot_y_90
                 arrow_quat = final_arrow_rot.as_quat()
@@ -583,7 +594,12 @@ class ArucoBoardDetectorNode(Node):
                 arrow.scale.x = self.arrow_length
                 arrow.scale.y = self.arrow_length * 0.15
                 arrow.scale.z = self.arrow_length * 0.2
-                arrow.color = ColorRGBA(r=min(1.0, color[0]+0.3), g=min(1.0, color[1]+0.3), b=min(1.0, color[2]+0.3), a=0.9)
+                arrow.color = ColorRGBA(
+                    r=min(1.0, color[0] + 0.3),
+                    g=min(1.0, color[1] + 0.3),
+                    b=min(1.0, color[2] + 0.3),
+                    a=0.9,
+                )
                 markers.append(arrow)
 
                 # --- Text Marker ---
@@ -593,11 +609,11 @@ class ArucoBoardDetectorNode(Node):
                 text.id = cube.id + 2
                 text.type = Marker.TEXT_VIEW_FACING
                 text.action = Marker.ADD
-                
+
                 # Offset text along the tag normal (Z in marker frame)
                 # rot_final gives us the axes of the marker in ROS frame.
                 # The 3rd column of rot_final is the Z-axis (normal).
-                z_axis_ros = rot_final[:, 2].reshape(3,1)
+                z_axis_ros = rot_final[:, 2].reshape(3, 1)
                 text_offset = (self.arrow_length + 0.02) * z_axis_ros
 
                 text.pose.position.x = float(center_ros[0][0] + text_offset[0][0])
@@ -614,6 +630,7 @@ class ArucoBoardDetectorNode(Node):
 
         return markers
 
+
 def main(args=None):
     rclpy.init(args=args)
     node = ArucoBoardDetectorNode()
@@ -624,6 +641,7 @@ def main(args=None):
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
 
 if __name__ == "__main__":
     main()

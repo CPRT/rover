@@ -41,8 +41,8 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "aruco_localizer_node = aruco_localizer.aruco_localizer_node:main",
             "aruco_board_detector_node = aruco_localizer.aruco_board_detector_node:main",
+            "aruco_board_localizer_node = aruco_localizer.aruco_board_localizer_node:main",
             "camera_publisher_node = aruco_localizer.camera_publisher_node:main",
         ],
     },
