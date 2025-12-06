@@ -57,11 +57,11 @@ def generate_launch_description():
     )
 
     # Launch camera publisher
-    camera_publisher_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_aruco, "launch", "camera_publisher.launch.py")
-        ),
-    )
+    # camera_publisher_cmd = IncludeLaunchDescription(
+    #     PythonLaunchDescriptionSource(
+    #         os.path.join(pkg_aruco, "launch", "camera_publisher.launch.py")
+    #     ),
+    # )
 
     # Launch ArUco board detector
     aruco_detector_cmd = IncludeLaunchDescription(
@@ -83,7 +83,7 @@ def generate_launch_description():
             declare_svo_path,
             slam_cmd,
             localization_cmd,
-            camera_publisher_cmd,
+            # camera_publisher_cmd,
             aruco_detector_cmd,
             aruco_localizer_cmd,
         ]
