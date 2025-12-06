@@ -5,29 +5,30 @@ Launch file for ArUco Board Localizer Node
 This node uses detected ArUco boards to provide robot localization estimates.
 """
 
+import os
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
+    # Get package directory
+    pkg_share = get_package_share_directory("aruco_localizer")
+    
+    # Default path
+    default_params_file = os.path.join(pkg_share, "config", "aruco_board_localizer_params.yaml")
+    
     # Declare launch arguments
-    params_file_arg = DeclareLaunchArgument(
-        "params_file",
-        default_value=PathJoinSubstitution(
-            [
-                FindPackageShare("aruco_localizer"),
-                "config",
-                "aruco_board_localizer_params.yaml",
-            ]
-        ),
+    localizer_params_file_arg = DeclareLaunchArgument(
+        "localizer_params_file",
+        default_value=default_params_file,
         description="Path to the parameter file for the localizer node",
     )
 
     # Get launch configuration
-    params_file = LaunchConfiguration("params_file")
+    localizer_params_file = LaunchConfiguration("localizer_params_file")
 
     # ArUco Board Localizer Node
     localizer_node = Node(
@@ -35,13 +36,13 @@ def generate_launch_description():
         executable="aruco_board_localizer_node",
         name="aruco_board_localizer_node",
         output="screen",
-        parameters=[params_file],
+        parameters=[localizer_params_file],
         emulate_tty=True,
     )
 
     return LaunchDescription(
         [
-            params_file_arg,
+            localizer_params_file_arg,
             localizer_node,
         ]
     )

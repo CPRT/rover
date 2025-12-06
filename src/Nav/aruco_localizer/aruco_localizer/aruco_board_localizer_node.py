@@ -38,6 +38,8 @@ from scipy.spatial.transform import Rotation
 # ROS2 message imports
 from interfaces.msg import ArucoBoard
 from geometry_msgs.msg import PoseWithCovarianceStamped, Pose, TransformStamped
+from visualization_msgs.msg import Marker, MarkerArray
+from std_msgs.msg import ColorRGBA
 from tf2_ros import (
     Buffer,
     TransformListener,
@@ -115,6 +117,10 @@ class ArucoBoardLocalizerNode(Node):
         self.known_boards: Dict[str, KnownBoard] = {}
         self.candidate_boards: Dict[str, BoardCandidate] = {}
         self.lock = threading.Lock()
+        
+        # Bootstrap tracking
+        self.last_bootstrap_time: Optional[Time] = None
+        self.bootstrap_published_count = 0
 
         # Subscribers
         self.aruco_sub = self.create_subscription(
@@ -124,6 +130,11 @@ class ArucoBoardLocalizerNode(Node):
         # Publisher
         self.pose_pub = self.create_publisher(
             PoseWithCovarianceStamped, self.output_topic, 10
+        )
+        
+        # Marker publishers
+        self.marker_pub = self.create_publisher(
+            MarkerArray, "/aruco_board_markers", 10
         )
 
         # Timer for cleanup of old candidates
@@ -259,6 +270,25 @@ class ArucoBoardLocalizerNode(Node):
                 description="Timeout for TF lookups in seconds",
             ),
         )
+        
+        # Bootstrap pose parameters
+        self.declare_parameter(
+            name="publish_bootstrap_pose",
+            value=True,
+            descriptor=ParameterDescriptor(
+                type=ParameterType.PARAMETER_BOOL,
+                description="Publish origin pose when no boards known and TF fails (helps EKF bootstrap)",
+            ),
+        )
+        
+        self.declare_parameter(
+            name="bootstrap_pose_rate",
+            value=1.0,
+            descriptor=ParameterDescriptor(
+                type=ParameterType.PARAMETER_DOUBLE,
+                description="Rate (Hz) to publish bootstrap pose when needed",
+            ),
+        )
 
         # Get parameter values
         self.aruco_topic = self.get_parameter("aruco_topic").value
@@ -292,6 +322,9 @@ class ArucoBoardLocalizerNode(Node):
         ).value
 
         self.tf_timeout_seconds = self.get_parameter("tf_timeout_seconds").value
+        
+        self.publish_bootstrap_pose = self.get_parameter("publish_bootstrap_pose").value
+        self.bootstrap_pose_rate = self.get_parameter("bootstrap_pose_rate").value
 
     def aruco_callback(self, msg: ArucoBoard):
         """Process detected ArUco board"""
@@ -346,6 +379,9 @@ class ArucoBoardLocalizerNode(Node):
 
                 # Check if we can validate this board
                 self.try_validate_board(board_id)
+                
+                # Publish candidate marker (red)
+                self.publish_candidate_marker(board_id, sample.position)
 
         except Exception as e:
             self.get_logger().error(f"Error processing candidate board {board_id}: {e}")
@@ -391,6 +427,9 @@ class ArucoBoardLocalizerNode(Node):
                 f"Position: [{mean_pos[0]:.3f}, {mean_pos[1]:.3f}, {mean_pos[2]:.3f}], "
                 f"Max std: {max_std:.4f}m"
             )
+            
+            # Publish known board marker (green) - only once
+            self.publish_known_board_marker(board_id, mean_pos)
         else:
             self.get_logger().debug(
                 f"Board {board_id}: {len(recent_samples)} samples, max_std={max_std:.4f}m "
@@ -421,7 +460,16 @@ class ArucoBoardLocalizerNode(Node):
 
             return board_pose_map.pose.pose
 
-        except (LookupException, ConnectivityException, ExtrapolationException) as e:
+        except LookupException as e:
+            # If no known boards exist and bootstrap is enabled, publish origin pose
+            if self.publish_bootstrap_pose and len(self.known_boards) == 0:
+                self.try_publish_bootstrap_pose(msg.header.stamp)
+            
+            self.get_logger().warn(
+                f"~TF lookup failed for board to map: {e}", throttle_duration_sec=1.0
+            )
+            return None
+        except (ConnectivityException, ExtrapolationException) as e:
             self.get_logger().warn(
                 f"TF lookup failed for board to map: {e}", throttle_duration_sec=1.0
             )
@@ -580,6 +628,136 @@ class ArucoBoardLocalizerNode(Node):
             f"Published pose estimate from board {board_id}: "
             f"[{pose.position.x:.3f}, {pose.position.y:.3f}, {pose.position.z:.3f}]"
         )
+    
+    def try_publish_bootstrap_pose(self, stamp):
+        """
+        Publish an origin pose to help EKF bootstrap when no boards are known.
+        Rate-limited to avoid spamming.
+        """
+        current_time = self.get_clock().now()
+        
+        # Rate limit bootstrap pose publishing
+        if self.last_bootstrap_time is not None:
+            time_since_last = (current_time - self.last_bootstrap_time).nanoseconds / 1e9
+            min_interval = 1.0 / self.bootstrap_pose_rate
+            
+            if time_since_last < min_interval:
+                return
+        
+        # Create origin pose
+        origin_pose = Pose()
+        origin_pose.position.x = 0.0
+        origin_pose.position.y = 0.0
+        origin_pose.position.z = 0.0
+        origin_pose.orientation.x = 0.0
+        origin_pose.orientation.y = 0.0
+        origin_pose.orientation.z = 0.0
+        origin_pose.orientation.w = 1.0
+        
+        # Publish with high covariance to indicate uncertainty
+        msg = PoseWithCovarianceStamped()
+        msg.header.stamp = stamp
+        msg.header.frame_id = self.map_frame
+        msg.pose.pose = origin_pose
+        
+        # High covariance for bootstrap (10x normal)
+        covariance = np.zeros(36)
+        covariance[0] = self.pose_covariance_position * 10.0  # x
+        covariance[7] = self.pose_covariance_position * 10.0  # y
+        covariance[14] = self.pose_covariance_position * 10.0  # z
+        covariance[21] = self.pose_covariance_orientation * 10.0  # rot x
+        covariance[28] = self.pose_covariance_orientation * 10.0  # rot y
+        covariance[35] = self.pose_covariance_orientation * 10.0  # rot z
+        msg.pose.covariance = covariance.tolist()
+        
+        self.pose_pub.publish(msg)
+        
+        self.last_bootstrap_time = current_time
+        self.bootstrap_published_count += 1
+        
+        if self.bootstrap_published_count <= 5:  # Log first few times
+            self.get_logger().info(
+                "Published bootstrap origin pose to help EKF initialize "
+                f"(count: {self.bootstrap_published_count})"
+            )
+        elif self.bootstrap_published_count % 10 == 0:  # Then every 10th time
+            self.get_logger().debug(
+                f"Bootstrap pose published {self.bootstrap_published_count} times"
+            )
+    
+    def publish_candidate_marker(self, board_id: str, position: np.ndarray):
+        """Publish a red sphere marker for a candidate board"""
+        marker = Marker()
+        marker.header.frame_id = self.map_frame
+        marker.header.stamp = self.get_clock().now().to_msg()
+        marker.ns = "candidate_boards"
+        marker.id = hash(board_id) % 10000  # Unique ID from board_id
+        marker.type = Marker.SPHERE
+        marker.action = Marker.ADD
+        
+        # Position
+        marker.pose.position.x = float(position[0])
+        marker.pose.position.y = float(position[1])
+        marker.pose.position.z = float(position[2])
+        marker.pose.orientation.w = 1.0
+        
+        # Size
+        marker.scale.x = 0.2
+        marker.scale.y = 0.2
+        marker.scale.z = 0.2
+        
+        # Color - Red for candidates
+        marker.color.r = 1.0
+        marker.color.g = 0.0
+        marker.color.b = 0.0
+        marker.color.a = 0.8  # Semi-transparent
+        
+        # Lifetime - will disappear if not updated
+        marker.lifetime.sec = 2
+        marker.lifetime.nanosec = 0
+        
+        # Publish as MarkerArray
+        marker_array = MarkerArray()
+        marker_array.markers = [marker]
+        self.marker_pub.publish(marker_array)
+    
+    def publish_known_board_marker(self, board_id: str, position: np.ndarray):
+        """Publish a green sphere marker for a validated known board"""
+        marker = Marker()
+        marker.header.frame_id = self.map_frame
+        marker.header.stamp = self.get_clock().now().to_msg()
+        marker.ns = "known_boards"
+        marker.id = hash(board_id) % 10000  # Unique ID from board_id
+        marker.type = Marker.SPHERE
+        marker.action = Marker.ADD
+        
+        # Position
+        marker.pose.position.x = float(position[0])
+        marker.pose.position.y = float(position[1])
+        marker.pose.position.z = float(position[2])
+        marker.pose.orientation.w = 1.0
+        
+        # Size
+        marker.scale.x = 0.2
+        marker.scale.y = 0.2
+        marker.scale.z = 0.2
+        
+        # Color - Green for known boards
+        marker.color.r = 0.0
+        marker.color.g = 1.0
+        marker.color.b = 0.0
+        marker.color.a = 1.0  # Fully opaque
+        
+        # Lifetime - persistent (0 means forever)
+        marker.lifetime.sec = 0
+        marker.lifetime.nanosec = 0
+        
+        # Publish as MarkerArray
+        marker_array = MarkerArray()
+        marker_array.markers = [marker]
+        self.marker_pub.publish(marker_array)
+        
+        self.get_logger().info(f"Published green marker for validated board {board_id}")
 
     def cleanup_old_candidates(self):
         """Remove candidate boards that haven't been seen recently"""
