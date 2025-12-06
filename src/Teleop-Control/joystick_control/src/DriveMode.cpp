@@ -6,24 +6,17 @@ DriveMode::DriveMode(rclcpp::Node *node)
     : Mode("Drive", node), camera_service_available_(false) {
   RCLCPP_INFO(node_->get_logger(), "Drive Mode");
   loadParameters();
-  std::vector<std::string> motor_names = {kCamPanMotor, kCamTiltMotor};
+  std::vector<std::string> motor_names = {camPanMotor, camTiltMotor};
   twist_pub_ =
       node_->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
 
   for (const auto &topic : motor_names) {
-    topic_name = "/" + topic;
+    std::string topic_name = "/" + topic;
     motor_pubs[topic] = node_->create_publisher<std_msgs::msg::Float32>(
         topic_name, rclcpp::QoS(rclcpp::KeepLast(10)).reliable());
   }
   pwm_pub_ =
       node_->create_publisher<std_msgs::msg::Float32>("servo_pwm_control", 10);
-
-  // Wait for the service to be available
-  if (servo_client_->wait_for_service(std::chrono::seconds(1))) {
-    camera_service_available_ = true;
-  } else {
-    RCLCPP_WARN(node_->get_logger(), "Service not available after waiting");
-  }
 }
 
 void DriveMode::processJoystickInput(
@@ -74,8 +67,7 @@ void DriveMode::handleTwist(
   twist_pub_->publish(twist);
 }
 
-void DriveMode::handleCam(
-    std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const {
+void DriveMode::handleCam(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   static double tilt_pos = kDefaultCamTilt;
   static double pan_pos = kDefaultCamPan;
   static double timestamp = 0;
@@ -116,10 +108,10 @@ void DriveMode::handlePWM(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   }
 }
 
-void DriveMode::setServoPosition(std::string name,
-                                 double position) const { // port name?
-  auto servo_msg = std::msgs::msg::Float32();
+void DriveMode::setServoPosition(std::string name, double position) {
+  auto servo_msg = std_msgs::msg::Float32();
   servo_msg.data = position;
+  RCLCPP_WARN(node_->get_logger(), "Service not available after waiting");
   motor_pubs[name]->publish(servo_msg);
 }
 

@@ -8,6 +8,7 @@
 #include "interfaces/srv/move_servo.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "ros_phoenix/msg/motor_control.hpp"
+#include "std_msgs/msg/float32.hpp"
 
 /**
  * @class ArmDummyMode

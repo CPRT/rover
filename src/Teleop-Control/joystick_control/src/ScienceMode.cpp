@@ -12,7 +12,7 @@ ScienceMode::ScienceMode(rclcpp::Node *node) : Mode("Science", node) {
   std::vector<std::string> motor_names = {collectionServo, microscopeServo};
 
   for (const auto &topic : motor_names) {
-    topic_name = "/" + topic;
+    std::string topic_name = "/" + topic;
     motor_pubs[topic] = node_->create_publisher<std_msgs::msg::Float32>(
         topic_name, rclcpp::QoS(rclcpp::KeepLast(10)).reliable());
   }
@@ -50,7 +50,7 @@ void ScienceMode::handleDrill(
 }
 
 void ScienceMode::handleMicroscope(
-    std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const {
+    std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   // Process input and output linear component
   static double position;
   double value = joystickMsg->axes[kMicroscopeAxis] * rad_multiplier;
@@ -64,7 +64,7 @@ void ScienceMode::handleMicroscope(
 }
 
 void ScienceMode::handleSoilCollection(
-    std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const {
+    std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   if (joystickMsg->buttons[kCollectionButton]) {
     setServoPosition(collectionServo, kCollectionOpen);
   } else if (joystickMsg->buttons[kCancelCollectionButton]) {
@@ -76,8 +76,8 @@ void ScienceMode::handleSoilCollection(
   }
 }
 
-void ScienceMode::setServoPosition(std::string name, double position) const {
-  auto servo_msg = std::msgs::msg::Float32();
+void ScienceMode::setServoPosition(std::string name, double position) {
+  auto servo_msg = std_msgs::msg::Float32();
   servo_msg.data = position;
   motor_pubs[name]->publish(servo_msg);
 }
@@ -105,7 +105,7 @@ void ScienceMode::declareParameters(rclcpp::Node *node) {
   node->declare_parameter("science_mode.microscope_light_button", 7);
   node->declare_parameter("science_mode.collection_servo_name", "collection");
   node->declare_parameter("science_mode.microscope_servo_name", "microscope");
-  node->declare_parameter("science_mode.collection_open", 0);
+  node->declare_parameter("science_mode.collection_open", 0.0);
   node->declare_parameter("science_mode.collection_dump", M_PI / 2);
   node->declare_parameter("science_mode.collection_lock", M_PI);
   node->declare_parameter("science_mode.collection_test", M_PI);

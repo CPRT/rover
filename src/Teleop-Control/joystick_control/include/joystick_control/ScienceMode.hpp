@@ -9,6 +9,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "ros_phoenix/msg/motor_control.hpp"
 #include "ros_phoenix/msg/motor_status.hpp"
+#include "std_msgs/msg/float32.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 
 class ScienceMode : public Mode {
@@ -23,14 +24,12 @@ public:
 private:
   void handlePlatform(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const;
   void handleDrill(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const;
-  void
-  handleMicroscope(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const;
+  void handleMicroscope(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
   void
   handlePanoramic(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const;
-  void handleSoilCollection(
-      std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const;
+  void handleSoilCollection(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
 
-  void setServoPosition(std::string name, double position) const;
+  void setServoPosition(std::string name, double position);
   void toggleLights() const;
 
   void loadParameters();
@@ -47,10 +46,10 @@ private:
   int8_t kSoilTestButton;
   int8_t kSoilLockButton;
   int8_t kMicroscopeLightButton;
-  int8_t kCollectionSample;
-  int16_t kCollectionOpen;
-  int16_t kCollectionClose;
-  int16_t kCollectionLock;
+  double kCollectionSample;
+  double kCollectionOpen;
+  double kCollectionClose;
+  double kCollectionLock;
   std::string collectionServo;
   std::string microscopeServo;
 

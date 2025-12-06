@@ -6,19 +6,8 @@
 ArmIKMode::ArmIKMode(rclcpp::Node *node) : Mode("IK Arm", node) {
   RCLCPP_INFO(node_->get_logger(), "IK Arm Mode");
   loadParameters();
-  servo_client_ =
-      node_->create_client<interfaces::srv::MoveServo>("servo_service");
   twist_pub_ = node_->create_publisher<geometry_msgs::msg::TwistStamped>(
       "/servo_node/delta_twist_cmds", 10);
-  if (!ArmHelpers::start_moveit_servo(node_)) {
-    RCLCPP_ERROR(node_->get_logger(),
-                 "Failed to start MoveIt servo service, IK mode will not work");
-  }
-  servo_pub_ = node_->create_publisher<std_msgs::msg::Float32>(
-      "/" + servoName, rclcpp::QoS(rclcpp::KeepLast(10)).reliable())
-                   twist_pub_ =
-      node_->create_publisher<geometry_msgs::msg::TwistStamped>(
-          "/servo_node/delta_twist_cmds", 10);
   if (!ArmHelpers::start_moveit_servo(node_)) {
     RCLCPP_ERROR(node_->get_logger(),
                  "Failed to start MoveIt servo service, IK mode will not work");
@@ -26,6 +15,9 @@ ArmIKMode::ArmIKMode(rclcpp::Node *node) : Mode("IK Arm", node) {
 
   auto stop_hw_interface_pub =
       node_->create_publisher<std_msgs::msg::Bool>("/arm_active", 10);
+  servo_pub_ = node_->create_publisher<std_msgs::msg::Float32>(
+      "/" + servoName, rclcpp::QoS(rclcpp::KeepLast(10)).reliable());
+
   auto msg = std_msgs::msg::Bool();
   msg.data = true;
   stop_hw_interface_pub->publish(msg);
@@ -83,7 +75,7 @@ void ArmIKMode::handleGripper(
     } else {
       buttonPressed_ = true;
       RCLCPP_INFO(node_->get_logger(), "Max Open");
-      RCLCPP_INFO(node_->get_logger(), "%d", servoPos_);
+      RCLCPP_INFO(node_->get_logger(), "%f", servoPos_);
     }
   } else if (joystickMsg->buttons[kClawClose] == 1 && !buttonPressed_) {
     if (servoPos_ - ((kClawMax - kClawMin) / 2) > kClawMin - rad_multiplier) {
@@ -93,7 +85,7 @@ void ArmIKMode::handleGripper(
     } else {
       buttonPressed_ = true;
       RCLCPP_INFO(node_->get_logger(), "Max Close");
-      RCLCPP_INFO(node_->get_logger(), "%d", servoPos_);
+      RCLCPP_INFO(node_->get_logger(), "%f", servoPos_);
     }
   } else if ((joystickMsg->buttons[kClawClose] == 0) &&
              (joystickMsg->buttons[kClawOpen] == 0)) {
@@ -131,33 +123,8 @@ void ArmIKMode::loadParameters() {
   node_->get_parameter("arm_ik_mode.servo_name", servoName);
 }
 
-interfaces::srv::MoveServo::Response ArmIKMode::sendRequest(int port,
-                                                            int pos) const {
-  auto request = std::make_shared<interfaces::srv::MoveServo::Request>();
-  request->port = port;
-  request->pos = pos;
-
-  // Wait for the service to be available
-  if (!servo_client_->wait_for_service(std::chrono::seconds(1))) {
-    RCLCPP_WARN(node_->get_logger(), "Service not available after waiting");
-    return interfaces::srv::MoveServo::Response();
-  }
-
-  auto future = servo_client_->async_send_request(request);
-
-  // Wait for the result (with timeout)
-  if (rclcpp::spin_until_future_complete(node_->get_node_base_interface(),
-                                         future, std::chrono::seconds(1)) !=
-      rclcpp::FutureReturnCode::SUCCESS) {
-    RCLCPP_ERROR(node_->get_logger(), "Service call failed");
-    return interfaces::srv::MoveServo::Response();
-  }
-
-  return *future.get();
-}
-
-void ArmIKMode::setServoPosition(float position) const {
-  auto servo_msg = std::msgs::msg::Float32();
+void ArmIKMode::setServoPosition(double position) const {
+  auto servo_msg = std_msgs::msg::Float32();
   servo_msg.data = position;
   servo_pub_->publish(servo_msg);
 }

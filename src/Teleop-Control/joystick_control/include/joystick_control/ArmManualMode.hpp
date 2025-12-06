@@ -9,6 +9,7 @@
 #include "interfaces/srv/move_servo.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/joy.hpp"
+#include "std_msgs/msg/float32.hpp"
 
 /**
  * @class ArmManualMode

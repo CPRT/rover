@@ -53,7 +53,7 @@ private:
    *
    * @param joystickMsg A shared pointer to the sensor_msgs::msg::Joy message.
    */
-  void handleCam(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const;
+  void handleCam(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
 
   /**
    * @brief Handles the video control based on joystick input. Not implemented
@@ -67,9 +67,7 @@ private:
    *
    * @param joystickMsg A shared pointer to the sensor_msgs::msg::Joy message.
    */
-
-  void findServoTopic() void handlePWM(
-      std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
+  void handlePWM(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
 
   /**
    * @brief Gets the throttle value from the joystick input.
@@ -85,7 +83,7 @@ private:
    * @param name The servo name.
    * @param position The target position for the servo.
    */
-  void setServoPosition(std::string name, double position) const;
+  void setServoPosition(std::string name, double position);
 
   void loadParameters();
 
@@ -120,8 +118,6 @@ private:
 
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr
       twist_pub_; ///< Publisher for Twist messages.
-  rclcpp::Client<interfaces::srv::MoveServo>::SharedPtr
-      servo_client_; ///< Client for servo control.
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr
       pwm_pub_; ///< Publisher for video messages.
 

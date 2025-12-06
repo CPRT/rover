@@ -9,15 +9,13 @@ ArmManualMode::ArmManualMode(rclcpp::Node *node) : Mode("Manual Arm", node) {
   loadParameters();
   joint_pub_ = node_->create_publisher<control_msgs::msg::JointJog>(
       "/servo_node/delta_joint_cmds", 10);
-  servo_client_ =
-      node_->create_client<interfaces::srv::MoveServo>("servo_service");
-  servo_pub_ = node_->create_publisher<std_msgs::msg::Float32>(
-      "/" + servoName, rclcpp::QoS(rclcpp::KeepLast(10)).reliable());
   if (!ArmHelpers::start_moveit_servo(node_)) {
     RCLCPP_ERROR(
         node_->get_logger(),
         "Failed to start MoveIt servo service, Manual mode will not work");
   }
+  servo_pub_ = node_->create_publisher<std_msgs::msg::Float32>(
+      "/" + servoName, rclcpp::QoS(rclcpp::KeepLast(10)).reliable());
 
   auto stop_hw_interface_pub =
       node_->create_publisher<std_msgs::msg::Bool>("/arm_active", 10);
@@ -114,7 +112,7 @@ void ArmManualMode::handleTwist(
     } else {
       buttonPressed_ = true;
       RCLCPP_INFO(node_->get_logger(), "Max Open");
-      RCLCPP_INFO(node_->get_logger(), "%d", servoPos_);
+      RCLCPP_INFO(node_->get_logger(), "%f", servoPos_);
     }
   } else if (joystickMsg->buttons[kClawClose] == 1 && !buttonPressed_) {
     if (servoPos_ - ((kClawMax - kClawMin) / 2) > kClawMin - rad_multiplier) {
@@ -124,7 +122,7 @@ void ArmManualMode::handleTwist(
     } else {
       buttonPressed_ = true;
       RCLCPP_INFO(node_->get_logger(), "Max Close");
-      RCLCPP_INFO(node_->get_logger(), "%d", servoPos_);
+      RCLCPP_INFO(node_->get_logger(), "%f", servoPos_);
     }
   } else if ((joystickMsg->buttons[kClawClose] == 0) &&
              (joystickMsg->buttons[kClawOpen] == 0)) {
@@ -170,8 +168,8 @@ void ArmManualMode::loadParameters() {
   node_->get_parameter("arm_manual_mode.throttle.min", kThrottleMin);
 }
 
-void ArmDummyMode::setServoPosition(double position) const {
-  auto servo_msg = std::msgs::msg::Float32();
+void ArmManualMode::setServoPosition(double position) const {
+  auto servo_msg = std_msgs::msg::Float32();
   servo_msg.data = position;
   servo_pub_->publish(servo_msg);
 }

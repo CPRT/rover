@@ -8,6 +8,7 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "interfaces/srv/move_servo.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/float32.hpp"
 
 const std::string CAM_FRAME_ID = "Link_6";
 const std::string BASE_FRAME_ID = "Link_2";
