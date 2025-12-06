@@ -1,0 +1,38 @@
+aruco_board_localizer_node:
+  ros__parameters:
+    # Input topic
+    aruco_topic: "/aruco_boards"
+    
+    # Output topic
+    output_topic: "/aruco_pose_estimate"
+    
+    # Frame IDs
+    map_frame: "map"
+    base_link_frame: "base_link"
+    camera_frame: "zed_camera_link"
+    
+    # Board validation parameters
+    # Minimum number of samples needed within the time window to validate a board
+    min_samples_for_validation: 10
+    
+    # Time window (seconds) for collecting validation samples
+    validation_window_seconds: 2.0
+    
+    # Maximum standard deviation (meters) in position measurements to accept board
+    # This ensures the board location is stable and consistent
+    max_position_std_meters: 0.3
+    
+    # Candidate board timeout
+    # Remove candidate boards that haven't been seen for this many seconds
+    candidate_timeout_seconds: 10.0
+    
+    # Cleanup interval (seconds) for removing stale candidates
+    candidate_cleanup_interval: 5.0
+    
+    # Covariance for published pose estimates
+    # These values represent the uncertainty in the pose estimate
+    pose_covariance_position: 0.1      # meters^2 (diagonal elements for x, y, z)
+    pose_covariance_orientation: 0.05  # radians^2 (diagonal elements for roll, pitch, yaw)
+    
+    # TF lookup timeout (seconds)
+    tf_timeout_seconds: 0.1
