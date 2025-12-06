@@ -1,8 +1,8 @@
 aruco_board_detector_node:
   ros__parameters:
     # Image and camera topics (should match camera_publisher topics)
-    image_topic: "/camera/image_raw"
-    camera_info_topic: "/camera/camera_info"
+    image_topic: "/zed/zed_node/left_raw/image_raw_color"
+    camera_info_topic: "/zed/zed_node/left_raw/camera_info"
     camera_frame: "zed_camera_link"
     
     # ArUco dictionary to use (must match the dictionary used to generate markers)
