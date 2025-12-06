@@ -36,3 +36,8 @@ aruco_board_localizer_node:
     
     # TF lookup timeout (seconds)
     tf_timeout_seconds: 0.1
+    
+    # Bootstrap pose publishing
+    # When no boards are known and TF fails, publish an origin pose to help EKF bootstrap
+    publish_bootstrap_pose: true
+    bootstrap_pose_rate: 1.0  # Hz - rate to publish bootstrap pose when needed
