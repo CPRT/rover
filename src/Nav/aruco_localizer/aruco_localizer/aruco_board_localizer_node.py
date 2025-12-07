@@ -546,6 +546,13 @@ class ArucoBoardLocalizerNode(Node):
             )
 
             if robot_pose_map:
+                # Calculate distance to board for covariance scaling
+                distance_to_board = np.linalg.norm([
+                    board_pose_base.pose.position.x,
+                    board_pose_base.pose.position.y,
+                    board_pose_base.pose.position.z
+                ])
+                
                 # Update known board stats (with lock)
                 with self.lock:
                     known_board.num_observations += 1
@@ -553,7 +560,7 @@ class ArucoBoardLocalizerNode(Node):
 
                 # Publish pose estimate with current time for better EKF integration
                 current_stamp = self.get_clock().now().to_msg()
-                self.publish_pose_estimate(robot_pose_map, current_stamp, board_id)
+                self.publish_pose_estimate(robot_pose_map, current_stamp, board_id, distance_to_board)
 
         except (LookupException, ConnectivityException, ExtrapolationException) as e:
             self.get_logger().warn(
@@ -627,28 +634,43 @@ class ArucoBoardLocalizerNode(Node):
             self.get_logger().error(f"Error computing robot pose from board: {e}")
             return None
 
-    def publish_pose_estimate(self, pose: Pose, stamp, board_id: str):
-        """Publish robot pose estimate"""
+    def publish_pose_estimate(self, pose: Pose, stamp, board_id: str, distance_to_board: float = 0.0):
+        """
+        Publish robot pose estimate with distance-based covariance scaling.
+        
+        Args:
+            pose: Robot pose in map frame
+            stamp: Timestamp for the message
+            board_id: ID of the board used for estimation
+            distance_to_board: Distance from robot to board in meters
+        """
         msg = PoseWithCovarianceStamped()
         msg.header.stamp = stamp
         msg.header.frame_id = self.map_frame
         msg.pose.pose = pose
 
+        # Scale covariance based on distance to board
+        # At 5 meters, covariance is tripled (3x)
+        # Linear scaling: scale = 1 + (distance / 5.0) * 2.0
+        # This gives: 1x at 0m, 3x at 5m, 5x at 10m, etc.
+        distance_scale = 1.0 + (distance_to_board / 5.0) * 2.0
+        
         # Set covariance (6x6 matrix, flattened)
         # Order: x, y, z, rotation about X, rotation about Y, rotation about Z
         covariance = np.zeros(36)
-        covariance[0] = self.pose_covariance_position  # x
-        covariance[7] = self.pose_covariance_position  # y
-        covariance[14] = self.pose_covariance_position  # z
-        covariance[21] = self.pose_covariance_orientation  # rot x
-        covariance[28] = self.pose_covariance_orientation  # rot y
-        covariance[35] = self.pose_covariance_orientation  # rot z
+        covariance[0] = self.pose_covariance_position * distance_scale  # x
+        covariance[7] = self.pose_covariance_position * distance_scale  # y
+        covariance[14] = self.pose_covariance_position * distance_scale  # z
+        covariance[21] = self.pose_covariance_orientation * distance_scale  # rot x
+        covariance[28] = self.pose_covariance_orientation * distance_scale  # rot y
+        covariance[35] = self.pose_covariance_orientation * distance_scale  # rot z
         msg.pose.covariance = covariance.tolist()
 
         self.pose_pub.publish(msg)
 
         self.get_logger().debug(
-            f"Published pose estimate from board {board_id}: "
+            f"Published pose estimate from board {board_id} "
+            f"(dist: {distance_to_board:.2f}m, scale: {distance_scale:.2f}x): "
             f"[{pose.position.x:.3f}, {pose.position.y:.3f}, {pose.position.z:.3f}]"
         )
 
