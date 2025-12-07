@@ -31,13 +31,13 @@ aruco_board_localizer_node:
     
     # Covariance for published pose estimates
     # These values represent the uncertainty in the pose estimate
-    pose_covariance_position: 0.1      # meters^2 (diagonal elements for x, y, z)
-    pose_covariance_orientation: 0.05  # radians^2 (diagonal elements for roll, pitch, yaw)
+    pose_covariance_position: 0.2      # meters^2 (diagonal elements for x, y, z)
+    pose_covariance_orientation: 0.2  # radians^2 (diagonal elements for roll, pitch, yaw)
     
     # TF lookup timeout (seconds)
     tf_timeout_seconds: 0.1
     
     # Bootstrap pose publishing
     # When no boards are known and TF fails, publish an origin pose to help EKF bootstrap
-    publish_bootstrap_pose: true
+    publish_bootstrap_pose: false
     bootstrap_pose_rate: 1.0  # Hz - rate to publish bootstrap pose when needed
