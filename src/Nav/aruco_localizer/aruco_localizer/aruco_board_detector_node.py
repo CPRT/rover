@@ -416,11 +416,67 @@ class ArucoBoardDetectorNode(Node):
             )
 
             if num_markers > 0 and rvec is not None and tvec is not None:
+                # Validate the pose to reject flipped/ambiguous solutions
+                if not self.validate_pose(tvec, rvec):
+                    self.get_logger().debug(
+                        f"Rejected invalid pose for board {board_config.board_id}",
+                        throttle_duration_sec=1.0,
+                    )
+                    return False, None, None
                 return True, rvec, tvec
             return False, None, None
         except Exception as e:
             self.get_logger().error(f"Error estimating pose: {e}")
             return False, None, None
+
+    def validate_pose(self, tvec, rvec):
+        """
+        Validate the estimated pose to reject ambiguous or flipped solutions.
+
+        ArUco pose estimation can sometimes return a 180-degree flipped solution
+        where the board appears behind the camera or with impossible orientation.
+
+        Validation checks:
+        1. Board must be in front of camera (positive Z in OpenCV camera frame)
+        2. Distance should be reasonable (not too close, not too far)
+        3. Board normal should generally face the camera
+        """
+        try:
+            # Check 1: Board must be in front of camera (Z > 0 in OpenCV convention)
+            z_distance = float(tvec[2][0])
+            if z_distance <= 0:
+                return False
+
+            # Check 2: Reasonable distance bounds (adjust based on your use case)
+            # Reject if too close (< 0.2m) or too far (> 20m)
+            if z_distance < 0.2 or z_distance > 20.0:
+                return False
+
+            # Check 3: Board normal should roughly face the camera
+            # Convert rotation vector to rotation matrix
+            rot_mat, _ = cv2.Rodrigues(rvec)
+
+            # In OpenCV convention, the board's Z-axis (normal) is the 3rd column
+            board_normal = rot_mat[:, 2]
+
+            # Vector from camera to board
+            camera_to_board = tvec.flatten() / np.linalg.norm(tvec)
+
+            # The board normal should be roughly opposite to the camera-to-board vector
+            # (i.e., the board should be facing the camera)
+            # dot product should be negative (angles between 90-270 degrees)
+            dot_product = np.dot(board_normal, camera_to_board)
+
+            # Allow some tolerance - board doesn't need to be perfectly perpendicular
+            # but should be generally facing the camera (dot < 0.5 means angle > 60 degrees)
+            if dot_product > 0.5:
+                return False
+
+            return True
+
+        except Exception as e:
+            self.get_logger().warn(f"Error validating pose: {e}")
+            return False
 
     def publish_board_pose(self, board_config, rvec, tvec, header, detected_ids):
         """

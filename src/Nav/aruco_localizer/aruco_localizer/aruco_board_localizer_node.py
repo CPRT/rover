@@ -37,7 +37,12 @@ from scipy.spatial.transform import Rotation
 
 # ROS2 message imports
 from interfaces.msg import ArucoBoard
-from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped, Pose, TransformStamped
+from geometry_msgs.msg import (
+    PoseWithCovarianceStamped,
+    PoseStamped,
+    Pose,
+    TransformStamped,
+)
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import ColorRGBA
 from tf2_ros import (
@@ -331,7 +336,7 @@ class ArucoBoardLocalizerNode(Node):
         # Check if this is a known board (lock only for the check)
         with self.lock:
             is_known = board_id in self.known_boards
-        
+
         if is_known:
             # Use this board to estimate robot pose
             self.estimate_robot_pose(msg)
@@ -368,13 +373,15 @@ class ArucoBoardLocalizerNode(Node):
                     ]
                 ),
             )
-            
+
             # self.get_logger().info(f"Board {board_id} sample in map frame:")
 
             # Add to candidate (lock only for dictionary access)
             with self.lock:
                 if board_id not in self.candidate_boards:
-                    self.get_logger().info(f"Creating new candidate board entry: {board_id}")
+                    self.get_logger().info(
+                        f"Creating new candidate board entry: {board_id}"
+                    )
                     self.candidate_boards[board_id] = BoardCandidate(board_id=board_id)
                     self.get_logger().info(f"New candidate board detected: {board_id}")
 
@@ -396,7 +403,7 @@ class ArucoBoardLocalizerNode(Node):
             if board_id not in self.candidate_boards:
                 return
             candidate = self.candidate_boards[board_id]
-        
+
         current_time = self.get_clock().now()
         window = Duration(seconds=self.validation_window_seconds)
 
@@ -466,11 +473,11 @@ class ArucoBoardLocalizerNode(Node):
             # Use Time() to get the latest available transform to avoid extrapolation errors
             timeout = Duration(seconds=self.tf_timeout_seconds)
             transform = self.tf_buffer.lookup_transform(
-                self.map_frame, 
-                camera_frame, 
-                # msg.header.stamp, 
+                self.map_frame,
+                camera_frame,
+                # msg.header.stamp,
                 Time(),
-                timeout
+                timeout,
             )
 
             # Transform the pose using PoseStamped
@@ -495,7 +502,9 @@ class ArucoBoardLocalizerNode(Node):
             )
             return None
         except Exception as e:
-            self.get_logger().error(f"Error transforming board to map: {e} \n{traceback.format_exc()}")
+            self.get_logger().error(
+                f"Error transforming board to map: {e} \n{traceback.format_exc()}"
+            )
             return None
 
     def estimate_robot_pose(self, msg: ArucoBoard):
@@ -547,12 +556,14 @@ class ArucoBoardLocalizerNode(Node):
 
             if robot_pose_map:
                 # Calculate distance to board for covariance scaling
-                distance_to_board = np.linalg.norm([
-                    board_pose_base.pose.position.x,
-                    board_pose_base.pose.position.y,
-                    board_pose_base.pose.position.z
-                ])
-                
+                distance_to_board = np.linalg.norm(
+                    [
+                        board_pose_base.pose.position.x,
+                        board_pose_base.pose.position.y,
+                        board_pose_base.pose.position.z,
+                    ]
+                )
+
                 # Update known board stats (with lock)
                 with self.lock:
                     known_board.num_observations += 1
@@ -560,7 +571,9 @@ class ArucoBoardLocalizerNode(Node):
 
                 # Publish pose estimate with current time for better EKF integration
                 current_stamp = self.get_clock().now().to_msg()
-                self.publish_pose_estimate(robot_pose_map, current_stamp, board_id, distance_to_board)
+                self.publish_pose_estimate(
+                    robot_pose_map, current_stamp, board_id, distance_to_board
+                )
 
         except (LookupException, ConnectivityException, ExtrapolationException) as e:
             self.get_logger().warn(
@@ -568,7 +581,9 @@ class ArucoBoardLocalizerNode(Node):
                 throttle_duration_sec=1.0,
             )
         except Exception as e:
-            self.get_logger().error(f"Error estimating robot pose: {e} {traceback.format_exc()}")
+            self.get_logger().error(
+                f"Error estimating robot pose: {e} {traceback.format_exc()}"
+            )
 
     def compute_robot_pose_from_board(
         self, board_pose_base: Pose, known_board: KnownBoard
@@ -634,10 +649,12 @@ class ArucoBoardLocalizerNode(Node):
             self.get_logger().error(f"Error computing robot pose from board: {e}")
             return None
 
-    def publish_pose_estimate(self, pose: Pose, stamp, board_id: str, distance_to_board: float = 0.0):
+    def publish_pose_estimate(
+        self, pose: Pose, stamp, board_id: str, distance_to_board: float = 0.0
+    ):
         """
         Publish robot pose estimate with distance-based covariance scaling.
-        
+
         Args:
             pose: Robot pose in map frame
             stamp: Timestamp for the message
@@ -654,7 +671,7 @@ class ArucoBoardLocalizerNode(Node):
         # Linear scaling: scale = 1 + (distance / 5.0) * 2.0
         # This gives: 1x at 0m, 3x at 5m, 5x at 10m, etc.
         distance_scale = 1.0 + (distance_to_board / 5.0) * 2.0
-        
+
         # Set covariance (6x6 matrix, flattened)
         # Order: x, y, z, rotation about X, rotation about Y, rotation about Z
         covariance = np.zeros(36)
