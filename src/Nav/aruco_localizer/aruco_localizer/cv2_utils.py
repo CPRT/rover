@@ -37,10 +37,10 @@ IS_NEW_API = OPENCV_VERSION >= version.parse("4.7.0")
 def get_aruco_dictionary(dictionary_id):
     """
     Get an ArUco dictionary compatible with the current OpenCV version.
-    
+
     Args:
         dictionary_id: Integer constant for the dictionary (e.g., cv2.aruco.DICT_6X6_250)
-    
+
     Returns:
         ArUco dictionary object
     """
@@ -53,7 +53,7 @@ def get_aruco_dictionary(dictionary_id):
 def create_detector_parameters():
     """
     Create ArUco detector parameters compatible with the current OpenCV version.
-    
+
     Returns:
         ArUco DetectorParameters object
     """
@@ -66,12 +66,12 @@ def create_detector_parameters():
 def create_aruco_board(obj_points, dictionary, ids):
     """
     Create an ArUco board compatible with the current OpenCV version.
-    
+
     Args:
         obj_points: Array of 3D object points for each marker
         dictionary: ArUco dictionary object
         ids: Array of marker IDs
-    
+
     Returns:
         ArUco Board object
     """
@@ -85,12 +85,12 @@ def create_aruco_board(obj_points, dictionary, ids):
 def detect_markers(image, dictionary, parameters):
     """
     Detect ArUco markers in an image compatible with the current OpenCV version.
-    
+
     Args:
         image: Input image
         dictionary: ArUco dictionary object
         parameters: ArUco detector parameters
-    
+
     Returns:
         Tuple of (corners, ids, rejected) where:
         - corners: List of detected marker corners
@@ -104,19 +104,19 @@ def detect_markers(image, dictionary, parameters):
         corners, ids, rejected = cv2.aruco.detectMarkers(
             image, dictionary, parameters=parameters
         )
-    
+
     return corners, ids, rejected
 
 
 def draw_detected_markers(image, corners, ids):
     """
     Draw detected ArUco markers on an image compatible with the current OpenCV version.
-    
+
     Args:
         image: Input/output image
         corners: List of detected marker corners
         ids: Array of detected marker IDs
-    
+
     Returns:
         Image with markers drawn (modifies in-place and returns)
     """
@@ -126,14 +126,14 @@ def draw_detected_markers(image, corners, ids):
 def estimate_pose_board(corners, ids, board, camera_matrix, dist_coeffs):
     """
     Estimate the pose of an ArUco board compatible with the current OpenCV version.
-    
+
     Args:
         corners: List of detected marker corners
         ids: Array of detected marker IDs
         board: ArUco Board object
         camera_matrix: Camera intrinsic matrix
         dist_coeffs: Camera distortion coefficients
-    
+
     Returns:
         Tuple of (num_markers, rvec, tvec) where:
         - num_markers: Number of markers used for pose estimation
@@ -144,16 +144,24 @@ def estimate_pose_board(corners, ids, board, camera_matrix, dist_coeffs):
         # New API: returns (rvec, tvec) directly, and success is determined by non-None values
         # The signature is: estimatePoseBoard(corners, ids, board, cameraMatrix, distCoeffs[, rvec[, tvec]]) -> retval, rvec, tvec
         obj_points, img_points = board.matchImagePoints(corners, ids)
-        
+
         if obj_points is None or len(obj_points) == 0:
             return 0, None, None
-        
+
         success, rvec, tvec = cv2.solvePnP(
-            obj_points, img_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE
+            obj_points,
+            img_points,
+            camera_matrix,
+            dist_coeffs,
+            flags=cv2.SOLVEPNP_ITERATIVE,
         )
-        
+
         if success:
-            return len(obj_points) // 4, rvec, tvec  # Divide by 4 because 4 corners per marker
+            return (
+                len(obj_points) // 4,
+                rvec,
+                tvec,
+            )  # Divide by 4 because 4 corners per marker
         else:
             return 0, None, None
     else:
@@ -167,7 +175,7 @@ def estimate_pose_board(corners, ids, board, camera_matrix, dist_coeffs):
 def draw_axis(image, camera_matrix, dist_coeffs, rvec, tvec, length):
     """
     Draw coordinate axes on an image compatible with the current OpenCV version.
-    
+
     Args:
         image: Input/output image
         camera_matrix: Camera intrinsic matrix
@@ -175,13 +183,15 @@ def draw_axis(image, camera_matrix, dist_coeffs, rvec, tvec, length):
         rvec: Rotation vector
         tvec: Translation vector
         length: Length of the axes to draw
-    
+
     Returns:
         Image with axes drawn (modifies in-place and returns)
     """
     if IS_NEW_API:
         # New API uses cv2.drawFrameAxes
-        return cv2.drawFrameAxes(image, camera_matrix, dist_coeffs, rvec, tvec, length, 2)
+        return cv2.drawFrameAxes(
+            image, camera_matrix, dist_coeffs, rvec, tvec, length, 2
+        )
     else:
         # Old API uses cv2.aruco.drawAxis
         return cv2.aruco.drawAxis(image, camera_matrix, dist_coeffs, rvec, tvec, length)
@@ -190,7 +200,7 @@ def draw_axis(image, camera_matrix, dist_coeffs, rvec, tvec, length):
 def get_api_info():
     """
     Get information about the OpenCV version and API being used.
-    
+
     Returns:
         Dictionary with version information
     """
@@ -198,5 +208,5 @@ def get_api_info():
         "opencv_version": cv2.__version__,
         "parsed_version": str(OPENCV_VERSION),
         "using_new_api": IS_NEW_API,
-        "api_version": "4.7.0+" if IS_NEW_API else "< 4.7.0"
+        "api_version": "4.7.0+" if IS_NEW_API else "< 4.7.0",
     }
