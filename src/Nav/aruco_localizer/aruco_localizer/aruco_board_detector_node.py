@@ -42,6 +42,9 @@ import os
 from pathlib import Path
 from scipy.spatial.transform import Rotation
 
+# Import OpenCV compatibility layer
+from . import cv2_utils
+
 # ROS2 message imports
 from sensor_msgs.msg import CameraInfo, Image
 from interfaces.msg import ArucoBoard
@@ -97,9 +100,11 @@ class ArucoBoardConfig:
         self.obj_points = np.array(self.obj_points, dtype=np.float32)
         self.ids = np.array(self.ids, dtype=np.int32)
 
-        self.board = cv2.aruco.Board_create(
+        # Use compatibility layer for board creation
+        dictionary = cv2_utils.get_aruco_dictionary(cv2.aruco.DICT_6X6_250)
+        self.board = cv2_utils.create_aruco_board(
             self.obj_points,
-            cv2.aruco.Dictionary_get(cv2.aruco.DICT_6X6_250),
+            dictionary,
             self.ids,
         )
 
@@ -119,8 +124,9 @@ class ArucoBoardDetectorNode(Node):
             )
             raise
 
-        self.aruco_dictionary = cv2.aruco.Dictionary_get(dictionary_id)
-        self.aruco_parameters = cv2.aruco.DetectorParameters_create()
+        # Use compatibility layer for ArUco dictionary and parameters
+        self.aruco_dictionary = cv2_utils.get_aruco_dictionary(dictionary_id)
+        self.aruco_parameters = cv2_utils.create_detector_parameters()
 
         self.boards = []
         self.load_board_configs()
@@ -147,8 +153,14 @@ class ArucoBoardDetectorNode(Node):
         self.distortion = None
         self.bridge = CvBridge()
 
+        # Log OpenCV version information
+        api_info = cv2_utils.get_api_info()
         self.get_logger().info(
             f"ArUco Board Detector Node initialized with {len(self.boards)} boards"
+        )
+        self.get_logger().info(
+            f"OpenCV Version: {api_info['opencv_version']} "
+            f"(using {'new' if api_info['using_new_api'] else 'legacy'} ArUco API)"
         )
 
     def initialize_parameters(self):
@@ -326,8 +338,9 @@ class ArucoBoardDetectorNode(Node):
 
         try:
             cv_image = self.bridge.imgmsg_to_cv2(img_msg, desired_encoding="rgb8")
-            corners, marker_ids, rejected = cv2.aruco.detectMarkers(
-                cv_image, self.aruco_dictionary, parameters=self.aruco_parameters
+            # Use compatibility layer for marker detection
+            corners, marker_ids, rejected = cv2_utils.detect_markers(
+                cv_image, self.aruco_dictionary, self.aruco_parameters
             )
 
             debug_image = cv_image.copy()
@@ -335,7 +348,8 @@ class ArucoBoardDetectorNode(Node):
             marker_id_counter = 0
 
             if marker_ids is not None and len(marker_ids) > 0:
-                cv2.aruco.drawDetectedMarkers(debug_image, corners, marker_ids)
+                # Use compatibility layer for drawing markers
+                cv2_utils.draw_detected_markers(debug_image, corners, marker_ids)
                 marker_ids = marker_ids.flatten()
 
                 for board_config in self.boards:
@@ -358,7 +372,8 @@ class ArucoBoardDetectorNode(Node):
                                 board_config, rvec, tvec, img_msg.header, detected_ids
                             )
 
-                            cv2.aruco.drawAxis(
+                            # Use compatibility layer for drawing axis
+                            cv2_utils.draw_axis(
                                 debug_image,
                                 self.intrinsic_mat,
                                 self.distortion,
@@ -391,14 +406,13 @@ class ArucoBoardDetectorNode(Node):
             detected_corners_array = [c for c in detected_corners]
             detected_ids_array = np.array(detected_ids, dtype=np.int32).reshape(-1, 1)
 
-            num_markers, rvec, tvec = cv2.aruco.estimatePoseBoard(
+            # Use compatibility layer for pose estimation
+            num_markers, rvec, tvec = cv2_utils.estimate_pose_board(
                 detected_corners_array,
                 detected_ids_array,
                 board_config.board,
                 self.intrinsic_mat,
                 self.distortion,
-                None,
-                None,
             )
 
             if num_markers > 0 and rvec is not None and tvec is not None:

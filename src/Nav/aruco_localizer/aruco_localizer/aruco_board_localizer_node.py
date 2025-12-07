@@ -37,7 +37,7 @@ from scipy.spatial.transform import Rotation
 
 # ROS2 message imports
 from interfaces.msg import ArucoBoard
-from geometry_msgs.msg import PoseWithCovarianceStamped, Pose, TransformStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped, Pose, TransformStamped
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import ColorRGBA
 from tf2_ros import (
@@ -117,7 +117,7 @@ class ArucoBoardLocalizerNode(Node):
         self.known_boards: Dict[str, KnownBoard] = {}
         self.candidate_boards: Dict[str, BoardCandidate] = {}
         self.lock = threading.Lock()
-        
+
         # Bootstrap tracking
         self.last_bootstrap_time: Optional[Time] = None
         self.bootstrap_published_count = 0
@@ -131,11 +131,9 @@ class ArucoBoardLocalizerNode(Node):
         self.pose_pub = self.create_publisher(
             PoseWithCovarianceStamped, self.output_topic, 10
         )
-        
+
         # Marker publishers
-        self.marker_pub = self.create_publisher(
-            MarkerArray, "/aruco_board_markers", 10
-        )
+        self.marker_pub = self.create_publisher(MarkerArray, "/aruco_board_markers", 10)
 
         # Timer for cleanup of old candidates
         self.cleanup_timer = self.create_timer(
@@ -270,7 +268,7 @@ class ArucoBoardLocalizerNode(Node):
                 description="Timeout for TF lookups in seconds",
             ),
         )
-        
+
         # Bootstrap pose parameters
         self.declare_parameter(
             name="publish_bootstrap_pose",
@@ -280,7 +278,7 @@ class ArucoBoardLocalizerNode(Node):
                 description="Publish origin pose when no boards known and TF fails (helps EKF bootstrap)",
             ),
         )
-        
+
         self.declare_parameter(
             name="bootstrap_pose_rate",
             value=1.0,
@@ -322,7 +320,7 @@ class ArucoBoardLocalizerNode(Node):
         ).value
 
         self.tf_timeout_seconds = self.get_parameter("tf_timeout_seconds").value
-        
+
         self.publish_bootstrap_pose = self.get_parameter("publish_bootstrap_pose").value
         self.bootstrap_pose_rate = self.get_parameter("bootstrap_pose_rate").value
 
@@ -330,14 +328,16 @@ class ArucoBoardLocalizerNode(Node):
         """Process detected ArUco board"""
         board_id = msg.board_id
 
-        # Check if this is a known board
+        # Check if this is a known board (lock only for the check)
         with self.lock:
-            if board_id in self.known_boards:
-                # Use this board to estimate robot pose
-                self.estimate_robot_pose(msg)
-            else:
-                # Process as candidate for validation
-                self.process_candidate_board(msg)
+            is_known = board_id in self.known_boards
+        
+        if is_known:
+            # Use this board to estimate robot pose
+            self.estimate_robot_pose(msg)
+        else:
+            # Process as candidate for validation
+            self.process_candidate_board(msg)
 
     def process_candidate_board(self, msg: ArucoBoard):
         """Process a board that's being validated"""
@@ -368,30 +368,35 @@ class ArucoBoardLocalizerNode(Node):
                     ]
                 ),
             )
+            
+            # self.get_logger().info(f"Board {board_id} sample in map frame:")
 
+            # Add to candidate (lock only for dictionary access)
             with self.lock:
-                # Add to candidate
                 if board_id not in self.candidate_boards:
+                    self.get_logger().info(f"Creating new candidate board entry: {board_id}")
                     self.candidate_boards[board_id] = BoardCandidate(board_id=board_id)
                     self.get_logger().info(f"New candidate board detected: {board_id}")
 
                 self.candidate_boards[board_id].add_sample(sample)
 
-                # Check if we can validate this board
-                self.try_validate_board(board_id)
-                
-                # Publish candidate marker (red)
-                self.publish_candidate_marker(board_id, sample.position)
+            # Check if we can validate this board (outside lock)
+            self.try_validate_board(board_id)
+
+            # Publish candidate marker (red)
+            self.publish_candidate_marker(board_id, sample.position)
 
         except Exception as e:
             self.get_logger().error(f"Error processing candidate board {board_id}: {e}")
 
     def try_validate_board(self, board_id: str):
         """Check if a candidate board meets validation criteria"""
-        if board_id not in self.candidate_boards:
-            return
-
-        candidate = self.candidate_boards[board_id]
+        # Get candidate (with lock)
+        with self.lock:
+            if board_id not in self.candidate_boards:
+                return
+            candidate = self.candidate_boards[board_id]
+        
         current_time = self.get_clock().now()
         window = Duration(seconds=self.validation_window_seconds)
 
@@ -408,30 +413,40 @@ class ArucoBoardLocalizerNode(Node):
 
         mean_pos, mean_orientation, max_std = result
 
+        self.get_logger().info(
+            f"Board {board_id} validation result: "
+            f"Mean Position: [{mean_pos[0]:.3f}, {mean_pos[1]:.3f}, {mean_pos[2]:.3f}], "
+            f"Mean Orientation: [{mean_orientation[0]:.3f}, {mean_orientation[1]:.3f}, {mean_orientation[2]:.3f}, {mean_orientation[3]:.3f}], "
+            f"Max Std: {max_std:.4f}m"
+        )
+
         # Check if variance is acceptable
         if max_std <= self.max_position_std_meters:
-            # Promote to known board
-            known_board = KnownBoard(
-                board_id=board_id,
-                position=mean_pos,
-                orientation=mean_orientation,
-                num_observations=len(recent_samples),
-                last_seen=current_time,
-            )
+            # Promote to known board (with lock)
+            with self.lock:
+                known_board = KnownBoard(
+                    board_id=board_id,
+                    position=mean_pos,
+                    orientation=mean_orientation,
+                    num_observations=len(recent_samples),
+                    last_seen=current_time,
+                )
 
-            self.known_boards[board_id] = known_board
-            del self.candidate_boards[board_id]
+                self.known_boards[board_id] = known_board
+                # Only delete if still exists (race condition check)
+                if board_id in self.candidate_boards:
+                    del self.candidate_boards[board_id]
 
             self.get_logger().info(
                 f"Board {board_id} validated and added to known boards! "
                 f"Position: [{mean_pos[0]:.3f}, {mean_pos[1]:.3f}, {mean_pos[2]:.3f}], "
                 f"Max std: {max_std:.4f}m"
             )
-            
+
             # Publish known board marker (green) - only once
             self.publish_known_board_marker(board_id, mean_pos)
         else:
-            self.get_logger().debug(
+            self.get_logger().info(
                 f"Board {board_id}: {len(recent_samples)} samples, max_std={max_std:.4f}m "
                 f"(threshold: {self.max_position_std_meters}m)"
             )
@@ -443,28 +458,33 @@ class ArucoBoardLocalizerNode(Node):
             camera_frame = msg.header.frame_id
 
             # Create PoseStamped from board detection
-            board_pose_camera = PoseWithCovarianceStamped()
+            board_pose_camera = PoseStamped()
             board_pose_camera.header = msg.header
-            board_pose_camera.pose.pose = msg.pose
+            board_pose_camera.pose = msg.pose
 
             # Look up transform from camera to map
+            # Use Time() to get the latest available transform to avoid extrapolation errors
             timeout = Duration(seconds=self.tf_timeout_seconds)
             transform = self.tf_buffer.lookup_transform(
-                self.map_frame, camera_frame, msg.header.stamp, timeout
+                self.map_frame, 
+                camera_frame, 
+                # msg.header.stamp, 
+                Time(),
+                timeout
             )
 
-            # Transform the pose
+            # Transform the pose using PoseStamped
             board_pose_map = tf2_geometry_msgs.do_transform_pose_stamped(
                 board_pose_camera, transform
             )
 
-            return board_pose_map.pose.pose
+            return board_pose_map.pose
 
         except LookupException as e:
             # If no known boards exist and bootstrap is enabled, publish origin pose
             if self.publish_bootstrap_pose and len(self.known_boards) == 0:
                 self.try_publish_bootstrap_pose(msg.header.stamp)
-            
+
             self.get_logger().warn(
                 f"~TF lookup failed for board to map: {e}", throttle_duration_sec=1.0
             )
@@ -475,17 +495,18 @@ class ArucoBoardLocalizerNode(Node):
             )
             return None
         except Exception as e:
-            self.get_logger().error(f"Error transforming board to map: {e}")
+            self.get_logger().error(f"Error transforming board to map: {e} \n{traceback.format_exc()}")
             return None
 
     def estimate_robot_pose(self, msg: ArucoBoard):
         """Estimate robot pose using a known board"""
         board_id = msg.board_id
 
-        if board_id not in self.known_boards:
-            return
-
-        known_board = self.known_boards[board_id]
+        # Get known board (with lock)
+        with self.lock:
+            if board_id not in self.known_boards:
+                return
+            known_board = self.known_boards[board_id]
 
         try:
             # Board detection is in camera frame
@@ -497,14 +518,15 @@ class ArucoBoardLocalizerNode(Node):
             transform_base_to_camera = self.tf_buffer.lookup_transform(
                 self.base_link_frame,
                 msg.header.frame_id,  # camera frame
-                msg.header.stamp,
+                # msg.header.stamp,
+                Time(),
                 timeout,
             )
 
             # Transform board detection to base_link frame
-            board_pose_camera = PoseWithCovarianceStamped()
+            board_pose_camera = PoseStamped()
             board_pose_camera.header = msg.header
-            board_pose_camera.pose.pose = msg.pose
+            board_pose_camera.pose = msg.pose
 
             board_pose_base = tf2_geometry_msgs.do_transform_pose_stamped(
                 board_pose_camera, transform_base_to_camera
@@ -520,17 +542,18 @@ class ArucoBoardLocalizerNode(Node):
             # where T_board_base = inv(T_base_board)
 
             robot_pose_map = self.compute_robot_pose_from_board(
-                board_pose_base.pose.pose, known_board
+                board_pose_base.pose, known_board
             )
 
             if robot_pose_map:
-                # Update known board stats
+                # Update known board stats (with lock)
                 with self.lock:
                     known_board.num_observations += 1
                     known_board.last_seen = self.get_clock().now()
 
-                # Publish pose estimate
-                self.publish_pose_estimate(robot_pose_map, msg.header.stamp, board_id)
+                # Publish pose estimate with current time for better EKF integration
+                current_stamp = self.get_clock().now().to_msg()
+                self.publish_pose_estimate(robot_pose_map, current_stamp, board_id)
 
         except (LookupException, ConnectivityException, ExtrapolationException) as e:
             self.get_logger().warn(
@@ -538,7 +561,7 @@ class ArucoBoardLocalizerNode(Node):
                 throttle_duration_sec=1.0,
             )
         except Exception as e:
-            self.get_logger().error(f"Error estimating robot pose: {e}")
+            self.get_logger().error(f"Error estimating robot pose: {e} {traceback.format_exc()}")
 
     def compute_robot_pose_from_board(
         self, board_pose_base: Pose, known_board: KnownBoard
@@ -628,22 +651,24 @@ class ArucoBoardLocalizerNode(Node):
             f"Published pose estimate from board {board_id}: "
             f"[{pose.position.x:.3f}, {pose.position.y:.3f}, {pose.position.z:.3f}]"
         )
-    
+
     def try_publish_bootstrap_pose(self, stamp):
         """
         Publish an origin pose to help EKF bootstrap when no boards are known.
         Rate-limited to avoid spamming.
         """
         current_time = self.get_clock().now()
-        
+
         # Rate limit bootstrap pose publishing
         if self.last_bootstrap_time is not None:
-            time_since_last = (current_time - self.last_bootstrap_time).nanoseconds / 1e9
+            time_since_last = (
+                current_time - self.last_bootstrap_time
+            ).nanoseconds / 1e9
             min_interval = 1.0 / self.bootstrap_pose_rate
-            
+
             if time_since_last < min_interval:
                 return
-        
+
         # Create origin pose
         origin_pose = Pose()
         origin_pose.position.x = 0.0
@@ -653,13 +678,13 @@ class ArucoBoardLocalizerNode(Node):
         origin_pose.orientation.y = 0.0
         origin_pose.orientation.z = 0.0
         origin_pose.orientation.w = 1.0
-        
+
         # Publish with high covariance to indicate uncertainty
         msg = PoseWithCovarianceStamped()
         msg.header.stamp = stamp
         msg.header.frame_id = self.map_frame
         msg.pose.pose = origin_pose
-        
+
         # High covariance for bootstrap (10x normal)
         covariance = np.zeros(36)
         covariance[0] = self.pose_covariance_position * 10.0  # x
@@ -669,12 +694,12 @@ class ArucoBoardLocalizerNode(Node):
         covariance[28] = self.pose_covariance_orientation * 10.0  # rot y
         covariance[35] = self.pose_covariance_orientation * 10.0  # rot z
         msg.pose.covariance = covariance.tolist()
-        
+
         self.pose_pub.publish(msg)
-        
+
         self.last_bootstrap_time = current_time
         self.bootstrap_published_count += 1
-        
+
         if self.bootstrap_published_count <= 5:  # Log first few times
             self.get_logger().info(
                 "Published bootstrap origin pose to help EKF initialize "
@@ -684,7 +709,7 @@ class ArucoBoardLocalizerNode(Node):
             self.get_logger().debug(
                 f"Bootstrap pose published {self.bootstrap_published_count} times"
             )
-    
+
     def publish_candidate_marker(self, board_id: str, position: np.ndarray):
         """Publish a red sphere marker for a candidate board"""
         marker = Marker()
@@ -694,33 +719,33 @@ class ArucoBoardLocalizerNode(Node):
         marker.id = hash(board_id) % 10000  # Unique ID from board_id
         marker.type = Marker.SPHERE
         marker.action = Marker.ADD
-        
+
         # Position
         marker.pose.position.x = float(position[0])
         marker.pose.position.y = float(position[1])
         marker.pose.position.z = float(position[2])
         marker.pose.orientation.w = 1.0
-        
+
         # Size
         marker.scale.x = 0.2
         marker.scale.y = 0.2
         marker.scale.z = 0.2
-        
+
         # Color - Red for candidates
         marker.color.r = 1.0
         marker.color.g = 0.0
         marker.color.b = 0.0
         marker.color.a = 0.8  # Semi-transparent
-        
+
         # Lifetime - will disappear if not updated
         marker.lifetime.sec = 2
         marker.lifetime.nanosec = 0
-        
+
         # Publish as MarkerArray
         marker_array = MarkerArray()
         marker_array.markers = [marker]
         self.marker_pub.publish(marker_array)
-    
+
     def publish_known_board_marker(self, board_id: str, position: np.ndarray):
         """Publish a green sphere marker for a validated known board"""
         marker = Marker()
@@ -730,33 +755,33 @@ class ArucoBoardLocalizerNode(Node):
         marker.id = hash(board_id) % 10000  # Unique ID from board_id
         marker.type = Marker.SPHERE
         marker.action = Marker.ADD
-        
+
         # Position
         marker.pose.position.x = float(position[0])
         marker.pose.position.y = float(position[1])
         marker.pose.position.z = float(position[2])
         marker.pose.orientation.w = 1.0
-        
+
         # Size
         marker.scale.x = 0.2
         marker.scale.y = 0.2
         marker.scale.z = 0.2
-        
+
         # Color - Green for known boards
         marker.color.r = 0.0
         marker.color.g = 1.0
         marker.color.b = 0.0
         marker.color.a = 1.0  # Fully opaque
-        
+
         # Lifetime - persistent (0 means forever)
         marker.lifetime.sec = 0
         marker.lifetime.nanosec = 0
-        
+
         # Publish as MarkerArray
         marker_array = MarkerArray()
         marker_array.markers = [marker]
         self.marker_pub.publish(marker_array)
-        
+
         self.get_logger().info(f"Published green marker for validated board {board_id}")
 
     def cleanup_old_candidates(self):

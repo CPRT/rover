@@ -17,10 +17,12 @@ from launch_ros.actions import Node
 def generate_launch_description():
     # Get package directory
     pkg_share = get_package_share_directory("aruco_localizer")
-    
+
     # Default paths
     default_params_file = os.path.join(pkg_share, "config", "camera_params.yaml")
-    default_calibration_file = os.path.join(pkg_share, "config", "camera_intrinsics", "ErikKlarityCam.yaml")
+    default_calibration_file = os.path.join(
+        pkg_share, "config", "camera_intrinsics", "ErikKlarityCam.yaml"
+    )
 
     # Declare only essential launch arguments
     params_file_arg = DeclareLaunchArgument(
