@@ -1,0 +1,22 @@
+[MASTER]
+ignore=third-party
+ignore-patterns=
+    ^third-party/.*$
+
+init-hook='import sys; sys.path.append("src")'
+
+[MESSAGES CONTROL]
+disable=all
+
+enable=
+    import-error,                   # E0401: cannot import
+    undefined-variable,             # E0602: name not defined
+    unused-import,                  # W0611: dead import
+    unused-variable,                # W0612: dead store (often a bug)
+    used-before-assignment,         # E0601: reference before assign
+    dangerous-default-value,        # W0102: mutable default args
+    inconsistent-return-statements, # R1710: missing returns
+
+[REPORTS]
+output-format=text
+reports=no

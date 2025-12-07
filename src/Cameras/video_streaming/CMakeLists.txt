@@ -18,12 +18,15 @@ pkg_check_modules(GSTREAMER REQUIRED IMPORTED_TARGET gstreamer-1.0)
 pkg_check_modules(GST_APP REQUIRED IMPORTED_TARGET gstreamer-app-1.0)
 pkg_check_modules(GST_VIDEO REQUIRED IMPORTED_TARGET gstreamer-video-1.0)
 
+add_subdirectory(gst-plugins)
+
 # ---- Targets
 add_library(${PROJECT_NAME} SHARED
   src/base_video_node.cpp
   src/input_node.cpp
   src/detect_node.cpp
   src/webrtc_node.cpp
+  src/srt_node.cpp
 )
 
 include_directories(
@@ -54,6 +57,7 @@ rclcpp_components_register_nodes(${PROJECT_NAME}
   "InputNode"
   "DetectNode"
   "WebRtcNode"
+  "video_streaming::SrtNode"
 )
 
 # ---- Install
@@ -73,6 +77,11 @@ install(DIRECTORY launch
 )
 install(DIRECTORY config
   DESTINATION share/${PROJECT_NAME}
+)
+
+# Install environment hooks so they are sourced by setup.bash
+ament_environment_hooks(
+  hooks/gst_env_hook.sh
 )
 
 # ---- Export

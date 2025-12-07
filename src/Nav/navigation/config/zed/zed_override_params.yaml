@@ -6,7 +6,7 @@
             grab_resolution: 'HD720' # The native camera grab resolution. 'HD2K', 'HD1080', 'HD720', 'VGA', 'AUTO'
             grab_frame_rate: 60 # ZED SDK internal grabbing rate
 
-            pub_resolution: "OPTIMIZED" # The resolution used for output. 'NATIVE' to use the same `general.grab_resolution` - `CUSTOM` to apply the `general.pub_downscale_factor` downscale factory to reduce bandwidth in transmission
+            pub_resolution: "CUSTOM" # The resolution used for output. 'NATIVE' to use the same `general.grab_resolution` - `CUSTOM` to apply the `general.pub_downscale_factor` downscale factory to reduce bandwidth in transmission
             pub_downscale_factor: 1.0 # rescale factor used to rescale image before publishing when 'pub_resolution' is 'CUSTOM'
             pub_frame_rate: 5.0 # frequency of publishing of visual images and depth images
             gpu_id: -1

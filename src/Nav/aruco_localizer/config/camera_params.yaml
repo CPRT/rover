@@ -1,0 +1,32 @@
+camera_publisher_node:
+  ros__parameters:
+    # Camera device - can be device path (e.g., "/dev/video0") or index (e.g., "0")
+    camera_device: "/dev/v4l/by-id/usb-Arducam_Technology_Co.__Ltd._Arducam_B0561_16MP_Klarity_SN0001-video-index0"
+    
+    # Camera identification
+    camera_name: "ErikKlarityCam"
+    
+    # Image resolution
+    image_width: 1280
+    image_height: 720
+    
+    # Frame rate in Hz
+    frame_rate: 30.0
+    
+    # Output topics
+    image_topic: "/camera/image_raw"
+    camera_info_topic: "/camera/camera_info"
+    
+    # Camera frame ID
+    camera_frame_id: "zed_camera_link"
+    
+    # Path to camera calibration YAML file
+    # This will be set by the launch file to point to the correct calibration file
+    calibration_file: ""
+    
+    # Whether to also publish compressed images (reduces bandwidth)
+    use_compressed: false
+    
+    # FourCC code for video format
+    # Common options: "MJPG" (Motion JPEG), "YUYV" (YUV 4:2:2)
+    fourcc: "MJPG"

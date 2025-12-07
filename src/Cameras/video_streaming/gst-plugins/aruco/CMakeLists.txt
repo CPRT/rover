@@ -1,4 +1,4 @@
-# gstreamer_plugins/CMakeLists.txt
+# gstreamer_plugins/aruco/CMakeLists.txt
 
 find_package(OpenCV REQUIRED)
 find_package(PkgConfig REQUIRED)
@@ -20,7 +20,7 @@ target_compile_definitions(gstarucomarker PRIVATE
   PACKAGE="\\\"gstarucomarker\\\""
   VERSION="\\\"1.0\\\""
   PACKAGE_NAME="\\\"gstarucomarker\\\""
-  PACKAGE_ORIGIN="\\\"https://github.com/yourname/gstarucomarker\\\""
+  PACKAGE_ORIGIN="\\\"https://github.com/CPRT/rover/tree/main/src/Cameras/video_streaming\\\""
 )
 
 target_link_libraries(gstarucomarker

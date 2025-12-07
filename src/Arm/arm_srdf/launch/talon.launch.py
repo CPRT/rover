@@ -1,5 +1,6 @@
+# This launch file is deprecated. Use only for testing/debugging.
+
 import launch
-import launch_ros.actions
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 from math import pi

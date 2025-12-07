@@ -63,13 +63,6 @@ def generate_launch_description():
         launch_arguments={"use_sim_time": use_sim_time}.items(),
     )
 
-    slam_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_localization, "launch", "rtabmap.launch.py")
-        ),
-        launch_arguments={"use_sim_time": use_sim_time}.items(),
-    )
-
     ekf_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_localization, "launch", "ekf.launch.py")
@@ -106,7 +99,6 @@ def generate_launch_description():
             launch_desc_cmd,
             rviz_cmd,
             gps_cmd,
-            # slam_cmd,
             ekf_cmd,
             desc_cmd,
             navsat_node,

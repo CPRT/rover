@@ -1,0 +1,22 @@
+image_width: 1280
+image_height: 720
+camera_name: ErikKlarityCam
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [986.3321089, 0.0, 640.1575794, 0.0, 981.6186107, 500.6903186, 0.0, 0.0, 1.0]
+distortion_model: rational_polynomial
+distortion_coefficients:
+  rows: 1
+  cols: 8
+  data: [0.2624628475, 0.1102693035, -0.001259269067, -2.317268492e-05, 0.2807165481,
+    0.2516554863, 0.1878639645, 0.1083906076]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [986.3321089, 0.0, 640.1575794, 0.0, 0.0, 981.6186107, 500.6903186, 0.0, 0.0,
+    0.0, 1.0, 0.0]

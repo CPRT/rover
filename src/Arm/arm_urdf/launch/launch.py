@@ -5,19 +5,15 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
-    ExecuteProcess,
-    IncludeLaunchDescription,
 )
 from launch.conditions import IfCondition
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
     # Get the launch directory
     bringup_dir = get_package_share_directory("arm_urdf")
-    launch_dir = os.path.join(bringup_dir, "launch")
 
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration("rviz_config_file")
