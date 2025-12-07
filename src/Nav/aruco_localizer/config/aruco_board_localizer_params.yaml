@@ -13,10 +13,10 @@ aruco_board_localizer_node:
     
     # Board validation parameters
     # Minimum number of samples needed within the time window to validate a board
-    min_samples_for_validation: 10
+    min_samples_for_validation: 5
     
     # Time window (seconds) for collecting validation samples
-    validation_window_seconds: 2.0
+    validation_window_seconds: 6.0
     
     # Maximum standard deviation (meters) in position measurements to accept board
     # This ensures the board location is stable and consistent

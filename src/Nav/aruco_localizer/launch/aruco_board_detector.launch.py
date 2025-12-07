@@ -18,7 +18,7 @@ from launch_ros.actions import Node
 def generate_launch_description():
     # Get package directories
     pkg_share = get_package_share_directory("aruco_localizer")
-    
+
     # Default paths
     default_params_file = os.path.join(pkg_share, "config", "aruco_board_params.yaml")
     default_board_config_dir = os.path.join(pkg_share, "config", "aruco_boards")

@@ -24,11 +24,9 @@ def generate_launch_description():
     declare_use_sim_time = DeclareLaunchArgument(
         "use_sim_time", default_value="false", description="Use simulation time if true"
     )
-    
+
     declare_svo_path = DeclareLaunchArgument(
-        "svo_path",
-        default_value="live",
-        description="Path to an input SVO file."
+        "svo_path", default_value="live", description="Path to an input SVO file."
     )
 
     # Launch SLAM launch file with localization disabled
@@ -85,6 +83,6 @@ def generate_launch_description():
             localization_cmd,
             # camera_publisher_cmd,
             aruco_detector_cmd,
-            aruco_localizer_cmd,
+            # aruco_localizer_cmd,
         ]
     )

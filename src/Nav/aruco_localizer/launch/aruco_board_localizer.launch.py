@@ -16,10 +16,12 @@ from launch_ros.actions import Node
 def generate_launch_description():
     # Get package directory
     pkg_share = get_package_share_directory("aruco_localizer")
-    
+
     # Default path
-    default_params_file = os.path.join(pkg_share, "config", "aruco_board_localizer_params.yaml")
-    
+    default_params_file = os.path.join(
+        pkg_share, "config", "aruco_board_localizer_params.yaml"
+    )
+
     # Declare launch arguments
     localizer_params_file_arg = DeclareLaunchArgument(
         "localizer_params_file",
