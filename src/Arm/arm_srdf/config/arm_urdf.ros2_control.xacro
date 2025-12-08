@@ -8,6 +8,7 @@
         <plugin>ros2_control_rover_arm/RoverArmHardwareInterface</plugin>
       </hardware>
       <joint name="Joint_1">
+        <param name="type">TalonSRX</param>
         <param name="can_id">10</param>
         <param name="kP">3.0</param>
         <param name="kI">0.0</param>
@@ -24,6 +25,7 @@
         <state_interface name="velocity"/>
       </joint>
       <joint name="Joint_2">
+        <param name="type">TalonSRX</param>
         <param name="can_id">11</param>
         <param name="kP">10.0</param>
         <param name="kI">0.0</param>
@@ -40,6 +42,7 @@
         <state_interface name="velocity"/>
       </joint>
       <joint name="Joint_3">
+        <param name="type">TalonSRX</param>
         <param name="can_id">14</param>
         <param name="kP">1.0</param>
         <param name="kI">0.0</param>
@@ -56,6 +59,7 @@
         <state_interface name="velocity"/>
       </joint>
       <joint name="Joint_4">
+        <param name="type">TalonSRX</param>
         <param name="can_id">15</param>
         <param name="kP">2.0</param>
         <param name="kI">0.0</param>
@@ -72,6 +76,7 @@
         <state_interface name="velocity"/>
       </joint>
       <joint name="Joint_5">
+        <param name="type">TalonSRX</param>
         <param name="can_id">12</param>
         <param name="kP">20.0</param>
         <param name="kI">0.0</param>
@@ -88,6 +93,7 @@
         <state_interface name="velocity"/>
       </joint>
       <joint name="Joint_6">
+        <param name="type">TalonSRX</param>
         <param name="can_id">13</param>
         <param name="kP">0.012</param>
         <param name="kI">0.0</param>

@@ -4,22 +4,20 @@ namespace motors = ctre::phoenix::motorcontrol;
 
 TalonSRXWrapper::TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
                                  std::shared_ptr<rclcpp::Node> debug_node)
-    : info_(joint), kP_(0), kI_(0), kD_(0), kF_(0), debug_node_(debug_node),
-      inverted_(false), invert_sensor_(false) {
-  id_ = -1;
-  control_type_ = motors::ControlMode::Disabled;
+    : BaseWrapper(joint, debug_node), id_(-1), kP_(0.0), kI_(0.0), kD_(0.0),
+      kF_(0.0),
+      control_type_(ctre::phoenix::motorcontrol::ControlMode::Disabled),
+      sensor_type_(SensorType::RELATIVE), sensor_ticks_(4096),
+      sensor_offset_(0.0), crossover_mode_(false), inverted_(false),
+      invert_sensor_(false), talon_controller_(nullptr) {
   position_ = 0.0;
   velocity_ = 0.0;
   command_ = 0.0;
-  talon_controller_ = nullptr;
   debug_pub_ = nullptr;
-  debug_timer_ = nullptr;
   sensor_type_ = SensorType::RELATIVE;
   sensor_ticks_ = 4096;
   sensor_offset_ = 0.0;
   crossover_mode_ = false;
-  int freq = 0;
-
   std::string sensor_type_str;
   std::string can_interface = "can0";
 
@@ -44,8 +42,6 @@ TalonSRXWrapper::TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
       kF_ = std::stod(param.second);
     } else if (param.first == "crossover_mode") {
       crossover_mode_ = (param.second == "true");
-    } else if (param.first == "debug_frequency") {
-      freq = std::stoi(param.second);
     } else if (param.first == "can_interface") {
       can_interface = param.second;
     } else if (param.first == "invert") {
@@ -53,9 +49,9 @@ TalonSRXWrapper::TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
     } else if (param.first == "invert_sensor") {
       invert_sensor_ = (param.second == "true");
     } else {
-      RCLCPP_WARN(debug_node_->get_logger(),
-                  "[%s] Unknown parameter: %s, ignoring", joint.name.c_str(),
-                  param.first.c_str());
+      RCLCPP_DEBUG(debug_node_->get_logger(),
+                   "[%s] Unknown parameter: %s, ignoring", joint.name.c_str(),
+                   param.first.c_str());
     }
   }
   if (id_ < 0) {
@@ -87,13 +83,8 @@ TalonSRXWrapper::TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
 
   talon_controller_ =
       std::make_shared<motors::can::TalonSRX>(id_, can_interface);
-  if (freq > 0) {
-    debug_pub_ = debug_node_->create_publisher<ros_phoenix::msg::MotorStatus>(
-        joint.name + "/status", rclcpp::SystemDefaultsQoS());
-    debug_timer_ = debug_node_->create_wall_timer(
-        std::chrono::milliseconds(1000 / freq),
-        std::bind(&TalonSRXWrapper::pub_status, this));
-  }
+  debug_pub_ = debug_node_->create_publisher<ros_phoenix::msg::MotorStatus>(
+      joint.name + "/status", rclcpp::SystemDefaultsQoS());
 
   std::transform(sensor_type_str.begin(), sensor_type_str.end(),
                  sensor_type_str.begin(),
@@ -108,6 +99,9 @@ TalonSRXWrapper::TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
 }
 
 void TalonSRXWrapper::pub_status() const {
+  if (!talon_controller_ || !debug_pub_) {
+    return;
+  }
   ros_phoenix::msg::MotorStatus status_msg;
   status_msg.temperature = talon_controller_->GetTemperature();
   status_msg.bus_voltage = talon_controller_->GetBusVoltage();
@@ -118,9 +112,7 @@ void TalonSRXWrapper::pub_status() const {
   status_msg.velocity = velocity_;
   status_msg.fwd_limit = talon_controller_->IsFwdLimitSwitchClosed() == 1;
   status_msg.rev_limit = talon_controller_->IsRevLimitSwitchClosed() == 1;
-  if (debug_pub_) {
-    debug_pub_->publish(status_msg);
-  }
+  debug_pub_->publish(status_msg);
 }
 
 void TalonSRXWrapper::write() {
@@ -181,6 +173,7 @@ void TalonSRXWrapper::add_command_interface(
 }
 
 void TalonSRXWrapper::configure() {
+  BaseWrapper::configure();
   while (true) {
     if (talon_controller_->GetFirmwareVersion() == -1) {
       RCLCPP_ERROR_THROTTLE(

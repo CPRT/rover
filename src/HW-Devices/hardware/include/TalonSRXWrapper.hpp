@@ -5,46 +5,49 @@
 #include <functional>
 #include <limits>
 #include <memory>
-#include <rclcpp/rclcpp.hpp>
 #include <string>
 #include <vector>
 
 #define Phoenix_No_WPI
 #include "ctre/Phoenix.h"
+
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/hardware_info.hpp"
 #include "hardware_interface/system_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+
 #include "rclcpp/rclcpp.hpp"
 #include "ros_phoenix/msg/motor_control.hpp"
 #include "ros_phoenix/msg/motor_status.hpp"
 
-class TalonSRXWrapper {
+#include "BaseWrapper.hpp"
+
+class TalonSRXWrapper : public BaseWrapper {
 public:
-  // Constructor
   TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
                   std::shared_ptr<rclcpp::Node> debug_node);
 
-  void pub_status() const;
+  void pub_status() const override;
 
-  // Updates the TalonSRX motor controller with the given command
-  void write();
+  void write() override;
 
-  // Returns the current position of the TalonSRX motor controller
-  void read();
+  void read() override;
 
-  void add_state_interface(
-      std::vector<hardware_interface::StateInterface> &state_interfaces);
+  void add_state_interface(StateInterfaceVec &state_interfaces) override;
 
-  void add_command_interface(
-      std::vector<hardware_interface::CommandInterface> &command_interfaces);
-  void configure();
+  void add_command_interface(CommandInterfaceVec &command_interfaces) override;
 
+  void configure() override;
+
+  std::string get_name() const override { return info_.name; }
+
+  int get_id() const override { return id_; }
+
+  // Optional: type-level setup for Talons if you need it
   static void setup();
 
 private:
-  const hardware_interface::ComponentInfo info_;
   enum class SensorType { PWM, RELATIVE, ANALOG };
 
   // Parameters
@@ -60,16 +63,8 @@ private:
   bool crossover_mode_;
   bool inverted_;
   bool invert_sensor_;
-
-  // Interfaces
-  double position_;
-  double velocity_;
-  double command_;
-
-  // Ros2 node and debug publisher
-  std::shared_ptr<rclcpp::Node> debug_node_;
   rclcpp::Publisher<ros_phoenix::msg::MotorStatus>::SharedPtr debug_pub_;
-  rclcpp::TimerBase::SharedPtr debug_timer_;
 
+  // Talon-specific handle
   std::shared_ptr<ctre::phoenix::motorcontrol::can::TalonSRX> talon_controller_;
 };
