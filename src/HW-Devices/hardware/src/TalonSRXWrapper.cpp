@@ -3,7 +3,7 @@
 namespace motors = ctre::phoenix::motorcontrol;
 
 TalonSRXWrapper::TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
-                                 std::shared_ptr<rclcpp::Node> debug_node)
+                                 rclcpp::Node::SharedPtr debug_node)
     : BaseWrapper(joint, debug_node), id_(-1), kP_(0.0), kI_(0.0), kD_(0.0),
       kF_(0.0),
       control_type_(ctre::phoenix::motorcontrol::ControlMode::Disabled),
@@ -144,32 +144,6 @@ void TalonSRXWrapper::read() {
   // The TalonSRX reports velocity in ticks per 100ms, so we need to convert
   // it to radians per second.
   velocity_ = (raw_velocity / sensor_ticks_) * 2.0 * M_PI * 10;
-}
-
-void TalonSRXWrapper::add_state_interface(
-    std::vector<hardware_interface::StateInterface> &state_interfaces) {
-  for (const auto &interface : info_.state_interfaces) {
-    if (interface.name == hardware_interface::HW_IF_POSITION) {
-      state_interfaces.emplace_back(hardware_interface::StateInterface(
-          info_.name, hardware_interface::HW_IF_POSITION, &position_));
-    } else if (interface.name == hardware_interface::HW_IF_VELOCITY) {
-      state_interfaces.emplace_back(hardware_interface::StateInterface(
-          info_.name, hardware_interface::HW_IF_VELOCITY, &velocity_));
-    }
-  }
-}
-
-void TalonSRXWrapper::add_command_interface(
-    std::vector<hardware_interface::CommandInterface> &command_interfaces) {
-  for (const auto &interface : info_.command_interfaces) {
-    if (interface.name == hardware_interface::HW_IF_POSITION) {
-      command_interfaces.emplace_back(hardware_interface::CommandInterface(
-          info_.name, hardware_interface::HW_IF_POSITION, &command_));
-    } else if (interface.name == hardware_interface::HW_IF_VELOCITY) {
-      command_interfaces.emplace_back(hardware_interface::CommandInterface(
-          info_.name, hardware_interface::HW_IF_VELOCITY, &command_));
-    }
-  }
 }
 
 void TalonSRXWrapper::configure() {

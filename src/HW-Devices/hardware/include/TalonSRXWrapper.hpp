@@ -26,7 +26,7 @@
 class TalonSRXWrapper : public BaseWrapper {
 public:
   TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
-                  std::shared_ptr<rclcpp::Node> debug_node);
+                  rclcpp::Node::SharedPtr debug_node);
 
   void pub_status() const override;
 
@@ -34,15 +34,7 @@ public:
 
   void read() override;
 
-  void add_state_interface(StateInterfaceVec &state_interfaces) override;
-
-  void add_command_interface(CommandInterfaceVec &command_interfaces) override;
-
   void configure() override;
-
-  std::string get_name() const override { return info_.name; }
-
-  int get_id() const override { return id_; }
 
   // Optional: type-level setup for Talons if you need it
   static void setup();
