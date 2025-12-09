@@ -6,16 +6,39 @@ ignore-patterns=
 init-hook='import sys; sys.path.append("src")'
 
 [MESSAGES CONTROL]
-disable=all
 
-enable=
-    import-error,                   # E0401: cannot import
-    undefined-variable,             # E0602: name not defined
-    unused-import,                  # W0611: dead import
-    unused-variable,                # W0612: dead store (often a bug)
-    used-before-assignment,         # E0601: reference before assign
-    dangerous-default-value,        # W0102: mutable default args
-    inconsistent-return-statements, # R1710: missing returns
+enable=all
+disable=
+    too-many-instance-attributes,
+    invalid-name,
+    missing-module-docstring,
+    missing-function-docstring,
+    missing-class-docstring,
+    wrong-import-order,
+    too-few-public-methods,
+    duplicate-code,
+    consider-using-f-string,
+    line-too-long,
+    unused-argument,
+    broad-except,
+    too-many-return-statements,
+    too-many-branches,
+    too-many-statements,
+    c-extension-no-member,
+    too-many-locals,
+    too-many-arguments,
+    redefined-builtin,
+    superfluous-parens,
+    consider-using-enumerate,
+    pointless-string-statement,
+    redefined-outer-name,
+    too-many-boolean-expressions,
+    fixme,
+
+[TYPECHECK]
+ignored-modules=cv2
+ignored-classes=NMEAMessage,RTCMMessage,UBXMessage
+
 
 [REPORTS]
 output-format=text
