@@ -38,13 +38,6 @@ def generate_launch_description():
     )
     use_sim_time = LaunchConfiguration("use_sim_time")
 
-    use_python_node_arg = DeclareLaunchArgument(
-        "use_python_node",
-        default_value="false",
-        description="Use the Python node if true",
-    )
-    use_python_node = LaunchConfiguration("use_python_node")
-
     elevation_mapping_node_py = Node(
         package="elevation_mapping_cupy",
         executable="elevation_mapping_node.py",
@@ -54,30 +47,12 @@ def generate_launch_description():
             ParameterFile(core_param_path, allow_substs=True),
             spike_param_path,
             {"use_sim_time": use_sim_time},
-        ],
-        condition=IfCondition(use_python_node)
-        # condition=IfCondition(PythonExpression(use_python_node))
-    )
-
-    elevation_mapping_node = Node(
-        package="elevation_mapping_cupy",
-        executable="elevation_mapping_node",
-        name="elevation_mapping_node",
-        output="screen",
-        parameters=[
-            ParameterFile(core_param_path, allow_substs=True),
-            spike_param_path,
-            {"use_sim_time": use_sim_time},
-        ],
-        condition=UnlessCondition(use_python_node)
-        # condition=UnlessCondition(PythonExpression(use_python_node))
+        ]
     )
 
     return LaunchDescription(
         [
             use_sim_time_arg,
-            use_python_node_arg,
-            elevation_mapping_node_py,
-            elevation_mapping_node,
+            elevation_mapping_node_py
         ]
     )
