@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<package format="3">
+    <name>elevation_mapping_cupy</name>
+    <version>2.0.0</version>
+    <description>Elevation mapping on GPU</description>
+    <maintainer email="takahiro.miki1992@gmail.com">Takahiro Miki</maintainer>
+    <license>MIT</license>
+
+    <buildtool_depend>ament_cmake</buildtool_depend>
+    <buildtool_depend>ament_cmake_python</buildtool_depend>
+
+    <!-- Core ROS2 dependencies -->
+    <depend>rclpy</depend>
+    <depend>std_msgs</depend>
+    <depend>std_srvs</depend>    
+    <depend>sensor_msgs</depend>
+    <depend>geometry_msgs</depend>
+    <depend>message_filters</depend>
+    <depend>elevation_map_msgs</depend>
+    <depend>grid_map_msgs</depend>
+    <depend>image_transport</depend>
+    <depend>ros2_numpy</depend>
+    <depend>python3-scipy</depend>
+    <!-- Numpy version needs to be <2.0.0 -->
+    <depend>numpy_lessthan_2</depend>
+    <depend>tf2_ros</depend>
+    <depend>cv_bridge</depend>
+    <depend>ament_index_python</depend>
+    <depend>tf_transformations</depend>
+
+
+    <!-- Additional dependencies -->
+    <depend>rviz2</depend>
+    <!-- <depend>gazebo_ros</depend> -->
+    <depend>robot_state_publisher</depend>
+    <depend>python3-opencv</depend>
+    <depend>cupy-cuda12x</depend>
+    <depend>rosbag2_py</depend>
+    <depend>simple-parsing</depend>
+    <depend>python3-shapely</depend>
+    <depend>python3-ruamel.yaml</depend>
+    <depend>python3-transforms3d</depend>
+
+    <!-- For turtlebot3 simulation -->
+    <depend>gazebo_ros_pkgs</depend>
+    <depend>turtlebot3_msgs</depend>
+    <depend>turtlebot3_teleop</depend>
+    <depend>camera_info_manager</depend>
+    <depend>camera_calibration_parsers</depend>
+
+    <!-- Only used for semantic sensors I think -->
+    <!-- <depend>python3-sklearn</depend> -->
+    
+    <!-- Export dependencies -->
+    <!-- <build_export_depend>ament_cmake_python</build_export_depend> -->
+    <!-- <exec_depend>ament_cmake_python</exec_depend> -->
+
+    <test_depend>ament_cmake_pytest</test_depend>
+    <test_depend>ament_lint_auto</test_depend>
+    <test_depend>ament_lint_common</test_depend>
+    <test_depend>launch_testing</test_depend>
+    <test_depend>launch_testing_ament_cmake</test_depend>
+    <test_depend>launch_testing_ros</test_depend>
+    <test_depend>python3-pytest</test_depend>
+
+    <export>
+        <!-- Comment out to build only with python -->
+        <build_type>ament_cmake</build_type>
+        <!-- Comment in to build only with python -->
+        <!-- <build_type>ament_python</build_type> -->
+    </export>
+
+</package>
