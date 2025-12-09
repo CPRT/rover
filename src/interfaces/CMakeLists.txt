@@ -19,6 +19,7 @@ find_package(geographic_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/ArucoBoard.msg"
   "msg/ArucoMarkers.msg"
   "msg/VideoSource.msg"
   "msg/SystemTelemetry.msg"
