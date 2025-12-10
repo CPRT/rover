@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from std_srvs.srv import SetBool
-import RPi.GPIO as GPIO
+from RPi import GPIO
 from rcl_interfaces.msg import ParameterDescriptor, ParameterType
 
 

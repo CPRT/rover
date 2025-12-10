@@ -22,9 +22,9 @@ class i2c_Servo(Node):
         self.servo_list = [None] * 16
 
     def set_position(self, request, response) -> MoveServo:
-        if request.max != None:
+        if request.max is not None:
             self.maxrom = request.max
-        if self.servo_list[request.port - 1] == None:
+        if self.servo_list[request.port] is None:
             self.servo_list[request.port] = servo.Servo(
                 self.pca.channels[request.port], actuation_range=self.maxrom
             )

@@ -1,12 +1,12 @@
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import PointCloud2, Image
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
+from sensor_msgs.msg import PointCloud2, Image, PointField
 import cv2
 from cv_bridge import CvBridge
 import numpy as np
 import struct
 from message_filters import Subscriber, ApproximateTimeSynchronizer
-from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
 import os
 from ament_index_python.packages import get_package_share_directory
 
@@ -406,7 +406,7 @@ class PointCloudMasker(Node):
     def handle_key_press(self, key):
         """Handles key presses for mask navigation."""
         if not self.mask_initialized:
-            print(f"Cannot handle key press: masks not initialized yet.")
+            print("Cannot handle key press: masks not initialized yet.")
             return
 
         if key == ord("a"):  # 'a' key for previous mask
@@ -520,7 +520,6 @@ class PointCloudMasker(Node):
 
         # Copy existing fields and add an 'rgb' field if it doesn't exist.
         output_points_msg.fields = points_msg.fields[:]
-        from sensor_msgs.msg import PointField
 
         rgb_field_found = False
         rgb_field_offset = -1

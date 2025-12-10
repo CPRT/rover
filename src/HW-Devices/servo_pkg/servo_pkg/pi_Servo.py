@@ -8,7 +8,7 @@ from rpi_hardware_pwm import HardwarePWM
 def to_channel(pin: int) -> int:
     if pin == 18:
         return 0
-    elif pin == 19:
+    if pin == 19:
         return 1
     raise ValueError(f"Entered non PWM pin: {pin}")
 

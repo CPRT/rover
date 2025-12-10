@@ -27,5 +27,5 @@ git clone --recurse-submodules git@github.com:CPRT/rover.git
 ```
 
 ## Known limitations:
-1) When using the Dev container sometimes msgs are not recieved unless you are running as root (Recommended work around is run all ros2 commands as root inside the container)
+1) When using the Dev container sometimes msgs are not received unless you are running as root (Recommended work around is run all ros2 commands as root inside the container)
 

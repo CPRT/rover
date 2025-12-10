@@ -19,8 +19,7 @@ CSV_DIR.mkdir(exist_ok=True)
 # This saves the CSV files to the raman directory in the workspace and returns a csv in the response
 # here is how to call this stupid ass service since it runs as root
 """
-
-sudo -E bash -c '                                                                                                   
+sudo -E bash -c '
   source /opt/ros/humble/setup.bash
   source ~/cprt_rover_24/install/setup.bash
   ros2 service call /get_raman_spectrum interfaces/srv/Raman \
