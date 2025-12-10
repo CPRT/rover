@@ -29,7 +29,7 @@ def load_yaml(package_name: str, file_path: str):
     absolute_file_path = os.path.join(package_path, file_path)
 
     try:
-        with open(absolute_file_path, "r") as file:
+        with open(absolute_file_path, "r", encoding="utf-8") as file:
             return yaml.safe_load(file)
     except EnvironmentError:
         return None

@@ -174,18 +174,6 @@ class RtcmNode(Node):
             if rclpy.ok():
                 self.get_logger().error(f"Serial read loop terminated with error: {e}")
 
-    def destroy_node(self):
-        """
-        Overrides destroy_node to ensure the serial connection is closed.
-        """
-        self.get_logger().info("Shutting down RTCM node, closing serial port...")
-        if self.serial_conn and hasattr(self.serial_conn, "close"):
-            # closing serial port will cause self.serial_conn.read() to return
-            # and in the other thread to raise exception or return empty,
-            # and exit the read thread gracefully
-            self.serial_conn.close()
-        super().destroy_node()
-
 
 def main(args=None):
     """

@@ -52,7 +52,7 @@ def visualize_decay_with_cutoff(core_radius, decay_radius, decay_rate, start_val
         label=f"Start Value: {start_value:.2f}",
     )
     plt.scatter(
-        decay_radius, 0, color="g", marker="o", label=f"Cost at Decay Radius: 0.00"
+        decay_radius, 0, color="g", marker="o", label="Cost at Decay Radius: 0.00"
     )  # Mark cutoff
 
     plt.grid(True)

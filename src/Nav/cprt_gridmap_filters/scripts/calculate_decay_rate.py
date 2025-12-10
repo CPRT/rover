@@ -1,7 +1,15 @@
 import math
+import numpy as np
+import matplotlib.pyplot as plt
+from typing import Optional
 
 
-def calculate_decay_rate(core_radius, decay_radius, inflation_value, target_cost):
+def calculate_decay_rate(
+    core_radius: float,
+    decay_radius: float,
+    inflation_value: float,
+    target_cost: float,
+) -> Optional[float]:
     """
     Calculates the decay rate for exponential inflation falloff.
 
@@ -21,11 +29,8 @@ def calculate_decay_rate(core_radius, decay_radius, inflation_value, target_cost
     ):
         print("Invalid input parameters for decay rate calculation.")
         return None
-    else:
-        decay_rate = math.log(inflation_value / target_cost) / (
-            decay_radius - core_radius
-        )
-        return decay_rate
+    decay_rate = math.log(inflation_value / target_cost) / (decay_radius - core_radius)
+    return decay_rate
 
 
 if __name__ == "__main__":
@@ -48,17 +53,14 @@ if __name__ == "__main__":
         print(f"\nCalculated decay rate: {decay_rate:.4f}")
         print("\nYou can use this value for your 'decayRate_' parameter.")
 
-        # --- Optional: Visualize the decay ---
-        import numpy as np
-        import matplotlib.pyplot as plt
-
         distances = np.linspace(0, decay_radius, 100)
         decayed_costs = np.piecewise(
             distances,
             [distances <= core_radius, distances > core_radius],
             [
                 inflation_value,
-                lambda d: inflation_value * np.exp(-decay_rate * (d - core_radius)),
+                lambda d: inflation_value
+                * np.exp(-1.0 * decay_rate * (d - core_radius)),
             ],
         )
 

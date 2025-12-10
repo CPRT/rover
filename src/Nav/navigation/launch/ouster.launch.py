@@ -3,10 +3,8 @@
 
 """Launch a sensor node along with os_cloud and os_"""
 
+import os
 import launch
-import lifecycle_msgs.msg
-from ament_index_python.packages import get_package_share_directory
-from launch_ros.actions import LifecycleNode
 from launch.actions import (
     DeclareLaunchArgument,
     RegisterEventHandler,
@@ -15,9 +13,11 @@ from launch.actions import (
 )
 from launch.substitutions import LaunchConfiguration
 from launch.events import matches_action
+from launch_ros.actions import LifecycleNode
 from launch_ros.events.lifecycle import ChangeState
 from launch_ros.event_handlers import OnStateTransition
-import os
+import lifecycle_msgs.msg
+from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():

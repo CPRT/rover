@@ -171,10 +171,8 @@ class Controller:
     def getMovingState(self):
         cmd = chr(0x13)
         self.sendCmd(cmd)
-        if self.usb.read() == chr(0):
-            return False
-        else:
-            return True
+        value = self.usb.read()
+        return value != chr(0)
 
     # Run a Maestro Script subroutine in the currently active script. Scripts can
     # have multiple subroutines, which get numbered sequentially from 0 on up. Code your
