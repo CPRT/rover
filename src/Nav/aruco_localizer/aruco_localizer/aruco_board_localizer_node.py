@@ -734,12 +734,12 @@ class ArucoBoardLocalizerNode(Node):
 
         # High covariance for bootstrap (10x normal)
         covariance = np.zeros(36)
-        covariance[0] = self.pose_covariance_position # * 10.0  # x
-        covariance[7] = self.pose_covariance_position # * 10.0  # y
-        covariance[14] = self.pose_covariance_position # * 10.0  # z
-        covariance[21] = self.pose_covariance_orientation # * 10.0  # rot x
-        covariance[28] = self.pose_covariance_orientation # * 10.0  # rot y
-        covariance[35] = self.pose_covariance_orientation # * 10.0  # rot z
+        covariance[0] = self.pose_covariance_position  # * 10.0  # x
+        covariance[7] = self.pose_covariance_position  # * 10.0  # y
+        covariance[14] = self.pose_covariance_position  # * 10.0  # z
+        covariance[21] = self.pose_covariance_orientation  # * 10.0  # rot x
+        covariance[28] = self.pose_covariance_orientation  # * 10.0  # rot y
+        covariance[35] = self.pose_covariance_orientation  # * 10.0  # rot z
         msg.pose.covariance = covariance.tolist()
 
         self.pose_pub.publish(msg)
@@ -760,7 +760,7 @@ class ArucoBoardLocalizerNode(Node):
     def clear_all_markers(self):
         """Clear all markers from both namespaces on startup"""
         marker_array = MarkerArray()
-        
+
         # Create DELETE_ALL markers for both namespaces
         for ns in ["candidate_boards", "known_boards"]:
             delete_marker = Marker()
@@ -770,7 +770,7 @@ class ArucoBoardLocalizerNode(Node):
             delete_marker.id = 0
             delete_marker.action = Marker.DELETEALL
             marker_array.markers.append(delete_marker)
-        
+
         self.marker_pub.publish(marker_array)
         self.get_logger().info("Cleared all existing markers from previous sessions")
 
@@ -779,7 +779,7 @@ class ArucoBoardLocalizerNode(Node):
         with self.lock:
             if not self.known_boards:
                 return
-            
+
             marker_array = MarkerArray()
             for board_id, board in self.known_boards.items():
                 marker = Marker()
@@ -812,7 +812,7 @@ class ArucoBoardLocalizerNode(Node):
                 marker.lifetime.nanosec = 0
 
                 marker_array.markers.append(marker)
-            
+
             if marker_array.markers:
                 self.marker_pub.publish(marker_array)
 
