@@ -140,9 +140,17 @@ class ArucoBoardLocalizerNode(Node):
         # Marker publishers
         self.marker_pub = self.create_publisher(MarkerArray, "/aruco_board_markers", 10)
 
+        # Clear any existing markers from previous sessions
+        self.clear_all_markers()
+
         # Timer for cleanup of old candidates
         self.cleanup_timer = self.create_timer(
             self.candidate_cleanup_interval, self.cleanup_old_candidates
+        )
+
+        # Timer for republishing known board markers (keeps them visible)
+        self.marker_republish_timer = self.create_timer(
+            5.0, self.republish_known_board_markers
         )
 
         self.get_logger().info("ArUco Board Localizer Node initialized")
@@ -726,12 +734,12 @@ class ArucoBoardLocalizerNode(Node):
 
         # High covariance for bootstrap (10x normal)
         covariance = np.zeros(36)
-        covariance[0] = self.pose_covariance_position * 10.0  # x
-        covariance[7] = self.pose_covariance_position * 10.0  # y
-        covariance[14] = self.pose_covariance_position * 10.0  # z
-        covariance[21] = self.pose_covariance_orientation * 10.0  # rot x
-        covariance[28] = self.pose_covariance_orientation * 10.0  # rot y
-        covariance[35] = self.pose_covariance_orientation * 10.0  # rot z
+        covariance[0] = self.pose_covariance_position # * 10.0  # x
+        covariance[7] = self.pose_covariance_position # * 10.0  # y
+        covariance[14] = self.pose_covariance_position # * 10.0  # z
+        covariance[21] = self.pose_covariance_orientation # * 10.0  # rot x
+        covariance[28] = self.pose_covariance_orientation # * 10.0  # rot y
+        covariance[35] = self.pose_covariance_orientation # * 10.0  # rot z
         msg.pose.covariance = covariance.tolist()
 
         self.pose_pub.publish(msg)
@@ -748,6 +756,65 @@ class ArucoBoardLocalizerNode(Node):
             self.get_logger().debug(
                 f"Bootstrap pose published {self.bootstrap_published_count} times"
             )
+
+    def clear_all_markers(self):
+        """Clear all markers from both namespaces on startup"""
+        marker_array = MarkerArray()
+        
+        # Create DELETE_ALL markers for both namespaces
+        for ns in ["candidate_boards", "known_boards"]:
+            delete_marker = Marker()
+            delete_marker.header.frame_id = self.map_frame
+            delete_marker.header.stamp = self.get_clock().now().to_msg()
+            delete_marker.ns = ns
+            delete_marker.id = 0
+            delete_marker.action = Marker.DELETEALL
+            marker_array.markers.append(delete_marker)
+        
+        self.marker_pub.publish(marker_array)
+        self.get_logger().info("Cleared all existing markers from previous sessions")
+
+    def republish_known_board_markers(self):
+        """Republish all known board markers to keep them visible"""
+        with self.lock:
+            if not self.known_boards:
+                return
+            
+            marker_array = MarkerArray()
+            for board_id, board in self.known_boards.items():
+                marker = Marker()
+                marker.header.frame_id = self.map_frame
+                marker.header.stamp = self.get_clock().now().to_msg()
+                marker.ns = "known_boards"
+                marker.id = hash(board_id) % 10000
+                marker.type = Marker.SPHERE
+                marker.action = Marker.ADD
+
+                # Position
+                marker.pose.position.x = float(board.position[0])
+                marker.pose.position.y = float(board.position[1])
+                marker.pose.position.z = float(board.position[2])
+                marker.pose.orientation.w = 1.0
+
+                # Size
+                marker.scale.x = 0.2
+                marker.scale.y = 0.2
+                marker.scale.z = 0.2
+
+                # Color - Green for known boards
+                marker.color.r = 0.0
+                marker.color.g = 1.0
+                marker.color.b = 0.0
+                marker.color.a = 1.0
+
+                # Lifetime - 10 seconds (will be refreshed every 5 seconds)
+                marker.lifetime.sec = 10
+                marker.lifetime.nanosec = 0
+
+                marker_array.markers.append(marker)
+            
+            if marker_array.markers:
+                self.marker_pub.publish(marker_array)
 
     def publish_candidate_marker(self, board_id: str, position: np.ndarray):
         """Publish a red sphere marker for a candidate board"""
@@ -812,8 +879,8 @@ class ArucoBoardLocalizerNode(Node):
         marker.color.b = 0.0
         marker.color.a = 1.0  # Fully opaque
 
-        # Lifetime - persistent (0 means forever)
-        marker.lifetime.sec = 0
+        # Lifetime - 10 seconds (will be refreshed by timer every 5 seconds)
+        marker.lifetime.sec = 10
         marker.lifetime.nanosec = 0
 
         # Publish as MarkerArray

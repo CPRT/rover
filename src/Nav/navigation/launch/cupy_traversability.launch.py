@@ -33,7 +33,7 @@ def generate_launch_description():
     # Declare launch arguments
     use_sim_time_arg = DeclareLaunchArgument(
         "use_sim_time",
-        default_value="true",
+        default_value="false",
         description="Use simulation (Gazebo) clock if true",
     )
     use_sim_time = LaunchConfiguration("use_sim_time")
@@ -47,12 +47,7 @@ def generate_launch_description():
             ParameterFile(core_param_path, allow_substs=True),
             spike_param_path,
             {"use_sim_time": use_sim_time},
-        ]
+        ],
     )
 
-    return LaunchDescription(
-        [
-            use_sim_time_arg,
-            elevation_mapping_node_py
-        ]
-    )
+    return LaunchDescription([use_sim_time_arg, elevation_mapping_node_py])
