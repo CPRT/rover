@@ -40,8 +40,6 @@ TalonSRXWrapper::TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
       kD_ = std::stod(param.second);
     } else if (param.first == "kF") {
       kF_ = std::stod(param.second);
-    } else if (param.first == "crossover_mode") {
-      crossover_mode_ = (param.second == "true");
     } else if (param.first == "can_interface") {
       can_interface = param.second;
     } else if (param.first == "invert") {
@@ -126,19 +124,26 @@ void TalonSRXWrapper::write() {
   talon_controller_->Set(control_type_, output);
 }
 
+int TalonSRXWrapper::wrap_symmetric(const int x, const int range) {
+  assert(range > 0);
+
+  const int half = range / 2;
+
+  int y = (x + half) % range;
+  if (y < 0)
+    y += range;
+
+  return y - half;
+}
+
 void TalonSRXWrapper::read() {
-  double raw_ticks = talon_controller_->GetSelectedSensorPosition();
-  double position = ((raw_ticks / sensor_ticks_) * 2.0 * M_PI);
-
-  // Crossover mode: wrap between -pi and pi
+  int raw_ticks =
+      static_cast<int>(talon_controller_->GetSelectedSensorPosition());
   if (crossover_mode_) {
-    position = std::fmod(position + M_PI, 2.0 * M_PI);
-    if (position < 0)
-      position += 2.0 * M_PI;
-    position -= M_PI;
+    // adjust between -sensor_ticks_/2 and sensor_ticks_/2
+    raw_ticks = wrap_symmetric(raw_ticks, sensor_ticks_);
   }
-  position_ = position;
-
+  position_ = raw_ticks * 2.0 * M_PI / sensor_ticks_;
   double raw_velocity = talon_controller_->GetSelectedSensorVelocity();
   // Convert raw velocity to rad/s
   // The TalonSRX reports velocity in ticks per 100ms, so we need to convert
@@ -180,19 +185,29 @@ void TalonSRXWrapper::configure() {
     }
     break;
   }
-  int real_ticks = 0;
+
+  int current_ticks = 0;
   int offset_ticks =
       static_cast<int>(sensor_offset_ * sensor_ticks_ / (2.0 * M_PI));
   if (sensor_type_ == SensorType::PWM) {
     auto &sc = talon_controller_->GetSensorCollection();
-    int current_ticks = sc.GetPulseWidthPosition() & 0xFFF;
-    real_ticks = current_ticks - offset_ticks;
-  } else if (sensor_type_ == SensorType::RELATIVE) {
-    real_ticks = offset_ticks;
+    current_ticks = sc.GetPulseWidthPosition() & 0xFFF;
   } else if (sensor_type_ == SensorType::ANALOG) {
     auto &sc = talon_controller_->GetSensorCollection();
-    int current_ticks = sc.GetAnalogIn() & 0xFFF;
-    real_ticks = current_ticks - offset_ticks;
+    current_ticks = sc.GetAnalogIn() & 0xFFF;
+  }
+  if (invert_sensor_) {
+    current_ticks = sensor_ticks_ - current_ticks;
+  }
+  if (crossover_mode_) {
+    current_ticks = wrap_symmetric(current_ticks, sensor_ticks_);
+  }
+  int real_ticks = current_ticks - offset_ticks;
+
+  // Talon SRX expects a double for SetSelectedSensorPosition
+  double ticks_double = static_cast<double>(real_ticks);
+  if (invert_sensor_ != inverted_) {
+    ticks_double = -ticks_double;
   }
 
   talon_controller_->SetNeutralMode(NeutralMode::Brake);
@@ -207,7 +222,7 @@ void TalonSRXWrapper::configure() {
   talon_controller_->SetInverted(inverted_);
   talon_controller_->SetSensorPhase(invert_sensor_);
   talon_controller_->SelectProfileSlot(0, 0);
-  talon_controller_->SetSelectedSensorPosition(real_ticks, 0, 50);
+  talon_controller_->SetSelectedSensorPosition(ticks_double, 0, 0);
   RCLCPP_INFO(debug_node_->get_logger(),
               "%s: Successfully configured Motor Controller %d, with offset %d",
               __FUNCTION__, id_, real_ticks);

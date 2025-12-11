@@ -41,6 +41,8 @@ public:
 
 private:
   enum class SensorType { PWM, RELATIVE, ANALOG };
+  // Wrap to symmetric range [-range/2, range/2)
+  static int wrap_symmetric(int x, int range);
 
   // Parameters
   int id_;
