@@ -97,6 +97,7 @@ bool DetectNode::start_pipeline() {
     }
     g_signal_connect(aruco, "marker-detected", G_CALLBACK(on_marker_detected),
                      marker_pub_.get());
+    gst_object_unref(aruco);
   }
   return true;
 }
@@ -167,19 +168,22 @@ rcl_interfaces::msg::SetParametersResult DetectNode::on_parameter_change(
                   "Pipeline restarted with new detection_type %s.",
                   type_str.c_str());
     } else if (param.get_name() == "listen_to") {
-      GstElement *src = get_element("src");
-      if (!src) {
-        RCLCPP_ERROR(this->get_logger(), "Failed to get interpipesrc element.");
+      if (!stop_pipeline()) {
+        RCLCPP_ERROR(this->get_logger(),
+                     "Failed to stop pipeline for reconfiguration.");
         result.successful = false;
-        result.reason = "Failed to get interpipesrc element.";
+        result.reason = "Failed to stop pipeline for reconfiguration.";
         continue;
       }
-      std::string listen_to = param.as_string();
-      ;
-      g_object_set(G_OBJECT(src), "listen-to", listen_to.c_str(), NULL);
-      RCLCPP_INFO(this->get_logger(), "interpipesrc listen-to set to %s",
-                  listen_to.c_str());
-      gst_object_unref(src);
+      if (!start_pipeline()) {
+        RCLCPP_ERROR(this->get_logger(),
+                     "Failed to start pipeline after reconfiguration.");
+        result.successful = false;
+        result.reason = "Failed to start pipeline after reconfiguration.";
+        continue;
+      }
+      RCLCPP_INFO(this->get_logger(),
+                  "Pipeline restarted with new listen_to parameter.");
     }
   }
   return result;

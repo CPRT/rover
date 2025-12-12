@@ -12,8 +12,21 @@ BaseVideoNode::BaseVideoNode(const std::string name,
   restart_sub_ = create_subscription<std_msgs::msg::Empty>(
       "/all_video/restart_pipeline", 10,
       [this](const std::shared_ptr<std_msgs::msg::Empty> msg) {
-        stop_pipeline();
-        start_pipeline();
+        try {
+          if (!stop_pipeline()) {
+            RCLCPP_ERROR(this->get_logger(),
+                         "Failed to stop pipeline during restart.");
+            return;
+          }
+          if (!start_pipeline()) {
+            RCLCPP_ERROR(this->get_logger(),
+                         "Failed to start pipeline during restart.");
+            return;
+          }
+        } catch (const std::exception &e) {
+          RCLCPP_ERROR(this->get_logger(),
+                       "Exception during pipeline restart: %s", e.what());
+        }
       });
 }
 
