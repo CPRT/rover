@@ -48,11 +48,11 @@ hardware_interface::CallbackReturn RoverArmHardwareInterface::on_init(
 hardware_interface::CallbackReturn RoverArmHardwareInterface::on_configure(
     const rclcpp_lifecycle::State & /*previous_state*/) {
   c_SetPhoenixDiagnosticsStartTime(1);
-  RCLCPP_INFO(rclcpp::get_logger("RoverArmHardwareInterface"),
-              "Successfully configured!");
   for (auto &controller : controllers_) {
     controller->configure();
   }
+  RCLCPP_INFO(rclcpp::get_logger("RoverArmHardwareInterface"),
+              "Successfully configured!");
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 

@@ -93,7 +93,7 @@ protected:
   double velocity_;
   double command_;
 
-  // ROS 2 node debug node and timer
+  // ROS 2 debug node and timer
   int freq_;
   rclcpp::Node::SharedPtr debug_node_;
   rclcpp::TimerBase::SharedPtr debug_timer_;

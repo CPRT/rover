@@ -2,7 +2,7 @@
 BaseWrapper::BaseWrapper(const hardware_interface::ComponentInfo &joint,
                          rclcpp::Node::SharedPtr debug_node)
     : info_(joint), position_(0.0), velocity_(0.0), command_(0.0), freq_(0),
-      debug_node_(std::move(debug_node)), debug_timer_(nullptr) {
+      debug_node_(debug_node), debug_timer_(nullptr) {
   for (const auto &param : joint.parameters) {
     if (param.first == "debug_frequency") {
       freq_ = std::stoi(param.second);

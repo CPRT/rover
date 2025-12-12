@@ -9,15 +9,7 @@ TalonSRXWrapper::TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
       control_type_(ctre::phoenix::motorcontrol::ControlMode::Disabled),
       sensor_type_(SensorType::RELATIVE), sensor_ticks_(4096),
       sensor_offset_(0.0), crossover_mode_(false), inverted_(false),
-      invert_sensor_(false), talon_controller_(nullptr) {
-  position_ = 0.0;
-  velocity_ = 0.0;
-  command_ = 0.0;
-  debug_pub_ = nullptr;
-  sensor_type_ = SensorType::RELATIVE;
-  sensor_ticks_ = 4096;
-  sensor_offset_ = 0.0;
-  crossover_mode_ = false;
+      invert_sensor_(false), debug_pub_(nullptr), talon_controller_(nullptr) {
   std::string sensor_type_str;
   std::string can_interface = "can0";
 
@@ -206,7 +198,11 @@ void TalonSRXWrapper::configure() {
 
   // Talon SRX expects a double for SetSelectedSensorPosition
   double ticks_double = static_cast<double>(real_ticks);
-  if (invert_sensor_ != inverted_) {
+  // If exactly one of invert_sensor_ or inverted_ is true, negate the ticks.
+  // This ensures that if both are true (double inversion), the effect cancels
+  // out.
+  bool final_invert = invert_sensor_ != inverted_;
+  if (final_invert) {
     ticks_double = -ticks_double;
   }
 
@@ -222,7 +218,7 @@ void TalonSRXWrapper::configure() {
   talon_controller_->SetInverted(inverted_);
   talon_controller_->SetSensorPhase(invert_sensor_);
   talon_controller_->SelectProfileSlot(0, 0);
-  talon_controller_->SetSelectedSensorPosition(ticks_double, 0, 0);
+  talon_controller_->SetSelectedSensorPosition(ticks_double, 0, 50);
   RCLCPP_INFO(debug_node_->get_logger(),
               "%s: Successfully configured Motor Controller %d, with offset %d",
               __FUNCTION__, id_, real_ticks);
