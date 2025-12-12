@@ -65,7 +65,7 @@ bool InputNode::create_pipeline() {
   desc_stream << "nvcompositor name=compositor sink_0::width="
               << this->get_parameter("out_width").as_int() << " sink_0::height="
               << this->get_parameter("out_height").as_int();
-  desc_stream << " ! nvvidconv ! video/x-raw,width="
+  desc_stream << " ! nvvidconv ! videorate ! video/x-raw,width="
               << this->get_parameter("out_width").as_int()
               << ",height=" << this->get_parameter("out_height").as_int()
               << ",framerate=" << this->get_parameter("out_framerate").as_int()
