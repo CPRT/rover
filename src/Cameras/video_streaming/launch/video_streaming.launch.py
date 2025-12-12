@@ -23,7 +23,7 @@ def generate_launch_description():
         plugin="DetectNode",
         name="detect_node",
         namespace="",
-        parameters=[],
+        parameters=[{"bottle_config": config_dir + "/bottle/bottle.txt"}],
     )
 
     streaming_node = ComposableNode(
@@ -57,7 +57,7 @@ def generate_launch_description():
         composable_node_descriptions=[
             input_node,
             detect_node,
-            streaming_node,
+            # streaming_node,
             srt_node,
         ],
         output="screen",
