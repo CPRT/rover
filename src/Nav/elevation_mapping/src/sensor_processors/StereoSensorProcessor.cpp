@@ -120,14 +120,14 @@ bool StereoSensorProcessor::computeVariances(
   const Eigen::Matrix3f B_r_BS_skew = kindr::getSkewMatrixFromVector(
       Eigen::Vector3f(translationBaseToSensorInBaseFrame_.toImplementation()
                           .cast<float>()));
-  float depthToDisparityFactor =
+  const float depthToDisparityFactor =
       sensorParameters_.at("depth_to_disparity_factor");
-  float lateralFactor = sensorParameters_.at("lateral_factor");
-  float p1 = sensorParameters_.at("p_1");
-  float p2 = sensorParameters_.at("p_2");
-  float p3 = sensorParameters_.at("p_3");
-  float p4 = sensorParameters_.at("p_4");
-  float p5 = sensorParameters_.at("p_5");
+  const float lateralFactor = sensorParameters_.at("lateral_factor");
+  const float p1 = sensorParameters_.at("p_1");
+  const float p2 = sensorParameters_.at("p_2");
+  const float p3 = sensorParameters_.at("p_3");
+  const float p4 = sensorParameters_.at("p_4");
+  const float p5 = sensorParameters_.at("p_5");
 
   for (unsigned int i = 0; i < pointCloud->size(); ++i) {
     // For every point in point cloud.
