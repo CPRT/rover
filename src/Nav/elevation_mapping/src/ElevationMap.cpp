@@ -142,8 +142,15 @@ bool ElevationMap::add(const PointCloudType::Ptr pointCloud,
     auto &sensorYatLowestScan = sensorYatLowestScanLayer(row, col);
     auto &sensorZatLowestScan = sensorZatLowestScanLayer(row, col);
 
-    const float pointVariance = 1e-11 * pointCloudVariances(i);
+    float pointVariance = 1e-11 * pointCloudVariances(i);
     bool isValid = std::isfinite(elevation) && std::isfinite(variance);
+
+    if (variance < 1e-11) {
+      variance = 1e-11;
+    }
+    if (pointVariance < 1e-11) {
+      pointVariance = 1e-11;
+    }
 
     if (!isValid) {
       // No prior information in elevation map, use measurement.
@@ -155,9 +162,9 @@ bool ElevationMap::add(const PointCloudType::Ptr pointCloud,
       continue;
     }
 
-    // This is an optimization equivialent to computing the full mahalanobis
+    // This is an optimization equivalent to computing the full mahalanobis
     // distance and comparing to mahalanobisDistanceThreshold_.
-    const float dz = (point.z - elevation) * (point.z - elevation);
+    const float dz = (point.z - elevation);
     if (dz * dz > mahalanobisDistanceThresholdSquared * variance) {
       if (scanTimeSinceInitialization - time > scanningDuration_) {
         // Increase variance due to multi-height noise

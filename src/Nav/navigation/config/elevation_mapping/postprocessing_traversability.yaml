@@ -14,7 +14,7 @@ elevation_mapping:
         name: delete_original_layers
         type: gridMapFilters/DeletionFilter
         params:
-          layers: [lowest_scan_point,sensor_x_at_lowest_scan, sensor_y_at_lowest_scan, sensor_z_at_lowest_scan, variance, horizontal_variance_x, horizontal_variance_y, horizontal_variance_xy, time, dynamic_time] # List of layers.
+          layers: [lowest_scan_point, sensor_x_at_lowest_scan, sensor_y_at_lowest_scan, sensor_z_at_lowest_scan, variance, horizontal_variance_x, horizontal_variance_y, horizontal_variance_xy, time, dynamic_time] # List of layers.
 
       ##### Option 1 - InpaintFilter then radial blur #####
       # filter3:  # Fill holes in the map with inpainting.
