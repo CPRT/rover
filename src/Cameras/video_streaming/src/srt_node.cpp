@@ -16,7 +16,7 @@ SrtNode::SrtNode(const rclcpp::NodeOptions &options)
   this->declare_parameter<std::string>("srt_uri", "srt://:7001");
   this->declare_parameter<int>("latency", 100);
   this->declare_parameter<int>("iframe_interval", 0);
-  this->declare_parameter<bool>("test_mode", true);
+  this->declare_parameter<bool>("test_mode", false);
   this->declare_parameter<double>("stats_frequency", 1.0);
 
   param_callback_handle_ = this->add_on_set_parameters_callback(
