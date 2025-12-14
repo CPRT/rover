@@ -31,8 +31,7 @@
 namespace elevation_mapping {
 
 /*!
- * Elevation map stored as grid map handling elevation height, variance, color
- * etc.
+ * Elevation map stored as grid map handling elevation height, variance, etc.
  */
 class ElevationMap {
 public:

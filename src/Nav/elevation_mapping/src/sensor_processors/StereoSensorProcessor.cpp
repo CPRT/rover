@@ -120,14 +120,22 @@ bool StereoSensorProcessor::computeVariances(
   const Eigen::Matrix3f B_r_BS_skew = kindr::getSkewMatrixFromVector(
       Eigen::Vector3f(translationBaseToSensorInBaseFrame_.toImplementation()
                           .cast<float>()));
+  float depthToDisparityFactor =
+      sensorParameters_.at("depth_to_disparity_factor");
+  float lateralFactor = sensorParameters_.at("lateral_factor");
+  float p1 = sensorParameters_.at("p_1");
+  float p2 = sensorParameters_.at("p_2");
+  float p3 = sensorParameters_.at("p_3");
+  float p4 = sensorParameters_.at("p_4");
+  float p5 = sensorParameters_.at("p_5");
 
   for (unsigned int i = 0; i < pointCloud->size(); ++i) {
     // For every point in point cloud.
 
     // Preparation.
-    pcl::PointXYZRGBConfidenceRatio point = pointCloud->points[i];
+    const auto &point = pointCloud->points[i];
     double disparity =
-        sensorParameters_.at("depth_to_disparity_factor") /
+        depthToDisparityFactor /
         point.z; // NOLINT(cppcoreguidelines-pro-type-union-access)
     Eigen::Vector3f pointVector(
         point.x, point.y,
@@ -139,18 +147,11 @@ bool StereoSensorProcessor::computeVariances(
 
     // Compute sensor covariance matrix (Sigma_S) with sensor model.
     float varianceNormal =
-        pow(sensorParameters_.at("depth_to_disparity_factor") /
-                pow(disparity, 2),
-            2) *
-        ((sensorParameters_.at("p_5") * disparity +
-          sensorParameters_.at("p_2")) *
-             sqrt(pow(sensorParameters_.at("p_3") * disparity +
-                          sensorParameters_.at("p_4") - getJ(i),
-                      2) +
-                  pow(240 - getI(i), 2)) +
-         sensorParameters_.at("p_1"));
-    float varianceLateral =
-        pow(sensorParameters_.at("lateral_factor") * measurementDistance, 2);
+        pow(depthToDisparityFactor / pow(disparity, 2), 2) *
+        ((p5 * disparity + p2) * sqrt(pow(p3 * disparity + p4 - getJ(i), 2) +
+                                      pow(240 - getI(i), 2)) +
+         p1);
+    float varianceLateral = pow(lateralFactor * measurementDistance, 2);
     Eigen::Matrix3f sensorVariance = Eigen::Matrix3f::Zero();
     sensorVariance.diagonal() << varianceLateral, varianceLateral,
         varianceNormal;
