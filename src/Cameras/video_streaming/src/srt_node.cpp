@@ -230,7 +230,7 @@ void SrtNode::publish_srt_stats() {
     srt_stats_pub_->publish(msg);
     gst_structure_free(stats);
   }
-} 
+}
 
 RCLCPP_COMPONENTS_REGISTER_NODE(video_streaming::SrtNode)
 } // namespace video_streaming
