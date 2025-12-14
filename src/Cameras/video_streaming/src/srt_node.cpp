@@ -13,12 +13,11 @@ SrtNode::SrtNode(const rclcpp::NodeOptions &options)
     : BaseVideoNode("srt_node", options) {
   RCLCPP_INFO(this->get_logger(), "Initializing SrtNode...");
 
-  // Start up
-  // latency , iframe_interval
   this->declare_parameter<std::string>("srt_uri", "srt://:7001");
   this->declare_parameter<int>("latency", 100);
   this->declare_parameter<int>("iframe_interval", 0);
-  this->declare_parameter<bool>("test_mode", false);
+  this->declare_parameter<bool>("test_mode", true);
+  this->declare_parameter<double>("stats_frequency", 1.0);
 
   param_callback_handle_ = this->add_on_set_parameters_callback(
       std::bind(&SrtNode::on_parameter_change, this, std::placeholders::_1));
@@ -34,9 +33,18 @@ SrtNode::SrtNode(const rclcpp::NodeOptions &options)
   srt_stats_pub_ =
       this->create_publisher<interfaces::msg::SrtStats>("~/srt_stats", 10);
 
-  srt_stats_timer_ =
-      this->create_wall_timer(std::chrono::milliseconds(1000),
-                              std::bind(&SrtNode::publish_srt_stats, this));
+  double stats_freq = this->get_parameter("stats_frequency").as_double();
+  if (stats_freq <= 0.0) {
+    stats_freq = 1.0;
+    RCLCPP_WARN(this->get_logger(),
+                "Invalid stats_frequency (%.2f). Defaulting to 1.0 Hz",
+                stats_freq);
+  }
+  auto timer_period = std::chrono::duration<double>(1.0 / stats_freq);
+
+  srt_stats_timer_ = this->create_wall_timer(
+      std::chrono::duration_cast<std::chrono::milliseconds>(timer_period),
+      std::bind(&SrtNode::publish_srt_stats, this));
 
   if (!start_pipeline()) {
     RCLCPP_FATAL(get_logger(), "SrtNode: failed to start pipeline.");
@@ -167,43 +175,62 @@ void SrtNode::publish_srt_stats() {
     auto msg = interfaces::msg::SrtStats();
     msg.header.stamp = this->now();
 
+    GstStructure *target_stats = stats;
+
+    // Listener mode: check if "callers" field exists
+    if (gst_structure_has_field(stats, "callers")) {
+      const GValue *callers_val = gst_structure_get_value(stats, "callers");
+
+      if (callers_val && GST_VALUE_HOLDS_ARRAY(callers_val)) {
+        guint size = gst_value_array_get_size(callers_val);
+        if (size > 0) {
+
+          const GValue *first_caller =
+              gst_value_array_get_value(callers_val, 0);
+
+          if (first_caller && GST_VALUE_HOLDS_STRUCTURE(first_caller)) {
+            target_stats =
+                (GstStructure *)gst_value_get_structure(first_caller);
+          }
+        }
+      }
+    }
+
     // 1. RTT: seconds
     int rtt_ms = 0;
-    if (gst_structure_get_int(stats, "rtt-ms", &rtt_ms)) {
+    if (gst_structure_get_int(target_stats, "rtt-ms", &rtt_ms)) {
       msg.rtt = static_cast<double>(rtt_ms) / 1000.0;
     }
 
     // 2. Bandwidth: Mbps -> bits/sec
     double bw_mbps = 0.0;
-    if (gst_structure_get_double(stats, "bandwidth-mbps", &bw_mbps)) {
+    if (gst_structure_get_double(target_stats, "bandwidth-mbps", &bw_mbps)) {
       msg.bandwidth = bw_mbps * 1e6;
     }
 
     // 3. Packets Sent
     int64_t val_64 = 0;
-    if (gst_structure_get_int64(stats, "packets-sent", &val_64)) {
+    if (gst_structure_get_int64(target_stats, "packets-sent", &val_64)) {
       msg.packets_sent = val_64;
     }
 
     // 4. Packets Lost
     int val_int = 0;
-    if (gst_structure_get_int(stats, "packets-lost", &val_int) ||
-        gst_structure_get_int(stats, "pkt-snd-loss-total", &val_int)) {
+    if (gst_structure_get_int(target_stats, "packets-sent-lost", &val_int)) {
       msg.packets_lost = val_int;
     }
 
     // 5. Packets Retransmitted
     int ret_int = 0;
-    if (gst_structure_get_int(stats, "packets-retransmitted", &ret_int) ||
-        gst_structure_get_int(stats, "pkt-ret", &ret_int)) {
+    if (gst_structure_get_int(target_stats, "packets-retransmitted",
+                              &ret_int)) {
       msg.packets_retransmitted = ret_int;
     }
 
     srt_stats_pub_->publish(msg);
-    gst_structure_free(stats); // Free the structure after use
+    gst_structure_free(stats);
   }
-}
-
 } // namespace video_streaming
 
 RCLCPP_COMPONENTS_REGISTER_NODE(video_streaming::SrtNode)
+} // namespace video_streaming

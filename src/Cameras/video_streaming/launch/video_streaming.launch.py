@@ -39,7 +39,11 @@ def generate_launch_description():
         plugin="video_streaming::SrtNode",
         name="srt_node",
         namespace="",
-        parameters=[{"srt_uri": "srt://:7001", "latency": 100, "iframe_interval": 30}],
+        parameters=[{
+            "srt_uri": "srt://:7001",
+            "latency": 100,
+            "iframe_interval": 30,
+        }],
     )
 
     # Create a container for all 3 components
