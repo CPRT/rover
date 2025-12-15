@@ -165,41 +165,36 @@ void SrtNode::on_iframe_trigger(const std_msgs::msg::Empty::SharedPtr msg) {
 }
 
 void SrtNode::publish_srt_stats() {
-  if (!srt_sink_)
+  if (!srt_sink_) {
     return;
-
+  }
   GstStructure *stats = nullptr;
   g_object_get(srt_sink_, "stats", &stats, NULL);
 
-  if (stats) {
-    auto msg = interfaces::msg::SrtStats();
-    msg.header.stamp = this->now();
+  if (!stats) {
+    return;
+  }
+  auto msg = interfaces::msg::SrtStats();
+  msg.header.stamp = this->now();
 
-    GstStructure *target_stats = stats;
+  GstStructure *target_stats = stats;
+  const GValue *callers_val = gst_structure_get_value(stats, "callers");
 
-    // Listener mode: check if "callers" field exists
-    if (gst_structure_has_field(stats, "callers")) {
-      const GValue *callers_val = gst_structure_get_value(stats, "callers");
+  bool has_valid_callers = (callers_val && 
+                            GST_VALUE_HOLDS_ARRAY(callers_val) && 
+                            gst_value_array_get_size(callers_val) > 0);
 
-      if (callers_val && GST_VALUE_HOLDS_ARRAY(callers_val)) {
-        guint size = gst_value_array_get_size(callers_val);
-        if (size > 0) {
-
-          const GValue *first_caller =
-              gst_value_array_get_value(callers_val, 0);
-
-          if (first_caller && GST_VALUE_HOLDS_STRUCTURE(first_caller)) {
-            target_stats =
-                (GstStructure *)gst_value_get_structure(first_caller);
-          }
-        }
-      }
+  if (has_valid_callers) {
+    const GValue *first_caller = gst_value_array_get_value(callers_val, 0);
+    if (first_caller && GST_VALUE_HOLDS_STRUCTURE(first_caller)) {
+      target_stats = (GstStructure *)gst_value_get_structure(first_caller);
     }
+  }
 
-    // 1. RTT: seconds
+    // 1. RTT: milliseconds
     int rtt_ms = 0;
     if (gst_structure_get_int(target_stats, "rtt-ms", &rtt_ms)) {
-      msg.rtt = static_cast<double>(rtt_ms) / 1000.0;
+      msg.rtt = static_cast<double>(rtt_ms);
     }
 
     // 2. Bandwidth: Mbps -> bits/sec
@@ -230,7 +225,6 @@ void SrtNode::publish_srt_stats() {
     srt_stats_pub_->publish(msg);
     gst_structure_free(stats);
   }
-}
 
 RCLCPP_COMPONENTS_REGISTER_NODE(video_streaming::SrtNode)
 } // namespace video_streaming
