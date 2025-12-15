@@ -180,8 +180,7 @@ void SrtNode::publish_srt_stats() {
   GstStructure *target_stats = stats;
   const GValue *callers_val = gst_structure_get_value(stats, "callers");
 
-  bool has_valid_callers = (callers_val && 
-                            GST_VALUE_HOLDS_ARRAY(callers_val) && 
+  bool has_valid_callers = (callers_val && GST_VALUE_HOLDS_ARRAY(callers_val) &&
                             gst_value_array_get_size(callers_val) > 0);
 
   if (has_valid_callers) {
@@ -191,40 +190,39 @@ void SrtNode::publish_srt_stats() {
     }
   }
 
-    // 1. RTT: milliseconds
-    int rtt_ms = 0;
-    if (gst_structure_get_int(target_stats, "rtt-ms", &rtt_ms)) {
-      msg.rtt = static_cast<double>(rtt_ms);
-    }
-
-    // 2. Bandwidth: Mbps -> bits/sec
-    double bw_mbps = 0.0;
-    if (gst_structure_get_double(target_stats, "bandwidth-mbps", &bw_mbps)) {
-      msg.bandwidth = bw_mbps * 1e6;
-    }
-
-    // 3. Packets Sent
-    int64_t val_64 = 0;
-    if (gst_structure_get_int64(target_stats, "packets-sent", &val_64)) {
-      msg.packets_sent = val_64;
-    }
-
-    // 4. Packets Lost
-    int val_int = 0;
-    if (gst_structure_get_int(target_stats, "packets-sent-lost", &val_int)) {
-      msg.packets_lost = val_int;
-    }
-
-    // 5. Packets Retransmitted
-    int ret_int = 0;
-    if (gst_structure_get_int(target_stats, "packets-retransmitted",
-                              &ret_int)) {
-      msg.packets_retransmitted = ret_int;
-    }
-
-    srt_stats_pub_->publish(msg);
-    gst_structure_free(stats);
+  // 1. RTT: milliseconds
+  int rtt_ms = 0;
+  if (gst_structure_get_int(target_stats, "rtt-ms", &rtt_ms)) {
+    msg.rtt = static_cast<double>(rtt_ms);
   }
+
+  // 2. Bandwidth: Mbps -> bits/sec
+  double bw_mbps = 0.0;
+  if (gst_structure_get_double(target_stats, "bandwidth-mbps", &bw_mbps)) {
+    msg.bandwidth = bw_mbps * 1e6;
+  }
+
+  // 3. Packets Sent
+  int64_t val_64 = 0;
+  if (gst_structure_get_int64(target_stats, "packets-sent", &val_64)) {
+    msg.packets_sent = val_64;
+  }
+
+  // 4. Packets Lost
+  int val_int = 0;
+  if (gst_structure_get_int(target_stats, "packets-sent-lost", &val_int)) {
+    msg.packets_lost = val_int;
+  }
+
+  // 5. Packets Retransmitted
+  int ret_int = 0;
+  if (gst_structure_get_int(target_stats, "packets-retransmitted", &ret_int)) {
+    msg.packets_retransmitted = ret_int;
+  }
+
+  srt_stats_pub_->publish(msg);
+  gst_structure_free(stats);
+}
 
 RCLCPP_COMPONENTS_REGISTER_NODE(video_streaming::SrtNode)
 } // namespace video_streaming
