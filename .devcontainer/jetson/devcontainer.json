@@ -1,7 +1,7 @@
 {
   "name": "CPRT Dev Container",
 
-  "image": "cprtsoftware/rover:dev-arm64",
+  "image": "erik_jetson_cupy_rover_dec17:v1",
 
   "runArgs": [
     "--network=host",

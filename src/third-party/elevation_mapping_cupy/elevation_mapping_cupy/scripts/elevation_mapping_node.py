@@ -5,6 +5,8 @@ import os
 from pathlib import Path
 from functools import partial
 from typing import Dict, List
+import time
+from collections import defaultdict
 
 import rclpy
 from rclpy.node import Node
@@ -80,6 +82,18 @@ class ElevationMappingNode(Node):
         self.register_services()
         self._last_t = None
 
+        # Performance timing tracking
+        self._timing_stats = defaultdict(lambda: {'count': 0, 'total_time': 0.0, 'max_time': 0.0, 'min_time': float('inf')})
+        self._timing_log_file = '/tmp/elevation_mapping_timing.csv'
+        self._timing_counter = 0
+        self._timing_print_interval = 100  # Print stats every N callbacks
+        
+        # Initialize timing log file with header
+        with open(self._timing_log_file, 'w') as f:
+            f.write('timestamp,callback_name,duration_ms,counter\n')
+        
+        self.get_logger().info(f"Performance timing enabled. Logging to {self._timing_log_file}")
+
     def initialize_elevation_mapping(self) -> None:
         self.param.update()
         self._pointcloud_process_counter = 0
@@ -92,6 +106,39 @@ class ElevationMappingNode(Node):
 
         self._map_q = None
         self._map_t = None
+
+    def _record_timing(self, callback_name: str, duration: float) -> None:
+        """Record timing statistics for a callback."""
+        stats = self._timing_stats[callback_name]
+        stats['count'] += 1
+        stats['total_time'] += duration
+        stats['max_time'] = max(stats['max_time'], duration)
+        stats['min_time'] = min(stats['min_time'], duration)
+        
+        # Log to file
+        timestamp = time.time()
+        with open(self._timing_log_file, 'a') as f:
+            f.write(f'{timestamp},{callback_name},{duration*1000:.3f},{stats["count"]}\n')
+        
+        # Print summary periodically
+        self._timing_counter += 1
+        if self._timing_counter >= self._timing_print_interval:
+            self._print_timing_stats()
+            self._timing_counter = 0
+    
+    def _print_timing_stats(self) -> None:
+        """Print timing statistics summary."""
+        self.get_logger().info("=== Performance Timing Stats ===")
+        for name, stats in sorted(self._timing_stats.items()):
+            if stats['count'] > 0:
+                avg_ms = (stats['total_time'] / stats['count']) * 1000
+                max_ms = stats['max_time'] * 1000
+                min_ms = stats['min_time'] * 1000
+                self.get_logger().info(
+                    f"{name}: count={stats['count']}, avg={avg_ms:.2f}ms, "
+                    f"min={min_ms:.2f}ms, max={max_ms:.2f}ms"
+                )
+        self.get_logger().info("================================")
 
     def initialize_ros(self) -> None:
         self._tf_buffer = tf2_ros.Buffer()
@@ -326,9 +373,19 @@ class ElevationMappingNode(Node):
         )
 
     def publish_map(self, key: str) -> None:
+        start_time = time.perf_counter()
+        timing_breakdown = {}
+        
         if self._map_q is None:
             return
+        
+        # Time: Get map center
+        t0 = time.perf_counter()
         center = self._get_map_center()
+        timing_breakdown['get_center'] = time.perf_counter() - t0
+        
+        # Time: Initialize GridMap message
+        t0 = time.perf_counter()
         gm = GridMap()
         gm.header.frame_id = self.map_frame
         gm.header.stamp = self._last_t if self._last_t is not None else self.get_clock().now().to_msg()
@@ -357,17 +414,58 @@ class ElevationMappingNode(Node):
             gm.info.pose.orientation.z = 0.0
         gm.layers = []
         gm.basic_layers = self.my_publishers[key]["basic_layers"]
+        timing_breakdown['init_message'] = time.perf_counter() - t0
 
+        # Time: Process each layer (GPU->CPU transfer + serialization)
+        t0 = time.perf_counter()
+        layer_times = []
         for layer in self.my_publishers[key].get("layers", []):
+            layer_start = time.perf_counter()
+            
             gm.layers.append(layer)
+            
+            # Time: GPU to CPU transfer
+            t_gpu = time.perf_counter()
             self._map.get_map_with_name_ref(layer, self._map_data)
+            gpu_to_cpu_time = time.perf_counter() - t_gpu
+            
             # After fixing CUDA kernels and removing flips in elevation_mapping.py, no flip needed here
             map_data_for_gridmap = self._map_data
+            
+            # Time: Serialization to multiarray
+            t_serial = time.perf_counter()
             gm.data.append(self._numpy_to_multiarray(map_data_for_gridmap, layout="gridmap_column"))
+            serialization_time = time.perf_counter() - t_serial
+            
+            layer_total = time.perf_counter() - layer_start
+            layer_times.append({
+                'name': layer,
+                'gpu_to_cpu': gpu_to_cpu_time,
+                'serialization': serialization_time,
+                'total': layer_total
+            })
+        timing_breakdown['all_layers_total'] = time.perf_counter() - t0
 
         gm.outer_start_index = 0
         gm.inner_start_index = 0
+        
+        # Time: Actual publish call
+        t0 = time.perf_counter()
         self._publishers_dict[key].publish(gm)
+        timing_breakdown['publish_call'] = time.perf_counter() - t0
+        
+        total_duration = time.perf_counter() - start_time
+        self._record_timing(f'publish_map_{key}', total_duration)
+        
+        # Record detailed breakdown
+        for step_name, step_duration in timing_breakdown.items():
+            self._record_timing(f'publish_{key}_{step_name}', step_duration)
+        
+        # Record per-layer timings
+        for layer_info in layer_times:
+            self._record_timing(f'publish_{key}_layer_{layer_info["name"]}_gpu_to_cpu', layer_info['gpu_to_cpu'])
+            self._record_timing(f'publish_{key}_layer_{layer_info["name"]}_serialization', layer_info['serialization'])
+            self._record_timing(f'publish_{key}_layer_{layer_info["name"]}_total', layer_info['total'])
 
     def handle_masked_replace(self, request, response):
         try:
@@ -383,45 +481,82 @@ class ElevationMappingNode(Node):
         return response
 
     def handle_save_map(self, request, response):
+        start_time = time.perf_counter()
+        timing_breakdown = {}
+        
         try:
+            # Time: Prepare paths
+            t0 = time.perf_counter()
             fused_path, raw_path = self._prepare_bag_paths(request.file_path)
             topic_base = request.topic_name or self.save_map_default_topic
             fused_topic = self._resolve_topic_name(topic_base)
             raw_topic = self._resolve_topic_name(f"{topic_base}_raw")
+            timing_breakdown['prepare_paths'] = time.perf_counter() - t0
 
+            # Time: Collect layer names
+            t0 = time.perf_counter()
             fused_layer_names = self._collect_fused_layer_names()
             raw_layer_names = self._map.list_layers()
             self.get_logger().info(
                 f"Saving map: fused layers={fused_layer_names}, raw layers={raw_layer_names}"
             )
+            timing_breakdown['collect_layers'] = time.perf_counter() - t0
 
+            # Time: Export layers (GPU to CPU)
+            t0 = time.perf_counter()
             fused_layers = self._map.export_layers(fused_layer_names)
+            timing_breakdown['export_fused'] = time.perf_counter() - t0
+            
+            t0 = time.perf_counter()
             raw_layers = self._map.export_layers(raw_layer_names)
+            timing_breakdown['export_raw'] = time.perf_counter() - t0
+            
             self.get_logger().info(
                 f"Exported raw layer keys: {list(raw_layers.keys())}"
             )
 
+            # Time: Build messages (serialization)
+            t0 = time.perf_counter()
             gm_fused = self._build_grid_map_message(
                 fused_layer_names,
                 fused_layers,
                 self._collect_basic_layers(),
             )
+            timing_breakdown['build_fused_msg'] = time.perf_counter() - t0
+            
+            t0 = time.perf_counter()
             gm_raw = self._build_grid_map_message(
                 raw_layer_names,
                 raw_layers,
                 ['elevation'],
             )
+            timing_breakdown['build_raw_msg'] = time.perf_counter() - t0
+            
             self.get_logger().info(
                 f"Built fused msg layers={gm_fused.layers}, raw msg layers={gm_raw.layers}"
             )
 
+            # Time: Write to disk
+            t0 = time.perf_counter()
             self._write_grid_map_bag(fused_path, fused_topic, gm_fused)
+            timing_breakdown['write_fused_bag'] = time.perf_counter() - t0
+            
+            t0 = time.perf_counter()
             self._write_grid_map_bag(raw_path, raw_topic, gm_raw)
+            timing_breakdown['write_raw_bag'] = time.perf_counter() - t0
 
             response.success = True
         except Exception as exc:
             self.get_logger().error(f"save_map failed: {exc}")
             response.success = False
+        
+        total_duration = time.perf_counter() - start_time
+        self._record_timing('handle_save_map', total_duration)
+        
+        # Record detailed breakdown
+        for step_name, step_duration in timing_breakdown.items():
+            self._record_timing(f'save_map_{step_name}', step_duration)
+        
         return response
 
     def handle_load_map(self, request, response):
@@ -539,6 +674,11 @@ class ElevationMappingNode(Node):
         layer_data: Dict[str, np.ndarray],
         basic_layers: List[str],
     ) -> GridMap:
+        start_time = time.perf_counter()
+        timing_breakdown = {}
+        
+        # Time: Initialize message
+        t0 = time.perf_counter()
         gm = GridMap()
         gm.header.frame_id = self.map_frame
         gm.header.stamp = self._last_t if self._last_t is not None else self.get_clock().now().to_msg()
@@ -561,18 +701,42 @@ class ElevationMappingNode(Node):
 
         gm.layers = []
         gm.basic_layers = basic_layers
+        timing_breakdown['init'] = time.perf_counter() - t0
+        
+        # Time: Serialize each layer
+        t0 = time.perf_counter()
         for name in layer_names:
             data = layer_data.get(name)
             if data is None:
                 continue
             gm.layers.append(name)
+            
+            t_layer = time.perf_counter()
             gm.data.append(self._numpy_to_multiarray(data))
+            layer_time = time.perf_counter() - t_layer
+            self._record_timing(f'build_msg_layer_{name}', layer_time)
+        timing_breakdown['all_layers'] = time.perf_counter() - t0
+        
         gm.outer_start_index = 0
         gm.inner_start_index = 0
+        
+        total_duration = time.perf_counter() - start_time
+        self._record_timing('_build_grid_map_message', total_duration)
+        
+        # Record breakdown
+        for step_name, step_duration in timing_breakdown.items():
+            self._record_timing(f'build_msg_{step_name}', step_duration)
+        
         return gm
 
     def _numpy_to_multiarray(self, data: np.ndarray, layout: str = "gridmap_column") -> Float32MultiArray:
-        return encode_layer_to_multiarray(data, layout=layout)
+        start_time = time.perf_counter()
+        result = encode_layer_to_multiarray(data, layout=layout)
+        duration = time.perf_counter() - start_time
+        # Only record if it takes significant time (>1ms) to avoid log spam
+        if duration > 0.001:
+            self._record_timing('_numpy_to_multiarray', duration)
+        return result
 
     def _resolve_service_name(self, suffix: str) -> str:
         base = self.service_namespace
@@ -700,6 +864,8 @@ class ElevationMappingNode(Node):
             return None
 
     def image_callback(self, camera_msg: Image, camera_info_msg: CameraInfo, sub_key: str) -> None:
+        start_time = time.perf_counter()
+        
         self._last_t = camera_msg.header.stamp
         try:
             semantic_img = self.cv_bridge.imgmsg_to_cv2(camera_msg, desired_encoding="passthrough")
@@ -730,22 +896,34 @@ class ElevationMappingNode(Node):
             camera_info_msg.height, camera_info_msg.width
         )
         self._image_process_counter += 1
+        
+        duration = time.perf_counter() - start_time
+        self._record_timing(f'image_callback_{sub_key}', duration)
 
     def pointcloud_callback(self, msg: PointCloud2, sub_key: str) -> None:
+        start_time = time.perf_counter()
+        timing_breakdown = {}
+        
         self._last_t = msg.header.stamp
         # self.get_logger().info(f"Received pointcloud with {msg.width} points")
         additional_channels = self.param.subscriber_cfg[sub_key].get("channels", [])
         channels = ["x", "y", "z"] + additional_channels
+        
+        # Time: numpify
+        t0 = time.perf_counter()
         try:
             points = rnp.numpify(msg)
         except Exception as e:
             self.get_logger().warn(f"Failed to numpify point cloud: {e}")
             return
+        timing_breakdown['numpify'] = time.perf_counter() - t0
         
         # Check if points is empty - handle both structured array and dict cases
         if points is None:
             return
         
+        # Time: data validation
+        t0 = time.perf_counter()
         # Handle different data structures from rnp.numpify
         if isinstance(points, dict):
             # If it's a dict, check if it has data
@@ -768,7 +946,12 @@ class ElevationMappingNode(Node):
             # It's a structured numpy array
             if points.size == 0:
                 return
+        timing_breakdown['validation'] = time.perf_counter() - t0
+        
         frame_sensor_id = msg.header.frame_id
+        
+        # Time: TF lookup
+        t0 = time.perf_counter()
         transform_sensor_to_map = self.safe_lookup_transform(
             self.map_frame,
             frame_sensor_id,
@@ -777,11 +960,18 @@ class ElevationMappingNode(Node):
         if transform_sensor_to_map is None:
             # Transform not available, skip this pointcloud
             return
+        timing_breakdown['tf_lookup'] = time.perf_counter() - t0
+        
+        # Time: transform extraction
+        t0 = time.perf_counter()
         t = transform_sensor_to_map.transform.translation
         q = transform_sensor_to_map.transform.rotation
         t_np = np.array([t.x, t.y, t.z], dtype=np.float32)
         R = quaternion_matrix([q.x, q.y, q.z, q.w])[:3, :3].astype(np.float32)
+        timing_breakdown['transform_extract'] = time.perf_counter() - t0
         
+        # Time: point extraction and channel processing
+        t0 = time.perf_counter()
         # Extract xyz points based on data structure
         if isinstance(points, dict):
             # If points is a dict, manually construct xyz array
@@ -825,10 +1015,25 @@ class ElevationMappingNode(Node):
                     if data.ndim == 1:
                         data = data[:, np.newaxis]
                     pts = np.hstack((pts, data))
+        timing_breakdown['point_extraction'] = time.perf_counter() - t0
+        
+        # Time: input_pointcloud (the main processing)
+        t0 = time.perf_counter()
         self._map.input_pointcloud(pts, channels, R, t_np, 0, 0)
+        timing_breakdown['input_pointcloud'] = time.perf_counter() - t0
+        
         self._pointcloud_process_counter += 1
+        
+        total_duration = time.perf_counter() - start_time
+        self._record_timing(f'pointcloud_callback_{sub_key}', total_duration)
+        
+        # Record detailed breakdown
+        for step_name, step_duration in timing_breakdown.items():
+            self._record_timing(f'pointcloud_{sub_key}_{step_name}', step_duration)
 
     def pose_update(self) -> None:
+        start_time = time.perf_counter()
+        
         if self._last_t is None:
             return
         transform = self.safe_lookup_transform(
@@ -846,12 +1051,25 @@ class ElevationMappingNode(Node):
         self._map.move_to(trans, rot)
         self._map_t = t
         self._map_q = q
+        
+        duration = time.perf_counter() - start_time
+        self._record_timing('timer_pose_update', duration)
 
     def update_variance(self) -> None:
+        start_time = time.perf_counter()
+        
         self._map.update_variance()
+        
+        duration = time.perf_counter() - start_time
+        self._record_timing('timer_update_variance', duration)
 
     def update_time(self) -> None:
+        start_time = time.perf_counter()
+        
         self._map.update_time()
+        
+        duration = time.perf_counter() - start_time
+        self._record_timing('timer_update_time', duration)
 
     def destroy_node(self) -> None:
         super().destroy_node()
