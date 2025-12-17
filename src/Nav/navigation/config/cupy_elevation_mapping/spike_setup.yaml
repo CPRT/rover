@@ -60,14 +60,14 @@ elevation_mapping_node:
 
     publishers:
       elevation_map_raw:
-        layers: ['elevation', 'traversability', 'variance','rgb']
+        layers: ['elevation']
         basic_layers: ['elevation']
-        fps: 5.0
-      elevation_map_recordable:
-        layers: ['elevation', 'traversability']
-        basic_layers: ['elevation', 'traversability']
-        fps: 2.0
-      elevation_map_filter:
-        layers: ['min_filter', 'smooth', 'inpaint', 'elevation']
-        basic_layers: ['min_filter']
-        fps: 3.0
+        fps: 10.0
+      # elevation_map_recordable:
+      #   layers: ['elevation', 'traversability']
+      #   basic_layers: ['elevation', 'traversability']
+      #   fps: 2.0
+      # elevation_map_filter:
+      #   layers: ['min_filter', 'smooth', 'inpaint', 'elevation']
+      #   basic_layers: ['min_filter']
+      #   fps: 3.0

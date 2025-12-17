@@ -83,6 +83,6 @@ def generate_launch_description():
             localization_cmd,
             # camera_publisher_cmd,
             aruco_detector_cmd,
-            # aruco_localizer_cmd,
+            aruco_localizer_cmd,
         ]
     )
