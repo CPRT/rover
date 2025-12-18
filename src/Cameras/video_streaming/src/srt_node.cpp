@@ -180,20 +180,24 @@ void SrtNode::publish_srt_stats() {
   GstStructure *target_stats = stats;
   const GValue *callers_val = gst_structure_get_value(stats, "callers");
 
-  bool has_valid_callers = (callers_val && GST_VALUE_HOLDS_ARRAY(callers_val) &&
-                            gst_value_array_get_size(callers_val) > 0);
-
-  if (has_valid_callers) {
-    const GValue *first_caller = gst_value_array_get_value(callers_val, 0);
-    if (first_caller && GST_VALUE_HOLDS_STRUCTURE(first_caller)) {
-      target_stats = (GstStructure *)gst_value_get_structure(first_caller);
+  if (callers_val) {
+    GValueArray *arr = (GValueArray *)g_value_get_boxed(callers_val);
+    if (arr && arr->n_values > 0) {
+      GValue *first_val = g_value_array_get_nth(arr, 0);
+      target_stats = (GstStructure *)g_value_get_boxed(first_val);
+    } else {
+      RCLCPP_WARN_THROTTLE(this->get_logger(), *(this->get_clock()), 10,
+                           "No SRT caller stats available currently - (Msg is "
+                           "throttled to 10s)");
+      gst_structure_free(stats);
+      return;
     }
   }
 
   // 1. RTT: milliseconds
-  int rtt_ms = 0;
-  if (gst_structure_get_int(target_stats, "rtt-ms", &rtt_ms)) {
-    msg.rtt = static_cast<double>(rtt_ms);
+  double rtt_ms = 0.0;
+  if (gst_structure_get_double(target_stats, "rtt-ms", &rtt_ms)) {
+    msg.rtt = rtt_ms;
   }
 
   // 2. Bandwidth: Mbps -> bits/sec
