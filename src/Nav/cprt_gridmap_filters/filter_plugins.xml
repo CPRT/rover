@@ -7,4 +7,11 @@
       </description>
     </class>
   </library>
+  <library path="gradient_filter">
+    <class name="cprtGridMapFilters/GradientFilter" type="grid_map::GradientFilter" base_class_type="filters::FilterBase&lt;grid_map::GridMap&gt;">
+      <description>
+        Computes the gradient of a specified layer in the grid map
+      </description>
+    </class>
+  </library>
 </class_libraries>
