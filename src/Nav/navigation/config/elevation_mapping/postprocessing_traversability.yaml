@@ -48,25 +48,18 @@ elevation_mapping:
 
       # Compute Surface normals
       filter4:
-        name: surface_normals
-        type: gridMapFilters/NormalVectorsFilter
+        name: slope_gradient
+        type: cprtGridMapFilters/GradientFilter
         params:
-          # input_layer: elevation_inpainted
           input_layer: elevation_smooth
-          output_layers_prefix: normal_vectors_
-          radius: 0.35 # 1.5 times the map resolution is good
-          normal_vector_positive_axis: z
-
-      # Compute slope from surface normal.
-      filter5:
-        name: slope
-        type: gridMapFilters/MathExpressionFilter
-        params:
           output_layer: slope
-          expression: acos(normal_vectors_z)
+          mode: magnitude
+          stencil: sobel
+          allow_one_sided_edges: true
+
 
       # Compute roughness as absolute difference from map to smoothened map.
-      filter6:
+      filter5:
         name: roughness
         type: gridMapFilters/MathExpressionFilter
         params:
@@ -74,7 +67,7 @@ elevation_mapping:
           expression: abs(elevation - elevation_smooth)
 
       # Compute traversability as normalized weighted sum of slope and roughness.
-      filter7:
+      filter6:
         name: traversability
         type: gridMapFilters/MathExpressionFilter
         params:
@@ -82,7 +75,7 @@ elevation_mapping:
           expression: 0.13 * (slope / 0.6) + 0.24 * (roughness / 0.1) # roughness: 0.3
 
       # Set lower threshold on traversability.
-      filter8:
+      filter7:
         name: traversability_lower_threshold
         type: gridMapFilters/ThresholdFilter
         params:
@@ -92,7 +85,7 @@ elevation_mapping:
           set_to: 0.0
 
       # Set upper threshold on traversability.
-      filter9:
+      filter8:
         name: traversability_upper_threshold
         type: gridMapFilters/ThresholdFilter
         params:
@@ -102,7 +95,7 @@ elevation_mapping:
           set_to: 1.0 # Other uses: .nan, .inf
 
       # Inflate the traversability map to account for the robot's footprint.
-      filter10:
+      filter9:
         name: preserve_cost_inflation_filter
         type: cprtGridMapFilters/PreserveCostInflationFilter
         params:
@@ -112,8 +105,8 @@ elevation_mapping:
           decay_inflation_radius: 0.8 # in m
           decay_rate: 1.2 # See script at /src/cprt_grid_map_filters/scripts/calculate_decay_rate.py to help calculate.
       
-      filter11:
+      filter10:
         name: delete_unnecessary_layers
         type: gridMapFilters/DeletionFilter
         params:
-          layers: [roughness, slope, normal_vectors_x, normal_vectors_y, normal_vectors_z] # List of layers.
+          layers: [roughness, slope,] # List of layers.
