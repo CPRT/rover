@@ -13,11 +13,10 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>std_msgs</depend>
-  <!-- <depend>std_srvs</depend> -->
   <depend>gstreamer-1.0</depend>
   <depend>glib-2.0</depend>
 
-  <build_depend>interfaces</build_depend>
+  <depend>interfaces</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

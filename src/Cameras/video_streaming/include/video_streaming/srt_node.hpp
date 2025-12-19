@@ -4,6 +4,7 @@
 #include "std_msgs/msg/empty.hpp" // I-frame
 #include "std_msgs/msg/int32.hpp" // bitrate
 #include <gst/gst.h>
+#include <interfaces/msg/srt_stats.hpp>
 
 namespace video_streaming {
 
@@ -28,10 +29,16 @@ protected:
   // Parameter callback handle
   rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr param_callback_handle_;
 
+  // SRT Stats publisher
+  rclcpp::Publisher<interfaces::msg::SrtStats>::SharedPtr srt_stats_pub_;
+  rclcpp::TimerBase::SharedPtr srt_stats_timer_;
+
 private:
   void on_bitrate_received(const std_msgs::msg::Int32::SharedPtr msg);
 
   void on_iframe_trigger(const std_msgs::msg::Empty::SharedPtr msg);
+
+  void publish_srt_stats();
 
   rcl_interfaces::msg::SetParametersResult
   on_parameter_change(const std::vector<rclcpp::Parameter> &parameters);
