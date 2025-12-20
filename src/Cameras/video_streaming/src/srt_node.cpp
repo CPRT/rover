@@ -18,6 +18,7 @@ SrtNode::SrtNode(const rclcpp::NodeOptions &options)
   this->declare_parameter<int>("iframe_interval", 0);
   this->declare_parameter<bool>("test_mode", false);
   this->declare_parameter<double>("stats_frequency", 1.0);
+  this->declare_parameter<int>("target_framerate", 30);
 
   param_callback_handle_ = this->add_on_set_parameters_callback(
       std::bind(&SrtNode::on_parameter_change, this, std::placeholders::_1));
@@ -53,6 +54,19 @@ SrtNode::SrtNode(const rclcpp::NodeOptions &options)
   RCLCPP_INFO(get_logger(), "SrtNode constructed and pipeline started.");
 }
 
+SrtNode::~SrtNode() {
+  auto cleanup_element = [](GstElement *&elem) {
+    if (elem) {
+      gst_object_unref(elem);
+      elem = nullptr;
+    }
+  };
+
+  cleanup_element(framerate_caps_);
+  cleanup_element(av1_encoder_);
+  cleanup_element(srt_sink_);
+}
+
 bool SrtNode::create_pipeline() {
   std::string srt_uri = this->get_parameter("srt_uri").as_string();
   int latency_val = this->get_parameter("latency").as_int();
@@ -60,30 +74,40 @@ bool SrtNode::create_pipeline() {
 
   bool test_mode = this->get_parameter("test_mode").as_bool();
 
+  int default_fps = this->get_parameter("target_framerate").as_int();
+
   gchar *desc;
 
   if (test_mode) {
     desc = g_strdup_printf(
-        "videotestsrc is-live=true ! video/x-raw,width=640,height=480 ! "
+        "videotestsrc is-live=true ! "
+        "videorate ! "
+        "capsfilter name=framerate_caps "
+        "caps=video/x-raw,framerate=%d/1 ! "
         "videoconvert ! "
         "x264enc tune=zerolatency bitrate=2000 speed-preset=ultrafast "
         "name=av1_enc ! "
         "rtph264pay ! queue ! "
         "srtsink name=srt_sink uri=%s latency=%d",
-        srt_uri.c_str(), latency_val);
+        default_fps, srt_uri.c_str(), latency_val);
+
     RCLCPP_WARN(this->get_logger(), "Using MAC TEST pipeline description: %s",
                 desc);
 
   } else {
     desc = g_strdup_printf(
+
         "interpipesrc listen-to=detect is-live=true ! "
+        "videorate ! "
+        "capsfilter name=framerate_caps "
+        "caps=video/x-raw,framerate=%d/1 ! "
         "nvvidconv ! "
         "nvv4l2av1enc name=av1_enc insert-seq-hdr=true iframeinterval=%d ! "
         " av1parse ! capsfilter caps=\"video/x-av1, "
         "alignment=obu, parsed=true\" ! "
         "queue ! "
         "srtsink name=srt_sink uri=%s latency=%d sync=false",
-        iframe_interval_val, srt_uri.c_str(), latency_val);
+        default_fps, iframe_interval_val, srt_uri.c_str(), latency_val);
     RCLCPP_INFO(this->get_logger(), "Using PRODUCTION pipeline description: %s",
                 desc);
   }
@@ -110,8 +134,9 @@ bool SrtNode::create_pipeline() {
 
   av1_encoder_ = this->get_element("av1_enc");
   srt_sink_ = this->get_element("srt_sink");
+  framerate_caps_ = get_element("framerate_caps");
 
-  if (!av1_encoder_ || !srt_sink_) {
+  if (!av1_encoder_ || !srt_sink_ || !framerate_caps_) {
     RCLCPP_ERROR(get_logger(), "Failed to get elements by name");
     return false;
   }
@@ -119,6 +144,27 @@ bool SrtNode::create_pipeline() {
   RCLCPP_INFO(this->get_logger(),
               "Pipeline parsed and elements retrieved successfully.");
   return true;
+}
+void SrtNode::change_framerate(int new_fps) {
+  if (!pipeline_) {
+    RCLCPP_WARN(this->get_logger(),
+                "Pipeline not initialized, cannot change framerate.");
+    return;
+  }
+
+  if (!framerate_caps_) {
+    RCLCPP_WARN(this->get_logger(),
+                "framerate_caps_ is null! Check create_pipeline.");
+    return;
+  }
+
+  GstCaps *caps = gst_caps_new_simple("video/x-raw", "framerate",
+                                      GST_TYPE_FRACTION, new_fps, 1, NULL);
+
+  g_object_set(framerate_caps_, "caps", caps, NULL);
+  gst_caps_unref(caps);
+
+  RCLCPP_INFO(this->get_logger(), "Framerate changed to %d fps", new_fps);
 }
 
 rcl_interfaces::msg::SetParametersResult
@@ -128,18 +174,40 @@ SrtNode::on_parameter_change(const std::vector<rclcpp::Parameter> &parameters) {
   result.reason = "success";
 
   for (const auto &param : parameters) {
-    if (param.get_name() == "latency" && srt_sink_) {
-      int val = param.as_int();
-      g_object_set(srt_sink_, "latency", val, NULL);
-      RCLCPP_INFO(this->get_logger(), "Param Update: Latency set to %d", val);
-    } else if (param.get_name() == "iframe_interval" && av1_encoder_) {
-      int val = param.as_int();
+    const std::string &name = param.get_name();
 
-      g_object_set(av1_encoder_, "iframeinterval", val, NULL);
-      RCLCPP_INFO(this->get_logger(), "Param Update: IFrame Interval set to %d",
-                  val);
+    if (name == "latency") {
+      if (srt_sink_) {
+        int val = param.as_int();
+        g_object_set(srt_sink_, "latency", val, NULL);
+        RCLCPP_INFO(this->get_logger(), "Param Update: Latency set to %d", val);
+      }
+      continue;
+    }
+
+    if (name == "iframe_interval") {
+      if (av1_encoder_) {
+        int val = param.as_int();
+        g_object_set(av1_encoder_, "iframeinterval", val, NULL);
+        RCLCPP_INFO(this->get_logger(),
+                    "Param Update: IFrame Interval set to %d", val);
+      }
+      continue;
+    }
+
+    if (name == "target_framerate") {
+      int val = param.as_int();
+      if (val > 0 && val <= 60) {
+        change_framerate(val);
+      } else {
+        result.successful = false;
+        result.reason = "Framerate out of range";
+        RCLCPP_WARN(this->get_logger(), "Ignored invalid framerate: %d", val);
+      }
+      continue;
     }
   }
+
   return result;
 }
 

@@ -11,7 +11,7 @@ namespace video_streaming {
 class SrtNode : public BaseVideoNode {
 public:
   explicit SrtNode(const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
-  ~SrtNode() override = default;
+  ~SrtNode() override;
 
 protected:
   // (interpipesrc -> nvvidconv -> nvv4l2av1enc -> srtsink)
@@ -19,6 +19,7 @@ protected:
 
   GstElement *av1_encoder_ = nullptr;
   GstElement *srt_sink_ = nullptr;
+  GstElement *framerate_caps_ = nullptr;
 
   // bitrate
   rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr bitrate_sub_;
@@ -39,6 +40,8 @@ private:
   void on_iframe_trigger(const std_msgs::msg::Empty::SharedPtr msg);
 
   void publish_srt_stats();
+
+  void change_framerate(int new_fps);
 
   rcl_interfaces::msg::SetParametersResult
   on_parameter_change(const std::vector<rclcpp::Parameter> &parameters);
