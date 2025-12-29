@@ -14,8 +14,8 @@ network-type=0                  # detector
 infer-dims=3;640;640
 batch-size=1
 process-mode=1
-network-mode=0                  
-interval=2
+network-mode=2
+interval=1
 
 
 num-detected-classes=1
@@ -35,4 +35,4 @@ output-blob-names=output0
 [class-attrs-all]
 nms-iou-threshold=0.45
 pre-cluster-threshold=0.25
-topk=300
+topk=1
