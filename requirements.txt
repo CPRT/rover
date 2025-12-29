@@ -14,3 +14,6 @@ RPi.GPIO
 rpi-hardware-pwm
 Jetson.GPIO
 python-can
+ultralytics
+onnx
+onnxruntime
