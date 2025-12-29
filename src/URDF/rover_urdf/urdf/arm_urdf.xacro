@@ -33,13 +33,16 @@
         </material>
         </visual>
         <collision>
-        <origin
-            xyz="0 0 0"
-            rpy="0 0 0" />
-        <geometry>
-            <mesh
-            filename="package://rover_urdf/meshes/Link_1.STL" />
-        </geometry>
+            <origin xyz="-0.028000 0.051000 -0.060000" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.020000" length="0.120000"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 0.000000 0.014100" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.120000 0.212500 0.037300"/>
+            </geometry>
         </collision>
     </link>
     <link
@@ -73,13 +76,34 @@
         </material>
         </visual>
         <collision>
-        <origin
-            xyz="0 0 0"
-            rpy="0 0 0" />
-        <geometry>
-            <mesh
-            filename="package://rover_urdf/meshes/Link_2.STL" />
-        </geometry>
+            <origin xyz="0.000000 -0.075000 0.110725" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.057833" length="0.122902"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 0.059878 0.110725" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.057833" length="0.032902"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 0.000000 0.000725" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.106750 0.104676 0.020363"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 0.046000 0.040725" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.106750 0.014676 0.070363"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 -0.046000 0.040725" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.106750 0.014676 0.070363"/>
+            </geometry>
         </collision>
     </link>
     <joint
@@ -126,13 +150,64 @@
         </material>
         </visual>
         <collision>
-        <origin
-            xyz="0 0 0"
-            rpy="0 0 0" />
-        <geometry>
-            <mesh
-            filename="package://rover_urdf/meshes/Link_3.STL" />
-        </geometry>
+            <origin xyz="0.070000 -0.034283 0.592000" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.050000" length="0.055272"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.070000 -0.094283 0.592000" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.015548" length="0.125272"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.070000 0.065717 0.592000" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.025548" length="0.045272"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.070000 0.040000 0.592000" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.045548" length="0.005272"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.020000 -0.015000 0.519808" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.048322 0.009363 0.148954"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.020000 0.039500 0.519808" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.048322 0.009363 0.148954"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 0.012000 0.199808" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.048322 0.060000 0.488954"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.008289 0.045717 -0.000192" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.035548" length="0.020000"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 -0.034283 0.199808" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.058322 0.029363 0.168954"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="-0.001711 0.055717 0.199808" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.078322 0.029363 0.238954"/>
+            </geometry>
         </collision>
     </link>
     <joint
@@ -179,13 +254,22 @@
         </material>
         </visual>
         <collision>
-        <origin
-            xyz="0 0 0"
-            rpy="0 0 0" />
-        <geometry>
-            <mesh
-            filename="package://rover_urdf/meshes/Link_4.STL" />
-        </geometry>
+            <origin xyz="0.000000 0.011650 0.024000" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.058549 0.030000 0.101500"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="-0.053000 0.011650 -0.016000" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.021000" length="0.145333"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.002098 0.011650 0.070000" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.038000" length="0.015333"/>
+            </geometry>
         </collision>
     </link>
     <joint
@@ -232,13 +316,34 @@
         </material>
         </visual>
         <collision>
-        <origin
-            xyz="0 0 0"
-            rpy="0 0 0" />
-        <geometry>
-            <mesh
-            filename="package://rover_urdf/meshes/Link_5.STL" />
-        </geometry>
+            <origin xyz="-0.000000 0.000000 0.211681" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.015267" length="0.397787"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="-0.000000 0.000000 0.001681" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.035267" length="0.007787"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="-0.000000 0.049800 0.458000" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.010100" length="0.107787"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 0.019800 0.458000" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.045267" length="0.027787"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="-0.000000 -0.040200 0.451681" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.022900 0.008300 0.055841"/>
+            </geometry>
         </collision>
     </link>
     <joint
@@ -285,13 +390,28 @@
         </material>
         </visual>
         <collision>
-        <origin
-            xyz="0 0 0"
-            rpy="0 0 0" />
-        <geometry>
-            <mesh
-            filename="package://rover_urdf/meshes/Link_6.STL" />
-        </geometry>
+            <origin xyz="-0.017000 -0.069000 0.025888" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.011667" length="0.065592"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="-0.017000 -0.069000 0.063000" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.014000" length="0.009000"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 -0.028000 0.030000" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.070000 0.015000 0.034194"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 -0.028000 -0.000000" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.021667" length="0.015592"/>
+            </geometry>
         </collision>
     </link>
     <joint
@@ -338,13 +458,28 @@
         </material>
         </visual>
         <collision>
-        <origin
-            xyz="0 0 0"
-            rpy="0 0 0" />
-        <geometry>
-            <mesh
-            filename="package://rover_urdf/meshes/EndEffector.STL" />
-        </geometry>
+            <origin xyz="-0.000000 0.000000 0.270000" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.032381 0.240516 0.145815"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 0.000000 0.202653" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.052381 0.240516 0.015815"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="-0.000000 0.000000 0.152653" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.062381 0.060516 0.095815"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="-0.000000 0.000000 0.070000" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.041587" length="0.051087"/>
+            </geometry>
         </collision>
     </link>
     <joint
