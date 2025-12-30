@@ -277,7 +277,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/Wheel_Front_Right.STL" />
+          filename="package://rover_urdf/meshes/Wheel_Right.STL" />
       </geometry>
       <material
         name="">
@@ -445,7 +445,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/Wheel_Back_Right.STL" />
+          filename="package://rover_urdf/meshes/Wheel_Right.STL" />
       </geometry>
       <material
         name="">
@@ -664,7 +664,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/Wheel_Front_Left.STL" />
+          filename="package://rover_urdf/meshes/Wheel_Left.STL" />
       </geometry>
       <material
         name="">
@@ -832,7 +832,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/Wheel_Back_Left.STL" />
+          filename="package://rover_urdf/meshes/Wheel_Left.STL" />
       </geometry>
       <material
         name="">
@@ -932,7 +932,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/GPS_Right.STL" />
+          filename="package://rover_urdf/meshes/GPS.STL" />
       </geometry>
       <material
         name="">
@@ -988,7 +988,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/GPS_Left.STL" />
+          filename="package://rover_urdf/meshes/GPS.STL" />
       </geometry>
       <material
         name="">
@@ -1044,7 +1044,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/Antenna_Front.STL" />
+          filename="package://rover_urdf/meshes/Antenna.STL" />
       </geometry>
       <material
         name="">
@@ -1094,7 +1094,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/Antenna_Back.STL" />
+          filename="package://rover_urdf/meshes/Antenna.STL" />
       </geometry>
       <material
         name="">
