@@ -6,6 +6,7 @@
 #include <mutex>
 #include <optional>
 #include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/empty.hpp>
 #include <string>
 #include <thread>
 
@@ -30,7 +31,16 @@ protected:
 
   virtual bool start_pipeline();
 
+  virtual bool stop_pipeline();
+
+  virtual bool pause_pipeline();
+
+  virtual bool resume_pipeline();
+
   // Mutex to protect `pipeline_` access across threads
   mutable std::mutex pipeline_mutex_;
   static std::once_flag gst_init_once_flag_;
+
+private:
+  rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr restart_sub_;
 };

@@ -76,13 +76,13 @@ bool SrtNode::create_pipeline() {
 
   } else {
     desc = g_strdup_printf(
-        "interpipesrc listen-to=detect ! "
+        "interpipesrc listen-to=detect is-live=true ! "
         "nvvidconv ! "
         "nvv4l2av1enc name=av1_enc insert-seq-hdr=true iframeinterval=%d ! "
         " av1parse ! capsfilter caps=\"video/x-av1, "
         "alignment=obu, parsed=true\" ! "
         "queue ! "
-        "srtsink name=srt_sink uri=%s latency=%d",
+        "srtsink name=srt_sink uri=%s latency=%d sync=false",
         iframe_interval_val, srt_uri.c_str(), latency_val);
     RCLCPP_INFO(this->get_logger(), "Using PRODUCTION pipeline description: %s",
                 desc);
@@ -145,8 +145,10 @@ SrtNode::on_parameter_change(const std::vector<rclcpp::Parameter> &parameters) {
 
 void SrtNode::on_bitrate_received(const std_msgs::msg::Int32::SharedPtr msg) {
   if (av1_encoder_) {
+    pause_pipeline();
     g_object_set(av1_encoder_, "bitrate", msg->data, NULL);
-    RCLCPP_INFO(this->get_logger(), "Bitrate set to %d", msg->data);
+    resume_pipeline();
+    RCLCPP_DEBUG(this->get_logger(), "Bitrate set to %d", msg->data);
   }
 }
 
