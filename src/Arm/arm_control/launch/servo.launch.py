@@ -40,25 +40,15 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
     Launch a self-contained MoveIt demo.
 
     Includes:
-      * robot_state_publisher
       * move_group
-      * moveit_rviz
+      * moveit_rviz (Optional)
       * ros2_control_node + controller spawners
     """
     if launch_package_path is None:
         launch_package_path = moveit_config.package_path
 
     ld = LaunchDescription()
-
-    # Launch arguments
-    ld.add_action(DeclareBooleanLaunchArg("use_composition", default_value=True))
-    ld.add_action(
-        DeclareBooleanLaunchArg("use_intra_process_comms", default_value=True)
-    )
     ld.add_action(DeclareBooleanLaunchArg("use_rviz", default_value=False))
-
-    use_composition = LaunchConfiguration("use_composition")
-    use_intra_process_comms = LaunchConfiguration("use_intra_process_comms")
 
     # Move group
     ld.add_action(generate_move_group_launch(moveit_config))
@@ -79,7 +69,6 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
     parameters = [
         {
             "moveit_servo": servo_yaml,
-            "use_intra_process_comms": use_intra_process_comms,
             "publish_frequency": 15.0,
         },
         moveit_config.robot_description,
@@ -95,62 +84,16 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
         parameters=parameters,
         remappings=[("/controller_manager/robot_description", "/robot_description")],
     )
-
-    # Non-composed nodes
-    load_nodes = GroupAction(
-        condition=IfCondition(PythonExpression(["not ", use_composition])),
-        actions=[
-            Node(
-                package="moveit_servo",
-                executable="servo_node_main",
-                parameters=parameters,
-                output="screen",
-            ),
-            Node(
-                package="robot_state_publisher",
-                executable="robot_state_publisher",
-                name="robot_state_publisher",
-                parameters=parameters,
-            ),
-        ],
-    )
-
-    # Composable container
-    container_name = "arm_container"
-    container = ComposableNodeContainer(
-        namespace="",
-        package="rclcpp_components",
-        executable="component_container_isolated",
-        name=container_name,
+    servo_node = Node(
+        package="moveit_servo",
+        executable="servo_node_main",
+        parameters=parameters,
         output="screen",
-        condition=IfCondition(use_composition),
-    )
-
-    # Composable nodes (loaded into container when composition is enabled)
-    load_composable_nodes = LoadComposableNodes(
-        condition=IfCondition(use_composition),
-        target_container=container_name,
-        composable_node_descriptions=[
-            ComposableNode(
-                package="moveit_servo",
-                plugin="moveit_servo::ServoNode",
-                name="servo_node",
-                parameters=parameters,
-            ),
-            ComposableNode(
-                package="robot_state_publisher",
-                plugin="robot_state_publisher::RobotStatePublisher",
-                name="robot_state_publisher",
-                parameters=parameters,
-            ),
-        ],
     )
 
     # Add actions to launch description
     ld.add_action(control_node)
-    ld.add_action(load_nodes)
-    ld.add_action(container)
-    ld.add_action(load_composable_nodes)
+    ld.add_action(servo_node)
     return ld
 
 
