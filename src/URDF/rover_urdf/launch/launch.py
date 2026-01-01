@@ -35,16 +35,16 @@ def generate_launch_description():
     )
     declare_use_joint_state_pub_cmd = DeclareLaunchArgument(
         "use_joint_state_pub",
-        default_value="True",
+        default_value="False",
         description="Whether to start the joint state publisher",
     )
     declare_use_rviz_cmd = DeclareLaunchArgument(
-        "use_rviz", default_value="True", description="Whether to start RVIZ"
+        "use_rviz", default_value="False", description="Whether to start RVIZ"
     )
 
     declare_urdf_cmd = DeclareLaunchArgument(
         "urdf_file",
-        default_value=os.path.join(bringup_dir, "urdf", "rover_urdf.urdf"),
+        default_value=os.path.join(bringup_dir, "urdf", "rover_urdf.urdf.xacro"),
         description="Whether to start RVIZ",
     )
     start_robot_state_publisher_cmd = Node(

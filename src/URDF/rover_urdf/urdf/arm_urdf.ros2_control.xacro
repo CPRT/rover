@@ -4,7 +4,7 @@
     <ros2_control name="${name}" type="system">
       <hardware>
         <!-- By default, set up controllers for simulation. This won't work on real hardware -->
-        <!--<plugin>mock_components/GenericSystem</plugin> !-->
+        <!-- <plugin>mock_components/GenericSystem</plugin> -->
         <plugin>ros2_control_rover_arm/RoverArmHardwareInterface</plugin>
       </hardware>
       <joint name="Joint_1">
@@ -20,7 +20,7 @@
         <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">false</param>
         <param name="invert_sensor">true</param>
-        <command_interface name="velocity"/>
+        <command_interface name="position"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>
       </joint>
@@ -37,7 +37,7 @@
         <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">false</param>
         <param name="invert_sensor">true</param>
-        <command_interface name="velocity"/>
+        <command_interface name="position"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>
       </joint>
@@ -54,7 +54,7 @@
         <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">true</param>
         <param name="invert_sensor">false</param>
-        <command_interface name="velocity"/>
+        <command_interface name="position"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>
       </joint>
@@ -71,7 +71,7 @@
         <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">false</param>
         <param name="invert_sensor">false</param>
-        <command_interface name="velocity"/>
+        <command_interface name="position"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>
       </joint>
@@ -88,7 +88,7 @@
         <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">true</param>
         <param name="invert_sensor">true</param>
-        <command_interface name="velocity"/>
+        <command_interface name="position"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>
       </joint>
@@ -105,7 +105,7 @@
         <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">true</param>
         <param name="invert_sensor">true</param>
-        <command_interface name="velocity"/>
+        <command_interface name="position"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>
       </joint>

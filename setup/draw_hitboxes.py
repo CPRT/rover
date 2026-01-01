@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-'''
+"""
 Use to draw simple box/cylinder hitboxes over an STL mesh, then export URDF <collision> blocks.
-'''
+"""
 import argparse
 import math
 import numpy as np
@@ -18,15 +18,9 @@ def rpy_to_R(roll, pitch, yaw):
     cp, sp = math.cos(pitch), math.sin(pitch)
     cy, sy = math.cos(yaw), math.sin(yaw)
 
-    Rx = np.array([[1, 0, 0],
-                   [0, cr, -sr],
-                   [0, sr, cr]], dtype=float)
-    Ry = np.array([[cp, 0, sp],
-                   [0, 1, 0],
-                   [-sp, 0, cp]], dtype=float)
-    Rz = np.array([[cy, -sy, 0],
-                   [sy,  cy, 0],
-                   [0,   0,  1]], dtype=float)
+    Rx = np.array([[1, 0, 0], [0, cr, -sr], [0, sr, cr]], dtype=float)
+    Ry = np.array([[cp, 0, sp], [0, 1, 0], [-sp, 0, cp]], dtype=float)
+    Rz = np.array([[cy, -sy, 0], [sy, cy, 0], [0, 0, 1]], dtype=float)
     return Rz @ Ry @ Rx
 
 
@@ -77,7 +71,9 @@ class Primitive:
         if self.type == "box":
             m = trimesh.creation.box(extents=self.size)
         else:
-            m = trimesh.creation.cylinder(radius=self.radius, height=self.length, sections=64)
+            m = trimesh.creation.cylinder(
+                radius=self.radius, height=self.length, sections=64
+            )
 
         T = make_T(self.xyz, self.rpy)
         m.apply_transform(T)
@@ -103,7 +99,9 @@ class HitboxEditor(QtWidgets.QMainWindow):
         pv_mesh = pv.wrap(mesh.as_open3d.triangle_mesh) if False else None  # not used
         # Create PyVista PolyData directly
         verts = mesh.vertices
-        faces = np.hstack([np.full((mesh.faces.shape[0], 1), 3), mesh.faces]).astype(np.int64)
+        faces = np.hstack([np.full((mesh.faces.shape[0], 1), 3), mesh.faces]).astype(
+            np.int64
+        )
         faces = faces.reshape(-1)
         self.pv_stl = pv.PolyData(verts, faces)
 
@@ -138,25 +136,65 @@ class HitboxEditor(QtWidgets.QMainWindow):
         form = QtWidgets.QFormLayout()
         pl.addLayout(form)
 
-        self.x = QtWidgets.QDoubleSpinBox(); self.x.setRange(-1000, 1000); self.x.setDecimals(6); self.x.setSingleStep(0.01)
-        self.y = QtWidgets.QDoubleSpinBox(); self.y.setRange(-1000, 1000); self.y.setDecimals(6); self.y.setSingleStep(0.01)
-        self.z = QtWidgets.QDoubleSpinBox(); self.z.setRange(-1000, 1000); self.z.setDecimals(6); self.z.setSingleStep(0.01)
+        self.x = QtWidgets.QDoubleSpinBox()
+        self.x.setRange(-1000, 1000)
+        self.x.setDecimals(6)
+        self.x.setSingleStep(0.01)
+        self.y = QtWidgets.QDoubleSpinBox()
+        self.y.setRange(-1000, 1000)
+        self.y.setDecimals(6)
+        self.y.setSingleStep(0.01)
+        self.z = QtWidgets.QDoubleSpinBox()
+        self.z.setRange(-1000, 1000)
+        self.z.setDecimals(6)
+        self.z.setSingleStep(0.01)
 
-        self.roll  = QtWidgets.QDoubleSpinBox(); self.roll.setRange(-math.pi, math.pi); self.roll.setDecimals(6); self.roll.setSingleStep(0.01)
-        self.pitch = QtWidgets.QDoubleSpinBox(); self.pitch.setRange(-math.pi, math.pi); self.pitch.setDecimals(6); self.pitch.setSingleStep(0.01)
-        self.yaw   = QtWidgets.QDoubleSpinBox(); self.yaw.setRange(-math.pi, math.pi); self.yaw.setDecimals(6); self.yaw.setSingleStep(0.01)
+        self.roll = QtWidgets.QDoubleSpinBox()
+        self.roll.setRange(-math.pi, math.pi)
+        self.roll.setDecimals(6)
+        self.roll.setSingleStep(0.01)
+        self.pitch = QtWidgets.QDoubleSpinBox()
+        self.pitch.setRange(-math.pi, math.pi)
+        self.pitch.setDecimals(6)
+        self.pitch.setSingleStep(0.01)
+        self.yaw = QtWidgets.QDoubleSpinBox()
+        self.yaw.setRange(-math.pi, math.pi)
+        self.yaw.setDecimals(6)
+        self.yaw.setSingleStep(0.01)
 
-        self.sx = QtWidgets.QDoubleSpinBox(); self.sx.setRange(0.0001, 1000); self.sx.setDecimals(6); self.sx.setSingleStep(0.01)
-        self.sy = QtWidgets.QDoubleSpinBox(); self.sy.setRange(0.0001, 1000); self.sy.setDecimals(6); self.sy.setSingleStep(0.01)
-        self.sz = QtWidgets.QDoubleSpinBox(); self.sz.setRange(0.0001, 1000); self.sz.setDecimals(6); self.sz.setSingleStep(0.01)
+        self.sx = QtWidgets.QDoubleSpinBox()
+        self.sx.setRange(0.0001, 1000)
+        self.sx.setDecimals(6)
+        self.sx.setSingleStep(0.01)
+        self.sy = QtWidgets.QDoubleSpinBox()
+        self.sy.setRange(0.0001, 1000)
+        self.sy.setDecimals(6)
+        self.sy.setSingleStep(0.01)
+        self.sz = QtWidgets.QDoubleSpinBox()
+        self.sz.setRange(0.0001, 1000)
+        self.sz.setDecimals(6)
+        self.sz.setSingleStep(0.01)
 
-        self.radius = QtWidgets.QDoubleSpinBox(); self.radius.setRange(0.0001, 1000); self.radius.setDecimals(6); self.radius.setSingleStep(0.01)
-        self.length = QtWidgets.QDoubleSpinBox(); self.length.setRange(0.0001, 1000); self.length.setDecimals(6); self.length.setSingleStep(0.01)
+        self.radius = QtWidgets.QDoubleSpinBox()
+        self.radius.setRange(0.0001, 1000)
+        self.radius.setDecimals(6)
+        self.radius.setSingleStep(0.01)
+        self.length = QtWidgets.QDoubleSpinBox()
+        self.length.setRange(0.0001, 1000)
+        self.length.setDecimals(6)
+        self.length.setSingleStep(0.01)
 
-        form.addRow("x", self.x); form.addRow("y", self.y); form.addRow("z", self.z)
-        form.addRow("roll", self.roll); form.addRow("pitch", self.pitch); form.addRow("yaw", self.yaw)
-        form.addRow("box sx", self.sx); form.addRow("box sy", self.sy); form.addRow("box sz", self.sz)
-        form.addRow("cyl radius", self.radius); form.addRow("cyl length", self.length)
+        form.addRow("x", self.x)
+        form.addRow("y", self.y)
+        form.addRow("z", self.z)
+        form.addRow("roll", self.roll)
+        form.addRow("pitch", self.pitch)
+        form.addRow("yaw", self.yaw)
+        form.addRow("box sx", self.sx)
+        form.addRow("box sy", self.sy)
+        form.addRow("box sz", self.sz)
+        form.addRow("cyl radius", self.radius)
+        form.addRow("cyl length", self.length)
 
         # Export
         self.btn_export = QtWidgets.QPushButton("Copy URDF collisions to clipboard")
@@ -173,8 +211,19 @@ class HitboxEditor(QtWidgets.QMainWindow):
         self.btn_del.clicked.connect(self.delete_selected)
         self.listw.currentRowChanged.connect(self.select_index)
 
-        for w in [self.x, self.y, self.z, self.roll, self.pitch, self.yaw,
-                  self.sx, self.sy, self.sz, self.radius, self.length]:
+        for w in [
+            self.x,
+            self.y,
+            self.z,
+            self.roll,
+            self.pitch,
+            self.yaw,
+            self.sx,
+            self.sy,
+            self.sz,
+            self.radius,
+            self.length,
+        ]:
             w.valueChanged.connect(self.on_fields_changed)
 
         self.btn_export.clicked.connect(self.export_urdf)
@@ -182,8 +231,19 @@ class HitboxEditor(QtWidgets.QMainWindow):
         self.update_fields_enabled(False)
 
     def update_fields_enabled(self, enabled):
-        for w in [self.x, self.y, self.z, self.roll, self.pitch, self.yaw,
-                  self.sx, self.sy, self.sz, self.radius, self.length]:
+        for w in [
+            self.x,
+            self.y,
+            self.z,
+            self.roll,
+            self.pitch,
+            self.yaw,
+            self.sx,
+            self.sy,
+            self.sz,
+            self.radius,
+            self.length,
+        ]:
             w.setEnabled(enabled)
 
     def add_box(self):
@@ -195,8 +255,8 @@ class HitboxEditor(QtWidgets.QMainWindow):
         p.size = np.maximum(ext / 4.0, 0.02)
         self.prims.append(p)
         self.listw.addItem(f"box_{len(self.prims)-1}")
-        self.spawn_actor(len(self.prims)-1)
-        self.listw.setCurrentRow(len(self.prims)-1)
+        self.spawn_actor(len(self.prims) - 1)
+        self.listw.setCurrentRow(len(self.prims) - 1)
 
     def add_cyl(self):
         p = Primitive("cyl")
@@ -206,15 +266,19 @@ class HitboxEditor(QtWidgets.QMainWindow):
         p.radius = float(max(min(ext) / 6.0, 0.01))
         self.prims.append(p)
         self.listw.addItem(f"cyl_{len(self.prims)-1}")
-        self.spawn_actor(len(self.prims)-1)
-        self.listw.setCurrentRow(len(self.prims)-1)
+        self.spawn_actor(len(self.prims) - 1)
+        self.listw.setCurrentRow(len(self.prims) - 1)
 
     def spawn_actor(self, idx):
         prim = self.prims[idx]
         tm = prim.build_mesh()
 
         verts = tm.vertices
-        faces = np.hstack([np.full((tm.faces.shape[0], 1), 3), tm.faces]).astype(np.int64).reshape(-1)
+        faces = (
+            np.hstack([np.full((tm.faces.shape[0], 1), 3), tm.faces])
+            .astype(np.int64)
+            .reshape(-1)
+        )
         pd = pv.PolyData(verts, faces)
 
         actor = self.plotter.add_mesh(pd, opacity=0.35)
@@ -228,7 +292,11 @@ class HitboxEditor(QtWidgets.QMainWindow):
         pd, actor = self.actors[idx]
         # Update points and faces (faces constant for box/cyl? safer to rebuild)
         verts = tm.vertices
-        faces = np.hstack([np.full((tm.faces.shape[0], 1), 3), tm.faces]).astype(np.int64).reshape(-1)
+        faces = (
+            np.hstack([np.full((tm.faces.shape[0], 1), 3), tm.faces])
+            .astype(np.int64)
+            .reshape(-1)
+        )
         new_pd = pv.PolyData(verts, faces)
 
         # Remove old actor and re-add (simple + reliable)
@@ -267,8 +335,19 @@ class HitboxEditor(QtWidgets.QMainWindow):
         prim = self.prims[idx]
 
         # Block signals while populating fields
-        ws = [self.x, self.y, self.z, self.roll, self.pitch, self.yaw,
-              self.sx, self.sy, self.sz, self.radius, self.length]
+        ws = [
+            self.x,
+            self.y,
+            self.z,
+            self.roll,
+            self.pitch,
+            self.yaw,
+            self.sx,
+            self.sy,
+            self.sz,
+            self.radius,
+            self.length,
+        ]
         for w in ws:
             w.blockSignals(True)
 
@@ -303,11 +382,17 @@ class HitboxEditor(QtWidgets.QMainWindow):
             return
         prim = self.prims[self.selected]
 
-        prim.xyz = np.array([self.x.value(), self.y.value(), self.z.value()], dtype=float)
-        prim.rpy = np.array([self.roll.value(), self.pitch.value(), self.yaw.value()], dtype=float)
+        prim.xyz = np.array(
+            [self.x.value(), self.y.value(), self.z.value()], dtype=float
+        )
+        prim.rpy = np.array(
+            [self.roll.value(), self.pitch.value(), self.yaw.value()], dtype=float
+        )
 
         if prim.type == "box":
-            prim.size = np.array([self.sx.value(), self.sy.value(), self.sz.value()], dtype=float)
+            prim.size = np.array(
+                [self.sx.value(), self.sy.value(), self.sz.value()], dtype=float
+            )
         else:
             prim.radius = float(self.radius.value())
             prim.length = float(self.length.value())
@@ -321,13 +406,19 @@ class HitboxEditor(QtWidgets.QMainWindow):
         cb = QtWidgets.QApplication.clipboard()
         cb.setText(out)
 
-        QtWidgets.QMessageBox.information(self, "Copied", "URDF <collision> blocks copied to clipboard.")
+        QtWidgets.QMessageBox.information(
+            self, "Copied", "URDF <collision> blocks copied to clipboard."
+        )
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Interactive collision primitive drawer for an STL.")
+    ap = argparse.ArgumentParser(
+        description="Interactive collision primitive drawer for an STL."
+    )
     ap.add_argument("stl", help="Path to STL file")
-    ap.add_argument("--scale", type=float, default=1.0, help="Scale factor (e.g. 0.001 for mm->m)")
+    ap.add_argument(
+        "--scale", type=float, default=1.0, help="Scale factor (e.g. 0.001 for mm->m)"
+    )
     args = ap.parse_args()
 
     app = QtWidgets.QApplication([])

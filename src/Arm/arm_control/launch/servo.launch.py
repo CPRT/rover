@@ -75,7 +75,7 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
     )
 
     # Common parameters
-    servo_yaml = load_yaml("arm_srdf", "config/arm_config.yaml")
+    servo_yaml = load_yaml("arm_control", "config/arm_config.yaml")
     parameters = [
         {
             "moveit_servo": servo_yaml,
@@ -155,9 +155,15 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
 
 
 def generate_launch_description() -> LaunchDescription:
+    urdf_pkg = get_package_share_directory("rover_urdf")
+    urdf_path = os.path.join(
+        urdf_pkg,
+        "urdf",
+        "rover_urdf.urdf.xacro",
+    )
     moveit_config = (
-        MoveItConfigsBuilder("arm_urdf", package_name="arm_srdf")
-        .robot_description(file_path="config/arm_urdf.urdf.xacro")
+        MoveItConfigsBuilder("rover_urdf", package_name="arm_control")
+        .robot_description(file_path=urdf_path)
         .to_moveit_configs()
     )
     return arm_launch(moveit_config)
