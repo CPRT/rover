@@ -5,6 +5,7 @@
 #include "std_msgs/msg/int32.hpp" // bitrate
 #include <gst/gst.h>
 #include <interfaces/msg/srt_stats.hpp>
+#include <chrono> // timers
 
 namespace video_streaming {
 
@@ -45,6 +46,19 @@ private:
 
   rcl_interfaces::msg::SetParametersResult
   on_parameter_change(const std::vector<rclcpp::Parameter> &parameters);
+  
+  // Backoff mechanism to avoid excessive I-frame requests
+  void check_packet_loss_and_trigger(int64_t current_total_dropped);
+
+  struct BackoffState {
+      int current_delay_ms = 200;      
+      int MAX_DELAY_MS = 5000;
+      int RESET_MS = 10000;
+
+      std::chrono::steady_clock::time_point last_trigger_time;
+      std::chrono::steady_clock::time_point last_loss_time;
+      int64_t last_total_dropped_pkts = 0;
+  } backoff_state_;
 };
 
 } // namespace video_streaming

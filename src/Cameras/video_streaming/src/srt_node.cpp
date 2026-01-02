@@ -13,12 +13,25 @@ SrtNode::SrtNode(const rclcpp::NodeOptions &options)
     : BaseVideoNode("srt_node", options) {
   RCLCPP_INFO(this->get_logger(), "Initializing SrtNode...");
 
+  // Set last trigger time to 1 hour ago so the first error triggers immediately
+  backoff_state_.last_trigger_time =
+      std::chrono::steady_clock::now() - std::chrono::hours(1);
+  backoff_state_.last_loss_time = std::chrono::steady_clock::now();
+  backoff_state_.last_total_dropped_pkts = 0;
+  backoff_state_.current_delay_ms = 200;
+
   this->declare_parameter<std::string>("srt_uri", "srt://:7001");
   this->declare_parameter<int>("latency", 100);
   this->declare_parameter<int>("iframe_interval", 0);
   this->declare_parameter<bool>("test_mode", false);
   this->declare_parameter<double>("stats_frequency", 1.0);
   this->declare_parameter<int>("target_framerate", 30);
+  this->declare_parameter<int>("backoff_max_delay_ms", 5000);
+  this->declare_parameter<int>("backoff_reset_ms", 10000);
+
+  backoff_state_.max_delay_ms =
+      this->get_parameter("backoff_max_delay_ms").as_int();
+  backoff_state_.reset_ms = this->get_parameter("backoff_reset_ms").as_int();
 
   param_callback_handle_ = this->add_on_set_parameters_callback(
       std::bind(&SrtNode::on_parameter_change, this, std::placeholders::_1));
@@ -206,6 +219,26 @@ SrtNode::on_parameter_change(const std::vector<rclcpp::Parameter> &parameters) {
       }
       continue;
     }
+
+    if (name == "backoff_max_delay_ms") {
+      int val = param.as_int();
+      if (val > 0) {
+        backoff_state_.max_delay_ms = val;
+        RCLCPP_INFO(this->get_logger(),
+                    "Param Update: Backoff Max Delay set to %d ms", val);
+      }
+      continue;
+    }
+
+    if (name == "backoff_reset_ms") {
+      int val = param.as_int();
+      if (val > 0) {
+        backoff_state_.reset_ms = val;
+        RCLCPP_INFO(this->get_logger(),
+                    "Param Update: Backoff Reset Time set to %d ms", val);
+      }
+      continue;
+    }
   }
 
   return result;
@@ -222,16 +255,69 @@ void SrtNode::on_bitrate_received(const std_msgs::msg::Int32::SharedPtr msg) {
 
 void SrtNode::on_iframe_trigger(const std_msgs::msg::Empty::SharedPtr msg) {
   (void)msg;
-  if (av1_encoder_) {
-    GstEvent *event = gst_video_event_new_downstream_force_key_unit(
-        GST_CLOCK_TIME_NONE, GST_CLOCK_TIME_NONE, GST_CLOCK_TIME_NONE, TRUE, 0);
 
-    if (gst_element_send_event(av1_encoder_, event)) {
-      RCLCPP_INFO(this->get_logger(), "I-Frame triggered (Event sent)");
+  if (srt_sink_) {
+
+    GstEvent *event = gst_video_event_new_upstream_force_key_unit(
+        GST_CLOCK_TIME_NONE, TRUE, 0);
+
+    if (gst_element_send_event(srt_sink_, event)) {
+      RCLCPP_INFO(this->get_logger(),
+                  "Manual I-Frame triggered (Upstream Event sent)");
     } else {
-      RCLCPP_WARN(this->get_logger(), "Failed to trigger I-Frame");
+      RCLCPP_WARN(this->get_logger(),
+                  "Failed to trigger Manual I-Frame (Event rejected)");
     }
+  } else {
+    RCLCPP_WARN(this->get_logger(), "Cannot trigger I-Frame: SRT Sink is null");
   }
+}
+
+void SrtNode::check_packet_loss_and_trigger(int64_t current_total_dropped) {
+  auto now = std::chrono::steady_clock::now();
+
+  if (current_total_dropped <= backoff_state_.last_total_dropped_pkts) {
+    auto time_since_loss =
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            now - backoff_state_.last_loss_time)
+            .count();
+
+    if (time_since_loss > backoff_state_.reset_ms) {
+      if (backoff_state_.current_delay_ms != 200) {
+        RCLCPP_DEBUG(this->get_logger(),
+                     "SRT connection stable. Resetting backoff.");
+      }
+      backoff_state_.current_delay_ms = 200;
+    }
+    return;
+  }
+
+  backoff_state_.last_total_dropped_pkts = current_total_dropped;
+  backoff_state_.last_loss_time = now;
+
+  auto time_since_trigger =
+      std::chrono::duration_cast<std::chrono::milliseconds>(
+          now - backoff_state_.last_trigger_time)
+          .count();
+
+  if (time_since_trigger < backoff_state_.current_delay_ms) {
+    return;
+  }
+
+  RCLCPP_WARN(this->get_logger(),
+              "SRT Packet Drop Detected (%ld total). Requesting I-Frame! (Next "
+              "backoff: %d ms)",
+              current_total_dropped, backoff_state_.current_delay_ms * 2);
+
+  GstEvent *event =
+      gst_video_event_new_upstream_force_key_unit(GST_CLOCK_TIME_NONE, TRUE, 0);
+  if (srt_sink_) {
+    gst_element_send_event(srt_sink_, event);
+  }
+
+  backoff_state_.last_trigger_time = now;
+  backoff_state_.current_delay_ms = std::min(
+      backoff_state_.current_delay_ms * 2, backoff_state_.max_delay_ms);
 }
 
 void SrtNode::publish_srt_stats() {
@@ -292,6 +378,14 @@ void SrtNode::publish_srt_stats() {
   int ret_int = 0;
   if (gst_structure_get_int(target_stats, "packets-retransmitted", &ret_int)) {
     msg.packets_retransmitted = ret_int;
+  }
+
+  int64_t pkt_drop_total = 0;
+
+  if (gst_structure_get_int64(target_stats, "pkt-drop-total",
+                              &pkt_drop_total)) {
+    msg.packet_drop_total = pkt_drop_total;
+    check_packet_loss_and_trigger(pkt_drop_total);
   }
 
   srt_stats_pub_->publish(msg);
