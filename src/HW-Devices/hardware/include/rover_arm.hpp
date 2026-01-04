@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "BaseWrapper.hpp"
 #include "TalonSRXWrapper.hpp"
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/hardware_info.hpp"
@@ -68,7 +69,7 @@ public:
 
 private:
   rclcpp::Node::SharedPtr debug_node_;
-  std::vector<std::shared_ptr<TalonSRXWrapper>> controllers_;
+  std::vector<std::shared_ptr<BaseWrapper>> controllers_;
 };
 
 } // namespace ros2_control_rover_arm

@@ -8,6 +8,7 @@
         <plugin>ros2_control_rover_arm/RoverArmHardwareInterface</plugin>
       </hardware>
       <joint name="Joint_1">
+        <param name="type">TalonSRX</param>
         <param name="can_id">10</param>
         <param name="kP">3.0</param>
         <param name="kI">0.0</param>
@@ -24,6 +25,7 @@
         <state_interface name="velocity"/>
       </joint>
       <joint name="Joint_2">
+        <param name="type">TalonSRX</param>
         <param name="can_id">11</param>
         <param name="kP">10.0</param>
         <param name="kI">0.0</param>
@@ -31,7 +33,7 @@
         <param name="kF">100</param>
         <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">3.0</param>
+        <param name="sensor_offset">-2.7</param>
         <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">false</param>
         <param name="invert_sensor">true</param>
@@ -40,6 +42,7 @@
         <state_interface name="velocity"/>
       </joint>
       <joint name="Joint_3">
+        <param name="type">TalonSRX</param>
         <param name="can_id">14</param>
         <param name="kP">1.0</param>
         <param name="kI">0.0</param>
@@ -47,7 +50,7 @@
         <param name="kF">60.0</param>
         <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">-3.0</param>
+        <param name="sensor_offset">3.14</param>
         <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">true</param>
         <param name="invert_sensor">false</param>
@@ -56,6 +59,7 @@
         <state_interface name="velocity"/>
       </joint>
       <joint name="Joint_4">
+        <param name="type">TalonSRX</param>
         <param name="can_id">15</param>
         <param name="kP">2.0</param>
         <param name="kI">0.0</param>
@@ -63,7 +67,7 @@
         <param name="kF">5.0</param>
         <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">0.0</param>
+        <param name="sensor_offset">-1.0</param>
         <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">false</param>
         <param name="invert_sensor">false</param>
@@ -72,6 +76,7 @@
         <state_interface name="velocity"/>
       </joint>
       <joint name="Joint_5">
+        <param name="type">TalonSRX</param>
         <param name="can_id">12</param>
         <param name="kP">20.0</param>
         <param name="kI">0.0</param>
@@ -79,7 +84,7 @@
         <param name="kF">7.8</param>
         <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">0.4</param>
+        <param name="sensor_offset">-0.23</param>
         <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">true</param>
         <param name="invert_sensor">true</param>
@@ -88,6 +93,7 @@
         <state_interface name="velocity"/>
       </joint>
       <joint name="Joint_6">
+        <param name="type">TalonSRX</param>
         <param name="can_id">13</param>
         <param name="kP">0.012</param>
         <param name="kI">0.0</param>
