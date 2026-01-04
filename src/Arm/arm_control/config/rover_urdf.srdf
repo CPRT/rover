@@ -45,11 +45,6 @@
     </group_state>
     <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
     <end_effector name="EEF" parent_link="base_link" group="arm"/>
-    <!--PASSIVE JOINT: Purpose: this element is used to mark joints that are not actuated-->
-    <passive_joint name="Back_antenna_joint"/>
-    <passive_joint name="Front_antenna_joint"/>
-    <passive_joint name="Left_shoulder"/>
-    <passive_joint name="Right_shoulder"/>
     <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
     <disable_collisions link1="Antenna_Back" link2="Antenna_Front" reason="Never"/>
     <disable_collisions link1="Antenna_Back" link2="Frame" reason="Adjacent"/>

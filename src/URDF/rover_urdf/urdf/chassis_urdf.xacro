@@ -126,7 +126,7 @@
   <!-- TODO: This should be switched to revolute with joint limits -->
   <joint
     name="Right_shoulder"
-    type="continuous">
+    type="fixed">
     <origin
       xyz="0 -0.20704 -0.07135"
       rpy="0 0.0001756 0" />
@@ -513,7 +513,7 @@
   <!-- TODO: This should be switched to revolute with joint limits -->
   <joint
     name="Left_shoulder"
-    type="continuous">
+    type="fixed">
     <origin
       xyz="0 0.22074 -0.07135"
       rpy="0 -1.802E-05 0" />
@@ -1061,7 +1061,7 @@
   </link>
   <joint
     name="Front_antenna_joint"
-    type="continuous">
+    type="fixed">
     <origin
       xyz="0.275000018562033 0.18073782630944 1.40731289579837"
       rpy="0 0 0" />
@@ -1111,7 +1111,7 @@
   </link>
   <joint
     name="Back_antenna_joint"
-    type="continuous">
+    type="fixed">
     <origin
       xyz="-0.065 0.18074 1.4073"
       rpy="0 0 0" />
