@@ -52,8 +52,8 @@ private:
 
   struct BackoffState {
       int current_delay_ms = 200;      
-      int MAX_DELAY_MS = 5000;
-      int RESET_MS = 10000;
+      int max_delay_ms = 5000;
+      int reset_ms = 10000;
 
       std::chrono::steady_clock::time_point last_trigger_time;
       std::chrono::steady_clock::time_point last_loss_time;
