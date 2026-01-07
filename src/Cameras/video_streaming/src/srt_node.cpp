@@ -67,16 +67,9 @@ SrtNode::SrtNode(const rclcpp::NodeOptions &options)
 }
 
 SrtNode::~SrtNode() {
-  auto cleanup_element = [](GstElement *&elem) {
-    if (elem) {
-      gst_object_unref(elem);
-      elem = nullptr;
-    }
-  };
-
-  cleanup_element(framerate_caps_);
-  cleanup_element(av1_encoder_);
-  cleanup_element(srt_sink_);
+  BaseVideoNode::safe_gst_unref(framerate_caps_);
+  BaseVideoNode::safe_gst_unref(av1_encoder_);
+  BaseVideoNode::safe_gst_unref(srt_sink_);
 }
 
 bool SrtNode::create_pipeline() {
@@ -86,7 +79,7 @@ bool SrtNode::create_pipeline() {
 
   bool test_mode = this->get_parameter("test_mode").as_bool();
 
-  int default_fps = this->get_parameter("target_framerate").as_int();
+  int framerate = this->get_parameter("target_framerate").as_int();
 
   gchar *desc;
 
@@ -101,7 +94,7 @@ bool SrtNode::create_pipeline() {
         "name=av1_enc ! "
         "rtph264pay ! queue ! "
         "srtsink name=srt_sink uri=%s latency=%d",
-        default_fps, srt_uri.c_str(), latency_val);
+        framerate, srt_uri.c_str(), latency_val);
 
     RCLCPP_WARN(this->get_logger(), "Using MAC TEST pipeline description: %s",
                 desc);
@@ -119,7 +112,7 @@ bool SrtNode::create_pipeline() {
         "alignment=obu, parsed=true\" ! "
         "queue ! "
         "srtsink name=srt_sink uri=%s latency=%d sync=false",
-        default_fps, iframe_interval_val, srt_uri.c_str(), latency_val);
+        framerate, iframe_interval_val, srt_uri.c_str(), latency_val);
     RCLCPP_INFO(this->get_logger(), "Using PRODUCTION pipeline description: %s",
                 desc);
   }
