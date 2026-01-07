@@ -22,6 +22,9 @@ protected:
   // Returns new ref; caller must unref.
   GstElement *get_element(const std::string &name) const;
 
+  // Safely unref a GStreamer element.
+  static void safe_gst_unref(GstElement *&elem);
+
   // GStreamer pipeline owned by this node.
   GstElement *pipeline_{nullptr};
 

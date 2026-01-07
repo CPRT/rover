@@ -107,3 +107,10 @@ bool BaseVideoNode::resume_pipeline() {
   }
   return true;
 }
+
+void BaseVideoNode::safe_gst_unref(GstElement *&elem) {
+  if (elem) {
+    gst_object_unref(elem);
+    elem = nullptr;
+  }
+}
