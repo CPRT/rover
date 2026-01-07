@@ -3,6 +3,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/empty.hpp" // I-frame
 #include "std_msgs/msg/int32.hpp" // bitrate
+#include <chrono>                 // timers
 #include <gst/gst.h>
 #include <interfaces/msg/srt_stats.hpp>
 
@@ -12,6 +13,10 @@ class SrtNode : public BaseVideoNode {
 public:
   explicit SrtNode(const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
   ~SrtNode() override;
+
+  static constexpr int INITIAL_BACKOFF_MS = 200;
+  static constexpr int MAX_BACKOFF_MS = 5000;
+  static constexpr int BACKOFF_RESET_MS = 10000;
 
 protected:
   // (interpipesrc -> nvvidconv -> nvv4l2av1enc -> srtsink)
@@ -45,6 +50,19 @@ private:
 
   rcl_interfaces::msg::SetParametersResult
   on_parameter_change(const std::vector<rclcpp::Parameter> &parameters);
+
+  // Backoff mechanism to avoid excessive I-frame requests
+  void check_packet_loss_and_trigger(int64_t current_total_dropped);
+
+  struct BackoffState {
+    int current_delay_ms = INITIAL_BACKOFF_MS;
+    int max_delay_ms = MAX_BACKOFF_MS;
+    int reset_ms = BACKOFF_RESET_MS;
+
+    std::chrono::steady_clock::time_point last_trigger_time;
+    std::chrono::steady_clock::time_point last_loss_time;
+    int64_t last_total_dropped_pkts = 0;
+  } backoff_state_;
 };
 
 } // namespace video_streaming
