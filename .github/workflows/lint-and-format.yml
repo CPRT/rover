@@ -30,8 +30,8 @@ jobs:
           | xargs clang-format --dry-run --Werror
 
       # C++ Linting
-      - name: Install Clang-tidy
-        run: sudo apt-get install -y clang-tidy
+      - name: Install dependencies for C++ linting
+        run: sudo apt-get install -y clang-tidy python3-rosdep ros-humble-ros-base ros-dev-tools
       - name: Build for compile_commands.json files
         run:
           ./build.sh
