@@ -39,7 +39,8 @@ jobs:
           curl -L -o /tmp/ros2-apt-source.deb "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.$(. /etc/os-release && echo ${UBUNTU_CODENAME:-${VERSION_CODENAME}})_all.deb"
           sudo dpkg -i /tmp/ros2-apt-source.deb
           sudo apt update
-          sudo apt-get install -y clang-tidy python3-rosdep ros-humble-ros-base python3-colcon-common-extensions
+          sudo apt-get install -y clang-tidy python3-rosdep ros-humble-ros-base ros-dev-tools python3-colcon-common-extensions 
+          source /opt/ros/humble/setup.bash
       - name: Initialize rosdeps
         run: |
           sudo rosdep init
