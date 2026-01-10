@@ -48,7 +48,6 @@ jobs:
         run: |
           sudo rosdep init
           rosdep update
-          rosdep install -y --from-paths -s src
       - name: Build for compile_commands.json files
         run:
           source /opt/ros/humble/setup.bash && echo "setup.bash has been sourced."
