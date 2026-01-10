@@ -142,7 +142,7 @@
     <inertial>
       <origin
         xyz="0.57785416680796 -0.285312653930359 0.0825439600785206"
-        rpy="0 0 0" />
+        rpy="0 0 3.14" />
       <mass
         value="1.30155339210532" />
       <inertia
@@ -156,10 +156,10 @@
     <visual>
       <origin
         xyz="0 0 0"
-        rpy="0 0 0" />
+        rpy="0 0 3.14" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/Sus_Arm_Front_Right.STL" />
+          filename="package://rover_urdf/meshes/Sus_Arm_LB_RF.STL" />
       </geometry>
       <material
         name="">
@@ -184,7 +184,7 @@
     name="Right_front_arm_joint"
     type="fixed">
     <origin
-      xyz="-0.225 0.20619 -0.09"
+      xyz="0.43 -0.05 0"
       rpy="0 0 0" />
     <parent
       link="Rocker_Right" />
@@ -198,7 +198,7 @@
     <inertial>
       <origin
         xyz="-0.664037126098315 -0.188170529908974 -0.095574626273163"
-        rpy="0 0 0" />
+        rpy="0 0 3.14" />
       <mass
         value="1.37511463184065" />
       <inertia
@@ -212,10 +212,10 @@
     <visual>
       <origin
         xyz="0 0 0"
-        rpy="0 0 0" />
+        rpy="0 0 3.14" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/Wheel_Arm_Front_Right.STL" />
+          filename="package://rover_urdf/meshes/Wheel_Arm.STL" />
       </geometry>
       <material
         name="">
@@ -244,16 +244,16 @@
   </link>
   <joint
     name="Right_front_wheel_arm_joint"
-    type="fixed">
+    type="continuous">
     <origin
-      xyz="1.328 0.00105 0"
+      xyz= "0 0 0"
       rpy="0 0 0" />
     <parent
       link="Sus_Arm_Front_Right" />
     <child
       link="Wheel_Arm_Front_Right" />
     <axis
-      xyz="0 0 0" />
+      xyz="0 0 1" />
   </joint>
   <link
     name="Wheel_Front_Right">
@@ -277,7 +277,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/Wheel_Right.STL" />
+          filename="package://rover_urdf/meshes/Wheel.STL" />
       </geometry>
       <material
         name="">
@@ -296,7 +296,7 @@
     name="Right_front_wheel_joint"
     type="continuous">
     <origin
-      xyz="-0.664 -0.20693 -0.128"
+      xyz="0 0 -0.15"
       rpy="0 0 0" />
     <parent
       link="Wheel_Arm_Front_Right" />
@@ -327,7 +327,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/Sus_Arm_Back_Right.STL" />
+          filename="package://rover_urdf/meshes/Sus_Arm_LF_RB.STL" />
       </geometry>
       <material
         name="">
@@ -352,7 +352,7 @@
     name="Right_back_arm_joint"
     type="fixed">
     <origin
-      xyz="0.225 0.20619 -0.09"
+      xyz="-0.43 -0.05 0"
       rpy="0 0 0" />
     <parent
       link="Rocker_Right" />
@@ -366,7 +366,7 @@
     <inertial>
       <origin
         xyz="-0.664037126098314 -0.178170529908975 -0.0955746262731632"
-        rpy="0 0 0" />
+        rpy="0 0 3.14" />
       <mass
         value="1.37511463184065" />
       <inertia
@@ -380,10 +380,10 @@
     <visual>
       <origin
         xyz="0 0 0"
-        rpy="0 0 0" />
+        rpy="0 0 3.14" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/Wheel_Arm_Back_Right.STL" />
+          filename="package://rover_urdf/meshes/Wheel_Arm.STL" />
       </geometry>
       <material
         name="">
@@ -412,7 +412,7 @@
   </link>
   <joint
     name="Right_back_wheel_arm_joint"
-    type="fixed">
+    type="continuous">
     <origin
       xyz="0 -0.01 0"
       rpy="0 0 0" />
@@ -421,7 +421,7 @@
     <child
       link="Wheel_Arm_Back_Right" />
     <axis
-      xyz="0 0 0" />
+      xyz="0 0 1" />
   </joint>
   <link
     name="Wheel_Back_Right">
@@ -445,7 +445,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/Wheel_Right.STL" />
+          filename="package://rover_urdf/meshes/Wheel.STL" />
       </geometry>
       <material
         name="">
@@ -464,7 +464,7 @@
     name="Right_back_wheel_joint"
     type="continuous">
     <origin
-      xyz="-0.664 -0.19693 -0.128"
+      xyz="0 0 -0.15"
       rpy="0 0 0" />
     <parent
       link="Wheel_Arm_Back_Right" />
@@ -529,7 +529,7 @@
     <inertial>
       <origin
         xyz="0.577627534357114 0.279237097647626 0.082501913006288"
-        rpy="0 0 0" />
+        rpy="0 0 3.14" />
       <mass
         value="1.30155333808383" />
       <inertia
@@ -543,10 +543,10 @@
     <visual>
       <origin
         xyz="0 0 0"
-        rpy="0 0 0" />
+        rpy="0 0 3.14" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/Sus_Arm_Front_Left.STL" />
+          filename="package://rover_urdf/meshes/Sus_Arm_LF_RB.STL" />
       </geometry>
       <material
         name="">
@@ -571,7 +571,7 @@
     name="Left_front_arm_joint"
     type="fixed">
     <origin
-      xyz="-0.22502 -0.21159 -0.089956"
+      xyz="0.43 0.05 0"
       rpy="0 0 0" />
     <parent
       link="Rocker_Left" />
@@ -602,7 +602,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/Wheel_Arm_Front_Left.STL" />
+          filename="package://rover_urdf/meshes/Wheel_Arm.STL" />
       </geometry>
       <material
         name="">
@@ -631,7 +631,7 @@
   </link>
   <joint
     name="Left_front_wheel_arm_joint"
-    type="fixed">
+    type="continuous">
     <origin
       xyz="1.7429E-05 0.003185 -4.3566E-05"
       rpy="0 0 0" />
@@ -640,7 +640,7 @@
     <child
       link="Wheel_Arm_Front_Left" />
     <axis
-      xyz="0 0 0" />
+      xyz="0 0 1" />
   </joint>
   <link
     name="Wheel_Front_Left">
@@ -664,7 +664,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/Wheel_Left.STL" />
+          filename="package://rover_urdf/meshes/Wheel.STL" />
       </geometry>
       <material
         name="">
@@ -683,7 +683,7 @@
     name="Left_front_wheel_joint"
     type="continuous">
     <origin
-      xyz="0.664 0.19693 -0.128"
+      xyz="0 0 -0.15"
       rpy="0 0 0" />
     <parent
       link="Wheel_Arm_Front_Left" />
@@ -714,7 +714,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/Sus_Arm_Back_Left.STL" />
+          filename="package://rover_urdf/meshes/Sus_Arm_LB_RF.STL" />
       </geometry>
       <material
         name="">
@@ -739,7 +739,7 @@
     name="Left_back_arm_joint"
     type="fixed">
     <origin
-      xyz="0.22498 -0.23159 -0.090044"
+      xyz="-0.43 0.05 0"
       rpy="0 0 0" />
     <parent
       link="Rocker_Left" />
@@ -770,7 +770,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/Wheel_Arm_Back_Left.STL" />
+          filename="package://rover_urdf/meshes/Wheel_Arm.STL" />
       </geometry>
       <material
         name="">
@@ -799,16 +799,16 @@
   </link>
   <joint
     name="Left_back_wheel_arm_joint"
-    type="fixed">
+    type="continuous">
     <origin
-      xyz="-1.328 0.012135 4.3562E-05"
+      xyz="-.1 0 0"
       rpy="0 0 0" />
     <parent
       link="Sus_Arm_Back_Left" />
     <child
       link="Wheel_Arm_Back_Left" />
     <axis
-      xyz="0 0 0" />
+      xyz="0 0 1" />
   </joint>
   <link
     name="Wheel_Back_Left">
@@ -832,7 +832,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://rover_urdf/meshes/Wheel_Left.STL" />
+          filename="package://rover_urdf/meshes/Wheel.STL" />
       </geometry>
       <material
         name="">
@@ -851,7 +851,7 @@
     name="Left_back_wheel_joint"
     type="continuous">
     <origin
-      xyz="0.664 0.20693 -0.128"
+      xyz="0.0 0.0 -0.15"
       rpy="0 0 0" />
     <parent
       link="Wheel_Arm_Back_Left" />
