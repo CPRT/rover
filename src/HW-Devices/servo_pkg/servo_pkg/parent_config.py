@@ -25,12 +25,8 @@ class Parent_Config(Node):
 
     # Set class attributes based on yaml config
     def load_config(self):
-        self.declare_parameter("servo_num", 0)
-        self.servo_num = (
-            self.get_parameter("servo_num").get_parameter_value().integer_value
-        )
         for servo in range(NUM_PORTS):
-            self.declare_parameter(f"servo{servo}.name", f"/motor{servo}")
+            self.declare_parameter(f"servo{servo}.name", f"motor{servo}")
             motor_name = (
                 self.get_parameter(f"servo{servo}.name")
                 .get_parameter_value()
@@ -57,8 +53,6 @@ class Parent_Config(Node):
             self.servo_info[servo] = Servo_Info(motor_name, min_pwm, max_pwm, rom)
 
     def check_valid_servo(self, channel):
-        if self.servo_num < 0:
-            raise ValueError("Invalid max servo number")
         if channel not in self.servo_info:
             self.get_logger().error("Invalid servo")
             return False

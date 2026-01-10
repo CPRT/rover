@@ -75,7 +75,7 @@ void ArmIKMode::handleGripper(
     } else {
       buttonPressed_ = true;
       RCLCPP_INFO(node_->get_logger(), "Max Open");
-      RCLCPP_INFO(node_->get_logger(), "%f", servoPos_);
+      RCLCPP_INFO(node_->get_logger(), "Position: %f", servoPos_);
     }
   } else if (joystickMsg->buttons[kClawClose] == 1 && !buttonPressed_) {
     if (servoPos_ - ((kClawMax - kClawMin) / 2) > kClawMin - rad_multiplier) {
@@ -85,7 +85,7 @@ void ArmIKMode::handleGripper(
     } else {
       buttonPressed_ = true;
       RCLCPP_INFO(node_->get_logger(), "Max Close");
-      RCLCPP_INFO(node_->get_logger(), "%f", servoPos_);
+      RCLCPP_INFO(node_->get_logger(), "Position: %f", servoPos_);
     }
   } else if ((joystickMsg->buttons[kClawClose] == 0) &&
              (joystickMsg->buttons[kClawOpen] == 0)) {

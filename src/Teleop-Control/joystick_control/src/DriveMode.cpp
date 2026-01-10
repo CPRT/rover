@@ -111,7 +111,6 @@ void DriveMode::handlePWM(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
 void DriveMode::setServoPosition(std::string name, double position) {
   auto servo_msg = std_msgs::msg::Float32();
   servo_msg.data = position;
-  RCLCPP_WARN(node_->get_logger(), "Service not available after waiting");
   motor_pubs[name]->publish(servo_msg);
 }
 

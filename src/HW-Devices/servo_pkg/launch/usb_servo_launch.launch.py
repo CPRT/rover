@@ -9,7 +9,7 @@ def generate_launch_description():
     child_params = os.path.join(pkg_servo, "config", "usb_controller.yaml")
     parent_params = os.path.join(pkg_servo, "config", "parent_config.yaml")
     # if you wanted to run client alongside
-    # client_params = os.path.join(pkg_servo, "config", "servo_client.yaml")
+    client_params = os.path.join(pkg_servo, "config", "servo_client.yaml")
 
     return launch.LaunchDescription(
         [
@@ -18,6 +18,12 @@ def generate_launch_description():
                 executable="USB_Servo",
                 name="USB_Servo_node",
                 parameters=[parent_params, child_params],
-            )
+            ),
+            # launch_ros.actions.Node(
+            #   package="servo_pkg",
+            #   executable="servo_client",
+            #   name="servo_client_node",
+            #   parameters=[parent_params, client_params],
+            # ),
         ]
     )

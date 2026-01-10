@@ -24,13 +24,15 @@ class USB_Servo(Parent_Config):
             self.get_parameter("serial_port").get_parameter_value().string_value
         )
         self.servo_controller = maestro.Controller(serial_port)
-        self.get_logger().info(f"{self.servo_info[self.servo_num].motor_name}")
-        self.sub = self.create_subscription(
-            Float32,
-            f"/{self.servo_info[self.servo_num].motor_name}",
-            self.set_position,
-            3,
-        )
+        self.subs = {}
+        for port in self.servo_info:
+            self.subs[port] = self.create_subscription(
+                Float32,
+                f"/{self.servo_info[port].motor_name}",
+                lambda msg, port=port: self.set_position(msg, port),
+                3,
+            )
+            self.get_logger().info(f"Topic: /{self.servo_info[port].motor_name}")
 
         self.set_range()
         for port, servo in self.servo_info.items():
@@ -44,9 +46,8 @@ class USB_Servo(Parent_Config):
             self.get_logger().info(f"Port {port} -> Min: {min_qus}, Max: {max_qus}")
             self.servo_controller.setRange(port, min_qus, max_qus)
 
-    def set_position(self, msg):
-        port = self.servo_num
-
+    def set_position(self, msg, port):
+        self.get_logger().info(f"port: {port}")
         self.check_valid_servo(port)
         servo_info = self.servo_info[port]
         target_value = convert_from_radians(msg.data, servo_info)
@@ -70,6 +71,7 @@ class USB_Servo(Parent_Config):
             self.get_logger().info(
                 f"Servo {port} moved to angle: {current_position} with PWM {target_value}"
             )
+            self.get_logger().info(f"Topic: /{self.servo_info[port].motor_name}")
 
 
 def main(args=None):

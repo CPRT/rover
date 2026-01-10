@@ -9,11 +9,11 @@ class Servo_Client(Node):
     def __init__(self):
         super().__init__("servo_Client")
 
-        self.declare_parameter("servo_num", 0)
+        self.declare_parameter("servo_num", 1)
         self.servo_num = (
             self.get_parameter("servo_num").get_parameter_value().integer_value
         )
-        self.declare_parameter(f"servo{self.servo_num}.name", f"servo{self.servo_num}")
+        self.declare_parameter(f"servo{self.servo_num}.name", "collection")
         self.motor_name = (
             self.get_parameter(f"servo{self.servo_num}.name")
             .get_parameter_value()
@@ -22,7 +22,7 @@ class Servo_Client(Node):
 
         # publish angle with topic as motor name
         self.pub = self.create_publisher(Float32, f"/{self.motor_name}", 10)
-        timer_period = 1.5
+        timer_period = 1
         self.timer = self.create_timer(timer_period, self.servo_tester)
 
     def servo_pub(self, req_pos) -> None:
@@ -31,7 +31,7 @@ class Servo_Client(Node):
     def servo_tester(self) -> None:
         msg = Float32()
         # random value
-        msg.data = random.choice([2.6652457674418604, math.pi])
+        msg.data = random.uniform(math.pi / 2, math.pi)
         # set value
         self.get_logger().info(f"Sending position: {msg.data} to {self.motor_name}")
         self.servo_pub(msg)

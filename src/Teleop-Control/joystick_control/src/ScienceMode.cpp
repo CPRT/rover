@@ -66,12 +66,16 @@ void ScienceMode::handleMicroscope(
 void ScienceMode::handleSoilCollection(
     std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   if (joystickMsg->buttons[kCollectionButton]) {
+    RCLCPP_INFO(node_->get_logger(), "Collection");
     setServoPosition(collectionServo, kCollectionOpen);
   } else if (joystickMsg->buttons[kCancelCollectionButton]) {
+    RCLCPP_INFO(node_->get_logger(), "Cancel collection");
     setServoPosition(collectionServo, kCollectionClose);
   } else if (joystickMsg->buttons[kSoilTestButton]) {
+    RCLCPP_INFO(node_->get_logger(), "Soil test");
     setServoPosition(collectionServo, kCollectionSample);
   } else if (joystickMsg->buttons[kSoilLockButton]) {
+    RCLCPP_INFO(node_->get_logger(), "Soil lock");
     setServoPosition(collectionServo, kCollectionLock);
   }
 }

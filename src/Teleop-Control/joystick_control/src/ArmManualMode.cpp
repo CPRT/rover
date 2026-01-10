@@ -108,16 +108,18 @@ void ArmManualMode::handleTwist(
     if (servoPos_ + ((kClawMax - kClawMin) / 2) < kClawMax + rad_multiplier) {
       buttonPressed_ = true;
       servoPos_ = servoPos_ + ((kClawMax - kClawMin) / 2);
+      RCLCPP_INFO(node_->get_logger(), "Position: %f", servoPos_);
       setServoPosition(servoPos_);
     } else {
       buttonPressed_ = true;
       RCLCPP_INFO(node_->get_logger(), "Max Open");
-      RCLCPP_INFO(node_->get_logger(), "%f", servoPos_);
+      RCLCPP_INFO(node_->get_logger(), "Position: %f", servoPos_);
     }
   } else if (joystickMsg->buttons[kClawClose] == 1 && !buttonPressed_) {
     if (servoPos_ - ((kClawMax - kClawMin) / 2) > kClawMin - rad_multiplier) {
       buttonPressed_ = true;
       servoPos_ = servoPos_ - ((kClawMax - kClawMin) / 2);
+      RCLCPP_INFO(node_->get_logger(), "Position: %f", servoPos_);
       setServoPosition(servoPos_);
     } else {
       buttonPressed_ = true;
