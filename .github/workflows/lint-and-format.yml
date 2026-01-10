@@ -40,7 +40,6 @@ jobs:
           sudo dpkg -i /tmp/ros2-apt-source.deb
           sudo apt update
           sudo apt-get install -y clang-tidy python3-rosdep ros-humble-ros-base ros-dev-tools python3-colcon-common-extensions ros-humble-ament-cmake
-          source /opt/ros/humble/setup.bash
       - name: Test
         run: |
           pwd
@@ -52,4 +51,5 @@ jobs:
           rosdep install -y --from-paths -s src
       - name: Build for compile_commands.json files
         run:
+          source /opt/ros/humble/setup.bash && echo "setup.bash has been sourced."
           ./build.sh
