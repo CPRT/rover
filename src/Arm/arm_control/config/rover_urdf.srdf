@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--This does not replace URDF, and is not an extension of URDF.
+    This is a format for representing semantic information about the robot structure.
+    A URDF file must exist for this robot as well, where the joints and the links that are referenced are defined
+-->
+<robot name="rover_urdf">
+    <!--GROUPS: Representation of a set of joints and links. This can be useful for specifying DOF to plan for, defining arms, end effectors, etc-->
+    <!--LINKS: When a link is specified, the parent joint of that link (if it exists) is automatically included-->
+    <!--JOINTS: When a joint is specified, the child link of that joint (which will always exist) is automatically included-->
+    <!--CHAINS: When a chain is specified, all the links along the chain (including endpoints) are included in the group. Additionally, all the joints that are parents to included links are also included. This means that joints along the chain and the parent joint of the base link are included in the group-->
+    <!--SUBGROUPS: Groups can also be formed by referencing to already defined group names-->
+    <group name="arm">
+        <joint name="base_link_to_arm_base"/>
+        <joint name="Joint_1"/>
+        <joint name="Joint_2"/>
+        <joint name="Joint_3"/>
+        <joint name="Joint_4"/>
+        <joint name="Joint_5"/>
+        <joint name="Joint_6"/>
+    </group>
+    <!--GROUP STATES: Purpose: Define a named state for a particular group, in terms of joint values. This is useful to define states like 'folded arms'-->
+    <group_state name="Store" group="arm">
+        <joint name="Joint_1" value="0"/>
+        <joint name="Joint_2" value="1.168"/>
+        <joint name="Joint_3" value="3.0026"/>
+        <joint name="Joint_4" value="0"/>
+        <joint name="Joint_5" value="0"/>
+        <joint name="Joint_6" value="0"/>
+    </group_state>
+    <group_state name="Front Facing Home" group="arm">
+        <joint name="Joint_1" value="0"/>
+        <joint name="Joint_2" value="-0.2603"/>
+        <joint name="Joint_3" value="1.6836"/>
+        <joint name="Joint_4" value="0"/>
+        <joint name="Joint_5" value="-0.3992"/>
+        <joint name="Joint_6" value="0"/>
+    </group_state>
+    <group_state name="Pick Up Front" group="arm">
+        <joint name="Joint_1" value="0"/>
+        <joint name="Joint_2" value="-0.8505"/>
+        <joint name="Joint_3" value="1.7183"/>
+        <joint name="Joint_4" value="0"/>
+        <joint name="Joint_5" value="0.55"/>
+        <joint name="Joint_6" value="0"/>
+    </group_state>
+    <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
+    <end_effector name="EEF" parent_link="base_link" group="arm"/>
+    <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
+    <disable_collisions link1="Antenna_Back" link2="Antenna_Front" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Frame" reason="Adjacent"/>
+    <disable_collisions link1="Antenna_Back" link2="GPS_Left" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="GPS_Right" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Link_1" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Link_2" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Link_3" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Link_4" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Link_5" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Link_6" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Rocker_Left" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Rocker_Right" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Sus_Arm_Back_Left" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Sus_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Sus_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Sus_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Wheel_Arm_Back_Left" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Wheel_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Wheel_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Wheel_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Wheel_Back_Left" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Wheel_Back_Right" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Wheel_Front_Left" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Wheel_Front_Right" reason="Never"/>
+    <disable_collisions link1="Antenna_Back" link2="Zed" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Frame" reason="Adjacent"/>
+    <disable_collisions link1="Antenna_Front" link2="GPS_Left" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="GPS_Right" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Link_1" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Link_2" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Link_3" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Link_4" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Link_5" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Link_6" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Rocker_Left" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Rocker_Right" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Sus_Arm_Back_Left" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Sus_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Sus_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Sus_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Wheel_Arm_Back_Left" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Wheel_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Wheel_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Wheel_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Wheel_Back_Left" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Wheel_Back_Right" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Wheel_Front_Left" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Wheel_Front_Right" reason="Never"/>
+    <disable_collisions link1="Antenna_Front" link2="Zed" reason="Never"/>
+    <disable_collisions link1="EndEffector" link2="Link_4" reason="Never"/>
+    <disable_collisions link1="EndEffector" link2="Link_6" reason="Adjacent"/>
+    <disable_collisions link1="Frame" link2="GPS_Left" reason="Adjacent"/>
+    <disable_collisions link1="Frame" link2="GPS_Right" reason="Adjacent"/>
+    <disable_collisions link1="Frame" link2="Link_1" reason="Adjacent"/>
+    <disable_collisions link1="Frame" link2="Link_2" reason="Default"/>
+    <disable_collisions link1="Frame" link2="Rocker_Left" reason="Adjacent"/>
+    <disable_collisions link1="Frame" link2="Rocker_Right" reason="Adjacent"/>
+    <disable_collisions link1="Frame" link2="Sus_Arm_Back_Left" reason="Default"/>
+    <disable_collisions link1="Frame" link2="Sus_Arm_Back_Right" reason="Default"/>
+    <disable_collisions link1="Frame" link2="Sus_Arm_Front_Left" reason="Default"/>
+    <disable_collisions link1="Frame" link2="Sus_Arm_Front_Right" reason="Default"/>
+    <disable_collisions link1="Frame" link2="Wheel_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="Frame" link2="Wheel_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Frame" link2="Zed" reason="Adjacent"/>
+    <disable_collisions link1="GPS_Left" link2="GPS_Right" reason="Never"/>
+    <disable_collisions link1="GPS_Left" link2="Link_1" reason="Never"/>
+    <disable_collisions link1="GPS_Left" link2="Link_2" reason="Never"/>
+    <disable_collisions link1="GPS_Left" link2="Link_4" reason="Never"/>
+    <disable_collisions link1="GPS_Left" link2="Rocker_Left" reason="Never"/>
+    <disable_collisions link1="GPS_Left" link2="Rocker_Right" reason="Never"/>
+    <disable_collisions link1="GPS_Left" link2="Sus_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="GPS_Left" link2="Sus_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="GPS_Left" link2="Wheel_Arm_Back_Left" reason="Never"/>
+    <disable_collisions link1="GPS_Left" link2="Wheel_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="GPS_Left" link2="Wheel_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="GPS_Left" link2="Wheel_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="GPS_Left" link2="Wheel_Back_Left" reason="Never"/>
+    <disable_collisions link1="GPS_Left" link2="Wheel_Back_Right" reason="Never"/>
+    <disable_collisions link1="GPS_Left" link2="Wheel_Front_Left" reason="Never"/>
+    <disable_collisions link1="GPS_Left" link2="Wheel_Front_Right" reason="Never"/>
+    <disable_collisions link1="GPS_Left" link2="Zed" reason="Never"/>
+    <disable_collisions link1="GPS_Right" link2="Link_1" reason="Never"/>
+    <disable_collisions link1="GPS_Right" link2="Link_2" reason="Never"/>
+    <disable_collisions link1="GPS_Right" link2="Link_4" reason="Never"/>
+    <disable_collisions link1="GPS_Right" link2="Rocker_Left" reason="Never"/>
+    <disable_collisions link1="GPS_Right" link2="Rocker_Right" reason="Never"/>
+    <disable_collisions link1="GPS_Right" link2="Sus_Arm_Back_Left" reason="Never"/>
+    <disable_collisions link1="GPS_Right" link2="Sus_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="GPS_Right" link2="Wheel_Arm_Back_Left" reason="Never"/>
+    <disable_collisions link1="GPS_Right" link2="Wheel_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="GPS_Right" link2="Wheel_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="GPS_Right" link2="Wheel_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="GPS_Right" link2="Wheel_Back_Left" reason="Never"/>
+    <disable_collisions link1="GPS_Right" link2="Wheel_Back_Right" reason="Never"/>
+    <disable_collisions link1="GPS_Right" link2="Wheel_Front_Left" reason="Never"/>
+    <disable_collisions link1="GPS_Right" link2="Wheel_Front_Right" reason="Never"/>
+    <disable_collisions link1="GPS_Right" link2="Zed" reason="Never"/>
+    <disable_collisions link1="Link_1" link2="Link_2" reason="Adjacent"/>
+    <disable_collisions link1="Link_1" link2="Link_4" reason="Never"/>
+    <disable_collisions link1="Link_1" link2="Rocker_Left" reason="Never"/>
+    <disable_collisions link1="Link_1" link2="Rocker_Right" reason="Never"/>
+    <disable_collisions link1="Link_1" link2="Sus_Arm_Back_Left" reason="Never"/>
+    <disable_collisions link1="Link_1" link2="Sus_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="Link_1" link2="Sus_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="Link_1" link2="Sus_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Link_1" link2="Wheel_Arm_Back_Left" reason="Never"/>
+    <disable_collisions link1="Link_1" link2="Wheel_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="Link_1" link2="Wheel_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="Link_1" link2="Wheel_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Link_1" link2="Wheel_Back_Left" reason="Never"/>
+    <disable_collisions link1="Link_1" link2="Wheel_Back_Right" reason="Never"/>
+    <disable_collisions link1="Link_1" link2="Wheel_Front_Left" reason="Never"/>
+    <disable_collisions link1="Link_1" link2="Wheel_Front_Right" reason="Never"/>
+    <disable_collisions link1="Link_1" link2="Zed" reason="Never"/>
+    <disable_collisions link1="Link_2" link2="Link_3" reason="Adjacent"/>
+    <disable_collisions link1="Link_2" link2="Link_4" reason="Never"/>
+    <disable_collisions link1="Link_2" link2="Rocker_Left" reason="Never"/>
+    <disable_collisions link1="Link_2" link2="Rocker_Right" reason="Never"/>
+    <disable_collisions link1="Link_2" link2="Sus_Arm_Back_Left" reason="Never"/>
+    <disable_collisions link1="Link_2" link2="Sus_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="Link_2" link2="Sus_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="Link_2" link2="Sus_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Link_2" link2="Wheel_Arm_Back_Left" reason="Never"/>
+    <disable_collisions link1="Link_2" link2="Wheel_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="Link_2" link2="Wheel_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="Link_2" link2="Wheel_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Link_2" link2="Wheel_Back_Left" reason="Never"/>
+    <disable_collisions link1="Link_2" link2="Wheel_Back_Right" reason="Never"/>
+    <disable_collisions link1="Link_2" link2="Wheel_Front_Left" reason="Never"/>
+    <disable_collisions link1="Link_2" link2="Wheel_Front_Right" reason="Never"/>
+    <disable_collisions link1="Link_2" link2="Zed" reason="Never"/>
+    <disable_collisions link1="Link_3" link2="Link_4" reason="Adjacent"/>
+    <disable_collisions link1="Link_4" link2="Link_5" reason="Adjacent"/>
+    <disable_collisions link1="Link_4" link2="Link_6" reason="Never"/>
+    <disable_collisions link1="Link_4" link2="Rocker_Left" reason="Never"/>
+    <disable_collisions link1="Link_4" link2="Rocker_Right" reason="Never"/>
+    <disable_collisions link1="Link_4" link2="Zed" reason="Never"/>
+    <disable_collisions link1="Link_5" link2="Link_6" reason="Adjacent"/>
+    <disable_collisions link1="Rocker_Left" link2="Rocker_Right" reason="Never"/>
+    <disable_collisions link1="Rocker_Left" link2="Sus_Arm_Back_Left" reason="Adjacent"/>
+    <disable_collisions link1="Rocker_Left" link2="Sus_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="Rocker_Left" link2="Sus_Arm_Front_Left" reason="Adjacent"/>
+    <disable_collisions link1="Rocker_Left" link2="Sus_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Rocker_Left" link2="Wheel_Arm_Back_Left" reason="Never"/>
+    <disable_collisions link1="Rocker_Left" link2="Wheel_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="Rocker_Left" link2="Wheel_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="Rocker_Left" link2="Wheel_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Rocker_Left" link2="Wheel_Back_Left" reason="Never"/>
+    <disable_collisions link1="Rocker_Left" link2="Wheel_Back_Right" reason="Never"/>
+    <disable_collisions link1="Rocker_Left" link2="Wheel_Front_Left" reason="Never"/>
+    <disable_collisions link1="Rocker_Left" link2="Wheel_Front_Right" reason="Never"/>
+    <disable_collisions link1="Rocker_Left" link2="Zed" reason="Never"/>
+    <disable_collisions link1="Rocker_Right" link2="Sus_Arm_Back_Left" reason="Never"/>
+    <disable_collisions link1="Rocker_Right" link2="Sus_Arm_Back_Right" reason="Adjacent"/>
+    <disable_collisions link1="Rocker_Right" link2="Sus_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="Rocker_Right" link2="Sus_Arm_Front_Right" reason="Adjacent"/>
+    <disable_collisions link1="Rocker_Right" link2="Wheel_Arm_Back_Left" reason="Never"/>
+    <disable_collisions link1="Rocker_Right" link2="Wheel_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="Rocker_Right" link2="Wheel_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="Rocker_Right" link2="Wheel_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Rocker_Right" link2="Wheel_Back_Left" reason="Never"/>
+    <disable_collisions link1="Rocker_Right" link2="Wheel_Back_Right" reason="Never"/>
+    <disable_collisions link1="Rocker_Right" link2="Wheel_Front_Left" reason="Never"/>
+    <disable_collisions link1="Rocker_Right" link2="Wheel_Front_Right" reason="Never"/>
+    <disable_collisions link1="Rocker_Right" link2="Zed" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Left" link2="Sus_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Left" link2="Sus_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Left" link2="Sus_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Left" link2="Wheel_Arm_Back_Left" reason="Adjacent"/>
+    <disable_collisions link1="Sus_Arm_Back_Left" link2="Wheel_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Left" link2="Wheel_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Left" link2="Wheel_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Left" link2="Wheel_Back_Left" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Left" link2="Wheel_Back_Right" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Left" link2="Wheel_Front_Left" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Left" link2="Wheel_Front_Right" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Left" link2="Zed" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Right" link2="Sus_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Right" link2="Sus_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Right" link2="Wheel_Arm_Back_Left" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Right" link2="Wheel_Arm_Back_Right" reason="Adjacent"/>
+    <disable_collisions link1="Sus_Arm_Back_Right" link2="Wheel_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Right" link2="Wheel_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Right" link2="Wheel_Back_Left" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Right" link2="Wheel_Back_Right" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Right" link2="Wheel_Front_Left" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Right" link2="Wheel_Front_Right" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Back_Right" link2="Zed" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Front_Left" link2="Sus_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Front_Left" link2="Wheel_Arm_Back_Left" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Front_Left" link2="Wheel_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Front_Left" link2="Wheel_Arm_Front_Left" reason="Adjacent"/>
+    <disable_collisions link1="Sus_Arm_Front_Left" link2="Wheel_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Front_Left" link2="Wheel_Back_Left" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Front_Left" link2="Wheel_Back_Right" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Front_Left" link2="Wheel_Front_Left" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Front_Left" link2="Wheel_Front_Right" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Front_Left" link2="Zed" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Front_Right" link2="Wheel_Arm_Back_Left" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Front_Right" link2="Wheel_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Front_Right" link2="Wheel_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Front_Right" link2="Wheel_Arm_Front_Right" reason="Adjacent"/>
+    <disable_collisions link1="Sus_Arm_Front_Right" link2="Wheel_Back_Left" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Front_Right" link2="Wheel_Back_Right" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Front_Right" link2="Wheel_Front_Left" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Front_Right" link2="Wheel_Front_Right" reason="Never"/>
+    <disable_collisions link1="Sus_Arm_Front_Right" link2="Zed" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Back_Left" link2="Wheel_Arm_Back_Right" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Back_Left" link2="Wheel_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Back_Left" link2="Wheel_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Back_Left" link2="Wheel_Back_Left" reason="Adjacent"/>
+    <disable_collisions link1="Wheel_Arm_Back_Left" link2="Wheel_Back_Right" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Back_Left" link2="Wheel_Front_Left" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Back_Left" link2="Wheel_Front_Right" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Back_Left" link2="Zed" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Back_Right" link2="Wheel_Arm_Front_Left" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Back_Right" link2="Wheel_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Back_Right" link2="Wheel_Back_Left" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Back_Right" link2="Wheel_Back_Right" reason="Adjacent"/>
+    <disable_collisions link1="Wheel_Arm_Back_Right" link2="Wheel_Front_Left" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Back_Right" link2="Wheel_Front_Right" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Back_Right" link2="Zed" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Front_Left" link2="Wheel_Arm_Front_Right" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Front_Left" link2="Wheel_Back_Left" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Front_Left" link2="Wheel_Back_Right" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Front_Left" link2="Wheel_Front_Left" reason="Adjacent"/>
+    <disable_collisions link1="Wheel_Arm_Front_Left" link2="Wheel_Front_Right" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Front_Left" link2="Zed" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Front_Right" link2="Wheel_Back_Left" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Front_Right" link2="Wheel_Back_Right" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Front_Right" link2="Wheel_Front_Left" reason="Never"/>
+    <disable_collisions link1="Wheel_Arm_Front_Right" link2="Wheel_Front_Right" reason="Adjacent"/>
+    <disable_collisions link1="Wheel_Arm_Front_Right" link2="Zed" reason="Never"/>
+    <disable_collisions link1="Wheel_Back_Left" link2="Wheel_Back_Right" reason="Never"/>
+    <disable_collisions link1="Wheel_Back_Left" link2="Wheel_Front_Left" reason="Never"/>
+    <disable_collisions link1="Wheel_Back_Left" link2="Wheel_Front_Right" reason="Never"/>
+    <disable_collisions link1="Wheel_Back_Left" link2="Zed" reason="Never"/>
+    <disable_collisions link1="Wheel_Back_Right" link2="Wheel_Front_Left" reason="Never"/>
+    <disable_collisions link1="Wheel_Back_Right" link2="Wheel_Front_Right" reason="Never"/>
+    <disable_collisions link1="Wheel_Back_Right" link2="Zed" reason="Never"/>
+    <disable_collisions link1="Wheel_Front_Left" link2="Wheel_Front_Right" reason="Never"/>
+    <disable_collisions link1="Wheel_Front_Left" link2="Zed" reason="Never"/>
+    <disable_collisions link1="Wheel_Front_Right" link2="Zed" reason="Never"/>
+</robot>
