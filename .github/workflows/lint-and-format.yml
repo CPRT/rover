@@ -41,10 +41,15 @@ jobs:
           sudo apt update
           sudo apt-get install -y clang-tidy python3-rosdep ros-humble-ros-base ros-dev-tools python3-colcon-common-extensions ros-humble-ament-cmake
           source /opt/ros/humble/setup.bash
+      - name: Test
+        run: |
+          pwd
+          ls
       - name: Initialize rosdeps
         run: |
           sudo rosdep init
           rosdep update
+          rosdep install -y --from-paths -s src
       - name: Build for compile_commands.json files
         run:
           ./build.sh
