@@ -45,7 +45,7 @@ jobs:
           git clone https://github.com/ANYbotics/kindr.git
           cd kindr && mkdir build && cd build
           cmake .. -DUSE_CMAKE=true
-          make install
+          sudo make install
           rm -rf /kindr
       - name: Install zed
         run: |
