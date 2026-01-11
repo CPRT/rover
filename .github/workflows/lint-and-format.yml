@@ -30,6 +30,16 @@ jobs:
           | xargs clang-format --dry-run --Werror
 
       # C++ Linting
+      - name: Install dependencies for C++ linting
+        run: |
+          sudo apt install software-properties-common
+          sudo add-apt-repository universe
+          sudo apt update && sudo apt install curl -y
+          export ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest | grep -F "tag_name" | awk -F\" '{print $4}')
+          curl -L -o /tmp/ros2-apt-source.deb "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.$(. /etc/os-release && echo ${UBUNTU_CODENAME:-${VERSION_CODENAME}})_all.deb"
+          sudo dpkg -i /tmp/ros2-apt-source.deb
+          sudo apt update
+          sudo apt-get install -y clang-tidy python3-rosdep ros-humble-desktop ros-dev-tools python3-colcon-common-extensions ros-humble-ament-cmake libglib2.0-dev libunwind-dev libeigen3-dev
       - name: Install kindr
         run: |
           git clone https://github.com/ANYbotics/kindr.git
@@ -43,16 +53,6 @@ jobs:
           curl -L https://stereolabs.sfo2.cdn.digitaloceanspaces.com/zedsdk/4.2/ZED_SDK_Tegra_L4T36.4_v4.2.2.zstd.run -o zed_sdk_installer.run
           chmod +x zed_sdk_installer.run
           ./zed_sdk_installer.run -- silent
-      - name: Install dependencies for C++ linting
-        run: |
-          sudo apt install software-properties-common
-          sudo add-apt-repository universe
-          sudo apt update && sudo apt install curl -y
-          export ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest | grep -F "tag_name" | awk -F\" '{print $4}')
-          curl -L -o /tmp/ros2-apt-source.deb "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.$(. /etc/os-release && echo ${UBUNTU_CODENAME:-${VERSION_CODENAME}})_all.deb"
-          sudo dpkg -i /tmp/ros2-apt-source.deb
-          sudo apt update
-          sudo apt-get install -y clang-tidy python3-rosdep ros-humble-desktop ros-dev-tools python3-colcon-common-extensions ros-humble-ament-cmake libglib2.0-dev libunwind-dev libeigen3-dev
       - name: Initialize rosdeps
         run: |
           source /opt/ros/humble/setup.bash && echo "setup.bash has been sourced."
