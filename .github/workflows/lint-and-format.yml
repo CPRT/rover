@@ -48,8 +48,10 @@ jobs:
         run: |
           sudo rosdep init
           rosdep update
-          rosdep install --from-paths src --ignore-src -r -y
+          rosdep install --from-paths src -i -r -y
       - name: Build for compile_commands.json files
         run: |
           source /opt/ros/humble/setup.bash && echo "setup.bash has been sourced."
-          ./build.sh
+          colcon build --continue-on-error --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --cmake-force-configure --parallel-workers $(nproc)
+
+
