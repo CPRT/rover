@@ -48,12 +48,12 @@ jobs:
           sudo apt-get install -y clang-tidy python3-rosdep ros-humble-desktop ros-dev-tools python3-colcon-common-extensions ros-humble-ament-cmake
       - name: Initialize rosdeps
         run: |
+          source /opt/ros/humble/setup.bash && echo "setup.bash has been sourced."
           sudo rosdep init
           rosdep update
           rosdep install --from-paths src -i -r -y
       - name: Build for compile_commands.json files
         run: |
-          source /opt/ros/humble/setup.bash && echo "setup.bash has been sourced."
           colcon build --continue-on-error --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --cmake-force-configure
 
 
