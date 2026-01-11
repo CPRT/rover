@@ -30,6 +30,13 @@ jobs:
           | xargs clang-format --dry-run --Werror
 
       # C++ Linting
+      - name: Install kindr
+        run: |
+          git clone https://github.com/ANYbotics/kindr.git
+          cd kindr && mkdir build && cd build
+          cmake .. -DUSE_CMAKE=true
+          make install
+          rm -rf /kindr
       - name: Install zed
         run: |
           cd /tmp
@@ -45,7 +52,7 @@ jobs:
           curl -L -o /tmp/ros2-apt-source.deb "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.$(. /etc/os-release && echo ${UBUNTU_CODENAME:-${VERSION_CODENAME}})_all.deb"
           sudo dpkg -i /tmp/ros2-apt-source.deb
           sudo apt update
-          sudo apt-get install -y clang-tidy python3-rosdep ros-humble-desktop ros-dev-tools python3-colcon-common-extensions ros-humble-ament-cmake
+          sudo apt-get install -y clang-tidy python3-rosdep ros-humble-desktop ros-dev-tools python3-colcon-common-extensions ros-humble-ament-cmake libglib2.0-dev libunwind-dev
       - name: Initialize rosdeps
         run: |
           source /opt/ros/humble/setup.bash && echo "setup.bash has been sourced."
