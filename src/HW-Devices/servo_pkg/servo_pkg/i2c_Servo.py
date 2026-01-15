@@ -1,12 +1,9 @@
+import math
 import rclpy
 from std_msgs.msg import Float32
-import math
-from std_msgs.msg import Float32
-import math
 import board
 from adafruit_motor import servo
 from adafruit_pca9685 import PCA9685
-from servo_pkg.parent_config import Parent_Config
 from servo_pkg.parent_config import Parent_Config
 
 
@@ -28,7 +25,6 @@ class i2c_Servo(Parent_Config):
         self.pca = PCA9685(self.i2c)
         self.pca.frequency = 50
 
-        self.maxrom = math.pi  # max range of motion of the servo, default pi
         self.maxrom = math.pi  # max range of motion of the servo, default pi
 
     def set_position(self, msg, port):

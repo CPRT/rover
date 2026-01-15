@@ -71,7 +71,6 @@ class USB_Servo(Parent_Config):
             self.get_logger().info(
                 f"Servo {port} moved to angle: {current_position} with PWM {target_value}"
             )
-            self.get_logger().info(f"Topic: /{self.servo_info[port].motor_name}")
 
 
 def main(args=None):

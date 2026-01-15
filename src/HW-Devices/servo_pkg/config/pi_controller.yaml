@@ -1,6 +1,6 @@
 pi_Servo_node:
   ros__parameters:
-    servo_num: 1
+    servos_used: 2
     # Microscope Servo
     servo0:
       name: "microscope"
@@ -12,5 +12,4 @@ pi_Servo_node:
       name: "collection"
       min: 4.5   # Min PWM value
       max: 10.5  # Max PWM value
-      rom: 3.1415   # 180 degrees
       rom: 3.1415   # 180 degrees
