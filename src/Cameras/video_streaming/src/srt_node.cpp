@@ -102,10 +102,10 @@ bool SrtNode::create_pipeline() {
   } else {
     desc = g_strdup_printf(
 
-        "interpipesrc listen-to=detect is-live=true ! "
-        "videorate ! "
+        "interpipesrc format=3 listen-to=detect is-live=true ! "
+        "nvvidconv ! videorate ! "
         "capsfilter name=framerate_caps "
-        "caps=video/x-raw,framerate=%d/1 ! "
+        "caps=video/x-raw(memory:NVMM),framerate=%d/1 ! "
         "nvvidconv ! "
         "nvv4l2av1enc name=av1_enc insert-seq-hdr=true iframeinterval=%d ! "
         " av1parse ! capsfilter caps=\"video/x-av1, "

@@ -26,7 +26,7 @@ DetectNode::DetectNode(const rclcpp::NodeOptions &options)
 bool DetectNode::create_pipeline() {
 
   std::stringstream desc_ss;
-  desc_ss << "interpipesrc listen-to="
+  desc_ss << "interpipesrc format=3 listen-to="
           << this->get_parameter("listen_to").as_string()
           << " is-live=true "
              "allow-renegotiation=true name=src ! ";
