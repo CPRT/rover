@@ -12,7 +12,6 @@ class pi_Servo_info:
         self.pwm_pin = HardwarePWM(pwm_channel=self.channel, hz=self.frequency, chip=0)
         self.pwm_pin.start(0)
 
-
     def set_position(self, angle: float):
         if angle < 0 or angle > self.servo_info.rom:
             raise ValueError(f"Angle out of range: {angle}")

@@ -7,7 +7,6 @@ from adafruit_pca9685 import PCA9685
 from servo_pkg.parent_config import Parent_Config
 
 
-
 class i2c_Servo(Parent_Config):
     def __init__(self):
         super().__init__("i2c_servo")
