@@ -62,40 +62,15 @@ template <typename T> bool BoxBlurFilter<T>::configure() {
 
 template <typename T> bool BoxBlurFilter<T>::update(const T &mapIn, T &mapOut) {
   // Add new layers to the elevation map.
-  mapOut = mapIn;
-  mapOut.add(outputLayer_);
+  T mapOutHorz = mapIn;
+  T mapOutVert = mapIn;
+  //mapOut.add(outputLayer_);
 
-  HorizontalBoxBlur(mapIn[outputLayer_], mapOut[outputLayer_], radius_);
+  HorizontalBoxBlur(mapIn[outputLayer_], mapOutHorz[outputLayer_], radius_);
+  VerticalBoxBlur(mapIn[outputLayer_], mapOutVert[outputLayer_], radius_);
 
-  //VerticalBoxBlur(mapIn[outputLayer_], mapOut[outputLayer_], radius_);
-
-  double value;
-
-  // First iteration through the elevation map.
-  for (grid_map::GridMapIterator iterator(mapOut); !iterator.isPastEnd();
-       ++iterator) {
-    double valueSum = 0.0;
-    int counter = 0;
-    // Requested position (center) of circle in map.
-    Eigen::Vector2d center;
-    mapOut.getPosition(*iterator, center);
-
-    // Find the mean in a circle around the center
-    for (grid_map::CircleIterator submapIterator(mapOut, center, radius_);
-         !submapIterator.isPastEnd(); ++submapIterator) {
-      if (!mapOut.isValid(*submapIterator, inputLayer_)) {
-        continue;
-      }
-      value = mapOut.at(inputLayer_, *submapIterator);
-      valueSum += value;
-      counter++;
-    }
-
-    if (counter != 0) {
-      mapOut.at(outputLayer_, *iterator) = valueSum / counter;
-    }
-  }
-
+  MatrixMultiply(mapOutHorz, mapOutVert, mapOut);
+  
   return true;
 }
 
@@ -104,49 +79,59 @@ template <typename T> bool BoxBlurFilter<T>::update(const T &mapIn, T &mapOut) {
 // finished!
 void HorizontalBoxBlur(
     const Eigen::MatrixXf &layerIn, Eigen::MatrixXf &layerOut,
-    double radius) // Unsure about parameter types.. ask about const + &!
+    double radius)
 {
-  layerOut = layerIn; // is this necessary?
-  float avgDenominator = 2 * radius + 1;
+ 
+  int height = layerOut.rows();
+  int width = layerOut.cols();
+  int r = (int)radius;
 
-  for (int y = 0; y <= layerOut.cols(); y++) { // Loop through columns
-    float minusCoeff;
-    float plusCoeff;
-    double sum = 0;
+  for(int y = 0; y < height; y++)
+  {
+    for(int x = 0; x < width; x++)
+    {
+      int minCoeff = std::max(0, x - r);
+      int maxCoeff = std::min(width - 1, x + r);
+      double sum = 0;
 
-    for (int x = 0; x <= layerOut.rows(); x++) { // Loop through rows
-      if (x == 0) {
-        minusCoeff = 0;
-      } else {
-        minusCoeff = layerOut(x - 1, y); // layerOut.getCoeff(x - 1, y);
+      for(int i = minCoeff; i <= maxCoeff; i++)
+      {
+        sum += layerIn(i, y);
       }
-
-      if (x + 1 <= layerOut.rows()) {
-        plusCoeff = layerOut(x + 1, y); // layerOut.getCoeff(x + 1, y);
-      } else {
-        plusCoeff = 0;
-      }
-
-      sum = plusCoeff - minusCoeff + sum;
-      layerOut(x, y) = sum / avgDenominator;
+      layerOut(x, y) = sum/(maxCoeff - minCoeff + 1);
     }
   }
 }
-/*
+
 void VerticalBoxBlur(
     const Eigen::MatrixXf &layerIn, Eigen::MatrixXf &layerOut,
-    double radius) // Unsure about parameter types.. ask about const + &!
+    double radius)
 {
-  //Fill in when horizontal algorithm works properly
+  int height = layerOut.rows();
+  int width = layerOut.cols();
+  int r = (int)radius;
+
+  for(int x = 0; x < width; x++)
+  {
+    for(int y = 0; y < height; y++)
+    {
+      int minCoeff = std::max(0, y - r);
+      int maxCoeff = std::min(height - 1, y + r);
+      double sum = 0;
+
+      for(int i = minCoeff; i <= maxCoeff; i++)
+      {
+        sum += layerIn(x, i);
+      }
+      layerOut(x, y) = sum/(maxCoeff - minCoeff + 1);
+    }
+  }
 }
 
-void MatrixMultiply(
-    const Eigen::MatrixXf &layerIn, Eigen::MatrixXf &layerOut,
-    double radius) // Unsure about parameter types.. ask about const + &!
+template <typename T> void BoxBlurFilter<T>::MatrixMultiply(const T &mapH, const T &mapV, T &mapOut)
 {
   //Fill in when horizontal algorithm works properly
 }
-*/
 
 } // namespace grid_map
 
