@@ -8,9 +8,9 @@
 
 #ifndef CPRTGRIDMAPFILTERS_BOXBLURFILTER_HPP_
 #define CPRTGRIDMAPFILTERS_BOXBLURFILTER_HPP_
-#include <string>
-
+#include <Eigen/Dense>
 #include <filters/filter_base.hpp>
+#include <string>
 
 #include <string>
 #include <vector>
@@ -45,6 +45,12 @@ public:
    * layer.
    */
   bool update(const T &mapIn, T &mapOut) override;
+
+  void HorizontalBoxBlur(const Eigen::MatrixXf &layerIn,
+                         Eigen::MatrixXf &layerOut, double radius);
+  
+  void VerticalBoxBlur(const Eigen::MatrixXf &layerIn,
+                         Eigen::MatrixXf &layerOut, double radius);
 
 private:
   //! Radius to take the mean from.

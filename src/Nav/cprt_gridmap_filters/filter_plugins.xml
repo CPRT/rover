@@ -7,6 +7,16 @@
       </description>
     </class>
   </library>
+
+    <library path="box_blur_filter">
+    <class name="cprtGridMapFilters/BoxBlurFilter" type="grid_map::BoxBlurFilter&lt;grid_map::GridMap&gt;" base_class_type="filters::FilterBase&lt;grid_map::GridMap&gt;">
+      <description>
+        Applies a box blur (mean filter) to a single layer of a GridMap. 
+        The radius of the blur should be configurable as a filter parameter. 
+        The filter should handle NaN values correctly and integrate seamlessly with the existing cprt_gridmap_filters framework.
+      </description>
+    </class>
+  </library>
   <library path="gradient_filter">
     <class name="cprtGridMapFilters/GradientFilter" type="grid_map::GradientFilter" base_class_type="filters::FilterBase&lt;grid_map::GridMap&gt;">
       <description>
