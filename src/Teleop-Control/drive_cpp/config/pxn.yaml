@@ -26,8 +26,8 @@ flightstick_control:
       max_angular: 1.0
       max_increment: 0.1
       min_speed: 0.001
-      default_pan: 180.0
-      default_tilt: 45.0
+      default_pan: 3.14159
+      default_tilt: 0.785398
       
     arm_manual_mode:
       throttle:
@@ -45,7 +45,7 @@ flightstick_control:
       claw_close: 0
       simple_forward: 2
       simple_backward: 4
-      servo_port: 3
+      servo_name: "arm"
   
     arm_ik_mode:
       x_axis: 1
@@ -59,7 +59,7 @@ flightstick_control:
       close_claw: 0
       base_frame: 4
       eef_frame: 2
-      servo_port: 3
+      servo_name: "arm"
 
     science_mode:
       platform_axis: 1
@@ -70,11 +70,10 @@ flightstick_control:
       soil_test_button: 2
       lock_sample_button: 4
       microscope_light_button: 4
-      microscope_servo: 1
-      collection_servo: 0
-      collection_open: 170
-      collection_dump: 80
-      collection_test: 0
-      collection_lock: 180
+      microscope_servo_name: "microscope"
+      collection_servo_name: "collection"
+      collection_open: 2.967060
+      collection_dump: 1.396263
+      collection_test: 0.0
+      collection_lock: 3.141593
       throttle_axis: 2
-

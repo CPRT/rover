@@ -1,6 +1,5 @@
 Parent_config:
     ros__parameters:
-      servo_num: 1
       # Tilt
       servo0:
         name: "tilt"

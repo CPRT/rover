@@ -1,6 +1,6 @@
 pi_Servo_node:
   ros__parameters:
-    servo_num: 1
+    servos_used: 2
     # Microscope Servo
     servo0:
       name: "microscope"

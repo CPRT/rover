@@ -31,14 +31,14 @@ class pi_Servo_info:
 class pi_Servo(Parent_Config):
     def __init__(self):
         super().__init__("pi_servo")
-        self.get_logger().info(f"{self.servo_num}")
-        self.get_logger().info(self.servo_info[self.servo_num].motor_name)
-        self.sub = self.create_subscription(
-            Float32,
-            f"/{self.servo_info[self.servo_num].motor_name}",
-            self.set_position,
-            3,
-        )
+        self.subs = {}
+        for servo in self.servo_info:
+            self.subs[servo] = self.create_subscription(
+                Float32,
+                f"/{self.servo_info[servo].motor_name}",
+                lambda msg, servo=servo: self.set_position(msg, servo),
+                3,
+            )
         self.servo_list = {}
         self.load_params()
 
@@ -57,7 +57,7 @@ class pi_Servo(Parent_Config):
                 frequency=frequency,
             )
 
-    def set_position(self, msg):
+    def set_position(self, msg, port):
         port = self.servo
         servo = self.servo_info[port]
         angle = msg.data

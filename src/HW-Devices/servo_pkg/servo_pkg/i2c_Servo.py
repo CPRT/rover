@@ -1,6 +1,6 @@
+import math
 import rclpy
 from std_msgs.msg import Float32
-import math
 import board
 from adafruit_motor import servo
 from adafruit_pca9685 import PCA9685
@@ -11,12 +11,14 @@ class i2c_Servo(Parent_Config):
     def __init__(self):
         super().__init__("i2c_servo")
 
-        self.sub = self.create_subscription(
-            Float32,
-            f"/{self.servo_info[self.servo_num].motor_name}",
-            self.set_position,
-            3,
-        )
+        self.subs = {}
+        for servo in self.servo_info:
+            self.subs[servo] = self.create_subscription(
+                Float32,
+                f"/{self.servo_info[servo].motor_name}",
+                lambda msg, servo=servo: self.set_position(msg, servo),
+                3,
+            )
 
         self.i2c = board.I2C()
         self.pca = PCA9685(self.i2c)
@@ -24,16 +26,14 @@ class i2c_Servo(Parent_Config):
 
         self.maxrom = math.pi  # max range of motion of the servo, default pi
 
-    def set_position(self, msg):
-        if self.servo_list[self.servo_num - 1] == None:
-            self.servo_list[self.servo_num] = servo.Servo(
-                self.pca.channels[self.servo_num], actuation_range=self.maxrom
+    def set_position(self, msg, port):
+        if self.servo_list[port - 1] == None:
+            self.servo_list[port] = servo.Servo(
+                self.pca.channels[port], actuation_range=self.maxrom
             )
-        cur_servo = self.servo_list[self.servo_num]
+        cur_servo = self.servo_list[port]
         cur_servo.angle = msg.data
-        self.get_logger().info(
-            f"Servo {self.servo_num} moving to {cur_servo.angle} degrees"
-        )
+        self.get_logger().info(f"Servo {port} moving to {cur_servo.angle} degrees")
 
 
 def main(args=None):

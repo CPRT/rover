@@ -1,6 +1,5 @@
 USB_Servo_node:
   ros__parameters:
-    servo_num: 1
     serial_port: "/dev/serial/by-id/usb-Pololu_Corporation_Pololu_Mini_Maestro_12-Channel_USB_Servo_Controller_00460938-if00"
     # Tilt
     servo0:
@@ -16,7 +15,7 @@ USB_Servo_node:
       rom: 6.2832
     # GRIPPER
     servo3:
-      name: "gripper"
-      min: 500.0
+      name: "arm"
+      min: 350.0
       max: 2500.0
-      rom: 3.1415
+      rom: 6.2832

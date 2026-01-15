@@ -3,12 +3,19 @@
 ScienceMode::ScienceMode(rclcpp::Node *node) : Mode("Science", node) {
   RCLCPP_INFO(node_->get_logger(), "Science Mode");
   loadParameters();
+
   platform_pub_ = node_->create_publisher<ros_phoenix::msg::MotorControl>(
       "/platform/set", 10);
   drill_pub_ =
       node_->create_publisher<ros_phoenix::msg::MotorControl>("/drill/set", 10);
-  servo_client_ = node_->create_client<interfaces::srv::MoveServo>(
-      "/science_servo_service");
+
+  std::vector<std::string> motor_names = {collectionServo, microscopeServo};
+
+  for (const auto &topic : motor_names) {
+    std::string topic_name = "/" + topic;
+    motor_pubs[topic] = node_->create_publisher<std_msgs::msg::Float32>(
+        topic_name, rclcpp::QoS(rclcpp::KeepLast(10)).reliable());
+  }
   led_client_ =
       node_->create_client<std_srvs::srv::SetBool>("/microscope_light");
 }
@@ -43,13 +50,13 @@ void ScienceMode::handleDrill(
 }
 
 void ScienceMode::handleMicroscope(
-    std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const {
+    std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   // Process input and output linear component
   static double position;
-  double value = joystickMsg->axes[kMicroscopeAxis];
+  double value = joystickMsg->axes[kMicroscopeAxis] * rad_multiplier;
   if (value != 0) {
     position += value;
-    setServoPosition(kMicroscopeServo, position);
+    setServoPosition(microscopeServo, position);
   }
   if (joystickMsg->buttons[kMicroscopeLightButton]) {
     toggleLights();
@@ -57,31 +64,28 @@ void ScienceMode::handleMicroscope(
 }
 
 void ScienceMode::handleSoilCollection(
-    std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const {
+    std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   if (joystickMsg->buttons[kCollectionButton]) {
-    setServoPosition(kCollectionServo, kCollectionOpen);
+    RCLCPP_INFO(node_->get_logger(), "Collection");
+    setServoPosition(collectionServo, kCollectionOpen);
   } else if (joystickMsg->buttons[kCancelCollectionButton]) {
-    setServoPosition(kCollectionServo, kCollectionClose);
+    RCLCPP_INFO(node_->get_logger(), "Cancel collection");
+    setServoPosition(collectionServo, kCollectionClose);
   } else if (joystickMsg->buttons[kSoilTestButton]) {
-    setServoPosition(kCollectionServo, kCollectionSample);
+    RCLCPP_INFO(node_->get_logger(), "Soil test");
+    setServoPosition(collectionServo, kCollectionSample);
   } else if (joystickMsg->buttons[kSoilLockButton]) {
-    setServoPosition(kCollectionServo, kCollectionLock);
+    RCLCPP_INFO(node_->get_logger(), "Soil lock");
+    setServoPosition(collectionServo, kCollectionLock);
   }
 }
 
-void ScienceMode::setServoPosition(int port, int position) const {
-  auto request = std::make_shared<interfaces::srv::MoveServo::Request>();
-  request->port = port;
-  request->pos = position;
-
-  // Wait for the service to be available
-  if (!servo_client_->wait_for_service(std::chrono::seconds(1))) {
-    RCLCPP_WARN(node_->get_logger(), "Service not available after waiting");
-    return;
-  }
-
-  servo_client_->async_send_request(request);
+void ScienceMode::setServoPosition(std::string name, double position) {
+  auto servo_msg = std_msgs::msg::Float32();
+  servo_msg.data = position;
+  motor_pubs[name]->publish(servo_msg);
 }
+
 void ScienceMode::toggleLights() const {
   static bool light_on = false;
   auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
@@ -103,12 +107,12 @@ void ScienceMode::declareParameters(rclcpp::Node *node) {
   node->declare_parameter("science_mode.cancel_collection_button", 5);
   node->declare_parameter("science_mode.soil_test_button", 6);
   node->declare_parameter("science_mode.microscope_light_button", 7);
-  node->declare_parameter("science_mode.collection_servo", 0);
-  node->declare_parameter("science_mode.microscope_servo", 1);
-  node->declare_parameter("science_mode.collection_open", 0);
-  node->declare_parameter("science_mode.collection_dump", 90);
-  node->declare_parameter("science_mode.collection_lock", 180);
-  node->declare_parameter("science_mode.collection_test", 180);
+  node->declare_parameter("science_mode.collection_servo_name", "collection");
+  node->declare_parameter("science_mode.microscope_servo_name", "microscope");
+  node->declare_parameter("science_mode.collection_open", 0.0);
+  node->declare_parameter("science_mode.collection_dump", M_PI / 2);
+  node->declare_parameter("science_mode.collection_lock", M_PI);
+  node->declare_parameter("science_mode.collection_test", M_PI);
 }
 
 void ScienceMode::loadParameters() {
@@ -124,8 +128,8 @@ void ScienceMode::loadParameters() {
   node_->get_parameter("science_mode.lock_sample_button", kSoilLockButton);
   node_->get_parameter("science_mode.microscope_light_button",
                        kMicroscopeLightButton);
-  node_->get_parameter("science_mode.collection_servo", kCollectionServo);
-  node_->get_parameter("science_mode.microscope_servo", kMicroscopeServo);
+  node_->get_parameter("science_mode.collection_servo_name", collectionServo);
+  node_->get_parameter("science_mode.microscope_servo_name", microscopeServo);
   node_->get_parameter("science_mode.collection_open", kCollectionOpen);
   node_->get_parameter("science_mode.collection_dump", kCollectionClose);
   node_->get_parameter("science_mode.collection_test", kCollectionSample);

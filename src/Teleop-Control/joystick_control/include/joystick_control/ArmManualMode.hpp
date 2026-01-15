@@ -1,12 +1,15 @@
 #ifndef JOYSTICK_CONTROL__ARMMANUAL_MODE_HPP_
 #define JOYSTICK_CONTROL__ARMMANUAL_MODE_HPP_
 
+#include <cmath>
+
 #include "Mode.hpp"
 #include "control_msgs/msg/joint_jog.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "interfaces/srv/move_servo.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/joy.hpp"
+#include "std_msgs/msg/float32.hpp"
 
 /**
  * @class ArmManualMode
@@ -52,7 +55,7 @@ public:
    * @param req_min The minimum position limit
    * @param req_max The maximum position limit
    */
-  void servoRequest(int req_port, int req_pos) const;
+  void setServoPosition(double position) const;
 
 private:
   /**
@@ -94,25 +97,28 @@ private:
   int8_t kSimpleForward;  ///< Button to move the end effector forward
   int8_t kSimpleBackward; ///< Button to move the end effector backward
 
+  // constant for radians
+  const double rad_multiplier = M_PI / 180;
+
   // Publishers
   rclcpp::Publisher<control_msgs::msg::JointJog>::SharedPtr
       joint_pub_; ///< Publisher for joint jog messages.
 
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr
+      servo_pub_; ///< Publisher for servo
+
   // Message Messages
   control_msgs::msg::JointJog joint_msg_;
 
-  // Servo Members
-  rclcpp::Client<interfaces::srv::MoveServo>::SharedPtr servo_client_;
-
   // Servo Constants
-  int8_t kServoPort;
-  int8_t kServoMin;
-  int8_t kServoMax;
-  int8_t kClawMax;
-  int8_t kClawMin;
+  std::string servoName;
+  double kServoMin;
+  double kServoMax;
+  double kClawMax;
+  double kClawMin;
   double act1Scaler_;
   double act2Scaler_;
-  int8_t servoPos_;
+  double servoPos_;
   bool buttonPressed_;
 };
 

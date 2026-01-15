@@ -1,11 +1,14 @@
 #ifndef JOYSTICK_CONTROL__ARMDUMMY_MODE_HPP_
 #define JOYSTICK_CONTROL__ARMDUMMY_MODE_HPP_
 
+#include <cmath>
+
 #include "Mode.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "interfaces/srv/move_servo.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "ros_phoenix/msg/motor_control.hpp"
+#include "std_msgs/msg/float32.hpp"
 
 /**
  * @class ArmDummyMode
@@ -47,12 +50,9 @@ public:
 
   /**
    * @brief Wrapper for servo control
-   * @param req_port The servo port number
-   * @param req_pos The target position
-   * @param req_min The minimum position limit
-   * @param req_max The maximum position limit
+   * @param position The target position
    */
-  void servoRequest(int req_port, int req_pos, int req_min, int req_max) const;
+  void setServoPosition(double position) const;
 
 private:
   /**
@@ -105,6 +105,9 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr
       twist_pub_; ///< Publisher for Twist messages.
 
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr
+      servo_pub_; ///< Publisher for servo
+
   // MotorControl Messages
   mutable ros_phoenix::msg::MotorControl base_;
   mutable ros_phoenix::msg::MotorControl act1_;
@@ -113,19 +116,19 @@ private:
   mutable ros_phoenix::msg::MotorControl wristTilt_;
   mutable ros_phoenix::msg::MotorControl wristTurn_;
 
-  // Servo Members
-  mutable rclcpp::Client<interfaces::srv::MoveServo>::SharedPtr servo_client_;
-
   // Servo Constants
-  int8_t kServoPort;
-  int8_t kServoMin;
-  int8_t kServoMax;
-  int8_t kClawMax;
-  int8_t kClawMin;
+  std::string servoName;
+  double kServoMin;
+  double kServoMax;
+  double kClawMax;
+  double kClawMin;
   mutable double act1Scaler;
   mutable double act2Scaler;
-  mutable int8_t servoPos;
+  mutable double servoPos;
   mutable bool buttonPressed;
+
+  // constant for radians
+  const double rad_multiplier = M_PI / 180;
 };
 
 #endif // JOYSTICK_CONTROL__ARMDUMMY_MODE_HPP_

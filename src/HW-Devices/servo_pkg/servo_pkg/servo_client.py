@@ -31,8 +31,7 @@ class Servo_Client(Node):
     def servo_tester(self) -> None:
         msg = Float32()
         # random value
-        msg.data = random.choice([2.6652457674418604, math.pi])
-        # set value
+        msg.data = random.uniform(math.pi / 2, math.pi)
         self.get_logger().info(f"Sending position: {msg.data} to {self.motor_name}")
         self.servo_pub(msg)
 
