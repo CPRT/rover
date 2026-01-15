@@ -10,8 +10,8 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
-find_package(std_srvs REQUIRED)
 find_package(interfaces REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(GSTREAMER REQUIRED IMPORTED_TARGET gstreamer-1.0)
@@ -46,7 +46,7 @@ ament_target_dependencies(${PROJECT_NAME}
   rclcpp
   rclcpp_components
   interfaces
-  std_srvs
+  std_msgs
 )
 
 # If pkg-config provided extra compile flags (e.g., -D, -pthread)
@@ -86,7 +86,7 @@ ament_environment_hooks(
 
 # ---- Export
 ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_dependencies(rclcpp rclcpp_components)
+ament_export_dependencies(rclcpp rclcpp_components interfaces std_msgs)
 ament_export_libraries(${PROJECT_NAME})
 
 ament_package()

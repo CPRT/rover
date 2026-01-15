@@ -20,7 +20,7 @@ spectrometer, wav = sn.array_get_spec(
 )  # 0 for first channel and 1 for second channel , up to 127 spectrometers
 """
 # Equivalent to get spectrometer and wav separately:
-spectrometer = sn.array_get_spec_only(0) 
+spectrometer = sn.array_get_spec_only(0)
 wav = sn.getSpectrum_X(spectrometer)
 """
 

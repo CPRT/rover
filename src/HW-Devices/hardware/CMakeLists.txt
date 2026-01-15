@@ -112,6 +112,7 @@ add_ctre_library(CTRE_PhoenixCCI cci)
 add_library(${PROJECT_NAME} SHARED
   "src/rover_arm.cpp"
   "src/TalonSRXWrapper.cpp"
+  "src/BaseWrapper.cpp"
 )
 ament_target_dependencies(${PROJECT_NAME}
   "rclcpp"

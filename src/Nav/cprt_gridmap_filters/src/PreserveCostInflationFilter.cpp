@@ -148,8 +148,7 @@ void PreserveCostInflationFilter<T>::computeWithSimpleSerialMethod(
 
     const grid_map::Index index = *iterator;
     grid_map::Position position;
-    mapIn.getPosition(
-        index, position); // Get position of cell from grid_map::Index of cell
+    mapIn.getPosition(index, position);
 
     const float value = layerIn.coeff(index(0), index(1));
     if (!std::isfinite(value)) {

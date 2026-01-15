@@ -89,7 +89,7 @@ def launch_setup(context):
             msg=f"Loading elevation mapping with profile: {selected_profile}"
         ),
         launch.actions.LogInfo(
-            msg=f"Waiting to compose gridmap node into zed container"
+            msg="Waiting to compose gridmap node into zed container"
         ),
         LoadComposableNodes(
             composable_node_descriptions=[node],

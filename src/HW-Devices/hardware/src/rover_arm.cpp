@@ -13,11 +13,23 @@ hardware_interface::CallbackReturn RoverArmHardwareInterface::on_init(
     return hardware_interface::CallbackReturn::ERROR;
   }
   debug_node_ = std::make_shared<rclcpp::Node>("rover_arm_debug_node");
+  std::shared_ptr<BaseWrapper> controller;
 
   for (const hardware_interface::ComponentInfo &joint : info_.joints) {
+    for (const auto &param : joint.parameters) {
+      if (param.first != "type") {
+        continue;
+      }
+      if (param.second == "TalonSRX") {
+        controller = std::make_shared<TalonSRXWrapper>(joint, debug_node_);
+      } else {
+        RCLCPP_FATAL(rclcpp::get_logger("RoverArmHardwareInterface"),
+                     "Unsupported controller type '%s' for joint '%s'",
+                     param.second.c_str(), joint.name.c_str());
+        return hardware_interface::CallbackReturn::ERROR;
+      }
+    }
     try {
-      auto controller = std::make_shared<TalonSRXWrapper>(joint, debug_node_);
-      controller->configure();
       controllers_.push_back(controller);
     } catch (const std::exception &e) {
       RCLCPP_FATAL(rclcpp::get_logger("RoverArmHardwareInterface"),
@@ -36,6 +48,9 @@ hardware_interface::CallbackReturn RoverArmHardwareInterface::on_init(
 hardware_interface::CallbackReturn RoverArmHardwareInterface::on_configure(
     const rclcpp_lifecycle::State & /*previous_state*/) {
   c_SetPhoenixDiagnosticsStartTime(1);
+  for (auto &controller : controllers_) {
+    controller->configure();
+  }
   RCLCPP_INFO(rclcpp::get_logger("RoverArmHardwareInterface"),
               "Successfully configured!");
   return hardware_interface::CallbackReturn::SUCCESS;

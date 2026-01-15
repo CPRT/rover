@@ -107,6 +107,14 @@ RUN if ! pkg-config --exists opencv4; then \
       echo "OpenCV already installed, skipping build."; \
     fi
 
+FROM nvcr.io/nvidia/deepstream:7.1-triton-multiarch AS deepstream-base
+RUN git clone https://github.com/marcoslucianops/DeepStream-Yolo.git && \
+    cd DeepStream-Yolo && \
+    CUDA_VER=12.6 make -C nvdsinfer_custom_impl_Yolo && \
+    mkdir -p /target/opt/nvidia/deepstream && \
+    cp nvdsinfer_custom_impl_Yolo/libnvdsinfer_custom_impl_Yolo.so /opt/nvidia/deepstream/deepstream/lib/  && \
+    cp -rH /opt/nvidia/deepstream/deepstream /target/opt/nvidia/deepstream    
+
 ############################
 # Stage 5: Minimal Runtime Base
 ############################
@@ -139,7 +147,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zlib1g-dev libffi-dev \
     libglib2.0-dev libmount-dev
 
-ENV GST_PLUGIN_PATH=/opt/gstreamer/lib/gstreamer-1.0:/usr/lib/aarch64-linux-gnu/gstreamer-1.0
+COPY --from=deepstream-base /target/ /
+ENV GST_PLUGIN_PATH=/opt/gstreamer/lib/gstreamer-1.0:/usr/lib/aarch64-linux-gnu/gstreamer-1.0:/opt/nvidia/deepstream/deepstream/lib/gst-plugins
+ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib:$LD_LIBRARY_PATH
 
 ############################
 # Stage 6: Dev Environment
@@ -150,7 +160,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ros-humble-ament-cmake python3-colcon-common-extensions \
         python3-colcon-ros clang-format cuda-compiler-12-6 \
         cuda-cudart-dev-12-6 cuda-driver-dev-12-6 libpng-dev ccache \
-        libc6-dev libssl-dev \
+        libc6-dev libssl-dev cuda-toolkit-12-6 libnvinfer10 \
+        libnvinfer-plugin10 libnvonnxparsers10 \
     && rm -rf /var/lib/apt/lists/*
 
 RUN [ "$(uname -m)" = "aarch64" ] && ln -sf /usr/lib/aarch64-linux-gnu/libdl.so.2 /usr/lib/aarch64-linux-gnu/libdl.so && ldconfig || true

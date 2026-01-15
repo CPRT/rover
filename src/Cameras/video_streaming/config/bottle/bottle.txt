@@ -1,0 +1,38 @@
+[property]
+gpu-id=0
+gie-unique-id=1
+
+# Preprocessing
+net-scale-factor=0.003921568859368563
+model-color-format=0
+
+# Model files
+model-engine-file=bottle.jetson.engine
+onnx-file=bottle_detector.onnx
+
+network-type=0                  # detector
+infer-dims=3;640;640
+batch-size=1
+process-mode=1
+network-mode=2
+interval=1
+
+
+num-detected-classes=1
+labelfile-path=labels.txt
+
+# YOLOv8 custom parser
+parse-bbox-func-name=NvDsInferParseYolo
+custom-lib-path=/opt/nvidia/deepstream/deepstream/lib/libnvdsinfer_custom_impl_Yolo.so
+engine-create-func-name=NvDsInferYoloCudaEngineGet
+output-tensor-meta=1
+
+cluster-mode=2
+maintain-aspect-ratio=1
+symmetric-padding=1
+output-blob-names=output0
+
+[class-attrs-all]
+nms-iou-threshold=0.45
+pre-cluster-threshold=0.25
+topk=1

@@ -1,7 +1,10 @@
 #include "srt_node.hpp"
+#include "interfaces/msg/srt_stats.hpp"
 #include "std_msgs/msg/empty.hpp"
 #include "std_msgs/msg/int32.hpp"
 #include <glib.h>
+#include <gst/gststructure.h>
+#include <gst/video/video-event.h>
 #include <rclcpp_components/register_node_macro.hpp>
 
 namespace video_streaming {
@@ -10,12 +13,11 @@ SrtNode::SrtNode(const rclcpp::NodeOptions &options)
     : BaseVideoNode("srt_node", options) {
   RCLCPP_INFO(this->get_logger(), "Initializing SrtNode...");
 
-  // Start up
-  // latency , iframe_interval
   this->declare_parameter<std::string>("srt_uri", "srt://:7001");
   this->declare_parameter<int>("latency", 100);
   this->declare_parameter<int>("iframe_interval", 0);
   this->declare_parameter<bool>("test_mode", false);
+  this->declare_parameter<double>("stats_frequency", 1.0);
 
   param_callback_handle_ = this->add_on_set_parameters_callback(
       std::bind(&SrtNode::on_parameter_change, this, std::placeholders::_1));
@@ -27,6 +29,22 @@ SrtNode::SrtNode(const rclcpp::NodeOptions &options)
   iframe_sub_ = this->create_subscription<std_msgs::msg::Empty>(
       "~/trigger_iframe", 10,
       std::bind(&SrtNode::on_iframe_trigger, this, std::placeholders::_1));
+
+  srt_stats_pub_ =
+      this->create_publisher<interfaces::msg::SrtStats>("~/srt_stats", 10);
+
+  double stats_freq = this->get_parameter("stats_frequency").as_double();
+  if (stats_freq <= 0.0) {
+    stats_freq = 1.0;
+    RCLCPP_WARN(this->get_logger(),
+                "Invalid stats_frequency (%.2f). Defaulting to 1.0 Hz",
+                stats_freq);
+  }
+  auto timer_period = std::chrono::duration<double>(1.0 / stats_freq);
+
+  srt_stats_timer_ = this->create_wall_timer(
+      std::chrono::duration_cast<std::chrono::milliseconds>(timer_period),
+      std::bind(&SrtNode::publish_srt_stats, this));
 
   if (!start_pipeline()) {
     RCLCPP_FATAL(get_logger(), "SrtNode: failed to start pipeline.");
@@ -58,13 +76,13 @@ bool SrtNode::create_pipeline() {
 
   } else {
     desc = g_strdup_printf(
-        "interpipesrc listen-to=detect ! "
+        "interpipesrc listen-to=detect is-live=true ! "
         "nvvidconv ! "
         "nvv4l2av1enc name=av1_enc insert-seq-hdr=true iframeinterval=%d ! "
         " av1parse ! capsfilter caps=\"video/x-av1, "
         "alignment=obu, parsed=true\" ! "
         "queue ! "
-        "srtsink name=srt_sink uri=%s latency=%d",
+        "srtsink name=srt_sink uri=%s latency=%d sync=false",
         iframe_interval_val, srt_uri.c_str(), latency_val);
     RCLCPP_INFO(this->get_logger(), "Using PRODUCTION pipeline description: %s",
                 desc);
@@ -127,19 +145,90 @@ SrtNode::on_parameter_change(const std::vector<rclcpp::Parameter> &parameters) {
 
 void SrtNode::on_bitrate_received(const std_msgs::msg::Int32::SharedPtr msg) {
   if (av1_encoder_) {
+    pause_pipeline();
     g_object_set(av1_encoder_, "bitrate", msg->data, NULL);
-    RCLCPP_INFO(this->get_logger(), "Bitrate set to %d", msg->data);
+    resume_pipeline();
+    RCLCPP_DEBUG(this->get_logger(), "Bitrate set to %d", msg->data);
   }
 }
 
 void SrtNode::on_iframe_trigger(const std_msgs::msg::Empty::SharedPtr msg) {
   (void)msg;
   if (av1_encoder_) {
-    g_signal_emit_by_name(av1_encoder_, "force-IDR", NULL);
-    RCLCPP_INFO(this->get_logger(), "I-Frame triggered");
+    GstEvent *event = gst_video_event_new_downstream_force_key_unit(
+        GST_CLOCK_TIME_NONE, GST_CLOCK_TIME_NONE, GST_CLOCK_TIME_NONE, TRUE, 0);
+
+    if (gst_element_send_event(av1_encoder_, event)) {
+      RCLCPP_INFO(this->get_logger(), "I-Frame triggered (Event sent)");
+    } else {
+      RCLCPP_WARN(this->get_logger(), "Failed to trigger I-Frame");
+    }
   }
 }
 
-} // namespace video_streaming
+void SrtNode::publish_srt_stats() {
+  if (!srt_sink_) {
+    return;
+  }
+  GstStructure *stats = nullptr;
+  g_object_get(srt_sink_, "stats", &stats, NULL);
+
+  if (!stats) {
+    return;
+  }
+  auto msg = interfaces::msg::SrtStats();
+  msg.header.stamp = this->now();
+
+  GstStructure *target_stats = stats;
+  const GValue *callers_val = gst_structure_get_value(stats, "callers");
+
+  if (callers_val) {
+    GValueArray *arr = (GValueArray *)g_value_get_boxed(callers_val);
+    if (arr && arr->n_values > 0) {
+      GValue *first_val = g_value_array_get_nth(arr, 0);
+      target_stats = (GstStructure *)g_value_get_boxed(first_val);
+    } else {
+      RCLCPP_WARN_THROTTLE(this->get_logger(), *(this->get_clock()), 10,
+                           "No SRT caller stats available currently - (Msg is "
+                           "throttled to 10s)");
+      gst_structure_free(stats);
+      return;
+    }
+  }
+
+  // 1. RTT: milliseconds
+  double rtt_ms = 0.0;
+  if (gst_structure_get_double(target_stats, "rtt-ms", &rtt_ms)) {
+    msg.rtt = rtt_ms;
+  }
+
+  // 2. Bandwidth: Mbps -> bits/sec
+  double bw_mbps = 0.0;
+  if (gst_structure_get_double(target_stats, "bandwidth-mbps", &bw_mbps)) {
+    msg.bandwidth = bw_mbps * 1e6;
+  }
+
+  // 3. Packets Sent
+  int64_t val_64 = 0;
+  if (gst_structure_get_int64(target_stats, "packets-sent", &val_64)) {
+    msg.packets_sent = val_64;
+  }
+
+  // 4. Packets Lost
+  int val_int = 0;
+  if (gst_structure_get_int(target_stats, "packets-sent-lost", &val_int)) {
+    msg.packets_lost = val_int;
+  }
+
+  // 5. Packets Retransmitted
+  int ret_int = 0;
+  if (gst_structure_get_int(target_stats, "packets-retransmitted", &ret_int)) {
+    msg.packets_retransmitted = ret_int;
+  }
+
+  srt_stats_pub_->publish(msg);
+  gst_structure_free(stats);
+}
 
 RCLCPP_COMPONENTS_REGISTER_NODE(video_streaming::SrtNode)
+} // namespace video_streaming
