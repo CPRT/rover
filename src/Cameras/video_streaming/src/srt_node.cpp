@@ -201,13 +201,18 @@ SrtNode::on_parameter_change(const std::vector<rclcpp::Parameter> &parameters) {
     }
 
     if (name == "target_framerate") {
-      int val = param.as_int();
-      if (val > 0 && val <= 60) {
-        change_framerate(val);
-      } else {
+      if (!stop_pipeline()) {
+        RCLCPP_ERROR(this->get_logger(),
+                     "Failed to stop pipeline for reconfiguration.");
         result.successful = false;
-        result.reason = "Framerate out of range";
-        RCLCPP_WARN(this->get_logger(), "Ignored invalid framerate: %d", val);
+        result.reason = "Failed to stop pipeline for reconfiguration.";
+        continue;
+      }
+      if (!start_pipeline()) {
+        RCLCPP_ERROR(this->get_logger(),
+                     "Failed to start pipeline after reconfiguration.");
+        result.successful = false;
+        result.reason = "Failed to start pipeline after reconfiguration.";
       }
       continue;
     }
