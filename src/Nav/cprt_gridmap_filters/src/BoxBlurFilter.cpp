@@ -32,13 +32,13 @@ template <typename T> bool BoxBlurFilter<T>::configure() {
     return false;
   }
 
-  if (radius_ < 0.0) {
+  if (radius_ < 0) {
     RCLCPP_ERROR(this->logging_interface_->get_logger(),
                  "BoxBlur filter: Radius must be greater than zero.");
     return false;
   }
 
-  RCLCPP_DEBUG(this->logging_interface_->get_logger(), "Radius = %f.", radius_);
+  RCLCPP_DEBUG(this->logging_interface_->get_logger(), "Radius = %d.", radius_);
 
   if (!param_reader.get(std::string("input_layer"), inputLayer_)) {
     RCLCPP_ERROR(this->logging_interface_->get_logger(),
@@ -66,8 +66,8 @@ template <typename T> bool BoxBlurFilter<T>::update(const T &mapIn, T &mapOut) {
   T mapOutHorz = mapIn;
 
   // Check if layer(s) exist
-  if (!mapOut.exists(this->inputLayer_) || !mapOutHorz.exists(this->inputLayer_)) 
-  {
+  if (!mapOut.exists(this->inputLayer_) ||
+      !mapOutHorz.exists(this->inputLayer_)) {
     RCLCPP_ERROR(this->logging_interface_->get_logger(),
                  "Layer %s does not exist. Unable to apply box blur"
                  "filter.",
@@ -78,58 +78,60 @@ template <typename T> bool BoxBlurFilter<T>::update(const T &mapIn, T &mapOut) {
   mapOut.add(this->outputLayer_);
   mapOutHorz.add(this->outputLayer_);
 
-  HorizontalBoxBlur(mapIn[outputLayer_], mapOutHorz[outputLayer_], radius_);
+  HorizontalBoxBlur(mapIn[inputLayer_], mapOutHorz[outputLayer_], radius_);
   VerticalBoxBlur(mapOutHorz[outputLayer_], mapOut[outputLayer_], radius_);
   return true;
 }
 
-void HorizontalBoxBlur(
-    const Eigen::MatrixXf &layerIn, Eigen::MatrixXf &layerOut,
-    double radius)
-{
- 
+template <typename T>
+void BoxBlurFilter<T>::HorizontalBoxBlur(const Eigen::MatrixXf &layerIn,
+                                         Eigen::MatrixXf &layerOut, int r) {
+
   int height = layerOut.rows();
   int width = layerOut.cols();
-  int r = (int)radius;
 
-  for(int y = 0; y < height; y++)
-  {
-    for(int x = 0; x < width; x++)
-    {
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
       int minCoeff = std::max(0, x - r);
       int maxCoeff = std::min(width - 1, x + r);
+      int numHoles = 0;
       double sum = 0;
 
-      for(int i = minCoeff; i <= maxCoeff; i++)
-      {
-        sum += layerIn(i, y);
+      for (int i = minCoeff; i <= maxCoeff; i++) {
+        const float value = layerIn(i, y);
+        if (!std::isfinite(value)) {
+          numHoles += 1;
+          continue;
+        }
+        sum += value;
       }
-      layerOut(x, y) = sum/(maxCoeff - minCoeff + 1);
+      layerOut(x, y) = sum / (maxCoeff - minCoeff + 1 - numHoles);
     }
   }
 }
 
-void VerticalBoxBlur(
-    const Eigen::MatrixXf &layerIn, Eigen::MatrixXf &layerOut,
-    double radius)
-{
+template <typename T>
+void BoxBlurFilter<T>::VerticalBoxBlur(const Eigen::MatrixXf &layerIn,
+                                       Eigen::MatrixXf &layerOut, int r) {
   int height = layerOut.rows();
   int width = layerOut.cols();
-  int r = (int)radius;
 
-  for(int x = 0; x < width; x++)
-  {
-    for(int y = 0; y < height; y++)
-    {
+  for (int x = 0; x < width; x++) {
+    for (int y = 0; y < height; y++) {
       int minCoeff = std::max(0, y - r);
       int maxCoeff = std::min(height - 1, y + r);
+      int numHoles = 0;
       double sum = 0;
 
-      for(int i = minCoeff; i <= maxCoeff; i++)
-      {
-        sum += layerIn(x, i);
+      for (int i = minCoeff; i <= maxCoeff; i++) {
+        const float value = layerIn(x, i);
+        if (!std::isfinite(value)) {
+          numHoles += 1;
+          continue;
+        }
+        sum += value;
       }
-      layerOut(x, y) = sum/(maxCoeff - minCoeff + 1);
+      layerOut(x, y) = sum / (maxCoeff - minCoeff + 1 - numHoles);
     }
   }
 }

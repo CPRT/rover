@@ -47,18 +47,19 @@ public:
   bool update(const T &mapIn, T &mapOut) override;
 
   void HorizontalBoxBlur(const Eigen::MatrixXf &layerIn,
-                         Eigen::MatrixXf &layerOut, double radius);
-  
-  void VerticalBoxBlur(const Eigen::MatrixXf &layerIn,
-                         Eigen::MatrixXf &layerOut, double radius);
-  
-  //void MatrixMultiply(const T &mapH, const T &mapV, T &mapOut);
+                         Eigen::MatrixXf &layerOut, int r);
 
-  //void MatrixMultiply(const Eigen::MatrixXf &layerHorz, const Eigen::MatrixXf &layerVert, Eigen::MatrixXf &layerOut) 
+  void VerticalBoxBlur(const Eigen::MatrixXf &layerIn,
+                       Eigen::MatrixXf &layerOut, int r);
+
+  // void MatrixMultiply(const T &mapH, const T &mapV, T &mapOut);
+
+  // void MatrixMultiply(const Eigen::MatrixXf &layerHorz, const Eigen::MatrixXf
+  // &layerVert, Eigen::MatrixXf &layerOut)
 
 private:
   //! Radius to take the mean from.
-  double radius_;
+  int radius_;
 
   //! Input layer name.
   std::string inputLayer_;
