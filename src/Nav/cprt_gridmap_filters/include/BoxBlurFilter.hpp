@@ -52,7 +52,9 @@ public:
   void VerticalBoxBlur(const Eigen::MatrixXf &layerIn,
                          Eigen::MatrixXf &layerOut, double radius);
   
-  void MatrixMultiply(const T &mapH, const T &mapV, T &mapOut);
+  //void MatrixMultiply(const T &mapH, const T &mapV, T &mapOut);
+
+  //void MatrixMultiply(const Eigen::MatrixXf &layerHorz, const Eigen::MatrixXf &layerVert, Eigen::MatrixXf &layerOut) 
 
 private:
   //! Radius to take the mean from.

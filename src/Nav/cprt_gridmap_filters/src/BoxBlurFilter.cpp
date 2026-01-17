@@ -61,22 +61,28 @@ template <typename T> bool BoxBlurFilter<T>::configure() {
 }
 
 template <typename T> bool BoxBlurFilter<T>::update(const T &mapIn, T &mapOut) {
-  // Add new layers to the elevation map.
+  // Add new layers to the elevation map
+  mapOut = mapIn;
   T mapOutHorz = mapIn;
-  T mapOutVert = mapIn;
-  //mapOut.add(outputLayer_);
+
+  // Check if layer(s) exist
+  if (!mapOut.exists(this->inputLayer_) || !mapOutHorz.exists(this->inputLayer_)) 
+  {
+    RCLCPP_ERROR(this->logging_interface_->get_logger(),
+                 "Layer %s does not exist. Unable to apply box blur"
+                 "filter.",
+                 this->inputLayer_.c_str());
+    return false;
+  }
+
+  mapOut.add(this->outputLayer_);
+  mapOutHorz.add(this->outputLayer_);
 
   HorizontalBoxBlur(mapIn[outputLayer_], mapOutHorz[outputLayer_], radius_);
-  VerticalBoxBlur(mapIn[outputLayer_], mapOutVert[outputLayer_], radius_);
-
-  MatrixMultiply(mapOutHorz, mapOutVert, mapOut);
-  
+  VerticalBoxBlur(mapOutHorz[outputLayer_], mapOut[outputLayer_], radius_);
   return true;
 }
 
-// Implement SEPARATE (for separable boxblur) horizontal and vertical blur
-// functions, call one after the other Don't forget to add to header file when
-// finished!
 void HorizontalBoxBlur(
     const Eigen::MatrixXf &layerIn, Eigen::MatrixXf &layerOut,
     double radius)
@@ -128,11 +134,31 @@ void VerticalBoxBlur(
   }
 }
 
-template <typename T> void BoxBlurFilter<T>::MatrixMultiply(const T &mapH, const T &mapV, T &mapOut)
+#if 0
 {
-  //Fill in when horizontal algorithm works properly
+  template <typename T> void BoxBlurFilter<T>::MatrixMultiply(const T &mapH, const T &mapV, T &mapOut) 
+  //wondering if I should only be passing in LAYERS rather than the whole map for more efficiency?? idk enough abt Eigen tbh
+  //TODO: ask Connor (or Darren or Erik!) above question ^^
+  {
+    //Fill in when horizontal algorithm works properly
+    mapOut = mapH*mapV;
+  }
 }
+#endif
 
+#if 0
+{
+  void MatrixMultiply(const Eigen::MatrixXf &layerHorz, const Eigen::MatrixXf &layerVert, Eigen::MatrixXf &layerOut) 
+  {
+    //layerOut = layerHorz*layerVert;
+    //wondering if I should only be passing in LAYERS rather than the whole map for more efficiency?? idk enough abt Eigen tbh
+    //TODO: ask Connor (or Darren or Erik!) above question ^^
+
+    layerOut = layerHorz.dot(layerVert);
+
+  }
+}
+#endif
 } // namespace grid_map
 
 PLUGINLIB_EXPORT_CLASS(grid_map::BoxBlurFilter<grid_map::GridMap>,
