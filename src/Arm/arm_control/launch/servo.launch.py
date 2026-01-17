@@ -74,16 +74,7 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
         moveit_config.robot_description,
         moveit_config.robot_description_semantic,
         moveit_config.robot_description_kinematics,
-        str(launch_package_path / "config/ros2_controllers.yaml"),
     ]
-    # Control Node does not implement a component option
-    control_node = Node(
-        package="controller_manager",
-        executable="ros2_control_node",
-        output="screen",
-        parameters=parameters,
-        remappings=[("/controller_manager/robot_description", "/robot_description")],
-    )
     servo_node = Node(
         package="moveit_servo",
         executable="servo_node_main",
@@ -92,7 +83,6 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
     )
 
     # Add actions to launch description
-    ld.add_action(control_node)
     ld.add_action(servo_node)
     return ld
 
