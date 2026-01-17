@@ -2,6 +2,7 @@ from launch import LaunchDescription
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 
+
 def generate_launch_description():
 
     srt_client_node = ComposableNode(
@@ -9,11 +10,7 @@ def generate_launch_description():
         plugin="video_streaming::SrtClientNode",
         name="srt_client_node",
         namespace="",
-        parameters=[
-            {
-                "srt_uri": "srt://:7001?mode=listener"
-            }
-        ],
+        parameters=[{"srt_uri": "srt://:7001?mode=listener"}],
     )
 
     # Container_mt
@@ -22,9 +19,7 @@ def generate_launch_description():
         namespace="",
         package="rclcpp_components",
         executable="component_container",
-        composable_node_descriptions=[
-            srt_client_node
-        ],
+        composable_node_descriptions=[srt_client_node],
         output="screen",
     )
 
