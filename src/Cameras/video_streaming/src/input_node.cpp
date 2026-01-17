@@ -9,6 +9,9 @@ InputNode::InputNode(const rclcpp::NodeOptions &options)
   video_service_ = this->create_service<interfaces::srv::VideoOut>(
       "start_video", std::bind(&InputNode::video_cb, this,
                                std::placeholders::_1, std::placeholders::_2));
+  param_callback_handle_ = this->add_on_set_parameters_callback(
+      std::bind(&InputNode::on_parameter_change, this, std::placeholders::_1));
+
   start_pipeline();
 }
 
@@ -24,6 +27,7 @@ void InputNode::declare_parameters() {
     this->declare_parameter(name + ".type",
                             static_cast<int>(CameraType::V4l2Src));
     this->declare_parameter(name + ".encoded", false);
+    this->declare_parameter(name + ".gamma", 1.0);
   }
 }
 
@@ -48,6 +52,11 @@ bool InputNode::create_pipeline() {
         continue;
       }
       desc_stream << "v4l2src device=" << path << " name=" << name << " ! ";
+
+      double current_gamma = this->get_parameter(name + ".gamma").as_double();
+      desc_stream << "gamma name=" << name << "_gamma gamma=" << current_gamma
+                  << " ! ";
+
       bool encoded;
       this->get_parameter(name + ".encoded", encoded);
       if (encoded) {
@@ -167,6 +176,26 @@ void InputNode::video_cb(
     RCLCPP_ERROR(this->get_logger(), "Failed to start pipeline");
     response->success = false;
   }
+}
+
+rcl_interfaces::msg::SetParametersResult InputNode::on_parameter_change(
+    const std::vector<rclcpp::Parameter> &parameters) {
+
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  result.reason = "success";
+
+  for (const auto &param : parameters) {
+    if (param.get_name().find(".gamma") != std::string::npos) {
+      std::string name = param.get_name();
+      std::string camera = name.substr(0, name.find(".gamma"));
+
+      if (auto *elem = get_element(camera + "_gamma")) {
+        g_object_set(elem, "gamma", param.as_double(), NULL);
+      }
+    }
+  }
+  return result;
 }
 
 RCLCPP_COMPONENTS_REGISTER_NODE(InputNode)

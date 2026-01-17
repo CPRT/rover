@@ -43,4 +43,7 @@ protected:
 private:
   std::map<std::string, size_t> source_map_;
   rclcpp::Service<interfaces::srv::VideoOut>::SharedPtr video_service_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr param_callback_handle_;
+  rcl_interfaces::msg::SetParametersResult
+  on_parameter_change(const std::vector<rclcpp::Parameter> &parameters); 
 };
