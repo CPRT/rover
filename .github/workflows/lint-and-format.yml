@@ -15,7 +15,7 @@ jobs:
       # Python Formatting and Linting
       - name: Install Python dependencies
         run: |
-          pip install black
+          python3 -m pip install black==21.12b0
       - name: Run Black
         run: black --check . --exclude "src/third-party/"
 
