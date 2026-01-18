@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="chassis_urdf_ros2_control" params="name">
+    <ros2_control name="${name}" type="system">
+      <hardware>
+        <!-- By default, set up controllers for simulation. This won't work on real hardware -->
+        <plugin>mock_components/GenericSystem</plugin>
+      </hardware>
+      <joint name="Left_front_wheel_joint">
+        <command_interface name="velocity"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+      <joint name="Left_back_wheel_joint">
+        <command_interface name="velocity"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+      <joint name="Right_front_wheel_joint">
+        <command_interface name="velocity"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+      <joint name="Right_back_wheel_joint">
+        <command_interface name="velocity"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+
+      <joint name="Left_front_wheel_arm_joint">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+      </joint>
+      <joint name="Left_back_wheel_arm_joint">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+      </joint>
+      <joint name="Right_front_wheel_arm_joint">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+      </joint>
+      <joint name="Right_back_wheel_arm_joint">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+      </joint>
+    </ros2_control>
+  </xacro:macro>
+</robot>

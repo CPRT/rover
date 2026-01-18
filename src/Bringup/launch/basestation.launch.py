@@ -26,14 +26,5 @@ def generate_launch_description():
                     {"Device": "/dev/ttyACM0"},
                 ],
             ),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(
-                        get_package_share_directory("arm_srdf"),
-                        "launch",
-                        "moveit_rviz.launch.py",
-                    )
-                )
-            ),
         ]
     )

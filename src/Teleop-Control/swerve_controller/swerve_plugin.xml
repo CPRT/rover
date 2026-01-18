@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<library path="swerve_controller_controller">
+  <class
+    name="swerve_controller/SwerveController"
+    type="swerve_controller::SwerveController"
+    base_class_type="controller_interface::ControllerInterface">
+    <description>
+      Four-wheel swerve drive controller.
+    </description>
+  </class>
+</library>
