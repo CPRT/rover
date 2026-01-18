@@ -46,7 +46,7 @@ chassis_controller:
     wheel_base: 0.5
     track_width: 0.4
     wheel_radius: 0.1
-    odom_publish_rate: 10.0
+    odom_publish_rate: 50.0
     cmd_timeout: 0.0
     min_angle: -1.6
     max_angle: 1.6
