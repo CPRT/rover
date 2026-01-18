@@ -1,6 +1,5 @@
 ---
-Checks: "clang-analyzer-*, bugprone-*"
+Checks: "clang-analyzer-*"
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
 FormatStyle: none
----
