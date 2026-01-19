@@ -1,0 +1,21 @@
+datasets:
+  - url: https://universe.roboflow.com/roboflowtestingyay/egnaro_remmah/1
+    path: "data/7000img_hammer_dataset"
+  - url: https://universe.roboflow.com/erikcprtwork/orange-hammer_orange-hammer-det/dataset/1
+    path: "data/good_desert_orange_hammer_images_dataset"
+    duplicate: 2
+  - url: https://universe.roboflow.com/erikcprtwork/mrt-yycsn_mallet-n56y8/dataset/1
+    path: "data/outside_inside_mrt_hammer_dataset"
+  - url: https://universe.roboflow.com/erikcprtwork/olabalasala_mallet-detection-msn/dataset/1
+    path: "data/olabalasala_rooftop_hammer_dataset"
+  - url: https://universe.roboflow.com/erikcprtwork/hamburger-wqtdq_hammer-iocxc/dataset/1
+    path: "data/hamburger_hammer_dataset"
+
+label_mapping:
+  hammer:
+    - "Hammer"
+    - "orange_hammer"
+    - "mallet"
+    - "Mallet"
+    - "Orange_hammer"
+    - "orange-hammer"

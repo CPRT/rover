@@ -1,0 +1,40 @@
+# YOLO Training Configuration
+# This file contains all training hyperparameters for YOLOv9 model training
+
+# Model Configuration
+model:
+  base_model: 'yolov9c.pt'  # Base model to start training from
+
+# Training Parameters
+training:
+  epochs: 100
+  patience: 15  # Early stopping patience (stops if no improvement for N epochs)
+  imgsz: 640    # Image size (640 is standard, 960 for tiny objects but slower)
+  batch: 16
+  
+  # Output Configuration
+  project: '/content/drive/MyDrive/yolo_runs'  # Google Drive path to save results
+  name: 'exp_mallet_utah'  # Experiment name
+
+# Data Augmentation - Desert Tuning
+# Optimized for "Orange Mallet in Utah" scenario
+augmentation:
+  # HSV Augmentation
+  hsv_h: 0.01   # Hue variance (lower = less color variation, prevents learning wrong colors like purple)
+                # Default: 0.015
+  
+  hsv_s: 0.8    # Saturation variance (higher = rely on deep orange color)
+                # Default: 0.7
+  
+  hsv_v: 0.5    # Value/Brightness variance (higher = handle sun/shadow better)
+                # Default: 0.4
+  
+  # Mosaic Augmentation
+  mosaic: 1.0   # Keep mosaic ON - essential for small objects in vast deserts
+                # Default: 1.0
+
+# Notes:
+# - hsv_h lowered to prevent learning purple/off-color mallets
+# - hsv_s increased to rely on saturated orange color
+# - hsv_v increased to handle bright sun vs dark shadow in desert
+# - mosaic kept at 1.0 for better small object detection
