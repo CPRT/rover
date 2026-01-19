@@ -1,5 +1,5 @@
 /**
- * PreserveCostInflationFilter.hpp
+ * BoxBlur.hpp
  *
  *    Created on: Oct 4th, 2025
  *        Author: Lauren Spargo
@@ -46,16 +46,16 @@ public:
    */
   bool update(const T &mapIn, T &mapOut) override;
 
-  void HorizontalBoxBlur(const Eigen::MatrixXf &layerIn,
-                         Eigen::MatrixXf &layerOut, int r);
+  /*!
+   * Averages (unweighted) [2*radius + 1] cells at a time along the rows of a gridmap layer
+   */
+  void HorizontalBoxBlur(const Eigen::MatrixXf &layerIn, Eigen::MatrixXf &layerOut, int r);
 
-  void VerticalBoxBlur(const Eigen::MatrixXf &layerIn,
-                       Eigen::MatrixXf &layerOut, int r);
-
-  // void MatrixMultiply(const T &mapH, const T &mapV, T &mapOut);
-
-  // void MatrixMultiply(const Eigen::MatrixXf &layerHorz, const Eigen::MatrixXf
-  // &layerVert, Eigen::MatrixXf &layerOut)
+  /*!
+   * Averages (unweighted) [2*radius + 1] cells at a time along the columns of a gridmap layer,
+   * called subsequently after HorizontalBoxBlur() to complete the box blur
+   */
+  void VerticalBoxBlur(const Eigen::MatrixXf &layerIn, Eigen::MatrixXf &layerOut, int r);
 
 private:
   //! Radius to take the mean from.
@@ -70,4 +70,4 @@ private:
 
 } // namespace grid_map
 
-#endif // CPRTGRIDMAPFILTERS_PRESERVECOSTINFLATIONFILTER_HPP_
+#endif // CPRTGRIDMAPFILTERS_BOXBLURFILTER_HPP_

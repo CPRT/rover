@@ -1,5 +1,5 @@
 /**
- * PreserveCostInflationFilter.hpp
+ * BoxBlurFilter.hpp
  *
  *    Created on: Oct 4th, 2025
  *        Author: Lauren Spargo
@@ -18,7 +18,7 @@
 #include "grid_map_cv/utilities.hpp"
 
 namespace grid_map {
-// Error trapping for invalid parameters
+//Error trapping for invalid parameters
 template <typename T> BoxBlurFilter<T>::BoxBlurFilter() : radius_(0.0) {}
 
 template <typename T> BoxBlurFilter<T>::~BoxBlurFilter() {}
@@ -61,7 +61,6 @@ template <typename T> bool BoxBlurFilter<T>::configure() {
 }
 
 template <typename T> bool BoxBlurFilter<T>::update(const T &mapIn, T &mapOut) {
-  // Add new layers to the elevation map
   mapOut = mapIn;
   T mapOutHorz = mapIn;
 
@@ -78,20 +77,21 @@ template <typename T> bool BoxBlurFilter<T>::update(const T &mapIn, T &mapOut) {
   mapOut.add(this->outputLayer_);
   mapOutHorz.add(this->outputLayer_);
 
-  HorizontalBoxBlur(mapIn[inputLayer_], mapOutHorz[outputLayer_], radius_);
-  VerticalBoxBlur(mapOutHorz[outputLayer_], mapOut[outputLayer_], radius_);
+  HorizontalBoxBlur(mapIn[inputLayer_], mapOutHorz[outputLayer_], radius_); //Blurs input layer from mapIn horizontally, saves blurred values to mapOutHorz on outputLayer_
+  VerticalBoxBlur(mapOutHorz[outputLayer_], mapOut[outputLayer_], radius_); //Blurs outputLayer_ from mapOutHorz vertically, saves blurred values to mapOut on outputLayer_
+  //Box blur complete!
   return true;
 }
 
 template <typename T>
-void BoxBlurFilter<T>::HorizontalBoxBlur(const Eigen::MatrixXf &layerIn,
-                                         Eigen::MatrixXf &layerOut, int r) {
-
+void BoxBlurFilter<T>::HorizontalBoxBlur(const Eigen::MatrixXf &layerIn, Eigen::MatrixXf &layerOut, int r) 
+{
   int height = layerOut.rows();
   int width = layerOut.cols();
 
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
+      //ensuring that max and min cells in radius do not exceed dimensions of gridmap layer
       int minCoeff = std::max(0, x - r);
       int maxCoeff = std::min(width - 1, x + r);
       int numHoles = 0;
@@ -99,20 +99,23 @@ void BoxBlurFilter<T>::HorizontalBoxBlur(const Eigen::MatrixXf &layerIn,
 
       for (int i = minCoeff; i <= maxCoeff; i++) {
         const float value = layerIn(i, y);
-        if (!std::isfinite(value)) {
-          numHoles += 1;
+        if (!std::isfinite(value)) //checking for hole
+        {
+          numHoles += 1; //if hole found, disregard it and continue
           continue;
         }
         sum += value;
       }
+      //calculate and write average to layerOut
       layerOut(x, y) = sum / (maxCoeff - minCoeff + 1 - numHoles);
     }
   }
 }
 
 template <typename T>
-void BoxBlurFilter<T>::VerticalBoxBlur(const Eigen::MatrixXf &layerIn,
-                                       Eigen::MatrixXf &layerOut, int r) {
+void BoxBlurFilter<T>::VerticalBoxBlur(const Eigen::MatrixXf &layerIn, Eigen::MatrixXf &layerOut, int r) 
+{
+  //Same algorithm as horizontal box blur, only along a column rather than a row
   int height = layerOut.rows();
   int width = layerOut.cols();
 
@@ -136,31 +139,6 @@ void BoxBlurFilter<T>::VerticalBoxBlur(const Eigen::MatrixXf &layerIn,
   }
 }
 
-#if 0
-{
-  template <typename T> void BoxBlurFilter<T>::MatrixMultiply(const T &mapH, const T &mapV, T &mapOut) 
-  //wondering if I should only be passing in LAYERS rather than the whole map for more efficiency?? idk enough abt Eigen tbh
-  //TODO: ask Connor (or Darren or Erik!) above question ^^
-  {
-    //Fill in when horizontal algorithm works properly
-    mapOut = mapH*mapV;
-  }
-}
-#endif
-
-#if 0
-{
-  void MatrixMultiply(const Eigen::MatrixXf &layerHorz, const Eigen::MatrixXf &layerVert, Eigen::MatrixXf &layerOut) 
-  {
-    //layerOut = layerHorz*layerVert;
-    //wondering if I should only be passing in LAYERS rather than the whole map for more efficiency?? idk enough abt Eigen tbh
-    //TODO: ask Connor (or Darren or Erik!) above question ^^
-
-    layerOut = layerHorz.dot(layerVert);
-
-  }
-}
-#endif
 } // namespace grid_map
 
 PLUGINLIB_EXPORT_CLASS(grid_map::BoxBlurFilter<grid_map::GridMap>,
