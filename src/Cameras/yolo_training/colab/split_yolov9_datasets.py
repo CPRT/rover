@@ -257,6 +257,11 @@ def main():
         help="Split ratio for train_val_test (e.g., 70_20_10 or 80_10_10)"
     )
     parser.add_argument(
+        "--input-dir",
+        type=str,
+        help="Base directory for resolving relative dataset paths in config file"
+    )
+    parser.add_argument(
         "--output-dir", 
         type=str, 
         required=True, 
@@ -305,6 +310,13 @@ def main():
     all_pairs = []
     all_class_names = []
     
+    # Determine base directory for relative paths
+    if args.input_dir:
+        base_dir = Path(args.input_dir).resolve()
+    else:
+        # Default to config file location
+        base_dir = Path(args.config).parent.resolve()
+    
     for dataset_config in datasets_config:
         # Handle both dict and string formats
         if isinstance(dataset_config, dict):
@@ -321,9 +333,8 @@ def main():
         # Convert to absolute path if relative
         dataset_path = Path(dataset_dir)
         if not dataset_path.is_absolute():
-            # Relative to the config file location
-            config_dir = Path(args.config).parent
-            dataset_path = (config_dir / dataset_path).resolve()
+            # Relative to the input-dir (or config file location if not specified)
+            dataset_path = (base_dir / dataset_path).resolve()
         
         if not dataset_path.is_dir():
             print(f"Error: Dataset directory does not exist: {dataset_path}")

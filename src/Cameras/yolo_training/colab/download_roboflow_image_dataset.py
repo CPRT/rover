@@ -51,18 +51,16 @@ def download_roboflow_dataset(url: str, dataset_version: int, model_format: str,
     Download the dataset from the given URL to the output directory
     """
     dataset_url = f"{url}/{dataset_version}"
-    dataset_name = dataset_url.replace("/", "_").replace("https:", "").replace("universe.roboflow.com", "")
-    dataset_path = os.path.join(output_dir, dataset_name)
 
-    if os.path.exists(dataset_path):
-        print(f"Dataset already exists at {dataset_path}")
+    if os.path.exists(output_dir):
+        print(f"Dataset already exists at {output_dir}")
         return False
 
     os.makedirs(output_dir, exist_ok=True)
 
-    print(f"Downloading dataset to {dataset_path}")
-    roboflow_download_func(dataset_url, model_format, dataset_path, api_key)
-    print(f"Dataset downloaded to {dataset_path}")
+    print(f"Downloading dataset to {output_dir}")
+    roboflow_download_func(dataset_url, model_format, output_dir, api_key)
+    print(f"Dataset downloaded to {output_dir}")
     return True
 
 def load_config(config_path: str) -> dict:
@@ -91,7 +89,7 @@ def download_datasets_from_config(config_path: str, model_format: str, base_outp
         dataset_version = dataset.get('version', 1)  # Default to version 1 if not specified
         dataset_name = dataset.get('name', f'dataset_{i}')
         
-        # Construct the full output directory
+        # Construct the full output directory using the path from config
         output_dir = os.path.join(base_output_dir, relative_path)
         
         print(f"\n[{i}/{len(datasets)}] Processing dataset: {dataset_name}")
@@ -100,7 +98,7 @@ def download_datasets_from_config(config_path: str, model_format: str, base_outp
         print(f"  Output: {output_dir}")
         
         try:
-            download_roboflow_dataset(url, dataset_version, model_format, base_output_dir, api_key)
+            download_roboflow_dataset(url, dataset_version, model_format, output_dir, api_key)
         except Exception as e:
             print(f"  Error downloading dataset: {e}")
             continue
