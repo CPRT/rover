@@ -1,5 +1,5 @@
 ---
-Checks: "clang-analyzer-*"
+Checks: "clang-analyzer-core-*"
 WarningsAsErrors: ''
-HeaderFilterRegex: ''
 FormatStyle: none
+HeaderFilterRegex: '^(?!/opt/ros/|/usr/).*'

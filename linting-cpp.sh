@@ -2,23 +2,30 @@
 rootPath=$(pwd)
 
 # Run build script to generate compile_commands.json for each CMake project
-#./build.sh
+./build.sh
 
 # Find all the CMake projects that have compile_commands.json
 # After, put into a Bash list using mapfile, so it can be iterated
 # Use -o -path to exclude directories
 mapfile -t projectPaths < <(find $rootPath \
-    \( -path "*/src/third-party" -o -path "*/src/Nav/kindr_ros" -o -path "*/build" \) \
+    \( -path "*/src/third-party" -o -path "*/src/Nav/kindr_ros" -o -path "*/build" -o -path "*/src/Nav/elevation_mapping" -o -path "*/src/interfaces" \) \
     -prune -o -name "CMakeLists.txt" -printf '%h\n')
 
-# Perform clang-tidy on each project
-for projectPath in "${projectPaths[@]}"; do
-    echo "Running clang-tidy on: $projectPath"
+# List of excluded projects
+# TODO: Read these projects from a file
+excludedProjects=("third-party" "elevation_mapping" "interfaces" "kindr_msgs" "kindr_ros" "ouster_ros" "ouster_sensor_msgs" "ublox" "ublox_gps" "ublox_msgs" "ublox_serialization" "zed_components" "zed_ros2" "zed_wrapper")
+excludedProjectsArgs=()
 
-    currDirectoryName="${projectPath##*/}"
-
-    cd $projectPath
-
-    # Use the build directory as the build path since that directory has the compile_commands.json file
-    run-clang-tidy -p $rootPath/build/$currDirectoryName
+# Format the excluded projects into an argument list that is read by find
+for excludedProject in "${excludedProjects[@]}"; do
+    excludedProjectsArgs+=("-not" "-path" "*/$excludedProject/*")
 done
+
+# Concatenate all compile_commands.json files into one file
+find build -name compile_commands.json -exec jq '.[]' {} + \
+    | jq -s '.' > build/compile_commands.json
+
+# Run clang-tidy
+# The find command filters the excluded projects out
+# All .cpp files in the included projects are linted (header files are also implicitly linted when included in a source file)
+run-clang-tidy -p build $(find src -type f -name "*.cpp" "${excludedProjectsArgs[@]}") -extra-arg-before=-std=c++17 -j $(nproc)
