@@ -51,25 +51,6 @@ bool Axle::activate(
   return true;
 }
 
-static inline double wrap_pi(double a) {
-  // (-pi, pi]
-  return std::remainder(a, 2.0 * M_PI);
-}
-
-static inline double shortest_angular_distance(double from, double to) {
-  return wrap_pi(to - from);
-}
-
-// If turning more than 90deg, flip wheel direction and add pi to steering.
-static inline void optimize_steering(double current_angle, double &target_angle,
-                                     double &target_wheel_rad_s) {
-  double d = shortest_angular_distance(current_angle, target_angle);
-  if (std::abs(d) > (M_PI * 0.5)) {
-    target_angle = wrap_pi(target_angle + M_PI);
-    target_wheel_rad_s = -target_wheel_rad_s;
-  }
-}
-
 bool Axle::update(double steering_angle_cmd, double wheel_velocity_cmd) {
   bool ok = true;
 
