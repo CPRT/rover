@@ -93,13 +93,17 @@ struct Axis {
   bool vel_input_enabled_ = false;
   bool torque_input_enabled_ = false;
 
-  template <typename T> void send(const T &msg) const {
+  template <typename T> bool send(const T &msg) const {
     struct can_frame frame;
     frame.can_id = node_id_ << 5 | msg.cmd_id;
     frame.can_dlc = msg.msg_length;
     msg.encode_buf(frame.data);
-
-    can_intf_->send_can_frame(frame);
+    if (!can_intf_->send_can_frame(frame)) {
+      RCLCPP_WARN(rclcpp::get_logger("ODriveHardwareInterface"),
+                  "Could not send CAN msg");
+      return false;
+    }
+    return true;
   }
 };
 
@@ -129,6 +133,9 @@ ODriveHardwareInterface::on_init(const hardware_interface::HardwareInfo &info) {
     double multiplier = 1.0;
     if (joint.parameters.find("multiplier") != joint.parameters.end()) {
       multiplier = std::stod(joint.parameters.at("multiplier"));
+      RCLCPP_ERROR(rclcpp::get_logger("ODriveHardwareInterface"),
+                   "Setting Joint %s multiplier to %f'", joint.name.c_str(),
+                   multiplier);
     }
 
     axes_.emplace_back(&can_intf_, std::stoi(joint.parameters.at("node_id")),

@@ -303,7 +303,7 @@
     <child
       link="Wheel_Front_Right" />
     <axis
-      xyz="0 1 0" />
+      xyz="0 -1 0" />
   </joint>
   <link
     name="Sus_Arm_Back_Right">
@@ -471,7 +471,7 @@
     <child
       link="Wheel_Back_Right" />
     <axis
-      xyz="0 1 0" />
+      xyz="0 -1 0" />
   </joint>
   <link
     name="Rocker_Left">

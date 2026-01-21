@@ -43,9 +43,9 @@ chassis_controller:
       rear_right:
         steering_angle_name: Right_back_wheel_arm_joint
         wheel_velocity_name: Right_back_wheel_joint
-    wheel_base: 0.5
-    track_width: 0.4
-    wheel_radius: 0.1
+    wheel_base: 0.9
+    track_width: 0.54
+    wheel_radius: 0.12
     odom_publish_rate: 50.0
     cmd_timeout: 0.0
     min_angle: -1.6

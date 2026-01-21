@@ -16,7 +16,8 @@
     "--gpus=all",
     "--ipc=host",
     "--group-add=video",
-    "--group-add=render"
+    "--group-add=render",
+    "--group-add=systemd-journal"
   ],
   "mounts": [
     "source=${env:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached",
