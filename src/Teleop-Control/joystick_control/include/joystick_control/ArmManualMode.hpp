@@ -31,7 +31,8 @@ public:
    * message.
    */
   void processJoystickInput(
-      std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) override;
+      std::shared_ptr<sensor_msgs::msg  interfaces::srv::MoveServo::Response sendRequest(int port, int pos) const;
+::Joy> joystickMsg) override;
 
   static void declareParameters(rclcpp::Node *node);
 
