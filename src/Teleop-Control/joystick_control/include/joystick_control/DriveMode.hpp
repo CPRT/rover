@@ -1,6 +1,8 @@
 #ifndef JOYSTICK_CONTROL__DRIVEMODE_HPP_
 #define JOYSTICK_CONTROL__DRIVEMODE_HPP_
 
+#include <cmath>
+
 #include "Mode.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "interfaces/srv/move_servo.hpp"
@@ -51,7 +53,7 @@ private:
    *
    * @param joystickMsg A shared pointer to the sensor_msgs::msg::Joy message.
    */
-  void handleCam(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) const;
+  void handleCam(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
 
   /**
    * @brief Handles the video control based on joystick input. Not implemented
@@ -78,46 +80,49 @@ private:
   /**
    * @brief Sets the position of the servo.
    *
-   * @param port The servo port number.
+   * @param name The servo name.
    * @param position The target position for the servo.
    */
-  void setServoPosition(int port, int position) const;
+  void setServoPosition(std::string name, double position);
 
   void loadParameters();
 
   // Parameters
-  int8_t kForwardAxis;   ///< Axis for forward movement.
-  int8_t kYawAxis;       ///< Axis for yaw (rotation).
-  int8_t kCamTiltAxis;   ///< Axis for camera tilt.
-  int8_t kCamPanAxis;    ///< Axis for camera pan.
-  int8_t kCamReset;      ///< Button for resetting the camera.
-  int8_t kLightsUp;      ///< Button for switching to the next camera.
-  int8_t kLightsDown;    ///< Button for switching to the previous camera.
-  int8_t kCruiseControl; ///< Button for enabling cruise control.
-  int8_t kThrottleAxis;  ///< Axis for throttle control.
-  int8_t kCamTiltPort;   ///< Port for camera tilt servo.
-  int8_t kCamPanPort;    ///< Port for camera pan servo.
+  int8_t kForwardAxis;      ///< Axis for forward movement.
+  int8_t kYawAxis;          ///< Axis for yaw (rotation).
+  int8_t kCamTiltAxis;      ///< Axis for camera tilt.
+  int8_t kCamPanAxis;       ///< Axis for camera pan.
+  int8_t kCamReset;         ///< Button for resetting the camera.
+  int8_t kLightsUp;         ///< Button for switching to the next camera.
+  int8_t kLightsDown;       ///< Button for switching to the previous camera.
+  int8_t kCruiseControl;    ///< Button for enabling cruise control.
+  int8_t kThrottleAxis;     ///< Axis for throttle control.
+  std::string camTiltMotor; ///< Motor name for camera tilt servo.
+  std::string camPanMotor;  ///< Motor name for camera pan servo.
 
-  double kThrottleMax;           ///< Maximum throttle value from joystick.
-  double kThrottleMin;           ///< Minimum throttle value from joystick.
-  double kMaxLinear;             ///< Maximum linear velocity.
-  double kMaxAngular;            ///< Maximum angular velocity.
-  double kMaxIncrement;          ///< Maximum increment for speed changes.
-  double kMinSpeed;              ///< Minimum speed value.
-  double kDefaultCamPan = 90.0;  ///< Default camera pan position.
-  double kDefaultCamTilt = 90.0; ///< Default camera tilt position.
-  double kCameraSpeed = 1.0;     ///< Speed for camera movement.
+  double kThrottleMax;               ///< Maximum throttle value from joystick.
+  double kThrottleMin;               ///< Minimum throttle value from joystick.
+  double kMaxLinear;                 ///< Maximum linear velocity.
+  double kMaxAngular;                ///< Maximum angular velocity.
+  double kMaxIncrement;              ///< Maximum increment for speed changes.
+  double kMinSpeed;                  ///< Minimum speed value.
+  double kDefaultCamPan = M_PI / 4;  ///< Default camera pan position.
+  double kDefaultCamTilt = M_PI / 4; ///< Default camera tilt position.
+  double kCameraSpeed = 1.0;         ///< Speed for camera movement.
 
   double current_light_pwm_; ///< Current PWM value for lights.
 
   bool camera_service_available_;
 
+  std::vector<std::string> motor_names; ///< Vector for motor names.
+
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr
       twist_pub_; ///< Publisher for Twist messages.
-  rclcpp::Client<interfaces::srv::MoveServo>::SharedPtr
-      servo_client_; ///< Client for servo control.
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr
       pwm_pub_; ///< Publisher for video messages.
+
+  std::map<std::string, rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr>
+      motor_pubs; ///< Map that maps motor names to publishers
 };
 
 #endif // JOYSTICK_CONTROL__DRIVEMODE_HPP_

@@ -3,14 +3,13 @@ pi_Servo_node:
     servos_used: 2
     # Microscope Servo
     servo0:
-      out_pin: 18
+      name: "microscope"
       min: 2.5   # Min PWM value
       max: 12.5  # Max PWM value
-      rom: 180   # 180 degrees
-
+      rom: 3.1415   # 180 degrees
     # Collection Servo
     servo1:
-      out_pin: 19
+      name: "collection"
       min: 4.5   # Min PWM value
       max: 10.5  # Max PWM value
-      rom: 180   # 180 degrees
+      rom: 3.1415   # 180 degrees
