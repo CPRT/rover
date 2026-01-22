@@ -10,7 +10,7 @@ def generate_launch_description():
         plugin="video_streaming::SrtClientNode",
         name="srt_client_node",
         namespace="",
-        parameters=[{"srt_uri": "srt://:7001?mode=listener"}],
+        parameters=[{"srt_uri": "srt://192.168.0.55:7001?mode=caller"}],
     )
 
     # Container_mt
