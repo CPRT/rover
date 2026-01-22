@@ -43,7 +43,9 @@ ament_target_dependencies(flightstick_control
 )
 
 # Install the executable
-
+install(TARGETS
+flightstick_control
+  DESTINATION lib/${PROJECT_NAME})
 # Install header files
 install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
