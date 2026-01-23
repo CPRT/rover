@@ -158,7 +158,7 @@ FROM runtime AS dev
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git x11-apps ros-humble-desktop ros-dev-tools black pylint \
         ros-humble-ament-cmake python3-colcon-common-extensions \
-        python3-colcon-ros clang-format cuda-compiler-12-6 \
+        python3-colcon-ros clang-format clang-tidy jq cuda-compiler-12-6 \
         cuda-cudart-dev-12-6 cuda-driver-dev-12-6 libpng-dev ccache \
         libc6-dev libssl-dev cuda-toolkit-12-6 libnvinfer10 \
         libnvinfer-plugin10 libnvonnxparsers10 \

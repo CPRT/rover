@@ -1,12 +1,23 @@
 #!/bin/bash
+
+# To use this script:
+# 1. Add the names of the projects you want to exclude to excludedProjects
+# 2. Run the script: ./linting-cpp.sh
+# Note: This script must be in the root directory because of build.sh
+
+# Additional checks can be added to the .clang-tidy file
+
+# List of excluded projects
+excludedProjects=("third-party" "elevation_mapping" "interfaces" "kindr_msgs"
+                  "kindr_ros" "ouster_ros" "ouster_sensor_msgs" "ublox" 
+                  "ublox_gps" "ublox_msgs" "ublox_serialization" 
+                  "zed_components" "zed_ros2" "zed_wrapper")
+
 rootPath=$(pwd)
 
 # Run build script to generate compile_commands.json for each CMake project
 ./build.sh
 
-# List of excluded projects
-# TODO: Read these projects from a file
-excludedProjects=("third-party" "elevation_mapping" "interfaces" "kindr_msgs" "kindr_ros" "ouster_ros" "ouster_sensor_msgs" "ublox" "ublox_gps" "ublox_msgs" "ublox_serialization" "zed_components" "zed_ros2" "zed_wrapper")
 excludedProjectsArgs=()
 
 # Format the excluded projects into an argument list that is read by find
