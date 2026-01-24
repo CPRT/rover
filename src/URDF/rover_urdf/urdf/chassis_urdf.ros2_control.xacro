@@ -5,8 +5,10 @@
       <hardware>
         <!-- By default, set up controllers for simulation. This won't work on real hardware -->
         <!-- <plugin>mock_components/GenericSystem</plugin> -->
-        <plugin>odrive_ros2_control_plugin/ODriveHardwareInterface</plugin>
-        <param name="can">can0</param>
+        <!--plugin>odrive_ros2_control_plugin/ODriveHardwareInterface</plugin-->
+        <plugin>mock_components/GenericSystem</plugin>
+        <param name="calculate_dynamics">true</param>
+        <!--param name="can">can0</param-->
       </hardware>
       <joint name="Left_front_wheel_joint">
         <param name="node_id">5</param>

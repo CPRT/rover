@@ -1,27 +1,28 @@
-
-throttle:
-  axis: 2
-  min: -1.0
-  max: 1.0
-forward_axis: 1
-yaw_axis: 0
-max_linear: 2.0
-max_angular: 1.0
-max_increment: 0.1
-min_speed: 0.001
-default_pan: 3.14159
-default_tilt: 0.785398
-base_axis: 0
-wrist_roll: 4
-wrist_yaw_positive: 3
-wrist_yaw_negative: 5
-act1_axis: 1
-act2_axis: 5
-elbow_yaw: 3
-claw: 1
-simple_forward: 2
-simple_backward: 4
-servo_name: "arm"
+drive_teleop_node:
+  ros__parameters:
+    #TODO change these for an actual PXN
+    forward_axis: 1
+    strafe_axis: 0
+    yaw_axis: 2
+    max_linear: 2.0
+    max_angular: 1.0
+arm_teleop_node:
+  ros__parameters:
+    throttle:
+      axis: 2
+      min: -1.0
+      max: 1.0
+    base_axis: 0
+    wrist_roll: 4
+    wrist_yaw_positive: 3
+    wrist_yaw_negative: 5
+    act1_axis: 1
+    act2_axis: 5
+    elbow_yaw: 3
+    claw: 1
+    simple_forward: 2
+    simple_backward: 4
+    servo_name: "arm"
   
     # arm_ik_mode:
     #   x_axis: 1

@@ -1,5 +1,5 @@
-#ifndef JOYSTICK_CONTROL__ARM_HELPERS_HPP_
-#define JOYSTICK_CONTROL__ARM_HELPERS_HPP_
+#ifndef teleop_modeless__ARM_HELPERS_HPP_
+#define teleop_modeless__ARM_HELPERS_HPP_
 
 #include "rclcpp/rclcpp.hpp"
 

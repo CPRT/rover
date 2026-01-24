@@ -13,10 +13,16 @@ public:
 private:
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr twist_pub;
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub;
-  int kForwardAxis = 1;     // Example axis index for forward/backward
-  int kYawAxis = 0;         // Example axis index for left/right
-  double kMaxLinear = 2.0;  // Max linear speed
-  double kMaxAngular = 2.0; // Max angular speed
+
+  void declare_parameters();
+  void load_parameters();
+
+  // Parameters
+  double kMaxLinear;
+  double kMaxAngular;
+  int kForwardAxis;
+  int kYawAxis;
+  int kStrafeAxis;
 };
 
 #endif // DRIVE_HPP
