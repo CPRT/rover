@@ -57,6 +57,7 @@ def yolov8_export(weights, device, fuse=True):
 
 def suppress_warnings():
     import warnings
+
     warnings.filterwarnings("ignore", category=torch.jit.TracerWarning)
     warnings.filterwarnings("ignore", category=UserWarning)
     warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -87,14 +88,7 @@ def main(args):
     onnx_input_im = torch.zeros(args.batch, 3, *img_size).to(device)
     onnx_output_file = args.weights.rsplit(".", 1)[0] + ".onnx"
 
-    dynamic_axes = {
-        "input": {
-            0: "batch"
-        },
-        "output": {
-            0: "batch"
-        }
-    }
+    dynamic_axes = {"input": {0: "batch"}, "output": {0: "batch"}}
 
     print("Exporting the model to ONNX")
     torch.onnx.export(
@@ -106,12 +100,13 @@ def main(args):
         do_constant_folding=True,
         input_names=["input"],
         output_names=["output"],
-        dynamic_axes=dynamic_axes if args.dynamic else None
+        dynamic_axes=dynamic_axes if args.dynamic else None,
     )
 
     if args.simplify:
         print("Simplifying the ONNX model")
         import onnxslim
+
         model_onnx = onnx.load(onnx_output_file)
         model_onnx = onnxslim.slim(model_onnx)
         onnx.save(model_onnx, onnx_output_file)
@@ -121,9 +116,23 @@ def main(args):
 
 def parse_args():
     import argparse
+
     parser = argparse.ArgumentParser(description="DeepStream YOLOv8 conversion")
-    parser.add_argument("-w", "--weights", required=True, type=str, help="Input weights (.pt) file path (required)")
-    parser.add_argument("-s", "--size", nargs="+", type=int, default=[640], help="Inference size [H,W] (default [640])")
+    parser.add_argument(
+        "-w",
+        "--weights",
+        required=True,
+        type=str,
+        help="Input weights (.pt) file path (required)",
+    )
+    parser.add_argument(
+        "-s",
+        "--size",
+        nargs="+",
+        type=int,
+        default=[640],
+        help="Inference size [H,W] (default [640])",
+    )
     parser.add_argument("--opset", type=int, default=17, help="ONNX opset version")
     parser.add_argument("--simplify", action="store_true", help="ONNX simplify model")
     parser.add_argument("--dynamic", action="store_true", help="Dynamic batch-size")
@@ -132,7 +141,9 @@ def parse_args():
     if not os.path.isfile(args.weights):
         raise RuntimeError("Invalid weights file")
     if args.dynamic and args.batch > 1:
-        raise RuntimeError("Cannot set dynamic batch-size and static batch-size at same time")
+        raise RuntimeError(
+            "Cannot set dynamic batch-size and static batch-size at same time"
+        )
     return args
 
 
