@@ -16,4 +16,3 @@ camera_setup/images/*
 .DS_Store
 
 upgrade_pkg.tar.*
-src/kindr
