@@ -13,14 +13,15 @@ PACKAGES_SELECT=()
 # Argument parsing
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --parallel-workers)
+    -w|--parallel-workers)
       PARALLEL_WORKERS="$2"
       shift 2
       ;;
-    --packages-select)
+    -s|--packages-select)
       PACKAGES_SELECT=()
       shift
-      while [[ $# -gt 0 ]] && ! [[ "$1" =~ ^-- ]]; do
+      # Consumes args until the next flag (starts with -) or end of args
+      while [[ $# -gt 0 ]] && ! [[ "$1" =~ ^- ]]; do
         PACKAGES_SELECT+=("$1")
         shift
       done
