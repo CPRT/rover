@@ -23,6 +23,8 @@ private:
   int kForwardAxis;
   int kYawAxis;
   int kStrafeAxis;
+
+  bool initialized_;
 };
 
 #endif // DRIVE_HPP

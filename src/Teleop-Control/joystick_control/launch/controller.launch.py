@@ -64,12 +64,14 @@ def generate_launch_description():
                 executable="arm",
                 name="arm_teleop_node",
                 parameters=[parameters_file],
+                remappings=[("/joy", "/arm/joy")],
             ),
             Node(
                 package="joystick_control",
                 executable="drive",
                 name="drive_teleop_node",
                 parameters=[parameters_file],
+                remappings=[("/joy", "/drive/joy")],
             ),
         ]
     )

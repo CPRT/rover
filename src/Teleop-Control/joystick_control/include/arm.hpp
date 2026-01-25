@@ -16,7 +16,6 @@ public:
 private:
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
   rclcpp::Publisher<control_msgs::msg::JointJog>::SharedPtr joint_pub_;
-  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr servo_pub__;
   control_msgs::msg::JointJog joint_msg_;
 
   void declareParameters();
@@ -36,8 +35,6 @@ private:
   int kAct1Axis;
   int kAct2Axis;
   int kElbowYaw;
-  int kClaw;
-  std::string servoName;
 };
 
 #endif
