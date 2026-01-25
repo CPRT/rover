@@ -46,33 +46,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libeigen3-dev python3-rosdep \
     && rm -rf /var/lib/apt/lists/*
 
+RUN source /opt/ros/humble/setup.bash \
+    && rosdep init \
+    && rosdep update
+
+WORKDIR /
+COPY rosdep-key.txt .
+RUN rosdep install \
+    --rosdep-keys="$(tr '\n' ' ' < rosdep-keys.txt)" \
+    -y
+
 # Python dependencies
 RUN python3 -m pip install --upgrade pip
 COPY requirements.txt .
 RUN pip3 install --break-system-packages --no-cache-dir -r requirements.txt
 
-############################
-# Stage 2: Collect package.xml files
-############################
-FROM alpine:latest AS package_xml_collector
-WORKDIR /src
-COPY src/ .
 
-RUN find . -name 'package.xml' -exec mkdir -p /collected/{} \; \
-    && find . -name 'package.xml' -exec cp {} /collected/{} \;
-
-############################
-# Stage 3: Create rosdep installation script
-############################
-FROM ros2_humble-base AS rosdep-creator
-WORKDIR /
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-COPY --from=package_xml_collector /collected /src
-RUN source /opt/ros/humble/setup.bash \
-    && rosdep init \
-    && rosdep update \
-    && rosdep install -i -y -r --from-paths -s src > /install_script.sh \
-    && chmod +x /install_script.sh
 
 ############################
 # Stage 4: OpenCV Build
