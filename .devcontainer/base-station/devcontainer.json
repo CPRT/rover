@@ -17,6 +17,7 @@
     "--ipc=host",
     "--group-add=video",
     "--group-add=render",
+    "--group-add=systemd-journal",
     "--env", "DISPLAY=${localEnv:DISPLAY}",
     "--volume", "/tmp/.X11-unix:/tmp/.X11-unix:rw"
   ],
