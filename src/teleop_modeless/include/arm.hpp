@@ -14,22 +14,20 @@ public:
   void arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
 
 private:
-  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub;
-  rclcpp::Publisher<control_msgs::msg::JointJog>::SharedPtr joint_pub;
-  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr servo_pub;
-  control_msgs::msg::JointJog joint_msg;
+  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
+  rclcpp::Publisher<control_msgs::msg::JointJog>::SharedPtr joint_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr servo_pub__;
+  control_msgs::msg::JointJog joint_msg_;
 
   void declareParameters();
   void loadParameters();
 
-  // TODO change these constants based on test
-  double const maxBaseSpeed = 1.0;
-  double const maxWristRollSpeed = 1.0;
-  double const maxWristSpeed = 1.0;
-  double const maxAct1Speed = 1.0;
-  double const maxAct2Speed = 1.0;
-  double const maxElbowYawSpeed = 1.0;
-
+  double kMaxBaseSpeed;
+  double kMaxWristRollSpeed;
+  double kMaxWristSpeed;
+  double kMaxAct1Speed;
+  double kMaxAct2Speed;
+  double kMaxElbowYawSpeed;
   int kThrottleAxis;
   int kBaseAxis;
   int kWristRoll;
@@ -38,7 +36,7 @@ private:
   int kAct1Axis;
   int kAct2Axis;
   int kElbowYaw;
-  int kclaw;
+  int kClaw;
   std::string servoName;
 };
 

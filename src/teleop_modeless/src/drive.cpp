@@ -39,7 +39,6 @@ void drive::load_parameters() {
 
 int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
-  // Replace 'arm' with your actual class name if different
   auto node = std::make_shared<drive>();
   rclcpp::spin(node);
   rclcpp::shutdown();

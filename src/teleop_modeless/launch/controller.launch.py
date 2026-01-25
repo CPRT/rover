@@ -30,12 +30,11 @@ def generate_launch_description():
     parameters_file = os.path.join(pkg_teleop_modeless, "pxn.yaml")
     # Detect IDs dynamically
     # We use 0 and 1 as defaults if the symlinks aren't found
-    id_a = get_joy_id("/dev/joy_a", 1)
-    id_b = get_joy_id("/dev/joy_b", 0)
+    id_a = get_joy_id("/dev/input/by-id/usb-LiteStar_PXN-2113_Pro-joystick", 1)
+    id_b = get_joy_id("/dev/input/by-id/usb-Thrustmaster_T.1600M-joystick", 0)
 
     return LaunchDescription(
         [
-            # Controller A (Top/Left)
             Node(
                 package="joy",
                 executable="joy_node",
@@ -46,9 +45,8 @@ def generate_launch_description():
                         "deadzone": 0.05,
                     }
                 ],
-                remappings=[("/joy", "/controller_a/joy")],
+                remappings=[("/joy", "/drive/joy")],
             ),
-            # Controller B (Bottom/Right)
             Node(
                 package="joy",
                 executable="joy_node",
@@ -59,7 +57,7 @@ def generate_launch_description():
                         "deadzone": 0.05,
                     }
                 ],
-                remappings=[("/joy", "/controller_b/joy")],
+                remappings=[("/joy", "/arm/joy")],
             ),
             Node(
                 package="teleop_modeless",
