@@ -93,7 +93,7 @@ void BoxBlurFilter<T>::HorizontalBoxBlur(const Eigen::MatrixXf &layerIn, Eigen::
     for (int x = 0; x < width; x++) {
       //ensuring that max and min cells in radius do not exceed dimensions of gridmap layer
       const int minCoeff = std::max(0, x - r);
-      int maxCoeff = std::min(width - 1, x + r);
+      const int maxCoeff = std::min(width - 1, x + r);
       int numHoles = 0;
       double sum = 0;
 
