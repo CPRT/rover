@@ -86,7 +86,7 @@ template <typename T> bool BoxBlurFilter<T>::update(const T &mapIn, T &mapOut) {
 template <typename T>
 void BoxBlurFilter<T>::HorizontalBoxBlur(const Eigen::MatrixXf &layerIn, Eigen::MatrixXf &layerOut, int r) 
 {
-  int height = layerOut.rows();
+  const int height = layerOut.rows();
   int width = layerOut.cols();
 
   for (int y = 0; y < height; y++) {
