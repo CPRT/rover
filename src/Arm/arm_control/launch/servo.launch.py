@@ -89,6 +89,9 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
         executable="servo_node_main",
         parameters=servo_parameters,
         output="screen",
+        remappings=[
+            ("~/robot_description", "/robot_description"),
+        ],
     )
     ld.add_action(servo_node)
 

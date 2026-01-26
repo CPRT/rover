@@ -46,16 +46,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libeigen3-dev python3-rosdep \
     && rm -rf /var/lib/apt/lists/*
 
-RUN source /opt/ros/humble/setup.bash \
-    && rosdep init \
-    && rosdep update
-
-WORKDIR /
-COPY rosdep-key.txt .
-RUN rosdep install \
-    --rosdep-keys="$(tr '\n' ' ' < rosdep-keys.txt)" \
-    -y
-
 # Python dependencies
 RUN python3 -m pip install --upgrade pip
 COPY requirements.txt .
@@ -124,17 +114,22 @@ RUN git clone https://github.com/ANYbotics/kindr.git \
     && make install \
     && rm -rf /kindr
 
-COPY --from=rosdep-creator /install_script.sh /
-RUN apt-get update \
-    && bash /install_script.sh \
-    && rm -rf /var/lib/apt/lists/* /install_script.sh
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libsrt1.4-openssl \
     lsb-release \
     gnupg2 libssl-dev libpng16-16 \
     zlib1g-dev libffi-dev \
     libglib2.0-dev libmount-dev
+
+RUN source /opt/ros/humble/setup.bash \
+    && rosdep init \
+    && rosdep update
+
+WORKDIR /
+COPY rosdep-keys.txt .
+RUN apt-get update && \
+    apt-get install -y \
+        $(xargs rosdep resolve < rosdep-keys.txt 2> /dev/null | sed '/^#/d')
 
 COPY --from=deepstream-base /target/ /
 ENV GST_PLUGIN_PATH=/opt/gstreamer/lib/gstreamer-1.0:/usr/lib/aarch64-linux-gnu/gstreamer-1.0:/opt/nvidia/deepstream/deepstream/lib/gst-plugins
