@@ -32,7 +32,7 @@ template <typename T> bool BoxBlurFilter<T>::configure() {
     return false;
   }
 
-  if (radius_ < 0) {
+  if (radius_ <= 0) {
     RCLCPP_ERROR(this->logging_interface_->get_logger(),
                  "BoxBlur filter: Radius must be greater than zero.");
     return false;
