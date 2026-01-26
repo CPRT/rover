@@ -107,7 +107,9 @@ void BoxBlurFilter<T>::HorizontalBoxBlur(const Eigen::MatrixXf &layerIn, Eigen::
         sum += value;
       }
       //calculate and write average to layerOut
-      layerOut(x, y) = sum / (maxCoeff - minCoeff + 1 - numHoles);
+      if (numValues > 0) {
+        layerOut(x, y) = sum / numValues ;
+      }
     }
   }
 }
