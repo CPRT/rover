@@ -51,28 +51,7 @@ RUN python3 -m pip install --upgrade pip
 COPY requirements.txt .
 RUN pip3 install --break-system-packages --no-cache-dir -r requirements.txt
 
-############################
-# Stage 2: Collect package.xml files
-############################
-FROM alpine:latest AS package_xml_collector
-WORKDIR /src
-COPY src/ .
 
-RUN find . -name 'package.xml' -exec mkdir -p /collected/{} \; \
-    && find . -name 'package.xml' -exec cp {} /collected/{} \;
-
-############################
-# Stage 3: Create rosdep installation script
-############################
-FROM ros2_humble-base AS rosdep-creator
-WORKDIR /
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-COPY --from=package_xml_collector /collected /src
-RUN source /opt/ros/humble/setup.bash \
-    && rosdep init \
-    && rosdep update \
-    && rosdep install -i -y -r --from-paths -s src > /install_script.sh \
-    && chmod +x /install_script.sh
 
 ############################
 # Stage 4: OpenCV Build
@@ -135,17 +114,22 @@ RUN git clone https://github.com/ANYbotics/kindr.git \
     && make install \
     && rm -rf /kindr
 
-COPY --from=rosdep-creator /install_script.sh /
-RUN apt-get update \
-    && bash /install_script.sh \
-    && rm -rf /var/lib/apt/lists/* /install_script.sh
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libsrt1.4-openssl \
     lsb-release \
     gnupg2 libssl-dev libpng16-16 \
     zlib1g-dev libffi-dev \
     libglib2.0-dev libmount-dev
+
+RUN source /opt/ros/humble/setup.bash \
+    && rosdep init \
+    && rosdep update
+
+WORKDIR /
+COPY rosdep-keys.txt .
+RUN apt-get update && \
+    apt-get install -y \
+        $(xargs rosdep resolve < rosdep-keys.txt 2> /dev/null | sed '/^#/d')
 
 COPY --from=deepstream-base /target/ /
 ENV GST_PLUGIN_PATH=/opt/gstreamer/lib/gstreamer-1.0:/usr/lib/aarch64-linux-gnu/gstreamer-1.0:/opt/nvidia/deepstream/deepstream/lib/gst-plugins
