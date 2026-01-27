@@ -61,7 +61,7 @@ def generate_launch_description():
             ),
             Node(
                 package="joystick_control",
-                executable="arm",
+                executable="arm_ik",
                 name="arm_teleop_node",
                 parameters=[parameters_file],
                 remappings=[("/joy", "/arm/joy")],
