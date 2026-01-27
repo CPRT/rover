@@ -109,6 +109,23 @@
         <state_interface name="position"/>
         <state_interface name="velocity"/>
       </joint>
+      <joint name="Joint_7"> <!-- for end effector -->
+        <param name="type">TalonSRX</param>
+        <param name="can_id">25</param> <!-- placeholder can_id -->
+        <param name="kP">0.012</param>
+        <param name="kI">0.0</param>
+        <param name="kD">0.0</param>
+        <param name="kF">0.005</param>
+        <param name="sensor_type">quadrature</param> 
+        <param name="sensor_ticks">2163000</param> <!-- TODO: this number is close but not quite -->
+        <param name="sensor_offset">0.0</param>
+        <param name="crossover">true</param> <!-- or "continuous" -->
+        <param name="invert">true</param>
+        <param name="invert_sensor">true</param>
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
     </ros2_control>
   </xacro:macro>
 </robot>

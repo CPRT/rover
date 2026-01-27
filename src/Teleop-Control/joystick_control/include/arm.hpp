@@ -35,6 +35,8 @@ private:
   int kAct1Axis;
   int kAct2Axis;
   int kElbowYaw;
+  int kClawOpen;
+  int kClawClose;
 };
 
 #endif

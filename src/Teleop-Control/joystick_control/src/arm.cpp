@@ -11,7 +11,8 @@ arm::arm() : Node("arm_node") {
       "/servo_node/delta_joint_cmds", 10);
   joint_msg_ = control_msgs::msg::JointJog();
   joint_msg_.joint_names = {"Joint_1", "Joint_2", "Joint_3",
-                            "Joint_4", "Joint_5", "Joint_6"};
+                            "Joint_4", "Joint_5", "Joint_6",
+                            "Joint_7"};
 
   RCLCPP_INFO(this->get_logger(), "Arm controller started");
 }
@@ -24,6 +25,7 @@ void arm::arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
 
   joint_msg_.header = joystickMsg->header;
 
+
   joint_msg_.velocities = {axes[kBaseAxis] * kMaxBaseSpeed,
                            axes[kAct1Axis] * kMaxAct1Speed,
                            axes[kAct2Axis] * kMaxAct2Speed,
@@ -31,7 +33,8 @@ void arm::arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
                            axes[kElbowYaw] * kMaxElbowYawSpeed,
                            buttons[kWristYaw_positive] -
                                buttons[kWristYaw_negative] * kMaxWristSpeed *
-                                   axes[kThrottleAxis]};
+                                   axes[kThrottleAxis],
+                           buttons[kClawOpen] - buttons[kClawClose]};
 
   joint_pub_->publish(joint_msg_);
 }
@@ -51,6 +54,9 @@ void arm::declareParameters() {
   this->declare_parameter("max_act1_speed", 1.0);
   this->declare_parameter("max_act2_speed", 1.0);
   this->declare_parameter("max_elbow_yaw_speed", 1.0);
+  this->declare_parameter("claw_open", 1);
+  this->declare_parameter("claw_close", 0);
+
 }
 void arm::loadParameters() {
   this->get_parameter("throttle.axis", kThrottleAxis);
@@ -67,6 +73,8 @@ void arm::loadParameters() {
   this->get_parameter("max_act1_speed", kMaxAct1Speed);
   this->get_parameter("max_act2_speed", kMaxAct2Speed);
   this->get_parameter("max_elbow_yaw_speed", kMaxElbowYawSpeed);
+  this->get_parameter("claw_open", kClawOpen);
+  this->get_parameter("claw_close", kClawClose);
 }
 
 int main(int argc, char **argv) {
