@@ -28,6 +28,9 @@ SrtNode::SrtNode(const rclcpp::NodeOptions &options)
   this->declare_parameter<int>("backoff_max_delay_ms", 5000);
   this->declare_parameter<int>("backoff_reset_ms", 10000);
 
+  iframe_interval_ = this->get_parameter("iframe_interval").as_int();
+  target_framerate_ = this->get_parameter("target_framerate").as_int();
+
   backoff_state_.max_delay_ms =
       this->get_parameter("backoff_max_delay_ms").as_int();
   backoff_state_.reset_ms = this->get_parameter("backoff_reset_ms").as_int();
@@ -73,13 +76,12 @@ SrtNode::~SrtNode() {
 }
 
 bool SrtNode::create_pipeline() {
+  bool test_mode = this->get_parameter("test_mode").as_bool();
   std::string srt_uri = this->get_parameter("srt_uri").as_string();
   int latency_val = this->get_parameter("latency").as_int();
-  int iframe_interval_val = this->get_parameter("iframe_interval").as_int();
+  int iframe_interval_val = iframe_interval_;
+  int framerate = target_framerate_;
 
-  bool test_mode = this->get_parameter("test_mode").as_bool();
-
-  int framerate = this->get_parameter("target_framerate").as_int();
 
   gchar *desc;
 
@@ -178,6 +180,8 @@ SrtNode::on_parameter_change(const std::vector<rclcpp::Parameter> &parameters) {
   result.successful = true;
   result.reason = "success";
 
+  bool needs_restart = false;
+
   for (const auto &param : parameters) {
     const std::string &name = param.get_name();
 
@@ -191,29 +195,16 @@ SrtNode::on_parameter_change(const std::vector<rclcpp::Parameter> &parameters) {
     }
 
     if (name == "iframe_interval") {
-      if (av1_encoder_) {
-        int val = param.as_int();
-        g_object_set(av1_encoder_, "iframeinterval", val, NULL);
-        RCLCPP_INFO(this->get_logger(),
-                    "Param Update: IFrame Interval set to %d", val);
-      }
+      iframe_interval_ = param.as_int();
+      RCLCPP_INFO(this->get_logger(), "Cache Update: iframe_interval = %d", iframe_interval_);
+      needs_restart = true;
       continue;
     }
 
     if (name == "target_framerate") {
-      if (!stop_pipeline()) {
-        RCLCPP_ERROR(this->get_logger(),
-                     "Failed to stop pipeline for reconfiguration.");
-        result.successful = false;
-        result.reason = "Failed to stop pipeline for reconfiguration.";
-        continue;
-      }
-      if (!start_pipeline()) {
-        RCLCPP_ERROR(this->get_logger(),
-                     "Failed to start pipeline after reconfiguration.");
-        result.successful = false;
-        result.reason = "Failed to start pipeline after reconfiguration.";
-      }
+      target_framerate_ = param.as_int();
+      RCLCPP_INFO(this->get_logger(), "Cache Update: target_framerate = %d", target_framerate_);
+      needs_restart = true;
       continue;
     }
 
@@ -238,6 +229,10 @@ SrtNode::on_parameter_change(const std::vector<rclcpp::Parameter> &parameters) {
     }
   }
 
+  if (needs_restart && result.successful) {
+      stop_pipeline();
+      start_pipeline();
+  }
   return result;
 }
 
@@ -379,6 +374,28 @@ void SrtNode::publish_srt_stats() {
   if (gst_structure_get_int(target_stats, "packets-retransmitted", &ret_int)) {
     msg.packets_retransmitted = ret_int;
   }
+
+  //6.ms-latency
+  double conf_lat = 0.0;
+  if (gst_structure_get_double(target_stats, "ms-latency", &conf_lat)) {
+    msg.srt_latency = conf_lat;
+  }
+
+  // 7. Actual Buffer Delay (send-buffer-ms)
+  double buf_delay = 0.0;
+  if (gst_structure_get_double(target_stats, "send-buffer-ms", &buf_delay)) {
+    msg.buffer_latency = buf_delay;
+  }
+
+  // 8. See if we need to manually adjust latency(based on Haivison doc)
+  if (msg.rtt > 0 && msg.srt_latency > 0) {
+    if (msg.rtt * 3.0 > msg.srt_latency) {
+      RCLCPP_WARN_THROTTLE(this->get_logger(), *(this->get_clock()), 5000,
+          "SRT Latency Warning: RTT (%.1fms) is too high for Configured Latency (%.1fms). "
+          "Recommended Latency >= 3x RTT.", msg.rtt, msg.srt_latency);
+    }
+  }
+
 
   int64_t pkt_drop_total = 0;
 
