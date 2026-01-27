@@ -38,24 +38,26 @@
       </joint>
 
       <joint name="Left_front_wheel_arm_joint">
-        <param name="node_id">1</param>
+        <param name="node_id">2</param>
+        <param name="multiplier">-0.0166666667</param>
         <command_interface name="position"/>
         <state_interface name="position"/>
       </joint>
       <joint name="Left_back_wheel_arm_joint">
         <param name="node_id">3</param>
+        <param name="multiplier">0.0166666667</param>
         <command_interface name="position"/>
         <state_interface name="position"/>
       </joint>
       <joint name="Right_front_wheel_arm_joint">
-        <param name="node_id">2</param>
-        <param name="multiplier">1.0</param>
+        <param name="node_id">1</param>
+        <param name="multiplier">0.0166666667</param>
         <command_interface name="position"/>
         <state_interface name="position"/>
       </joint>
       <joint name="Right_back_wheel_arm_joint">
         <param name="node_id">4</param>
-        <param name="multiplier">1.0</param>
+        <param name="multiplier">-0.0166666667</param>
         <command_interface name="position"/>
         <state_interface name="position"/>
       </joint>
