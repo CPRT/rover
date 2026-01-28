@@ -113,6 +113,7 @@ bool SrtNode::create_pipeline() {
         " av1parse ! capsfilter caps=\"video/x-av1, "
         "alignment=obu, parsed=true\" ! "
         "queue ! "
+        "mpegtsmux ! "
         "srtsink name=srt_sink uri=%s latency=%d sync=false",
         framerate, iframe_interval_val, srt_uri.c_str(), latency_val);
     RCLCPP_INFO(this->get_logger(), "Using PRODUCTION pipeline description: %s",
