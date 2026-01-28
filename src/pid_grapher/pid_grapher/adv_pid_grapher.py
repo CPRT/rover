@@ -112,8 +112,6 @@ class advPIDGrapher(Node):
             print("Reset data")
 
 
-
-
 def main(args=None):
     rclpy.init(args=args)
     node = advPIDGrapher()

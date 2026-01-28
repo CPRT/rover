@@ -9,16 +9,16 @@ import os
 
 def generate_launch_description():
     # 1️⃣ Include talon.launch.py
-    talon_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(
-                get_package_share_directory("arm_srdf"), "launch", "talon.launch.py"
-            )
-        ),
-        launch_arguments={
-            "base_input_type": LaunchConfiguration("control_mode", default=1)
-        }.items(),
-    )
+    # talon_launch = IncludeLaunchDescription(
+    #     PythonLaunchDescriptionSource(
+    #         os.path.join(
+    #             get_package_share_directory("arm_srdf"), "launch", "talon.launch.py"
+    #         )
+    #     ),
+    #     launch_arguments={
+    #         "base_input_type": LaunchConfiguration("control_mode", default=1)
+    #     }.items(),
+    # )
 
     # 2️⃣ Launch MStates node
     mstates_node = Node(
@@ -51,4 +51,4 @@ def generate_launch_description():
         ],
     )
 
-    return LaunchDescription([talon_launch, mstates_node, joy_node, pid_controll_node])
+    return LaunchDescription([mstates_node, joy_node, pid_controll_node])

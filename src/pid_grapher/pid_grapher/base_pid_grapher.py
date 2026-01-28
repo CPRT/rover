@@ -93,6 +93,7 @@ class BasePIDGrapher(Node):
         if event.key == "s":
             self.save()
             print("Saved plot")
+
     def on_key(self, event):
         if event.key == "r":
             for j in self.Joints.values():
