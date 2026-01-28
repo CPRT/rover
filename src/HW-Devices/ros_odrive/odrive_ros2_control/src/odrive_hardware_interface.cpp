@@ -341,6 +341,8 @@ void ODriveHardwareInterface::set_axis_command_mode(const Axis &axis) {
     RCLCPP_INFO(rclcpp::get_logger("ODriveHardwareInterface"),
                 "Setting to position control.");
     control_msg.Control_Mode = CONTROL_MODE_POSITION_CONTROL;
+    control_msg.Input_Mode =
+        INPUT_MODE_TRAP_TRAJ; // CPRT HACK: This should be configurable
   } else if (axis.vel_input_enabled_) {
     RCLCPP_INFO(rclcpp::get_logger("ODriveHardwareInterface"),
                 "Setting to velocity control.");
