@@ -3,25 +3,21 @@
 
 """Launch a sensor node along with os_cloud and os_"""
 
-from pathlib import Path
+import os
 import launch
-import lifecycle_msgs.msg
-from ament_index_python.packages import get_package_share_directory
-from launch_ros.actions import LifecycleNode
 from launch.actions import (
     DeclareLaunchArgument,
-    IncludeLaunchDescription,
     RegisterEventHandler,
     EmitEvent,
     LogInfo,
 )
-from launch.conditions import IfCondition
-from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch.events import matches_action
+from launch_ros.actions import LifecycleNode
 from launch_ros.events.lifecycle import ChangeState
 from launch_ros.event_handlers import OnStateTransition
-import os
+import lifecycle_msgs.msg
+from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
@@ -29,7 +25,6 @@ def generate_launch_description():
     Generate launch description for running ouster_ros components separately each
     component will run in a separate process).
     """
-    ouster_ros_pkg_dir = get_package_share_directory("ouster_ros")
     params_file = os.path.join(
         get_package_share_directory("navigation"),
         "config",

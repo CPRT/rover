@@ -1,0 +1,1127 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="chassis_urdf" params="">
+  <link
+    name="Frame">
+    <inertial>
+      <origin
+        xyz="0.0800957323451785 0.0181716974755963 -0.000830008328684295"
+        rpy="0 0 0" />
+      <mass
+        value="7.54228704048224" />
+      <inertia
+        ixx="0.0869010721882039"
+        ixy="-0.00493257710248312"
+        ixz="0.000348785187980346"
+        iyy="0.0496973045367091"
+        iyz="-2.66470506536873E-06"
+        izz="0.0935427889963139" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/Frame.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.077212 0.000738 -0.070000" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.553312 0.472700 0.190000"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="-0.262788 0.078500 0.032719" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.153312 0.032700 0.277297"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="-0.180000 0.230000 0.000000" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.030000 0.030000 0.220000"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="-0.180000 -0.230000 0.000000" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.030000 0.030000 0.220000"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.360000 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.093312 0.072700 0.167297"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.360000 -0.140000 -0.050000" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.043312 0.072700 0.077297"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.360000 0.140000 -0.050000" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.043312 0.072700 0.077297"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.107212 0.180738 0.722719" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <cylinder radius="0.021800" length="1.423063"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.105000 0.180738 1.445000" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.403312 0.042700 0.030000"/>
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="Rocker_Right">
+    <inertial>
+      <origin
+        xyz="-7.79454517596534E-09 -0.0599185039830545 0.0309776992282597"
+        rpy="0 0 0" />
+      <mass
+        value="0.466658290559201" />
+      <inertia
+        ixx="0.00078110744357765"
+        ixy="-1.54065537175771E-11"
+        ixz="5.42142969110318E-13"
+        iyy="0.00131342318781746"
+        iyz="-4.23949324359414E-11"
+        izz="0.000539407548341228" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/Rocker_Right.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.000000 -0.041075 0.005650" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.150000 0.090000 0.240000"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- TODO: This should be switched to revolute with joint limits -->
+  <joint
+    name="Right_shoulder"
+    type="fixed">
+    <origin
+      xyz="0 -0.20704 -0.07135"
+      rpy="0 0.0001756 0" />
+    <parent
+      link="Frame" />
+    <child
+      link="Rocker_Right" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+  <link
+    name="Sus_Arm_Front_Right">
+    <inertial>
+      <origin
+        xyz="0.57785416680796 -0.285312653930359 0.0825439600785206"
+        rpy="0 0 3.14" />
+      <mass
+        value="1.30155339210532" />
+      <inertia
+        ixx="0.000635050100779676"
+        ixy="5.01413429887482E-06"
+        ixz="-4.32135243845773E-07"
+        iyy="0.00405405345345966"
+        iyz="-5.85963237483261E-06"
+        izz="0.00425435187817206" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 3.14" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/Sus_Arm_LB_RF.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.225 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.450000 0.090000 0.050000"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.085000 0.070000 0.090000"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Right_front_arm_joint"
+    type="fixed">
+    <origin
+      xyz="0.43 -0.05 0"
+      rpy="0 0 0" />
+    <parent
+      link="Rocker_Right" />
+    <child
+      link="Sus_Arm_Front_Right" />
+    <axis
+      xyz="0 0 0" />
+  </joint>
+  <link
+    name="Wheel_Arm_Front_Right">
+    <inertial>
+      <origin
+        xyz="-0.664037126098315 -0.188170529908974 -0.095574626273163"
+        rpy="0 0 3.14" />
+      <mass
+        value="1.37511463184065" />
+      <inertia
+        ixx="0.00128735496986635"
+        ixy="-1.71023561850026E-07"
+        ixz="-4.51304963957638E-08"
+        iyy="0.00166847088701996"
+        iyz="-5.79325295972676E-05"
+        izz="0.00115431488724209" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 3.14" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/Wheel_Arm.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -0.131243" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.154965 0.097667 0.148371"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 -0.175000 -0.051243" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.074965 0.049667 0.228371"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 -0.08 0.045000" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.074965 0.157667 0.068371"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Right_front_wheel_arm_joint"
+    type="continuous">
+    <origin
+      xyz= "0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="Sus_Arm_Front_Right" />
+    <child
+      link="Wheel_Arm_Front_Right" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="Wheel_Front_Right">
+    <inertial>
+      <origin
+        xyz="-1.5126324665049E-08 -0.0652540478917059 -4.94359794767085E-09"
+        rpy="0 0 0" />
+      <mass
+        value="4.07889519788779" />
+      <inertia
+        ixx="0.0253877346184538"
+        ixy="3.17556071861152E-10"
+        ixz="6.01779428304295E-08"
+        iyy="0.0442825412456799"
+        iyz="4.6564377485832E-09"
+        izz="0.0253877201893168" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/Wheel.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.000000  0.000000 0.000000" rpy="1.570000 0.000000 0.000000"/>
+      <geometry>
+        <cylinder radius="0.141667" length="0.139000"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Right_front_wheel_joint"
+    type="continuous">
+    <origin
+      xyz="0 0 -0.15"
+      rpy="0 0 0" />
+    <parent
+      link="Wheel_Arm_Front_Right" />
+    <child
+      link="Wheel_Front_Right" />
+    <axis
+      xyz="0 -1 0" />
+  </joint>
+  <link
+    name="Sus_Arm_Back_Right">
+    <inertial>
+      <origin
+        xyz="-0.577610105350204 -0.28605209764572 0.0825454788156203"
+        rpy="0 0 0" />
+      <mass
+        value="1.30155333809972" />
+      <inertia
+        ixx="0.000635051257793654"
+        ixy="4.98977414803435E-06"
+        ixz="1.41154589066429E-07"
+        iyy="0.00405405345341123"
+        iyz="-5.80877365251876E-06"
+        izz="0.00425435056151195" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/Sus_Arm_LF_RB.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+    <origin xyz="0.225 0 0" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.451125 0.077375 0.060750"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 0 0" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.081125 0.067375 0.090750"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Right_back_arm_joint"
+    type="fixed">
+    <origin
+      xyz="-0.43 -0.05 0"
+      rpy="0 0 0" />
+    <parent
+      link="Rocker_Right" />
+    <child
+      link="Sus_Arm_Back_Right" />
+    <axis
+      xyz="0 0 0" />
+  </joint>
+  <link
+    name="Wheel_Arm_Back_Right">
+    <inertial>
+      <origin
+        xyz="-0.664037126098314 -0.178170529908975 -0.0955746262731632"
+        rpy="0 0 3.14" />
+      <mass
+        value="1.37511463184065" />
+      <inertia
+        ixx="0.00128735496986644"
+        ixy="-1.71023561850366E-07"
+        ixz="-4.5130496445495E-08"
+        iyy="0.00166847088702004"
+        iyz="-5.79325295972671E-05"
+        izz="0.00115431488724208" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 3.14" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/Wheel_Arm.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -0.131243" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.154965 0.097667 0.148371"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 -0.175000 -0.051243" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.074965 0.049667 0.228371"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 -0.08 0.045000" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.074965 0.157667 0.068371"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Right_back_wheel_arm_joint"
+    type="continuous">
+    <origin
+      xyz="0 -0.01 0"
+      rpy="0 0 0" />
+    <parent
+      link="Sus_Arm_Back_Right" />
+    <child
+      link="Wheel_Arm_Back_Right" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="Wheel_Back_Right">
+    <inertial>
+      <origin
+        xyz="-1.51263247483158E-08 -0.0652540478917063 -4.94359803093758E-09"
+        rpy="0 0 0" />
+      <mass
+        value="4.07889519788779" />
+      <inertia
+        ixx="0.0253877346184539"
+        ixy="3.17556090144171E-10"
+        ixz="6.0177942822157E-08"
+        iyy="0.0442825412456799"
+        iyz="4.65643774360751E-09"
+        izz="0.0253877201893168" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/Wheel.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.000000 0.000000 0.000000" rpy="1.570000 0.000000 0.000000"/>
+      <geometry>
+        <cylinder radius="0.141667" length="0.139000"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Right_back_wheel_joint"
+    type="continuous">
+    <origin
+      xyz="0 0 -0.15"
+      rpy="0 0 0" />
+    <parent
+      link="Wheel_Arm_Back_Right" />
+    <child
+      link="Wheel_Back_Right" />
+    <axis
+      xyz="0 -1 0" />
+  </joint>
+  <link
+    name="Rocker_Left">
+    <inertial>
+      <origin
+        xyz="7.79453601662539E-09 0.0476985039830719 0.030977699228341"
+        rpy="0 0 0" />
+      <mass
+        value="0.46665829055892" />
+      <inertia
+        ixx="0.000781107443577619"
+        ixy="-1.54065124177074E-11"
+        ixz="-5.42083570076205E-13"
+        iyy="0.00131342318781745"
+        iyz="4.23949257268849E-11"
+        izz="0.000539407548341164" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/Rocker_Left.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.000000 0.028855 0.005650" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.133500 0.090538 0.249925"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- TODO: This should be switched to revolute with joint limits -->
+  <joint
+    name="Left_shoulder"
+    type="fixed">
+    <origin
+      xyz="0 0.22074 -0.07135"
+      rpy="0 -1.802E-05 0" />
+    <parent
+      link="Frame" />
+    <child
+      link="Rocker_Left" />
+    <axis
+      xyz="0 -1 0" />
+  </joint>
+  <link
+    name="Sus_Arm_Front_Left">
+    <inertial>
+      <origin
+        xyz="0.577627534357114 0.279237097647626 0.082501913006288"
+        rpy="0 0 3.14" />
+      <mass
+        value="1.30155333808383" />
+      <inertia
+        ixx="0.000635051257839279"
+        ixy="4.98977415478763E-06"
+        ixz="-1.41154588252225E-07"
+        iyy="0.00405405345338918"
+        iyz="5.80877363838514E-06"
+        izz="0.00425435056152947" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 3.14" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/Sus_Arm_LF_RB.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.225 0.0 0.000000" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.450000 0.090000 0.050000"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.085000 0.070000 0.090000"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Left_front_arm_joint"
+    type="fixed">
+    <origin
+      xyz="0.43 0.05 0"
+      rpy="0 0 0" />
+    <parent
+      link="Rocker_Left" />
+    <child
+      link="Sus_Arm_Front_Left" />
+    <axis
+      xyz="0 0 0" />
+  </joint>
+  <link
+    name="Wheel_Arm_Front_Left">
+    <inertial>
+      <origin
+        xyz="0.664037126098315 0.178170529908974 -0.0955746262731632"
+        rpy="0 0 0" />
+      <mass
+        value="1.37511463184065" />
+      <inertia
+        ixx="0.00128735496986635"
+        ixy="-1.71023561850106E-07"
+        ixz="4.513049637557E-08"
+        iyy="0.00166847088701983"
+        iyz="5.79325295972682E-05"
+        izz="0.00115431488724196" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/Wheel_Arm.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.000000 0.1 -0.131243" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.154965 0.097667 0.148371"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.000000 0.14 -0.051243" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.074965 0.049667 0.228371"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.000000 0.05 0.045000" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.074965 0.157667 0.068371"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Left_front_wheel_arm_joint"
+    type="continuous">
+    <origin
+      xyz="1.7429E-05 0.003185 -4.3566E-05"
+      rpy="0 0 0" />
+    <parent
+      link="Sus_Arm_Front_Left" />
+    <child
+      link="Wheel_Arm_Front_Left" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="Wheel_Front_Left">
+    <inertial>
+      <origin
+        xyz="-1.51271036530343E-08 0.0652540478917061 4.94121440985928E-09"
+        rpy="0 0 0" />
+      <mass
+        value="4.07889519788779" />
+      <inertia
+        ixx="0.0253877346374189"
+        ixy="-3.18289813015833E-10"
+        ixz="-6.01756661291818E-08"
+        iyy="0.0442825412456799"
+        iyz="4.65638765389284E-09"
+        izz="0.0253877201703517" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/Wheel.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.000000 0.000000 0.000000" rpy="1.570000 0.000000 0.000000"/>
+      <geometry>
+        <cylinder radius="0.141667" length="0.139000"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Left_front_wheel_joint"
+    type="continuous">
+    <origin
+      xyz="0 0 -0.15"
+      rpy="0 0 0" />
+    <parent
+      link="Wheel_Arm_Front_Left" />
+    <child
+      link="Wheel_Front_Left" />
+    <axis
+      xyz="0 -1 0" />
+  </joint>
+  <link
+    name="Sus_Arm_Back_Left">
+    <inertial>
+      <origin
+        xyz="-0.577836729367699 0.298497653931114 0.082587522513042"
+        rpy="0 0 0" />
+      <mass
+        value="1.30155339215341" />
+      <inertia
+        ixx="0.000635050100768571"
+        ixy="5.01413429404503E-06"
+        ixz="4.32135245332308E-07"
+        iyy="0.00405405345349003"
+        iyz="5.85963236124216E-06"
+        izz="0.00425435187819251" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/Sus_Arm_LB_RF.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+    <origin xyz="0.225 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.451125 0.077375 0.060750"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.0 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.081125 0.067375 0.090750"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Left_back_arm_joint"
+    type="fixed">
+    <origin
+      xyz="-0.43 0.05 0"
+      rpy="0 0 0" />
+    <parent
+      link="Rocker_Left" />
+    <child
+      link="Sus_Arm_Back_Left" />
+    <axis
+      xyz="0 0 0" />
+  </joint>
+  <link
+    name="Wheel_Arm_Back_Left">
+    <inertial>
+      <origin
+        xyz="0.664037126098315 0.188170529908974 -0.0955746262731639"
+        rpy="0 0 0" />
+      <mass
+        value="1.37511463184065" />
+      <inertia
+        ixx="0.00128735496986684"
+        ixy="-1.71023561850264E-07"
+        ixz="4.51304967548788E-08"
+        iyy="0.00166847088702042"
+        iyz="5.79325295972644E-05"
+        izz="0.00115431488724205" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/Wheel_Arm.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.000000 0.1 -0.131243" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.154965 0.097667 0.148371"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.000000 0.14 -0.051243" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.074965 0.049667 0.228371"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.000000 0.05 0.045000" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.074965 0.157667 0.068371"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Left_back_wheel_arm_joint"
+    type="continuous">
+    <origin
+      xyz="-.1 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="Sus_Arm_Back_Left" />
+    <child
+      link="Wheel_Arm_Back_Left" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="Wheel_Back_Left">
+    <inertial>
+      <origin
+        xyz="-1.51271036807898E-08 0.0652540478917061 4.94121440985928E-09"
+        rpy="0 0 0" />
+      <mass
+        value="4.07889519788779" />
+      <inertia
+        ixx="0.0253877346374189"
+        ixy="-3.182898207594E-10"
+        ixz="-6.01756661385619E-08"
+        iyy="0.04428254124568"
+        iyz="4.65638765996186E-09"
+        izz="0.0253877201703518" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/Wheel.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.000000 0.000000 0.000000" rpy="1.570000 0.000000 0.000000"/>
+      <geometry>
+        <cylinder radius="0.141667" length="0.139000"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Left_back_wheel_joint"
+    type="continuous">
+    <origin
+      xyz="0.0 0.0 -0.15"
+      rpy="0 0 0" />
+    <parent
+      link="Wheel_Arm_Back_Left" />
+    <child
+      link="Wheel_Back_Left" />
+    <axis
+      xyz="0 -1 0" />
+  </joint>
+  <link
+    name="Zed">
+    <inertial>
+      <origin
+        xyz="0.0306563640490988 -0.00896759508661651 -0.0111101689314073"
+        rpy="0 0 0" />
+      <mass
+        value="0.170322709852802" />
+      <inertia
+        ixx="0.000383424533024289"
+        ixy="3.53918528634825E-09"
+        ixz="1.86256816970885E-06"
+        iyy="3.25740538043786E-05"
+        iyz="4.69462665493872E-10"
+        izz="0.000390134804932486" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/Zed.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.028925 -0.008976 -0.010367" rpy="0.000000 0.290000 0.000000"/>
+      <geometry>
+        <box size="0.050000 0.183799 0.032000"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Zed_mount_joint"
+    type="fixed">
+    <origin
+      xyz="0.36578 0.0072063 -0.0243"
+      rpy="0 0 0" />
+    <parent
+      link="Frame" />
+    <child
+      link="Zed" />
+    <axis
+      xyz="0 0 0" />
+  </joint>
+  <link
+    name="GPS_Right">
+    <inertial>
+      <origin
+        xyz="-1.11022302462516E-16 -5.55111512312578E-17 0.0109498681042847"
+        rpy="0 0 0" />
+      <mass
+        value="0.100302140748761" />
+      <inertia
+        ixx="6.13488467528573E-05"
+        ixy="-2.55772032670663E-12"
+        ixz="5.88317367687464E-21"
+        iyy="5.63469436411297E-05"
+        iyz="2.81433252708947E-20"
+        izz="0.000103222402805233" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/GPS.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <cylinder radius="0.080000" length="0.010000"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.000000 0.000000 0.013335" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.037470 0.037500 0.020000"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Right_gps_joint"
+    type="fixed">
+    <origin
+      xyz="-0.1773 -0.23196 0.09651"
+      rpy="0 0 0" />
+    <parent
+      link="Frame" />
+    <child
+      link="GPS_Right" />
+    <axis
+      xyz="0 0 0" />
+  </joint>
+  <link
+    name="GPS_Left">
+    <inertial>
+      <origin
+        xyz="0 6.93889390390723E-18 0.0109498681042847"
+        rpy="0 0 0" />
+      <mass
+        value="0.100302140748761" />
+      <inertia
+        ixx="6.13488467528573E-05"
+        ixy="-2.55772032699891E-12"
+        ixz="-9.38973606700713E-21"
+        iyy="5.63469436411297E-05"
+        iyz="-4.27329022581811E-21"
+        izz="0.000103222402805233" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/GPS.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.000000 0.000000 0.000000" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <cylinder radius="0.080000" length="0.010000"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.000000 0.000000 0.013335" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <box size="0.037470 0.037500 0.020000"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Left_gps_joint"
+    type="fixed">
+    <origin
+      xyz="-0.1773 0.23344 0.095208"
+      rpy="0 0 0" />
+    <parent
+      link="Frame" />
+    <child
+      link="GPS_Left" />
+    <axis
+      xyz="0 0 0" />
+  </joint>
+  <link
+    name="Antenna_Front">
+    <inertial>
+      <origin
+        xyz="-5.27355936696949E-16 1.38777878078145E-16 0.13714331261652"
+        rpy="0 0 0" />
+      <mass
+        value="0.104399900997282" />
+      <inertia
+        ixx="0.000769132724700505"
+        ixy="-5.88401142398206E-22"
+        ixz="2.7963785641302E-18"
+        iyy="0.000769132724700505"
+        iyz="-8.05172962173959E-19"
+        izz="7.06095050498019E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/Antenna.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.000042 -0.000128 0.150000" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <cylinder radius="0.020000" length="0.300000"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Front_antenna_joint"
+    type="fixed">
+    <origin
+      xyz="0.275000018562033 0.18073782630944 1.40731289579837"
+      rpy="0 0 0" />
+    <parent
+      link="Frame" />
+    <child
+      link="Antenna_Front" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="Antenna_Back">
+    <inertial>
+      <origin
+        xyz="-5.55111512312578E-16 8.32667268468867E-17 0.13714331261652"
+        rpy="0 0 0" />
+      <mass
+        value="0.104399900997282" />
+      <inertia
+        ixx="0.000769132724700505"
+        ixy="-1.06099699903673E-21"
+        ixz="2.79509711477536E-18"
+        iyy="0.000769132724700505"
+        iyz="-8.10403874686085E-19"
+        izz="7.06095050498019E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://rover_urdf/meshes/Antenna.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.000042 -0.000128 0.150000" rpy="0.000000 0.000000 0.000000"/>
+      <geometry>
+        <cylinder radius="0.020000" length="0.300000"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Back_antenna_joint"
+    type="fixed">
+    <origin
+      xyz="-0.065 0.18074 1.4073"
+      rpy="0 0 0" />
+    <parent
+      link="Frame" />
+    <child
+      link="Antenna_Back" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  </xacro:macro>
+
+</robot>

@@ -1,0 +1,49 @@
+{
+  "name": "CPRT Dev Container",
+
+  "image": "cprtsoftware/rover:dev-arm64",
+
+  "runArgs": [
+    "--network=host",
+    "--privileged",
+    "--volume=/dev/v4l/by-id:/dev/v4l/by-id",
+    "--volume=/dev/serial/by-id:/dev/serial/by-id",
+    "--volume=/sys:/sys",
+    "--volume=/etc/timezone:/etc/timezone",
+    "--volume=/tmp/argus_socket:/tmp/argus_socket",
+    "--volume=/usr/local/zed:/usr/local/zed",
+    "--runtime=nvidia",
+    "--gpus=all",
+    "--ipc=host",
+    "--group-add=video",
+    "--group-add=render",
+    "--group-add=systemd-journal",
+    "--env", "DISPLAY=${localEnv:DISPLAY}",
+    "--volume", "/tmp/.X11-unix:/tmp/.X11-unix:rw"
+  ],
+  "mounts": [
+    "source=${env:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached",
+    "source=${env:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,consistency=cached"
+  ],
+  "containerEnv": {
+    "SSH_AUTH_SOCK": "/ssh-agent",
+    "NVIDIA_VISIBLE_DEVICES": "all",
+    "NVIDIA_DRIVER_CAPABILITIES": "all"
+  },
+  "remoteUser": "vscode",
+  "containerUser": "vscode",
+  "remoteEnv": {
+    "USER": "vscode"
+  },
+
+  // Usual extras (optional)
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+      },
+      "extensions": [ "ms-vscode.cpptools", "ms-azuretools.vscode-docker" ]
+    }
+  },
+  "postCreateCommand": "source /opt/ros/humble/setup.bash"
+}

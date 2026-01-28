@@ -1,26 +1,22 @@
-import rclpy
-from rclpy.executors import MultiThreadedExecutor
-from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
-from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
-import yaml
-from ament_index_python.packages import get_package_share_directory
-import os
-import sys
-import time
-from robot_localization.srv import FromLL
-from rclpy.node import Node
-from geometry_msgs.msg import PoseStamped
-from nav_msgs.msg import Odometry
-from geographic_msgs.msg import GeoPose
-from interfaces.srv import NavToGPSGeopose
-from std_msgs.msg import Int8, Int32MultiArray
-from std_srvs.srv import Trigger
-from rclpy.qos import qos_profile_sensor_data
-from rclpy.qos import QoSProfile, HistoryPolicy, ReliabilityPolicy
 import math
 from enum import Enum, auto
 from threading import Event
 from collections import Counter
+
+import rclpy
+from rclpy.node import Node
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
+from rclpy.qos import QoSProfile, ReliabilityPolicy, qos_profile_sensor_data
+
+from geometry_msgs.msg import PoseStamped
+from nav_msgs.msg import Odometry
+from std_msgs.msg import Int8, Int32MultiArray
+from std_srvs.srv import Trigger
+
+from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
+from robot_localization.srv import FromLL
+from interfaces.srv import NavToGPSGeopose
 
 
 class MissionState(Enum):
@@ -332,34 +328,33 @@ class IncrementalGpsCommander(Node):
             future.add_done_callback(done_callback)
             # Wait for the event to be set, indicating the service call is done, with a timeout
             event.wait(timeout=5.0)
-
-            if future.done():  # Check if the future completed
-                result = future.result()
-                if result:
-                    target_pose = PoseStamped()
-                    target_pose.header.frame_id = "map"
-                    target_pose.header.stamp = self.get_clock().now().to_msg()
-                    target_pose.pose.position = result.map_point
-                    target_pose.pose.orientation = orientation
-                    self.get_logger().info(
-                        f"Converted to map frame: x={target_pose.pose.position.x:.2f}, y={target_pose.pose.position.y:.2f}"
-                    )
-                    return target_pose
-                else:
-                    self.get_logger().error(
-                        "Failed to convert lat/lon to map pose: Service returned no result."
-                    )
-                    return None
-            else:
+            if not future.done():
                 self.get_logger().error(
-                    "Failed to convert lat/lon to map pose: Service call timed out."
+                    "Service call to convert lat/lon to map pose timed out."
                 )
                 return None
+
+            result = future.result()
+            if not result:
+                self.get_logger().error(
+                    "Failed to convert lat/lon to map pose: No result returned."
+                )
+                return None
+            target_pose = PoseStamped()
+            target_pose.header.frame_id = "map"
+            target_pose.header.stamp = self.get_clock().now().to_msg()
+            target_pose.pose.position = result.map_point
+            target_pose.pose.orientation = orientation
+            self.get_logger().info(
+                f"Converted to map frame: x={target_pose.pose.position.x:.2f}, y={target_pose.pose.position.y:.2f}"
+            )
+            return target_pose
         except Exception as e:
             self.get_logger().error(f"Error during lat/lon conversion: {e}")
             return None
 
-    def euclidean_distance(self, pose1: PoseStamped, pose2: PoseStamped):
+    @staticmethod
+    def euclidean_distance(pose1: PoseStamped, pose2: PoseStamped):
         """Calculates the Euclidean distance between two poses (ignoring z-axis)."""
         if pose1 is None or pose2 is None:
             return float("inf")
@@ -384,82 +379,77 @@ class IncrementalGpsCommander(Node):
         and monitors the navigation progress.
         """
         # Do nothing if the robot is in a non-active mission state
-        if self.mission_state == MissionState.DO_NOTHING:
+        if self.mission_state != MissionState.NAV_TO_GOAL:
             return
-        elif self.mission_state == MissionState.NAV_CANCELLED:
-            return
-        elif self.mission_state == MissionState.FOUND_ARUCO_MARKER:
-            return
-
         # Logic for when the robot is actively navigating to a goal
-        elif self.mission_state == MissionState.NAV_TO_GOAL:
-            if self.final_lat_lon is None:
-                self.get_logger().warn(
-                    "Error in NAV_TO_GOAL: final_lat_lon is None. Resetting mission."
-                )
-                self.reset()
-                return
-            elif self.current_robot_pose is None:
-                self.get_logger().warn(
-                    "Error in NAV_TO_GOAL: current robot pose is not available."
-                )
-                return
+        if self.final_lat_lon is None:
+            self.get_logger().warn(
+                "Error in NAV_TO_GOAL: final_lat_lon is None. Resetting mission."
+            )
+            self.reset()
+            return
 
-            # Convert the final GPS goal to a PoseStamped in the map frame
-            final_pose = self.convert_lat_lon_to_pose(*self.final_lat_lon)
-            if final_pose is None:
-                self.get_logger().error(
-                    "Error in NAV_TO_GOAL: Failed to convert final lat/lon to map pose. Resetting mission."
-                )
-                self.reset()
-                return
+        if self.current_robot_pose is None:
+            self.get_logger().warn(
+                "Error in NAV_TO_GOAL: current robot pose is not available."
+            )
+            return
 
-            # If no navigation goal is currently active, send the final goal to Nav2
-            if self.goal_handle is None:
-                self.get_logger().info(
-                    f"Starting navigation to final goal: x={final_pose.pose.position.x:.2f}, y={final_pose.pose.position.y:.2f}"
-                )
-                self.goal_handle = self.navigator.goToPose(final_pose)
-                self.get_logger().info(
-                    f"Called goToPose for final pose. GoalHandle: {self.goal_handle}"
-                )
-                return  # Wait for the next timer cycle to check task status
+        # Convert the final GPS goal to a PoseStamped in the map frame
+        final_pose = self.convert_lat_lon_to_pose(*self.final_lat_lon)
+        if final_pose is None:
+            self.get_logger().error(
+                "Error in NAV_TO_GOAL: Failed to convert final lat/lon to map pose. Resetting mission."
+            )
+            self.reset()
+            return
 
-            # Check if the navigation task is complete
-            if self.navigator.isTaskComplete():
-                self.get_logger().info("Final goal complete!")
+        # If no navigation goal is currently active, send the final goal to Nav2
+        if self.goal_handle is None:
+            self.get_logger().info(
+                f"Starting navigation to final goal: x={final_pose.pose.position.x:.2f}, y={final_pose.pose.position.y:.2f}"
+            )
+            self.goal_handle = self.navigator.goToPose(final_pose)
+            self.get_logger().info(
+                f"Called goToPose for final pose. GoalHandle: {self.goal_handle}"
+            )
+            return  # Wait for the next timer cycle to check task status
 
-                result = self.navigator.getResult()
-                if result == TaskResult.SUCCEEDED:
-                    self.get_logger().info("Final goal succeeded!")
-                    # This block is reached if navigation completed successfully without Aruco cancellation.
-                    if self.aruco_stop_triggered_id is None:
-                        self.get_logger().info(
-                            "Navigated to goal but did not find the required Aruco tag within the specified window."
-                        )
-                    msg = Int8()
-                    msg.data = self.nav_completed_light_code
-                    self.lights_publisher.publish(msg)
-                elif result == TaskResult.CANCELED:
-                    # This block is reached if navigation was cancelled (e.g., by Aruco detection or user service call).
-                    if self.aruco_stop_triggered_id is not None:
-                        self.get_logger().info(
-                            f"Found Aruco Tag {self.aruco_stop_triggered_id}, stopping navigation."
-                        )
-                    else:
-                        self.get_logger().info(
-                            "Final goal was canceled by user request or other reason!"
-                        )
-                    msg = Int8()
-                    msg.data = self.nav_cancelled_light_code
-                    self.lights_publisher.publish(msg)
-                elif result == TaskResult.FAILED:
-                    self.get_logger().error("Final goal failed!")
-                    msg = Int8()
-                    msg.data = self.nav_cancelled_light_code
-                    self.lights_publisher.publish(msg)
+        # Check if the navigation task is complete
+        if self.navigator.isTaskComplete():
+            self.get_logger().info("Final goal complete!")
 
-                self.reset()  # Reset all state variables after task completion or failure
+            result = self.navigator.getResult()
+            if result == TaskResult.SUCCEEDED:
+                self.get_logger().info("Final goal succeeded!")
+                # This block is reached if navigation completed successfully without Aruco cancellation.
+                if self.aruco_stop_triggered_id is None:
+                    self.get_logger().info(
+                        "Navigated to goal but did not find the required Aruco tag within the specified window."
+                    )
+                msg = Int8()
+                msg.data = self.nav_completed_light_code
+                self.lights_publisher.publish(msg)
+            elif result == TaskResult.CANCELED:
+                # This block is reached if navigation was cancelled (e.g., by Aruco detection or user service call).
+                if self.aruco_stop_triggered_id is not None:
+                    self.get_logger().info(
+                        f"Found Aruco Tag {self.aruco_stop_triggered_id}, stopping navigation."
+                    )
+                else:
+                    self.get_logger().info(
+                        "Final goal was canceled by user request or other reason!"
+                    )
+                msg = Int8()
+                msg.data = self.nav_cancelled_light_code
+                self.lights_publisher.publish(msg)
+            elif result == TaskResult.FAILED:
+                self.get_logger().error("Final goal failed!")
+                msg = Int8()
+                msg.data = self.nav_cancelled_light_code
+                self.lights_publisher.publish(msg)
+
+            self.reset()  # Reset all state variables after task completion or failure
 
 
 def main(args=None):

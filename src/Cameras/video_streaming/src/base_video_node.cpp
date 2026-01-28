@@ -9,15 +9,29 @@ BaseVideoNode::BaseVideoNode(const std::string name,
     : rclcpp::Node(name, options) {
   // Ensure GStreamer initialized once globally (thread-safe)
   std::call_once(gst_init_once_flag_, []() { gst_init(nullptr, nullptr); });
+  restart_sub_ = create_subscription<std_msgs::msg::Empty>(
+      "/all_video/restart_pipeline", 10,
+      [this](const std::shared_ptr<std_msgs::msg::Empty> msg) {
+        try {
+          if (!stop_pipeline()) {
+            RCLCPP_ERROR(this->get_logger(),
+                         "Failed to stop pipeline during restart.");
+            return;
+          }
+          if (!start_pipeline()) {
+            RCLCPP_ERROR(this->get_logger(),
+                         "Failed to start pipeline during restart.");
+            return;
+          }
+        } catch (const std::exception &e) {
+          RCLCPP_ERROR(this->get_logger(),
+                       "Exception during pipeline restart: %s", e.what());
+        }
+      });
 }
 
 BaseVideoNode::~BaseVideoNode() {
-  std::lock_guard<std::mutex> lock(pipeline_mutex_);
-  if (pipeline_) {
-    gst_element_set_state(pipeline_, GST_STATE_NULL);
-    gst_object_unref(pipeline_);
-    pipeline_ = nullptr;
-  }
+  stop_pipeline();
   RCLCPP_INFO(get_logger(), "BaseVideoNode: pipeline stopped and cleaned up.");
 }
 
@@ -51,4 +65,52 @@ bool BaseVideoNode::start_pipeline() {
   }
   RCLCPP_INFO(get_logger(), "BaseVideoNode: pipeline started.");
   return true;
+}
+
+bool BaseVideoNode::stop_pipeline() {
+  std::lock_guard<std::mutex> lock(pipeline_mutex_);
+  if (pipeline_) {
+    if (gst_element_set_state(pipeline_, GST_STATE_NULL) ==
+        GST_STATE_CHANGE_FAILURE) {
+      RCLCPP_ERROR(get_logger(), "Failed to set pipeline to NULL.");
+      return false;
+    }
+    gst_object_unref(pipeline_);
+    pipeline_ = nullptr;
+    RCLCPP_INFO(get_logger(), "BaseVideoNode: pipeline stopped.");
+  }
+  return true;
+}
+
+bool BaseVideoNode::pause_pipeline() {
+  std::lock_guard<std::mutex> lock(pipeline_mutex_);
+  if (pipeline_) {
+    if (gst_element_set_state(pipeline_, GST_STATE_PAUSED) ==
+        GST_STATE_CHANGE_FAILURE) {
+      RCLCPP_ERROR(get_logger(), "Failed to set pipeline to PAUSED.");
+      return false;
+    }
+    RCLCPP_INFO(get_logger(), "BaseVideoNode: pipeline paused.");
+  }
+  return true;
+}
+
+bool BaseVideoNode::resume_pipeline() {
+  std::lock_guard<std::mutex> lock(pipeline_mutex_);
+  if (pipeline_) {
+    if (gst_element_set_state(pipeline_, GST_STATE_PLAYING) ==
+        GST_STATE_CHANGE_FAILURE) {
+      RCLCPP_ERROR(get_logger(), "Failed to set pipeline to PLAYING.");
+      return false;
+    }
+    RCLCPP_INFO(get_logger(), "BaseVideoNode: pipeline resumed.");
+  }
+  return true;
+}
+
+void BaseVideoNode::safe_gst_unref(GstElement *&elem) {
+  if (elem) {
+    gst_object_unref(elem);
+    elem = nullptr;
+  }
 }

@@ -8,9 +8,17 @@ adafruit-circuitpython-ens160
 adafruit-circuitpython-busdevice
 adafruit-circuitpython-register
 adafruit-circuitpython-neopixel
+adafruit-circuitpython-neopixel-spi
 pyubx2
 RPi.GPIO
 rpi-hardware-pwm
 Jetson.GPIO
 python-can
+<<<<<<< HEAD
 matplotlib
+=======
+ultralytics
+onnx
+onnxruntime
+odrive
+>>>>>>> main

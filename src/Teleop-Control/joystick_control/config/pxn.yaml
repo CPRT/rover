@@ -1,0 +1,25 @@
+drive_teleop_node:
+  ros__parameters:
+    #TODO change these for an actual PXN
+    forward_axis: 1
+    strafe_axis: 0
+    yaw_axis: 2
+    max_linear: 2.0
+    max_angular: 1.0
+arm_teleop_node:
+  ros__parameters:
+    throttle:
+      axis: 2
+    base_axis: 0
+    wrist_roll: 4
+    wrist_yaw_positive: 3
+    wrist_yaw_negative: 5
+    act1_axis: 1
+    act2_axis: 5
+    elbow_yaw: 3
+    max_base_speed: 1.0
+    max_wrist_roll_speed: 1.0
+    max_wrist_speed: 1.0
+    max_act1_speed: 1.0
+    max_act2_speed: 1.0
+    max_elbow_yaw_speed: 1.0

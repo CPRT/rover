@@ -2,9 +2,8 @@ import os
 import launch
 import launch.actions
 import launch.substitutions
-import launch_ros.actions
 from ament_index_python.packages import get_package_share_directory
-from launch_ros.actions import ComposableNodeContainer, LoadComposableNodes
+from launch_ros.actions import LoadComposableNodes
 from launch_ros.descriptions import ComposableNode
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 
@@ -90,7 +89,7 @@ def launch_setup(context):
             msg=f"Loading elevation mapping with profile: {selected_profile}"
         ),
         launch.actions.LogInfo(
-            msg=f"Waiting to compose gridmap node into zed container"
+            msg="Waiting to compose gridmap node into zed container"
         ),
         LoadComposableNodes(
             composable_node_descriptions=[node],

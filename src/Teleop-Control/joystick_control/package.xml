@@ -4,10 +4,13 @@
   <name>joystick_control</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="connor.needham2015@gmail.com">connor</maintainer>
+  <maintainer email="PSPuttaguna@gmail.com">vscode</maintainer>
   <license>TODO: License declaration</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
   <depend>rclcpp</depend>
   <depend>std_msgs</depend>
   <depend>geometry_msgs</depend>
@@ -15,8 +18,6 @@
   <depend>ros_phoenix</depend>
   <depend>interfaces</depend>
   <depend>joy</depend>
-  <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_lint_common</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

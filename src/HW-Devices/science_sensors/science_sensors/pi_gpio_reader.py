@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Bool
-import RPi.GPIO as GPIO
+from RPi import GPIO
 
 
 class GPIOReader(Node):

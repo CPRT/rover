@@ -7,7 +7,6 @@ from pyubx2 import (
     UBX_PROTOCOL,
 )
 from .ubx_io_manager import UbxIoManager
-import os
 
 
 class HeadingNode(Node):
@@ -40,6 +39,7 @@ class HeadingNode(Node):
             self.layers |= SET_LAYER_FLASH
         self.timer = self.create_timer(1 / self.freq, self.timer_callback)
 
+    @staticmethod
     def quaternion_from_euler(roll, pitch, yaw):
         """
         Converts euler roll, pitch, yaw to quaternion (w in last place)

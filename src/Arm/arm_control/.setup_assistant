@@ -1,0 +1,23 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: rover_urdf
+    relative_path: urdf/rover_urdf.urdf.xacro
+  srdf:
+    relative_path: config/rover_urdf.srdf
+  package_settings:
+    author_name: Connor Needham
+    author_email: connor.needham2015@gmail.com
+    generated_timestamp: 1767296302
+  control_xacro:
+    command:
+      []
+    state:
+      []
+  modified_urdf:
+    xacros:
+      - control_xacro
+  control_xacro:
+    command:
+      []
+    state:
+      []

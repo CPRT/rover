@@ -31,8 +31,8 @@ class GasSensor(Node):
         try:
             self.bms280 = adafruit_bme280.Adafruit_BME280_I2C(i2c)
             self.ens160 = adafruit_ens160.ENS160(i2c)
-        except RuntimeError:
-            raise RuntimeError("Gas Sensor Not Connected")
+        except RuntimeError as e:
+            raise RuntimeError("Gas Sensor Not Connected") from e
 
         self.bms280.sea_level_pressure = (
             self.get_parameter("sea_level_pressure_hpa")

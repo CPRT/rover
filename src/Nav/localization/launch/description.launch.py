@@ -16,7 +16,7 @@ def generate_launch_description():
     urdf_file_name = "spike.urdf.xml"
     urdf = os.path.join(config_dir, urdf_file_name)
 
-    with open(urdf, "r") as infp:
+    with open(urdf, "r", encoding="utf-8") as infp:
         robot_desc = infp.read()
 
     return LaunchDescription(

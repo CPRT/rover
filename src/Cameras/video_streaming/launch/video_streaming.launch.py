@@ -23,7 +23,7 @@ def generate_launch_description():
         plugin="DetectNode",
         name="detect_node",
         namespace="",
-        parameters=[],
+        parameters=[{"bottle_config": config_dir + "/bottle/bottle.txt"}],
     )
 
     streaming_node = ComposableNode(
@@ -32,6 +32,20 @@ def generate_launch_description():
         name="streaming_node",
         namespace="",
         parameters=[],
+    )
+
+    srt_node = ComposableNode(
+        package="video_streaming",
+        plugin="video_streaming::SrtNode",
+        name="srt_node",
+        namespace="",
+        parameters=[
+            {
+                "srt_uri": "srt://:7001",
+                "latency": 100,
+                "iframe_interval": 30,
+            }
+        ],
     )
 
     # Create a container for all 3 components
@@ -43,7 +57,8 @@ def generate_launch_description():
         composable_node_descriptions=[
             input_node,
             detect_node,
-            streaming_node,
+            # streaming_node,
+            srt_node,
         ],
         output="screen",
     )

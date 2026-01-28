@@ -1,4 +1,4 @@
-from stellarnet_driverLibs import stellarnet_driver3 as sn
+from science_sensors.stellarnet_driverLibs import stellarnet_driver3 as sn
 
 # For Windows ONLY: Must be run in administrator mode
 # Only need to run it one time after switch back from the SpectraWiz. Or manually run InstallDriver.exe located in stellarnet_driverLis/windows_only
@@ -20,7 +20,7 @@ spectrometer, wav = sn.array_get_spec(
 )  # 0 for first channel and 1 for second channel , up to 127 spectrometers
 """
 # Equivalent to get spectrometer and wav separately:
-spectrometer = sn.array_get_spec_only(0) 
+spectrometer = sn.array_get_spec_only(0)
 wav = sn.getSpectrum_X(spectrometer)
 """
 

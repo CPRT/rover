@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="rover_urdf">
+  <xacro:arg name="use_arm" default="true"/>
+  <xacro:arg name="use_drive" default="true"/>
+  <link name="base_link"/>
+
+  <xacro:if value="$(arg use_arm)">
+    <!-- Arm geometry -->
+    <xacro:include filename="$(find rover_urdf)/urdf/arm_urdf.xacro" />
+    <xacro:arm_urdf />
+
+    <!-- Arm ros2_control -->
+    <xacro:include filename="$(find rover_urdf)/urdf/arm_urdf.ros2_control.xacro" />
+    <xacro:arm_urdf_ros2_control name="ArmSystem"/>
+
+    <!-- Link to base_link -->
+    <joint name="base_link_to_arm_base" type="fixed">
+      <parent link="base_link"/>
+      <child link="Link_1"/>
+      <origin xyz="0 0 0.0" rpy="0 0 0"/>
+    </joint>
+  </xacro:if>
+
+  <xacro:if value="$(arg use_drive)">
+    <!-- Chassis ... -->
+    <xacro:include filename="$(find rover_urdf)/urdf/chassis_urdf.xacro" />
+    <xacro:chassis_urdf />
+
+      <!-- Chassis ros2_control -->
+    <xacro:include filename="$(find rover_urdf)/urdf/chassis_urdf.ros2_control.xacro" />
+    <xacro:chassis_urdf_ros2_control name="ChassisSystem"/>
+
+    <joint name="base_link_to_chassis" type="fixed">
+      <parent link="base_link"/>
+      <child link="Frame"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+  </xacro:if>
+
+
+</robot>

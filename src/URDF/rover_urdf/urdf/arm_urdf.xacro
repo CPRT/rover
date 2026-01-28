@@ -1,0 +1,501 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="arm_urdf" params="">
+    <link
+        name="Link_1">
+        <inertial>
+        <origin
+            xyz="-0.0126994071629265 0.0222257343431005 -0.0197570207098757"
+            rpy="0 0 0" />
+        <mass
+            value="0.894465735151454" />
+        <inertia
+            ixx="0.00132263474307506"
+            ixy="-4.08904509356627E-06"
+            ixz="-2.17806362830514E-08"
+            iyy="0.000957372590197054"
+            iyz="-3.71581566948372E-08"
+            izz="0.00132572062977347" />
+        </inertial>
+        <visual>
+        <origin
+            xyz="0 0 0"
+            rpy="0 0 0" />
+        <geometry>
+            <mesh
+            filename="package://rover_urdf/meshes/Link_1.STL" />
+        </geometry>
+        <material
+            name="">
+            <color
+            rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+        </material>
+        </visual>
+        <collision>
+            <origin xyz="-0.028000 0.051000 -0.060000" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.020000" length="0.120000"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 0.000000 0.014100" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.120000 0.212500 0.037300"/>
+            </geometry>
+        </collision>
+    </link>
+    <link
+        name="Link_2">
+        <inertial>
+        <origin
+            xyz="-4.20856108088868E-06 -0.0230885212719903 0.0757638885361565"
+            rpy="0 0 0" />
+        <mass
+            value="1.06976490829179" />
+        <inertia
+            ixx="0.00114778086660067"
+            ixy="2.48725128684533E-09"
+            ixz="-4.35161783538529E-06"
+            iyy="0.00187950431086452"
+            iyz="-1.86226351623296E-09"
+            izz="0.00102016262127672" />
+        </inertial>
+        <visual>
+        <origin
+            xyz="0 0 0"
+            rpy="0 0 0" />
+        <geometry>
+            <mesh
+            filename="package://rover_urdf/meshes/Link_2.STL" />
+        </geometry>
+        <material
+            name="">
+            <color
+            rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+        </material>
+        </visual>
+        <collision>
+            <origin xyz="0.000000 -0.075000 0.110725" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.057833" length="0.122902"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 0.059878 0.110725" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.057833" length="0.032902"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 0.000000 0.000725" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.106750 0.104676 0.020363"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 0.046000 0.040725" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.106750 0.014676 0.070363"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 -0.046000 0.040725" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.106750 0.014676 0.070363"/>
+            </geometry>
+        </collision>
+    </link>
+    <joint
+        name="Joint_1"
+        type="continuous">
+        <origin
+        xyz="0 0 0.0287"
+        rpy="0 0 0" />
+        <parent
+        link="Link_1" />
+        <child
+        link="Link_2" />
+        <axis
+        xyz="0 0 1" />
+    </joint>
+    <link
+        name="Link_3">
+        <inertial>
+        <origin
+            xyz="0.0133105219503182 0.0134978165230319 0.302186148331124"
+            rpy="0 0 0" />
+        <mass
+            value="2.73505357681468" />
+        <inertia
+            ixx="0.0200002632227646"
+            ixy="-1.48636693159547E-06"
+            ixz="-0.000900668714405544"
+            iyy="0.0209861108518478"
+            iyz="-1.25861593989505E-06"
+            izz="0.00178169574785951" />
+        </inertial>
+        <visual>
+        <origin
+            xyz="0 0 0"
+            rpy="0 0 0" />
+        <geometry>
+            <mesh
+            filename="package://rover_urdf/meshes/Link_3.STL" />
+        </geometry>
+        <material
+            name="">
+            <color
+            rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+        </material>
+        </visual>
+        <collision>
+            <origin xyz="0.070000 -0.034283 0.592000" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.050000" length="0.055272"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.070000 -0.094283 0.592000" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.015548" length="0.125272"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.070000 0.065717 0.592000" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.025548" length="0.045272"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.070000 0.040000 0.592000" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.045548" length="0.005272"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.020000 -0.015000 0.519808" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.048322 0.009363 0.148954"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.020000 0.039500 0.519808" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.048322 0.009363 0.148954"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 0.012000 0.199808" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.048322 0.060000 0.488954"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.008289 0.045717 -0.000192" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.035548" length="0.020000"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 -0.034283 0.199808" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.058322 0.029363 0.168954"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="-0.001711 0.055717 0.199808" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.078322 0.029363 0.238954"/>
+            </geometry>
+        </collision>
+    </link>
+    <joint
+        name="Joint_2"
+        type="continuous">
+        <origin
+        xyz="0 0 0.10795"
+        rpy="0 0 0" />
+        <parent
+        link="Link_2" />
+        <child
+        link="Link_3" />
+        <axis
+        xyz="0 -1 0" />
+    </joint>
+    <link
+        name="Link_4">
+        <inertial>
+        <origin
+            xyz="-0.01792201238759 0.0119336456139042 0.0235980820711603"
+            rpy="0 0 0" />
+        <mass
+            value="0.592254181279744" />
+        <inertia
+            ixx="0.0005052936076767"
+            ixy="8.31096063015966E-09"
+            ixz="4.55868295342229E-07"
+            iyy="0.000496814164883247"
+            iyz="1.86069451987915E-07"
+            izz="0.000304993356864803" />
+        </inertial>
+        <visual>
+        <origin
+            xyz="0 0 0"
+            rpy="0 0 0" />
+        <geometry>
+            <mesh
+            filename="package://rover_urdf/meshes/Link_4.STL" />
+        </geometry>
+        <material
+            name="">
+            <color
+            rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+        </material>
+        </visual>
+        <collision>
+            <origin xyz="0.000000 0.011650 0.024000" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.058549 0.030000 0.101500"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="-0.053000 0.011650 -0.016000" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.021000" length="0.145333"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.002098 0.011650 0.070000" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.038000" length="0.015333"/>
+            </geometry>
+        </collision>
+    </link>
+    <joint
+        name="Joint_3"
+        type="continuous">
+        <origin
+        xyz="0.068432 0 0.59125"
+        rpy="0 0 0" />
+        <parent
+        link="Link_3" />
+        <child
+        link="Link_4" />
+        <axis
+        xyz="0 1 0" />
+    </joint>
+    <link
+        name="Link_5">
+        <inertial>
+        <origin
+            xyz="-3.32690983248507E-06 0.0047146073162176 0.356210950341734"
+            rpy="0 0 0" />
+        <mass
+            value="0.822677539380202" />
+        <inertia
+            ixx="0.00299649005940959"
+            ixy="-9.15653231578763E-09"
+            ixz="-1.30643541690658E-07"
+            iyy="0.00317061852966353"
+            iyz="1.38462770956105E-06"
+            izz="0.000334050583037236" />
+        </inertial>
+        <visual>
+        <origin
+            xyz="0 0 0"
+            rpy="0 0 0" />
+        <geometry>
+            <mesh
+            filename="package://rover_urdf/meshes/Link_5.STL" />
+        </geometry>
+        <material
+            name="">
+            <color
+            rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+        </material>
+        </visual>
+        <collision>
+            <origin xyz="-0.000000 0.000000 0.211681" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.015267" length="0.397787"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="-0.000000 0.000000 0.001681" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.035267" length="0.007787"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="-0.000000 0.049800 0.458000" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.010100" length="0.107787"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 0.019800 0.458000" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.045267" length="0.027787"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="-0.000000 -0.040200 0.451681" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.022900 0.008300 0.055841"/>
+            </geometry>
+        </collision>
+    </link>
+    <joint
+        name="Joint_4"
+        type="continuous">
+        <origin
+        xyz="0 0.01165 0.077"
+        rpy="0 0 0" />
+        <parent
+        link="Link_4" />
+        <child
+        link="Link_5" />
+        <axis
+        xyz="0 0 -1" />
+    </joint>
+    <link
+        name="Link_6">
+        <inertial>
+        <origin
+            xyz="-0.0042278717000258 -0.0383496874285328 0.0473063497868793"
+            rpy="0 0 0" />
+        <mass
+            value="0.330260939704627" />
+        <inertia
+            ixx="8.25792509570999E-05"
+            ixy="-4.28114152132045E-08"
+            ixz="-2.17436993282634E-07"
+            iyy="0.000114504209541654"
+            iyz="1.3430165694231E-06"
+            izz="8.91268273548946E-05" />
+        </inertial>
+        <visual>
+        <origin
+            xyz="0 0 0"
+            rpy="0 0 0" />
+        <geometry>
+            <mesh
+            filename="package://rover_urdf/meshes/Link_6.STL" />
+        </geometry>
+        <material
+            name="">
+            <color
+            rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+        </material>
+        </visual>
+        <collision>
+            <origin xyz="-0.017000 -0.069000 0.025888" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.011667" length="0.065592"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="-0.017000 -0.069000 0.063000" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.014000" length="0.009000"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 -0.028000 0.030000" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.070000 0.015000 0.034194"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 -0.028000 -0.000000" rpy="1.570000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.021667" length="0.015592"/>
+            </geometry>
+        </collision>
+    </link>
+    <joint
+        name="Joint_5"
+        type="continuous">
+        <origin
+        xyz="0 0 0.45756"
+        rpy="0 0 0" />
+        <parent
+        link="Link_5" />
+        <child
+        link="Link_6" />
+        <axis
+        xyz="0 1 0" />
+    </joint>
+    <link
+        name="EndEffector">
+        <inertial>
+        <origin
+            xyz="-0.000630328396680646 6.79014782507814E-06 0.229336591537716"
+            rpy="0 0 0" />
+        <mass
+            value="1.73621324847791" />
+        <inertia
+            ixx="0.00948716478067358"
+            ixy="8.38617593065526E-08"
+            ixz="-1.89010141585399E-06"
+            iyy="0.00305150176009116"
+            iyz="7.4271300056518E-09"
+            izz="0.006998650748849" />
+        </inertial>
+        <visual>
+        <origin
+            xyz="0 0 0"
+            rpy="0 0 0" />
+        <geometry>
+            <mesh
+            filename="package://rover_urdf/meshes/EndEffector.STL" />
+        </geometry>
+        <material
+            name="">
+            <color
+            rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+        </material>
+        </visual>
+        <collision>
+            <origin xyz="-0.000000 0.000000 0.270000" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.032381 0.240516 0.145815"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="0.000000 0.000000 0.202653" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.052381 0.240516 0.015815"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="-0.000000 0.000000 0.152653" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <box size="0.062381 0.060516 0.095815"/>
+            </geometry>
+        </collision>
+        <collision>
+            <origin xyz="-0.000000 0.000000 0.070000" rpy="0.000000 0.000000 0.000000"/>
+            <geometry>
+            <cylinder radius="0.041587" length="0.051087"/>
+            </geometry>
+        </collision>
+    </link>
+    <joint
+        name="Joint_6"
+        type="continuous">
+        <origin
+        xyz="0 -0.02785 0.022092"
+        rpy="0 0 0" />
+        <parent
+        link="Link_6" />
+        <child
+        link="EndEffector" />
+        <axis
+        xyz="0 0 1" />
+    </joint>
+
+  </xacro:macro>
+
+</robot>

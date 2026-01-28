@@ -1,36 +1,39 @@
 import rclpy
 from rclpy.node import Node
-from interfaces.srv import MoveServo
-
+from std_msgs.msg import Float32
 import random
+import math
 
 
 class Servo_Client(Node):
     def __init__(self):
         super().__init__("servo_Client")
-        self.declare_parameter("port", 0)
-        self.port = self.get_parameter("port").get_parameter_value().integer_value
-        self.get_logger().info(f"{self.port}")
 
-        self.cli = self.create_client(MoveServo, "servo_service")
-        while not self.cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info("service not available, waiting again...")
-        self.timer = self.create_timer(2, self.servo_tester)
+        self.declare_parameter("servo_num", 0)
+        self.servo_num = (
+            self.get_parameter("servo_num").get_parameter_value().integer_value
+        )
+        self.declare_parameter(f"servo{self.servo_num}.name", f"servo{self.servo_num}")
+        self.motor_name = (
+            self.get_parameter(f"servo{self.servo_num}.name")
+            .get_parameter_value()
+            .string_value
+        )
 
-    def send_request(self, port: int, pos: int) -> MoveServo:
-        req = MoveServo.Request()
-        req.port = port
-        req.pos = pos
-        future = self.cli.call_async(req)
+        # publish angle with topic as motor name
+        self.pub = self.create_publisher(Float32, f"/{self.motor_name}", 10)
+        timer_period = 1.5
+        self.timer = self.create_timer(timer_period, self.servo_tester)
 
-    def servo_request(self, req_port, req_pos) -> None:
-        Servo_Client.get_logger(self).info("Sending Request for: %s" % (req_pos))
-        self.send_request(port=req_port, pos=req_pos)
+    def servo_pub(self, req_pos) -> None:
+        self.pub.publish(req_pos)
 
     def servo_tester(self) -> None:
-        random_pos = random.randint(0, 180)
-
-        self.servo_request(self.port, random_pos)
+        msg = Float32()
+        # random value
+        msg.data = random.uniform(math.pi / 2, math.pi)
+        self.get_logger().info(f"Sending position: {msg.data} to {self.motor_name}")
+        self.servo_pub(msg)
 
 
 def main(args=None):

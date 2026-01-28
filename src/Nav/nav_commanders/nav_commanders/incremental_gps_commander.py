@@ -1,22 +1,15 @@
+import math
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
-from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
-import yaml
-from ament_index_python.packages import get_package_share_directory
-import os
-import sys
-import time
-from robot_localization.srv import FromLL
+from rclpy.qos import QoSProfile, ReliabilityPolicy, qos_profile_sensor_data
 from rclpy.node import Node
+from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
+from robot_localization.srv import FromLL
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry
-from geographic_msgs.msg import GeoPose
 from interfaces.srv import NavToGPSGeopose
 from std_msgs.msg import Int8
-from rclpy.qos import qos_profile_sensor_data
-from rclpy.qos import QoSProfile, HistoryPolicy, ReliabilityPolicy
-import math
 from enum import Enum, auto
 from threading import Event
 
@@ -204,30 +197,32 @@ class IncrementalGpsCommander(Node):
             event.wait()
 
             result = future.result()
-            if result:
-                target_pose = PoseStamped()
-                target_pose.header.frame_id = "map"
-                target_pose.header.stamp = self.get_clock().now().to_msg()
-                target_pose.pose.position = result.map_point
-                target_pose.pose.orientation = orientation
-                self.get_logger().info(
-                    f"Converted to map frame: x={target_pose.pose.position.x:.2f}, y={target_pose.pose.position.y:.2f}"
-                )
-
-                # hack for indoor testing
-                # target_pose.pose.position.x = 50.0
-                # target_pose.pose.position.y = 0.0
-                # target_pose.pose.position.z = 0.0
-
-                return target_pose
-            else:
+            if not result:
                 self.get_logger().error("Failed to convert lat/lon to map pose")
                 return None
+
+            target_pose = PoseStamped()
+            target_pose.header.frame_id = "map"
+            target_pose.header.stamp = self.get_clock().now().to_msg()
+            target_pose.pose.position = result.map_point
+            target_pose.pose.orientation = orientation
+            self.get_logger().info(
+                f"Converted to map frame: x={target_pose.pose.position.x:.2f}, y={target_pose.pose.position.y:.2f}"
+            )
+
+            # hack for indoor testing
+            # target_pose.pose.position.x = 50.0
+            # target_pose.pose.position.y = 0.0
+            # target_pose.pose.position.z = 0.0
+
+            return target_pose
+
         except Exception as e:
             self.get_logger().error(f"Error during lat/lon conversion: {e}")
             return None
 
-    def euclidean_distance(self, pose1: PoseStamped, pose2: PoseStamped):
+    @staticmethod
+    def euclidean_distance(pose1: PoseStamped, pose2: PoseStamped):
         """Calculates the Euclidean distance between two poses (ignoring z)."""
         if pose1 is None or pose2 is None:
             return float("inf")
@@ -274,13 +269,13 @@ class IncrementalGpsCommander(Node):
         if self.mission_state == MissionState.DO_NOTHING:
             return
 
-        elif self.mission_state == MissionState.NAV_TO_INTERMEDIATE_GOAL:
+        if self.mission_state == MissionState.NAV_TO_INTERMEDIATE_GOAL:
             if self.final_lat_lon is None:
                 self.get_logger().warn(
                     "Error in NAV_TO_INTERMEDIATE_GOAL: lat lon is None"
                 )
                 return
-            elif self.current_robot_pose is None:
+            if self.current_robot_pose is None:
                 self.get_logger().warn(
                     "Error in NAV_TO_INTERMEDIATE_GOAL: current robot pose is not available"
                 )
@@ -352,30 +347,32 @@ class IncrementalGpsCommander(Node):
             # self.get_logger().info("Finishing isTaskComplete")
             return
 
-        elif self.mission_state == MissionState.NAV_TO_FINAL_GOAL:
-            if not self.lookForAruco:
-                if self.goal_handle is None:
-                    self.get_logger().warn(
-                        "Error in NAV_TO_FINAL_GOAL: No goal handle available"
-                    )
-                    return
+        if self.mission_state == MissionState.NAV_TO_FINAL_GOAL:
+            if self.lookForAruco:
+                # Not implemented yet
+                return
+            if self.goal_handle is None:
+                self.get_logger().warn(
+                    "Error in NAV_TO_FINAL_GOAL: No goal handle available"
+                )
+                return
 
-                if self.navigator.isTaskComplete():
-                    self.get_logger().info("Final goal complete!")
+            if self.navigator.isTaskComplete():
+                self.get_logger().info("Final goal complete!")
 
-                    msg = Int8()
-                    msg.data = self.nav_completed_light_code
-                    self.lights_publisher.publish(msg)
+                msg = Int8()
+                msg.data = self.nav_completed_light_code
+                self.lights_publisher.publish(msg)
 
-                    result = self.navigator.getResult()
-                    if result == TaskResult.SUCCEEDED:
-                        self.get_logger().info("Final goal succeeded!")
-                    elif result == TaskResult.CANCELED:
-                        self.get_logger().info("Final goal was canceled!")
-                    elif result == TaskResult.FAILED:
-                        self.get_logger().error("Final goal failed!")
+                result = self.navigator.getResult()
+                if result == TaskResult.SUCCEEDED:
+                    self.get_logger().info("Final goal succeeded!")
+                elif result == TaskResult.CANCELED:
+                    self.get_logger().info("Final goal was canceled!")
+                elif result == TaskResult.FAILED:
+                    self.get_logger().error("Final goal failed!")
 
-                    self.reset()
+                self.reset()
 
 
 def main(args=None):

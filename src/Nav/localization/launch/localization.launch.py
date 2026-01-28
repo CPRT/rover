@@ -1,7 +1,7 @@
 import os
+import launch_ros
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-import launch_ros
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
@@ -63,13 +63,6 @@ def generate_launch_description():
         launch_arguments={"use_sim_time": use_sim_time}.items(),
     )
 
-    slam_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_localization, "launch", "rtabmap.launch.py")
-        ),
-        launch_arguments={"use_sim_time": use_sim_time}.items(),
-    )
-
     ekf_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_localization, "launch", "ekf.launch.py")
@@ -106,7 +99,6 @@ def generate_launch_description():
             launch_desc_cmd,
             rviz_cmd,
             gps_cmd,
-            # slam_cmd,
             ekf_cmd,
             desc_cmd,
             navsat_node,

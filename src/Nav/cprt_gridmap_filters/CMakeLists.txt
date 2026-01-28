@@ -42,6 +42,7 @@ set(dependencies
 
 set(filter_libs
   preserve_cost_inflation_filter
+  gradient_filter
 )
 
 ###########
@@ -58,6 +59,7 @@ include_directories(
 
 ## Declare cpp libraries
 add_library(preserve_cost_inflation_filter SHARED src/PreserveCostInflationFilter.cpp)
+add_library(gradient_filter SHARED src/GradientFilter.cpp)
 
 foreach(lib_name ${filter_libs})
   ament_target_dependencies(${lib_name} SYSTEM
