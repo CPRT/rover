@@ -18,7 +18,7 @@
 #include "grid_map_cv/utilities.hpp"
 
 namespace grid_map {
-//Error trapping for invalid parameters
+// Error trapping for invalid parameters
 template <typename T> BoxBlurFilter<T>::BoxBlurFilter() : radius_(0.0) {}
 
 template <typename T> BoxBlurFilter<T>::~BoxBlurFilter() {}
@@ -77,66 +77,70 @@ template <typename T> bool BoxBlurFilter<T>::update(const T &mapIn, T &mapOut) {
   mapOut.add(this->outputLayer_);
   mapOutHorz.add(this->outputLayer_);
 
-  HorizontalBoxBlur(mapIn[inputLayer_], mapOutHorz[outputLayer_], radius_); //Blurs input layer from mapIn horizontally, saves blurred values to mapOutHorz on outputLayer_
-  VerticalBoxBlur(mapOutHorz[outputLayer_], mapOut[outputLayer_], radius_); //Blurs outputLayer_ from mapOutHorz vertically, saves blurred values to mapOut on outputLayer_
-  //Box blur complete!
+  HorizontalBoxBlur(mapIn[inputLayer_], mapOutHorz[outputLayer_], radius_);
+  VerticalBoxBlur(mapOutHorz[outputLayer_], mapOut[outputLayer_], radius_);
   return true;
 }
 
 template <typename T>
-void BoxBlurFilter<T>::HorizontalBoxBlur(const Eigen::MatrixXf &layerIn, Eigen::MatrixXf &layerOut, int r) 
-{
+
+void BoxBlurFilter<T>::HorizontalBoxBlur(const Eigen::MatrixXf &layerIn,
+                                         Eigen::MatrixXf &layerOut, int r) {
   const int height = layerOut.rows();
   const int width = layerOut.cols();
 
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
-      //ensuring that max and min cells in radius do not exceed dimensions of gridmap layer
+      // ensuring that max and min cells in radius do not exceed dimensions of
+      // gridmap layer
       const int minCoeff = std::max(0, x - r);
       const int maxCoeff = std::min(width - 1, x + r);
-      int numHoles = 0;
+      int numValues = 0;
       double sum = 0;
 
       for (int i = minCoeff; i <= maxCoeff; i++) {
         const float value = layerIn(i, y);
-        if (!std::isfinite(value)) //checking for hole
+        if (!std::isfinite(value)) // checking for hole
         {
-          numHoles += 1; //if hole found, disregard it and continue
           continue;
         }
+        numValues++;
         sum += value;
       }
-      //calculate and write average to layerOut
+      // calculate and write average to layerOut
       if (numValues > 0) {
-        layerOut(x, y) = sum / numValues ;
+        layerOut(x, y) = sum / numValues;
       }
     }
   }
 }
 
 template <typename T>
-void BoxBlurFilter<T>::VerticalBoxBlur(const Eigen::MatrixXf &layerIn, Eigen::MatrixXf &layerOut, int r) 
-{
-  //Same algorithm as horizontal box blur, only along a column rather than a row
-  int height = layerOut.rows();
-  int width = layerOut.cols();
+void BoxBlurFilter<T>::VerticalBoxBlur(const Eigen::MatrixXf &layerIn,
+                                       Eigen::MatrixXf &layerOut, int r) {
+  const int height = layerOut.rows();
+  const int width = layerOut.cols();
 
   for (int x = 0; x < width; x++) {
     for (int y = 0; y < height; y++) {
-      int minCoeff = std::max(0, y - r);
-      int maxCoeff = std::min(height - 1, y + r);
-      int numHoles = 0;
+      const int minCoeff = std::max(0, y - r);
+      const int maxCoeff = std::min(height - 1, y + r);
+      int numValues = 0;
       double sum = 0;
 
       for (int i = minCoeff; i <= maxCoeff; i++) {
         const float value = layerIn(x, i);
-        if (!std::isfinite(value)) {
-          numHoles += 1;
+        if (!std::isfinite(value)) // checking for hole
+        {
           continue;
         }
+        numValues++;
         sum += value;
       }
-      layerOut(x, y) = sum / (maxCoeff - minCoeff + 1 - numHoles);
+      // calculate and write average to layerOut
+      if (numValues > 0) {
+        layerOut(x, y) = sum / numValues;
+      }
     }
   }
 }

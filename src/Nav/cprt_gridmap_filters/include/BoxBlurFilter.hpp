@@ -47,15 +47,19 @@ public:
   bool update(const T &mapIn, T &mapOut) override;
 
   /*!
-   * Averages (unweighted) [2*radius + 1] cells at a time along the rows of a gridmap layer
+   * Averages (unweighted) [2*radius + 1] cells at a time along the rows of a
+   * gridmap layer
    */
-  void HorizontalBoxBlur(const Eigen::MatrixXf &layerIn, Eigen::MatrixXf &layerOut, int r);
+  void HorizontalBoxBlur(const Eigen::MatrixXf &layerIn,
+                         Eigen::MatrixXf &layerOut, int r);
 
   /*!
-   * Averages (unweighted) [2*radius + 1] cells at a time along the columns of a gridmap layer,
-   * called subsequently after HorizontalBoxBlur() to complete the box blur
+   * Averages (unweighted) [2*radius + 1] cells at a time along the columns of a
+   * gridmap layer, called subsequently after HorizontalBoxBlur() to complete
+   * the box blur
    */
-  void VerticalBoxBlur(const Eigen::MatrixXf &layerIn, Eigen::MatrixXf &layerOut, int r);
+  void VerticalBoxBlur(const Eigen::MatrixXf &layerIn,
+                       Eigen::MatrixXf &layerOut, int r);
 
 private:
   //! Radius to take the mean from.
