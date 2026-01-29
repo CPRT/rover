@@ -82,7 +82,6 @@ bool SrtNode::create_pipeline() {
   int iframe_interval_val = iframe_interval_;
   int framerate = target_framerate_;
 
-
   gchar *desc;
 
   if (test_mode) {
@@ -107,15 +106,13 @@ bool SrtNode::create_pipeline() {
         "interpipesrc format=3 listen-to=detect is-live=true ! "
         "nvvidconv ! videorate ! "
         "capsfilter name=framerate_caps "
-        "caps=video/x-raw(memory:NVMM),framerate=%d/1 ! "
+        "caps=\"video/x-raw(memory:NVMM),framerate=%d/1\" ! "
         "nvvidconv ! "
-        "nvv4l2av1enc name=av1_enc insert-seq-hdr=true iframeinterval=%d ! "
-        " av1parse ! capsfilter caps=\"video/x-av1, "
-        "alignment=obu, parsed=true\" ! "
+        "nvv4l2h265enc name=h265_enc iframeinterval=30 ! "
         "queue ! "
-        "mpegtsmux ! "
+        "mux. mpegtsmux name=mux ! "
         "srtsink name=srt_sink uri=%s latency=%d sync=false",
-        framerate, iframe_interval_val, srt_uri.c_str(), latency_val);
+        framerate, srt_uri.c_str(), latency_val);
     RCLCPP_INFO(this->get_logger(), "Using PRODUCTION pipeline description: %s",
                 desc);
   }
@@ -140,7 +137,7 @@ bool SrtNode::create_pipeline() {
   }
   pipeline_ = p;
 
-  av1_encoder_ = this->get_element("av1_enc");
+  av1_encoder_ = this->get_element("h265_enc");
   srt_sink_ = this->get_element("srt_sink");
   framerate_caps_ = get_element("framerate_caps");
 
@@ -197,14 +194,16 @@ SrtNode::on_parameter_change(const std::vector<rclcpp::Parameter> &parameters) {
 
     if (name == "iframe_interval") {
       iframe_interval_ = param.as_int();
-      RCLCPP_INFO(this->get_logger(), "Cache Update: iframe_interval = %d", iframe_interval_);
+      RCLCPP_INFO(this->get_logger(), "Cache Update: iframe_interval = %d",
+                  iframe_interval_);
       needs_restart = true;
       continue;
     }
 
     if (name == "target_framerate") {
       target_framerate_ = param.as_int();
-      RCLCPP_INFO(this->get_logger(), "Cache Update: target_framerate = %d", target_framerate_);
+      RCLCPP_INFO(this->get_logger(), "Cache Update: target_framerate = %d",
+                  target_framerate_);
       needs_restart = true;
       continue;
     }
@@ -231,8 +230,8 @@ SrtNode::on_parameter_change(const std::vector<rclcpp::Parameter> &parameters) {
   }
 
   if (needs_restart && result.successful) {
-      stop_pipeline();
-      start_pipeline();
+    stop_pipeline();
+    start_pipeline();
   }
   return result;
 }
@@ -376,7 +375,7 @@ void SrtNode::publish_srt_stats() {
     msg.packets_retransmitted = ret_int;
   }
 
-  //6.ms-latency
+  // 6.ms-latency
   double conf_lat = 0.0;
   if (gst_structure_get_double(target_stats, "ms-latency", &conf_lat)) {
     msg.srt_latency = conf_lat;
@@ -392,11 +391,12 @@ void SrtNode::publish_srt_stats() {
   if (msg.rtt > 0 && msg.srt_latency > 0) {
     if (msg.rtt * 3.0 > msg.srt_latency) {
       RCLCPP_WARN_THROTTLE(this->get_logger(), *(this->get_clock()), 5000,
-          "SRT Latency Warning: RTT (%.1fms) is too high for Configured Latency (%.1fms). "
-          "Recommended Latency >= 3x RTT.", msg.rtt, msg.srt_latency);
+                           "SRT Latency Warning: RTT (%.1fms) is too high for "
+                           "Configured Latency (%.1fms). "
+                           "Recommended Latency >= 3x RTT.",
+                           msg.rtt, msg.srt_latency);
     }
   }
-
 
   int64_t pkt_drop_total = 0;
 
