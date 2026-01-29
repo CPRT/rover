@@ -65,7 +65,6 @@ ament_target_dependencies(arm_ik
 install(TARGETS
   drive
   arm
-  arm_ik
   DESTINATION lib/${PROJECT_NAME})
 
 # Install header files
