@@ -18,7 +18,8 @@ SrtClientNode::SrtClientNode(const rclcpp::NodeOptions &options)
   std::string pipeline_str = "srtsrc uri=\"" + uri +
                              "\" latency=0 ! "
                              "tsdemux latency=0 ! "
-                             "parsebin ! "
+                             "h265parse ! "
+                            //  "parsebin ! "
                              "nvv4l2decoder ! "
                              "nvvidconv ! "
                              "queue !"

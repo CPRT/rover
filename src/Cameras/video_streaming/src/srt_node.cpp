@@ -71,7 +71,7 @@ SrtNode::SrtNode(const rclcpp::NodeOptions &options)
 
 SrtNode::~SrtNode() {
   BaseVideoNode::safe_gst_unref(framerate_caps_);
-  BaseVideoNode::safe_gst_unref(av1_encoder_);
+  BaseVideoNode::safe_gst_unref(h265_encoder_);
   BaseVideoNode::safe_gst_unref(srt_sink_);
 }
 
@@ -92,7 +92,7 @@ bool SrtNode::create_pipeline() {
         "caps=video/x-raw,framerate=%d/1 ! "
         "videoconvert ! "
         "x264enc tune=zerolatency bitrate=2000 speed-preset=ultrafast "
-        "name=av1_enc ! "
+        "name=h265_enc ! "
         "rtph264pay ! queue ! "
         "srtsink name=srt_sink uri=%s latency=%d",
         framerate, srt_uri.c_str(), latency_val);
@@ -108,7 +108,7 @@ bool SrtNode::create_pipeline() {
         "capsfilter name=framerate_caps "
         "caps=\"video/x-raw(memory:NVMM),framerate=%d/1\" ! "
         "nvvidconv ! "
-        "nvv4l2h265enc name=h265_enc iframeinterval=30 ! "
+        "nvv4l2h265enc name=h265_enc iframeinterval=%d ! "
         "queue ! "
         "mux. mpegtsmux name=mux ! "
         "srtsink name=srt_sink uri=%s latency=%d sync=false",
@@ -137,11 +137,11 @@ bool SrtNode::create_pipeline() {
   }
   pipeline_ = p;
 
-  av1_encoder_ = this->get_element("h265_enc");
+  h265_encoder_ = this->get_element("h265_enc");
   srt_sink_ = this->get_element("srt_sink");
   framerate_caps_ = get_element("framerate_caps");
 
-  if (!av1_encoder_ || !srt_sink_ || !framerate_caps_) {
+  if (!h265_encoder_ || !srt_sink_ || !framerate_caps_) {
     RCLCPP_ERROR(get_logger(), "Failed to get elements by name");
     return false;
   }
@@ -237,9 +237,9 @@ SrtNode::on_parameter_change(const std::vector<rclcpp::Parameter> &parameters) {
 }
 
 void SrtNode::on_bitrate_received(const std_msgs::msg::Int32::SharedPtr msg) {
-  if (av1_encoder_) {
+  if (h265_encoder_) {
     pause_pipeline();
-    g_object_set(av1_encoder_, "bitrate", msg->data, NULL);
+    g_object_set(h265_encoder_, "bitrate", msg->data, NULL);
     resume_pipeline();
     RCLCPP_DEBUG(this->get_logger(), "Bitrate set to %d", msg->data);
   }

@@ -19,10 +19,10 @@ public:
   static constexpr int BACKOFF_RESET_MS = 10000;
 
 protected:
-  // (interpipesrc -> nvvidconv -> nvv4l2av1enc -> srtsink)
+  // (interpipesrc -> nvvidconv -> nvv4l2h265enc -> srtsink)
   bool create_pipeline() override;
 
-  GstElement *av1_encoder_ = nullptr;
+  GstElement *h265_encoder_ = nullptr;
   GstElement *srt_sink_ = nullptr;
   GstElement *framerate_caps_ = nullptr;
 
