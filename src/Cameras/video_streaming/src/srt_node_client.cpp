@@ -19,7 +19,7 @@ SrtClientNode::SrtClientNode(const rclcpp::NodeOptions &options)
                              "\" latency=0 ! "
                              "tsdemux latency=0 ! "
                              "h265parse ! "
-                            //  "parsebin ! "
+                            //  "parsebin ! test "
                              "nvv4l2decoder ! "
                              "nvvidconv ! "
                              "queue !"
