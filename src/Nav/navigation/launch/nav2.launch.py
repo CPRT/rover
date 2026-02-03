@@ -28,7 +28,7 @@ from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
     # Constants
-    DEFAULT_BT_XML_FILENAME = "bt_dynamic_replanning.xml"
+    DEFAULT_BT_XML_FILENAME = "bt_swerve_dynamic_replanning.xml"
 
     # Get the launch directory
     pkg_dir = get_package_share_directory("navigation")
@@ -152,6 +152,7 @@ def generate_launch_description():
                 package="nav2_controller",
                 executable="controller_server",
                 output="screen",
+                namespace=namespace,
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params],
@@ -162,6 +163,7 @@ def generate_launch_description():
                 executable="smoother_server",
                 name="smoother_server",
                 output="screen",
+                namespace=namespace,
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params],
@@ -172,6 +174,7 @@ def generate_launch_description():
                 executable="planner_server",
                 name="planner_server",
                 output="screen",
+                namespace=namespace,
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params],
@@ -182,6 +185,7 @@ def generate_launch_description():
                 executable="behavior_server",
                 name="behavior_server",
                 output="screen",
+                namespace=namespace,
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params],
@@ -192,6 +196,7 @@ def generate_launch_description():
                 executable="bt_navigator",
                 name="bt_navigator",
                 output="screen",
+                namespace=namespace,
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params],
@@ -202,6 +207,7 @@ def generate_launch_description():
                 executable="waypoint_follower",
                 name="waypoint_follower",
                 output="screen",
+                namespace=namespace,
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params],
@@ -212,6 +218,7 @@ def generate_launch_description():
                 executable="lifecycle_manager",
                 name="lifecycle_manager_navigation",
                 output="screen",
+                namespace=namespace,
                 parameters=[
                     {"use_sim_time": use_sim_time},
                     {"autostart": autostart},
@@ -224,6 +231,7 @@ def generate_launch_description():
                 executable="velocity_smoother",
                 name="velocity_smoother",
                 output="screen",
+                namespace=namespace,
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params],

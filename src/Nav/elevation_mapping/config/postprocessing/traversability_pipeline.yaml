@@ -1,7 +1,7 @@
 elevation_mapping:
   ros__parameters:
     # postprocessor_pipeline_name: traversability_postprocessing
-    output_topic: trasversability_map
+    output_topic: traversability_map
 
     postprocessor_pipeline:
 

@@ -65,8 +65,8 @@ bt_navigator_navigate_to_pose_rclcpp_node:
 local_costmap:
   local_costmap:
     ros__parameters:
-      update_frequency: 1.0
-      publish_frequency: 1.0
+      update_frequency: 10.0
+      publish_frequency: 2.0
       global_frame: odom
       robot_base_frame: base_link
       use_sim_time: True
@@ -77,19 +77,19 @@ local_costmap:
       width: 5
       height: 5
       resolution: 0.2
-      footprint: "[[0.56, 0.48], [0.56, -0.48], [-0.56, -0.48], [-0.56, 0.48]]"
+      robot_radius: 0.1
       plugins: [obstacle_layer]
       obstacle_layer:
         plugin: "cprt_costmap_plugins::GridmapLayer"
         enabled: true
-        map_topic: "/trasversability_map"
+        map_topic: "/traversability_map"
         layer_name: "traversability"
       always_send_full_costmap: true
 
 global_costmap:
   global_costmap:
     ros__parameters:
-      update_frequency: 2.0
+      update_frequency: 10.0
       publish_frequency: 0.5
       global_frame: map
       robot_base_frame: base_link
@@ -99,30 +99,17 @@ global_costmap:
       origin_x: -50.0
       origin_y: -50.0
       use_sim_time: True
-      footprint: "[[0.55, 0.45], [0.55, -0.45], [-0.55, -0.45], [-0.55, 0.45]]"
+      robot_radius: 0.3
       resolution: 0.2
       track_unknown_space: true
       trinary_costmap: false
       lethal_cost_threshold: 200
       unknown_cost_value: 255 # 255 is special key for unknown value
-      # plugins: [static_layer, inflation_layer, obstacle_layer]
       plugins: [obstacle_layer]
-      # plugins: [static_layer, inflation_layer]
-      # static_layer: 
-      #   enabled: true
-      #   plugin: nav2_costmap_2d::StaticLayer
-      #   map_subscribe_transient_local: True
-      #   subscribe_to_updates: True
-      #   footprint_clearing_enabled: True
-      #   map_topic: /map
-      inflation_layer:
-        plugin: nav2_costmap_2d::InflationLayer
-        cost_scaling_factor: 3.0
-        inflation_radius: 1.0
       obstacle_layer:
         plugin: "cprt_costmap_plugins::GridmapLayer"
         enabled: true
-        map_topic: "/trasversability_map"
+        map_topic: "/traversability_map"
         layer_name: "inflated_traversability"
       always_send_full_costmap: True
 
@@ -143,8 +130,8 @@ planner_server:
       horizon_distance: 40.0              # distance from start pose for which an intermediate goal should be created by EventHorizonPlanner
       intermediate_tolerance: 10.0        # tolerance value for intermediate goal created by EventHorizonPlanner
 
-      downsample_costmap: true            # whether or not to downsample the map
-      downsampling_factor: 2              # multiplier for the resolution of the costmap layer (e.g. 2 on a 5cm costmap would be 10cm)
+      downsample_costmap: false            # whether or not to downsample the map
+      downsampling_factor: 1              # multiplier for the resolution of the costmap layer (e.g. 2 on a 5cm costmap would be 10cm)
       tolerance: 0.5                      # dist-to-goal heuristic cost (distance) for valid tolerance endpoints if exact goal cannot be found.
       allow_unknown: true                 # allow traveling in unknown space
       goal_heading_mode: "ALL_DIRECTION"  # For “ALL_DIRECTION” mode, the planner will plan the goal with the orientation of the goal pose and all the possible orientation based on the angle quantization bins
@@ -158,7 +145,7 @@ planner_server:
       analytic_expansion_max_length: 3.0  # For Hybrid/Lattice nodes: The maximum length of the analytic expansion to be considered valid to prevent unsafe shortcutting
       analytic_expansion_max_cost: 200.0  # The maximum single cost for any part of an analytic expansion to contain and be valid, except when necessary on approach to goal
       analytic_expansion_max_cost_override: false  #  Whether or not to override the maximum cost setting if within critical distance to goal (ie probably required)
-      minimum_turning_radius: 0.80        # minimum turning radius in m of path / vehicle
+      minimum_turning_radius: 0.40        # minimum turning radius in m of path / vehicle (Swerve can turn tighter)
       reverse_penalty: 2.0                # Penalty to apply if motion is reversing, must be => 1
       change_penalty: 0.0                 # Penalty to apply if motion is changing directions (L to R), must be >= 0
       non_straight_penalty: 1.2           # Penalty to apply if motion is non-straight, must be => 1
@@ -210,24 +197,33 @@ controller_server:
     general_goal_checker:
       stateful: True
       plugin: nav2_controller::SimpleGoalChecker
-      xy_goal_tolerance: 1.1
-      yaw_goal_tolerance: 5.0
+      xy_goal_tolerance: 0.5 
+      yaw_goal_tolerance: 0.2 # ~11 degrees
 
     FollowPath:
-      plugin: nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
+      plugin: nav2_rotation_shim_controller::RotationShimController
+      primary_controller: nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
+      
+      # Rotation Shim Parameters (Swerve Logic - Point Turn Before Driving)
+      angular_dist_threshold: 0.5         # If path angle > 30deg, rotate in place first
+      forward_sampling_distance: 0.5      # How far ahead to check path orientation
+      rotate_to_heading_angular_vel: 1.0  # Angular velocity during point turn
+      max_angular_accel: 2.0              # Max angular acceleration
+      simulate_ahead_time: 1.0            # Simulation time for collision checking
 
+      # Regulated Pure Pursuit Parameters (Driving Logic)
       transform_tolerance: 1.0
 
-      desired_linear_vel: 0.5
+      desired_linear_vel: 0.3 # Increase to 1.0 for outdoor swerve agility
       max_robot_pose_search_dist: 10.0
 
-      lookahead_dist: 1.0
+      lookahead_dist: 1.2
       min_lookahead_dist: 0.3
-      max_lookahead_dist: 1.0
+      max_lookahead_dist: 1.5
       lookahead_time: 1.5
-      use_velocity_scaled_lookahead_dist: false
+      use_velocity_scaled_lookahead_dist: true
 
-      min_approach_linear_velocity: 0.1
+      min_approach_linear_velocity: 0.05
       max_allowed_time_to_collision_up_to_carrot: 5.0
 
       use_regulated_linear_velocity_scaling: false
@@ -236,8 +232,6 @@ controller_server:
       regulated_linear_scaling_min_speed: 0.25
 
       use_rotate_to_heading: false
-      # rotate_to_heading_min_angle: 0.8
-      # rotate_to_heading_angular_vel: 1.0
       max_angular_accel: 0.5
 
       use_interpolation: false
@@ -254,13 +248,13 @@ behavior_server:
     cycle_frequency: 0.4
     behavior_plugins: [spin, backup, drive_on_heading, wait]
     spin:
-      plugin: nav2_behaviors/Spin
+      plugin: nav2_behaviors::Spin
     backup:
-      plugin: nav2_behaviors/BackUp
+      plugin: nav2_behaviors::BackUp
     drive_on_heading:
-      plugin: nav2_behaviors/DriveOnHeading
+      plugin: nav2_behaviors::DriveOnHeading
     wait:
-      plugin: nav2_behaviors/Wait
+      plugin: nav2_behaviors::Wait
     global_frame: odom
     robot_base_frame: base_link
     transform_tolerance: 0.1
@@ -291,11 +285,19 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: OPEN_LOOP
-    max_velocity: [1.0, 0.0, 2.0]
-    min_velocity: [-1.0, 0.0, -2.0]
-    max_accel: [0.1, 0.0, 1.0]
-    max_decel: [-0.1, 0.0, -1.0]
     odom_topic: odometry/filtered/local
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 1.0
+    # OUTDOOR SWERVE
+    # max_velocity: [1.5, 0.0, 2.0]    # [x, y, theta] in m/s, m/s, rad/s
+    # min_velocity: [-1.5, 0.0, -2.0]
+    # max_accel: [0.5, 0.0, 1.5]       # [x, y, theta] in m/s², m/s², rad/s²
+    # max_decel: [-0.5, 0.0, -1.5]
+    # INDOOR TESTING 
+    # Safe limits for initial testing in confined spaces
+    max_velocity: [0.3, 0.0, 0.5]      # [x, y, theta] in m/s, m/s, rad/s
+    min_velocity: [-0.3, 0.0, -0.5]
+    max_accel: [0.2, 0.0, 0.5]         # [x, y, theta] in m/s², m/s², rad/s²
+    max_decel: [-0.2, 0.0, -0.5]
+    
