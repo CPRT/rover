@@ -2,7 +2,6 @@ import cv2
 import argparse
 import os
 import time
-import sys
 
 
 def main():

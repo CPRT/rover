@@ -37,11 +37,6 @@ def generate_launch_description():
         description="Path to camera calibration YAML file",
     )
 
-    camera_device_arg = DeclareLaunchArgument(
-        "camera_device",
-        default_value="",
-        description="Camera device path (empty = use params file default)",
-    )
     # Create the node
     camera_publisher_node = Node(
         package="aruco_localizer",
@@ -60,7 +55,6 @@ def generate_launch_description():
         [
             params_file_arg,
             calibration_file_arg,
-            camera_device_arg,
             camera_publisher_node,
         ]
     )

@@ -36,12 +36,10 @@ import cv2
 import numpy as np
 import yaml
 import os
-from pathlib import Path
 
 # ROS2 message imports
 from sensor_msgs.msg import Image, CameraInfo, CompressedImage
 from cv_bridge import CvBridge
-from std_msgs.msg import Header
 
 
 class CameraPublisherNode(Node):
@@ -360,7 +358,9 @@ def main(args=None):
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        pass
+        node.get_logger().info(
+            "Shutting down camera_publisher_node due to KeyboardInterrupt"
+        )
     finally:
         node.destroy_node()
         rclpy.shutdown()

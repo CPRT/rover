@@ -53,7 +53,7 @@ def generate_launch_description():
             [PathJoinSubstitution([pkg_share, "launch", "camera_publisher.launch.py"])]
         ),
         launch_arguments={
-            "params_file": LaunchConfiguration("camera_params_file"),
+            "cam_params": LaunchConfiguration("camera_params_file"),
             "calibration_file": LaunchConfiguration("calibration_file"),
         }.items(),
     )
@@ -68,7 +68,7 @@ def generate_launch_description():
             ]
         ),
         launch_arguments={
-            "params_file": LaunchConfiguration("aruco_params_file"),
+            "detector_params_file": LaunchConfiguration("aruco_params_file"),
             "board_config_dir": LaunchConfiguration("board_config_dir"),
         }.items(),
     )

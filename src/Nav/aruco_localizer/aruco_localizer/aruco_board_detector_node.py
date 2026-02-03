@@ -48,7 +48,7 @@ from . import cv2_utils
 # ROS2 message imports
 from sensor_msgs.msg import CameraInfo, Image
 from interfaces.msg import ArucoBoard
-from geometry_msgs.msg import Pose, Point
+from geometry_msgs.msg import Point
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import ColorRGBA
 from tf_transformations import quaternion_from_matrix
@@ -100,7 +100,8 @@ class ArucoBoardConfig:
         self.obj_points = np.array(self.obj_points, dtype=np.float32)
         self.ids = np.array(self.ids, dtype=np.int32)
 
-        # Use compatibility layer for board creation
+        # Note: Board uses a placeholder dictionary during initialization.
+        # The actual dictionary from the detector node will be used during detection.
         dictionary = cv2_utils.get_aruco_dictionary(cv2.aruco.DICT_6X6_250)
         self.board = cv2_utils.create_aruco_board(
             self.obj_points,
@@ -566,7 +567,6 @@ class ArucoBoardDetectorNode(Node):
         try:
             rot_mat_ros = ros_pose_data["rot_mat_ros"]
             tvec_ros = ros_pose_data["tvec_ros"]
-            T_cv_to_ros = ros_pose_data["T_cv_to_ros"]
 
             for i, (marker_id, marker_corners_3d) in enumerate(
                 zip(board_config.marker_ids, board_config.obj_points)
@@ -707,6 +707,7 @@ def main(args=None):
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
+        # Allow clean shutdown on Ctrl+C without printing a stack trace
         pass
     finally:
         node.destroy_node()

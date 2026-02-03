@@ -5,8 +5,6 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import ComposableNodeContainer, Node
-from launch_ros.descriptions import ComposableNode
 
 
 def generate_launch_description():
@@ -18,7 +16,6 @@ def generate_launch_description():
     # Launch configurations
     use_sim_time = LaunchConfiguration("use_sim_time")
     svo_path = LaunchConfiguration("svo_path")
-    slam_params_file = LaunchConfiguration("slam_params_file")
 
     # Declare launch arguments
     declare_use_sim_time = DeclareLaunchArgument(
@@ -68,21 +65,12 @@ def generate_launch_description():
         ),
     )
 
-    # Launch ArUco board localizer
-    aruco_localizer_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_aruco, "launch", "aruco_board_localizer.launch.py")
-        ),
-    )
-
     return LaunchDescription(
         [
             declare_use_sim_time,
             declare_svo_path,
             slam_cmd,
             localization_cmd,
-            # camera_publisher_cmd,
             aruco_detector_cmd,
-            # aruco_localizer_cmd,
         ]
     )

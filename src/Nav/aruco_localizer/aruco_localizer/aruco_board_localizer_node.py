@@ -29,7 +29,7 @@ from rclpy.time import Time
 from rcl_interfaces.msg import ParameterDescriptor, ParameterType
 
 import numpy as np
-from collections import defaultdict
+import traceback
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 import threading
@@ -41,10 +41,8 @@ from geometry_msgs.msg import (
     PoseWithCovarianceStamped,
     PoseStamped,
     Pose,
-    TransformStamped,
 )
 from visualization_msgs.msg import Marker, MarkerArray
-from std_msgs.msg import ColorRGBA
 from tf2_ros import (
     Buffer,
     TransformListener,
@@ -868,7 +866,10 @@ def main(args=None):
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        pass
+        # Gracefully handle Ctrl-C and proceed to shutdown in the finally block
+        node.get_logger().info(
+            "KeyboardInterrupt received, stopping spin and shutting down..."
+        )
     finally:
         # Print final status
         node.get_logger().info("Shutting down...")

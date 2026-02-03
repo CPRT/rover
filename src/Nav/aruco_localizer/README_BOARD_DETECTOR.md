@@ -42,10 +42,10 @@ tag_size: 0.1995
 
 Parameters are configured in `config/aruco_board_params.yaml`:
 
-- `image_topic`: Image topic to subscribe to (default: `/camera/color/image_raw`)
-- `camera_info_topic`: Camera calibration topic (default: `/camera/camera_info`)
+- `image_topic`: Image topic to subscribe to (default defined in `aruco_board_params.yaml`)
+- `camera_info_topic`: Camera calibration topic (default defined in `aruco_board_params.yaml`)
 - `camera_frame`: Camera optical frame ID (default: `camera_color_optical_frame`)
-- `aruco_dictionary_id`: ArUco dictionary used (default: `DICT_6X6_250`)
+- `aruco_dictionary_id`: ArUco dictionary used (default defined in `aruco_board_params.yaml`)
 - `board_config_dir`: Directory containing board YAML files (set by launch file)
 - `board_topic`: Topic to publish board poses (default: `/aruco_boards`)
 - `debug_image_topic`: Topic for debug visualization (default: `/aruco_debug`)

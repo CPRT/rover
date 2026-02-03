@@ -20,7 +20,6 @@ Version: 2025-12-07
 """
 
 import cv2
-import numpy as np
 from packaging import version
 
 

@@ -12,7 +12,7 @@ aruco_board_detector_node:
     #          DICT_7X7_50, DICT_7X7_100, DICT_7X7_250, DICT_7X7_1000,
     #          DICT_ARUCO_ORIGINAL, DICT_APRILTAG_16h5, DICT_APRILTAG_25h9,
     #          DICT_APRILTAG_36h10, DICT_APRILTAG_36h11
-    aruco_dictionary_id: "DICT_4X4_50"
+    aruco_dictionary_id: "DICT_6X6_250"
     
     # Directory containing board configuration YAML files
     # This will be set by the launch file
