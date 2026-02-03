@@ -227,7 +227,8 @@ class GenerateArucoBoardConfigZed(Node):
                 self.captured_frames.append(cv_image.copy())
                 self.last_capture_time = current_time
                 self.get_logger().info(
-                    f"Captured Frame #{len(self.captured_frames)}", throttle_duration_sec=0.5
+                    f"Captured Frame #{len(self.captured_frames)}",
+                    throttle_duration_sec=0.5,
                 )
 
                 # Flash effect
@@ -367,7 +368,9 @@ class GenerateArucoBoardConfigZed(Node):
         self.get_logger().info(f"Frames Processed:   {len(self.captured_frames)}")
         self.get_logger().info(f"Translation (XYZ):  {avg_translation} meters")
         self.get_logger().info(f"Translation StdDev: {std_translation * 1000} mm")
-        self.get_logger().info(f"Rotation Jitter:    {rmse_rotation:.4f} degrees (RMSE)")
+        self.get_logger().info(
+            f"Rotation Jitter:    {rmse_rotation:.4f} degrees (RMSE)"
+        )
 
         if np.any(std_translation > 0.01):  # Warning if > 1cm jitter
             self.get_logger().warn(
@@ -392,7 +395,7 @@ class GenerateArucoBoardConfigZed(Node):
             yaml.dump(output_data, outfile, default_flow_style=None)
 
         self.get_logger().info(f"\nModel saved to {self.output_board_yaml}")
-        
+
         # Shutdown the node
         rclpy.shutdown()
 
@@ -400,7 +403,7 @@ class GenerateArucoBoardConfigZed(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = GenerateArucoBoardConfigZed()
-    
+
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
