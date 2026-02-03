@@ -44,6 +44,7 @@ setup(
             "aruco_board_detector_node = aruco_localizer.aruco_board_detector_node:main",
             "aruco_board_localizer_node = aruco_localizer.aruco_board_localizer_node:main",
             "camera_publisher_node = aruco_localizer.camera_publisher_node:main",
+            "generate_aruco_board_config_zed = aruco_localizer.generate_aruco_board_config_zed:main",
         ],
     },
 )
