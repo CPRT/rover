@@ -211,6 +211,8 @@ controller_server:
       max_angular_accel: 2.0              # Max angular acceleration
       simulate_ahead_time: 1.0            # Simulation time for collision checking
 
+      use_rotate_to_heading: false # Disable since using rotation shim controller
+
       # Regulated Pure Pursuit Parameters (Driving Logic)
       transform_tolerance: 1.0
 
