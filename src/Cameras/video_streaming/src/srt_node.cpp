@@ -19,7 +19,7 @@ SrtNode::SrtNode(const rclcpp::NodeOptions &options)
   backoff_state_.last_total_dropped_pkts = 0;
   backoff_state_.current_delay_ms = INITIAL_BACKOFF_MS;
 
-  this->declare_parameter<std::string>("srt_uri", "srt://:7001");
+  this->declare_parameter<std::string>("srt_uri", "srt://:7001?mode=listener");
   this->declare_parameter<int>("latency", 100);
   this->declare_parameter<int>("iframe_interval", 0);
   this->declare_parameter<bool>("test_mode", false);
@@ -91,9 +91,8 @@ bool SrtNode::create_pipeline() {
         "capsfilter name=framerate_caps "
         "caps=video/x-raw,framerate=%d/1 ! "
         "videoconvert ! "
-        "x264enc tune=zerolatency bitrate=2000 speed-preset=ultrafast "
-        "name=h265_enc ! "
-        "rtph264pay ! queue ! "
+        "openh264enc name=h265_enc bitrate=2000000 complexity=0 ! "
+        "mpegtsmux ! queue ! "
         "srtsink name=srt_sink uri=%s latency=%d",
         framerate, srt_uri.c_str(), latency_val);
 
@@ -108,7 +107,7 @@ bool SrtNode::create_pipeline() {
         "capsfilter name=framerate_caps "
         "caps=\"video/x-raw(memory:NVMM),framerate=%d/1\" ! "
         "nvvidconv ! "
-        "nvv4l2h265enc name=h265_enc iframeinterval=%d ! "
+        "nvv4l2h265enc name=h265_enc iframeinterval=30 ! "
         "queue ! "
         "mux. mpegtsmux name=mux ! "
         "srtsink name=srt_sink uri=%s latency=%d sync=false",
