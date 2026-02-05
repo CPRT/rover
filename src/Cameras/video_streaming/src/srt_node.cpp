@@ -19,7 +19,7 @@ SrtNode::SrtNode(const rclcpp::NodeOptions &options)
   backoff_state_.last_total_dropped_pkts = 0;
   backoff_state_.current_delay_ms = INITIAL_BACKOFF_MS;
 
-  this->declare_parameter<std::string>("srt_uri", "srt://:7001");
+  this->declare_parameter<std::string>("srt_uri", "srt://:7001?mode=listener");
   this->declare_parameter<int>("latency", 100);
   this->declare_parameter<int>("iframe_interval", 0);
   this->declare_parameter<bool>("test_mode", false);
@@ -27,6 +27,9 @@ SrtNode::SrtNode(const rclcpp::NodeOptions &options)
   this->declare_parameter<int>("target_framerate", 30);
   this->declare_parameter<int>("backoff_max_delay_ms", 5000);
   this->declare_parameter<int>("backoff_reset_ms", 10000);
+
+  iframe_interval_ = this->get_parameter("iframe_interval").as_int();
+  target_framerate_ = this->get_parameter("target_framerate").as_int();
 
   backoff_state_.max_delay_ms =
       this->get_parameter("backoff_max_delay_ms").as_int();
@@ -68,19 +71,16 @@ SrtNode::SrtNode(const rclcpp::NodeOptions &options)
 
 SrtNode::~SrtNode() {
   BaseVideoNode::safe_gst_unref(framerate_caps_);
-  BaseVideoNode::safe_gst_unref(av1_encoder_);
+  BaseVideoNode::safe_gst_unref(h265_encoder_);
   BaseVideoNode::safe_gst_unref(srt_sink_);
 }
 
 bool SrtNode::create_pipeline() {
+  bool test_mode = this->get_parameter("test_mode").as_bool();
   std::string srt_uri = this->get_parameter("srt_uri").as_string();
   int latency_val = this->get_parameter("latency").as_int();
   int iframe_interval_val = this->get_parameter("iframe_interval").as_int();
-
-  bool test_mode = this->get_parameter("test_mode").as_bool();
-
   int framerate = this->get_parameter("target_framerate").as_int();
-
   gchar *desc;
 
   if (test_mode) {
@@ -90,9 +90,8 @@ bool SrtNode::create_pipeline() {
         "capsfilter name=framerate_caps "
         "caps=video/x-raw,framerate=%d/1 ! "
         "videoconvert ! "
-        "x264enc tune=zerolatency bitrate=2000 speed-preset=ultrafast "
-        "name=av1_enc ! "
-        "rtph264pay ! queue ! "
+        "openh264enc name=h265_enc bitrate=2000000 complexity=0 ! "
+        "mpegtsmux ! queue ! "
         "srtsink name=srt_sink uri=%s latency=%d",
         framerate, srt_uri.c_str(), latency_val);
 
@@ -105,12 +104,11 @@ bool SrtNode::create_pipeline() {
         "interpipesrc format=3 listen-to=detect is-live=true ! "
         "nvvidconv ! videorate ! "
         "capsfilter name=framerate_caps "
-        "caps=video/x-raw(memory:NVMM),framerate=%d/1 ! "
+        "caps=\"video/x-raw(memory:NVMM),framerate=%d/1\" ! "
         "nvvidconv ! "
-        "nvv4l2av1enc name=av1_enc insert-seq-hdr=true iframeinterval=%d ! "
-        " av1parse ! capsfilter caps=\"video/x-av1, "
-        "alignment=obu, parsed=true\" ! "
+        "nvv4l2h265enc name=h265_enc iframeinterval=%d ! "
         "queue ! "
+        "mux. mpegtsmux name=mux ! "
         "srtsink name=srt_sink uri=%s latency=%d sync=false",
         framerate, iframe_interval_val, srt_uri.c_str(), latency_val);
     RCLCPP_INFO(this->get_logger(), "Using PRODUCTION pipeline description: %s",
@@ -137,11 +135,11 @@ bool SrtNode::create_pipeline() {
   }
   pipeline_ = p;
 
-  av1_encoder_ = this->get_element("av1_enc");
+  h265_encoder_ = this->get_element("h265_enc");
   srt_sink_ = this->get_element("srt_sink");
   framerate_caps_ = get_element("framerate_caps");
 
-  if (!av1_encoder_ || !srt_sink_ || !framerate_caps_) {
+  if (!h265_encoder_ || !srt_sink_ || !framerate_caps_) {
     RCLCPP_ERROR(get_logger(), "Failed to get elements by name");
     return false;
   }
@@ -178,6 +176,8 @@ SrtNode::on_parameter_change(const std::vector<rclcpp::Parameter> &parameters) {
   result.successful = true;
   result.reason = "success";
 
+  bool needs_restart = false;
+
   for (const auto &param : parameters) {
     const std::string &name = param.get_name();
 
@@ -191,29 +191,18 @@ SrtNode::on_parameter_change(const std::vector<rclcpp::Parameter> &parameters) {
     }
 
     if (name == "iframe_interval") {
-      if (av1_encoder_) {
-        int val = param.as_int();
-        g_object_set(av1_encoder_, "iframeinterval", val, NULL);
-        RCLCPP_INFO(this->get_logger(),
-                    "Param Update: IFrame Interval set to %d", val);
-      }
+      iframe_interval_ = param.as_int();
+      RCLCPP_INFO(this->get_logger(), "Cache Update: iframe_interval = %d",
+                  iframe_interval_);
+      needs_restart = true;
       continue;
     }
 
     if (name == "target_framerate") {
-      if (!stop_pipeline()) {
-        RCLCPP_ERROR(this->get_logger(),
-                     "Failed to stop pipeline for reconfiguration.");
-        result.successful = false;
-        result.reason = "Failed to stop pipeline for reconfiguration.";
-        continue;
-      }
-      if (!start_pipeline()) {
-        RCLCPP_ERROR(this->get_logger(),
-                     "Failed to start pipeline after reconfiguration.");
-        result.successful = false;
-        result.reason = "Failed to start pipeline after reconfiguration.";
-      }
+      target_framerate_ = param.as_int();
+      RCLCPP_INFO(this->get_logger(), "Cache Update: target_framerate = %d",
+                  target_framerate_);
+      needs_restart = true;
       continue;
     }
 
@@ -238,13 +227,17 @@ SrtNode::on_parameter_change(const std::vector<rclcpp::Parameter> &parameters) {
     }
   }
 
+  if (needs_restart && result.successful) {
+    stop_pipeline();
+    start_pipeline();
+  }
   return result;
 }
 
 void SrtNode::on_bitrate_received(const std_msgs::msg::Int32::SharedPtr msg) {
-  if (av1_encoder_) {
+  if (h265_encoder_) {
     pause_pipeline();
-    g_object_set(av1_encoder_, "bitrate", msg->data, NULL);
+    g_object_set(h265_encoder_, "bitrate", msg->data, NULL);
     resume_pipeline();
     RCLCPP_DEBUG(this->get_logger(), "Bitrate set to %d", msg->data);
   }
@@ -378,6 +371,29 @@ void SrtNode::publish_srt_stats() {
   int ret_int = 0;
   if (gst_structure_get_int(target_stats, "packets-retransmitted", &ret_int)) {
     msg.packets_retransmitted = ret_int;
+  }
+
+  // 6.ms-latency
+  double conf_lat = 0.0;
+  if (gst_structure_get_double(target_stats, "ms-latency", &conf_lat)) {
+    msg.srt_latency = conf_lat;
+  }
+
+  // 7. Actual Buffer Delay (send-buffer-ms)
+  double buf_delay = 0.0;
+  if (gst_structure_get_double(target_stats, "send-buffer-ms", &buf_delay)) {
+    msg.buffer_latency = buf_delay;
+  }
+
+  // 8. See if we need to manually adjust latency(based on Haivison doc)
+  if (msg.rtt > 0 && msg.srt_latency > 0) {
+    if (msg.rtt * 3.0 > msg.srt_latency) {
+      RCLCPP_WARN_THROTTLE(this->get_logger(), *(this->get_clock()), 5000,
+                           "SRT Latency Warning: RTT (%.1fms) is too high for "
+                           "Configured Latency (%.1fms). "
+                           "Recommended Latency >= 3x RTT.",
+                           msg.rtt, msg.srt_latency);
+    }
   }
 
   int64_t pkt_drop_total = 0;

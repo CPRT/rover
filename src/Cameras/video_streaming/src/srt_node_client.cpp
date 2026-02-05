@@ -13,15 +13,18 @@ SrtClientNode::SrtClientNode(const rclcpp::NodeOptions &options)
                                        "srt://192.168.0.55:7001?mode=caller");
   std::string uri = this->get_parameter("srt_uri").as_string();
 
-  RCLCPP_INFO(this->get_logger(), "Trying to listen on URI: %s", uri.c_str());
+  RCLCPP_INFO(this->get_logger(), "SRT URI: %s", uri.c_str());
 
   std::string pipeline_str = "srtsrc uri=\"" + uri +
                              "\" latency=0 ! "
-                             "av1parse ! "
-                             "av1dec !"
-                             "videoconvert ! "
+                             "tsdemux latency=0 ! "
+                             "h265parse ! "
+                             "nvv4l2decoder ! "
+                             "nvvidconv ! "
                              "queue !"
                              "nveglglessink sync=false";
+
+  RCLCPP_INFO(this->get_logger(), "Pipeline: %s", pipeline_str.c_str());
 
   GError *error = nullptr;
   pipeline_ = gst_parse_launch(pipeline_str.c_str(), &error);
