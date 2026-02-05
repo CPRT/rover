@@ -14,7 +14,6 @@ SrtClientNode::SrtClientNode(const rclcpp::NodeOptions &options)
   std::string uri = this->get_parameter("srt_uri").as_string();
 
   RCLCPP_INFO(this->get_logger(), "SRT URI: %s", uri.c_str());
-  // RCLCPP_INFO(this->get_logger(), "Configured Latency: %d ms", latency_val);
 
   std::string pipeline_str = "srtsrc uri=\"" + uri +
                              "\" latency=0 ! "
