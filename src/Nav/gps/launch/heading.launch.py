@@ -1,22 +1,23 @@
 import os
 import launch
 import launch_ros.actions
+from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument, ExecuteProcess
+from launch.conditions import IfCondition
 from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
-    config_dir = os.path.join(get_package_share_directory("gps"), "config")
-
-    Heading_config_file = os.path.join(config_dir, "Heading_config.ubx")
-    heading = (
-        "ubxload --port /dev/serial/by-id/usb-FTDI_FT230X_Basic_UART_D30I1LY5-if00-port0 --baudrate 115200 --infile "
-        + Heading_config_file
-    )
-    # TODO: Uncomment the line below to configure the rover GPS on startup
-    # os.system(heading)
+    load_config = LaunchConfiguration("load_config", default="false")
 
     return launch.LaunchDescription(
         [
+            # Declare a boolean launch argument to control loading config on startup
+            DeclareLaunchArgument(
+                "load_config",
+                default_value="false",
+                description="If true, load GPS config on startup",
+            ),
             launch_ros.actions.Node(
                 package="gps",
                 executable="heading_pub_node",
@@ -26,10 +27,20 @@ def generate_launch_description():
                     {"Freq": 5.0},  # Publish rate (hz)
                     {"Baudrate": 115200},
                     {
-                        "Device": "/dev/serial/by-id/usb-FTDI_FT230X_Basic_UART_D30I1LY5-if00-port0"
+                        "Device": "/dev/serial/by-id/usb-FTDI_FT230X_Basic_UART_D30EFLJN-if00-port0"
                     },
                 ],
                 remappings=[("heading", "gps/heading")],
+            ),
+            # Optionally run the standalone config script when requested
+            ExecuteProcess(
+                cmd=[
+                    "python3",
+                    os.path.join(
+                        get_package_share_directory("gps"), "config", "fr_heading.py"
+                    ),
+                ],
+                condition=IfCondition(load_config),
             ),
         ]
     )
