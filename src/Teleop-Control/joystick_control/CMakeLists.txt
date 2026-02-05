@@ -28,9 +28,6 @@ add_executable(arm
   src/arm.cpp
 )
 
-add_executable(arm_ik
-  src/arm_ik.cpp
-)
 
 ament_target_dependencies(drive
   rclcpp
@@ -43,16 +40,6 @@ ament_target_dependencies(drive
 )
 
 ament_target_dependencies(arm
-  rclcpp
-  geometry_msgs
-  joy
-  ros_phoenix
-  interfaces
-  control_msgs
-  std_srvs
-)
-
-ament_target_dependencies(arm_ik
   rclcpp
   geometry_msgs
   joy

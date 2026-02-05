@@ -30,8 +30,8 @@ def generate_launch_description():
     parameters_file = os.path.join(pkg_joystick_control, "pxn.yaml")
     # Detect IDs dynamically
     # We use 0 and 1 as defaults if the symlinks aren't found
-    id_a = get_joy_id("/dev/input/by-id/usb-LiteStar_PXN-2113_Pro-joystick", 1)
-    id_b = get_joy_id("/dev/input/by-id/usb-Thrustmaster_T.1600M-joystick", 0)
+    id_a = get_joy_id("/dev/input/by-id/usb-LiteStar_PXN-2113_Pro-joystick", 0)
+    id_b = get_joy_id("/dev/input/by-id/usb-Thrustmaster_T.1600M-joystick", 1)
 
     return LaunchDescription(
         [
