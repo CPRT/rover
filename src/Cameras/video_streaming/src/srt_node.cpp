@@ -79,6 +79,9 @@ bool SrtNode::create_pipeline() {
   bool test_mode = this->get_parameter("test_mode").as_bool();
   std::string srt_uri = this->get_parameter("srt_uri").as_string();
   int latency_val = this->get_parameter("latency").as_int();
+  int iframe_interval_val = this->get_parameter("iframe_interval").as_int();
+  bool test_mode = this->get_parameter("test_mode").as_bool();
+  int framerate = this->get_parameter("target_framerate").as_int();
   int iframe_interval_val = iframe_interval_;
   int framerate = target_framerate_;
 
@@ -107,11 +110,11 @@ bool SrtNode::create_pipeline() {
         "capsfilter name=framerate_caps "
         "caps=\"video/x-raw(memory:NVMM),framerate=%d/1\" ! "
         "nvvidconv ! "
-        "nvv4l2h265enc name=h265_enc iframeinterval=30 ! "
+        "nvv4l2h265enc name=h265_enc iframeinterval=%d ! "
         "queue ! "
         "mux. mpegtsmux name=mux ! "
         "srtsink name=srt_sink uri=%s latency=%d sync=false",
-        framerate, srt_uri.c_str(), latency_val);
+        framerate, iframe_interval_val, srt_uri.c_str(), latency_val);
     RCLCPP_INFO(this->get_logger(), "Using PRODUCTION pipeline description: %s",
                 desc);
   }
