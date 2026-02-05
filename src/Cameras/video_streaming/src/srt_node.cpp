@@ -82,9 +82,6 @@ bool SrtNode::create_pipeline() {
   int iframe_interval_val = this->get_parameter("iframe_interval").as_int();
   bool test_mode = this->get_parameter("test_mode").as_bool();
   int framerate = this->get_parameter("target_framerate").as_int();
-  int iframe_interval_val = iframe_interval_;
-  int framerate = target_framerate_;
-
   gchar *desc;
 
   if (test_mode) {
