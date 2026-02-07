@@ -1,0 +1,31 @@
+aruco_board_detector_node:
+  ros__parameters:
+    # Image and camera topics (should match camera_publisher topics)
+    image_topic: "/zed/zed_node/left_raw/image_raw_color"
+    camera_info_topic: "/zed/zed_node/left_raw/camera_info"
+    camera_frame: "zed_camera_link"
+    
+    # ArUco dictionary to use (must match the dictionary used to generate markers)
+    # Options: DICT_4X4_50, DICT_4X4_100, DICT_4X4_250, DICT_4X4_1000,
+    #          DICT_5X5_50, DICT_5X5_100, DICT_5X5_250, DICT_5X5_1000,
+    #          DICT_6X6_50, DICT_6X6_100, DICT_6X6_250, DICT_6X6_1000,
+    #          DICT_7X7_50, DICT_7X7_100, DICT_7X7_250, DICT_7X7_1000,
+    #          DICT_ARUCO_ORIGINAL, DICT_APRILTAG_16h5, DICT_APRILTAG_25h9,
+    #          DICT_APRILTAG_36h10, DICT_APRILTAG_36h11
+    aruco_dictionary_id: "DICT_6X6_250"
+    
+    # Directory containing board configuration YAML files
+    # This will be set by the launch file
+    board_config_dir: ""
+    
+    # Output topics
+    board_topic: "/aruco_boards"
+    debug_image_topic: "/aruco_debug"
+    marker_visualization_topic: "/aruco_markers_viz"
+    
+    # Visualization settings
+    marker_size: 0.05  # Size of visualization spheres in meters
+    
+    # Minimum number of markers from a board that must be detected
+    # to attempt pose estimation for that board
+    min_markers_for_board: 2

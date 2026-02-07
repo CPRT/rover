@@ -23,24 +23,32 @@ from launch.substitutions import LaunchConfiguration
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from nav2_common.launch import RewrittenYaml
 
-ekf_profiles = {
+EKF_PROFILES = {
     "gps": {
         "local": "gps_ekf_local.yaml",
         "global": "gps_ekf_global.yaml",
     },
+    "indoor_aruco_boards": {
+        "local": "indoor_aruco_boards_ekf_local.yaml",
+        "global": "indoor_aruco_boards_ekf_global.yaml",
+    },
 }
-default_profile = "gps"
+DEFAULT_PROFILE = "gps"
 
 
 def launch_setup(context):
-    # This function is executed at launch time
-
+    # Retrieve launch configuration values
     use_sim_time = LaunchConfiguration("use_sim_time").perform(context)
     profile = LaunchConfiguration("ekf_profile").perform(context)
 
-    if profile not in ekf_profiles:
+    # Set default profile if 'default' is selected
+    if profile in ("default", ""):
+        profile = DEFAULT_PROFILE
+
+    # Check if the selected profile exists
+    if profile not in EKF_PROFILES:
         raise ValueError(
-            f"Unknown EKF profile: '{profile}'. Available profiles are: {list(ekf_profiles.keys())}"
+            f"Unknown EKF profile: '{profile}'. Available profiles are: {list(EKF_PROFILES.keys())}"
         )
 
     # Load the EKF parameters based on the profile
@@ -48,13 +56,13 @@ def launch_setup(context):
         get_package_share_directory("localization"),
         "config",
         "ekf",
-        ekf_profiles[profile]["local"],
+        EKF_PROFILES[profile]["local"],
     )
     global_params_file = os.path.join(
         get_package_share_directory("localization"),
         "config",
         "ekf",
-        ekf_profiles[profile]["global"],
+        EKF_PROFILES[profile]["global"],
     )
     print(f"Using EKF profile: {profile}")
 
@@ -107,8 +115,8 @@ def generate_launch_description():
 
     profile_cmd = DeclareLaunchArgument(
         "ekf_profile",
-        default_value=default_profile,
-        description="Select the EKF profile to use (gps, lidar)",
+        default_value=DEFAULT_PROFILE,
+        description="Select the EKF profile to use",
     )
 
     return LaunchDescription(
