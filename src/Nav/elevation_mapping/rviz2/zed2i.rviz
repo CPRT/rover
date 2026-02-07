@@ -190,7 +190,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /trasversability_map
+        Value: /traversability_map
       Use Rainbow: true
       Value: true
   Enabled: true

@@ -65,7 +65,7 @@ void GridmapLayer::getParameters() {
                    rclcpp::ParameterValue(true));
   declareParameter("transform_tolerance", rclcpp::ParameterValue(0.0));
   declareParameter("map_topic", rclcpp::ParameterValue("/map"));
-  declareParameter("layer_name", rclcpp::ParameterValue("trasversability_map"));
+  declareParameter("layer_name", rclcpp::ParameterValue("traversability_map"));
   declareParameter("footprint_clearing_enabled", rclcpp::ParameterValue(false));
 
   auto node = node_.lock();
@@ -84,7 +84,7 @@ void GridmapLayer::getParameters() {
   node->get_parameter("transform_tolerance", temp_tf_tol);
 
   // Enforce bounds
-  lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
+  lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 255), 0);
   map_received_ = false;
 
   transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
