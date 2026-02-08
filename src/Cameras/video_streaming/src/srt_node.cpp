@@ -107,6 +107,7 @@ bool SrtNode::create_pipeline() {
         "caps=\"video/x-raw(memory:NVMM),framerate=%d/1\" ! "
         "nvvidconv ! "
         "nvv4l2h265enc name=h265_enc iframeinterval=%d ! "
+        "h265parse ! "
         "queue ! "
         "mux. mpegtsmux name=mux ! "
         "srtsink name=srt_sink uri=%s latency=%d sync=false",
@@ -160,14 +161,23 @@ void SrtNode::change_framerate(int new_fps) {
                 "framerate_caps_ is null! Check create_pipeline.");
     return;
   }
+  std::string caps_str =
+      "video/x-raw(memory:NVMM),framerate=" + std::to_string(new_fps) + "/1";
+  GstCaps *caps = gst_caps_from_string(caps_str.c_str());
 
-  GstCaps *caps = gst_caps_new_simple("video/x-raw", "framerate",
-                                      GST_TYPE_FRACTION, new_fps, 1, NULL);
+  if (caps) {
+    g_object_set(framerate_caps_, "caps", caps, NULL);
+    gst_caps_unref(caps);
 
-  g_object_set(framerate_caps_, "caps", caps, NULL);
-  gst_caps_unref(caps);
+    g_object_set(h265_encoder_, "peak-bitrate", 0, NULL);
 
-  RCLCPP_INFO(this->get_logger(), "Framerate changed to %d fps", new_fps);
+    RCLCPP_INFO(this->get_logger(),
+                "Framerate caps updated to %d fps. Notifying encoder...",
+                new_fps);
+  } else {
+    RCLCPP_ERROR(this->get_logger(), "Failed to create caps for %d fps",
+                 new_fps);
+  }
 }
 
 rcl_interfaces::msg::SetParametersResult
@@ -200,9 +210,10 @@ SrtNode::on_parameter_change(const std::vector<rclcpp::Parameter> &parameters) {
 
     if (name == "target_framerate") {
       target_framerate_ = param.as_int();
+      change_framerate(target_framerate_);
       RCLCPP_INFO(this->get_logger(), "Cache Update: target_framerate = %d",
                   target_framerate_);
-      needs_restart = true;
+      needs_restart = false;
       continue;
     }
 
