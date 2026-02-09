@@ -801,7 +801,7 @@
     name="Left_back_wheel_arm_joint"
     type="continuous">
     <origin
-      xyz="-.1 0 0"
+      xyz="0 -0.01 0"
       rpy="0 0 0" />
     <parent
       link="Sus_Arm_Back_Left" />
