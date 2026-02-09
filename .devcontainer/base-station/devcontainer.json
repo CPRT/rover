@@ -19,7 +19,8 @@
     "--group-add=render",
     "--group-add=systemd-journal",
     "--env", "DISPLAY=${localEnv:DISPLAY}",
-    "--volume", "/tmp/.X11-unix:/tmp/.X11-unix:rw"
+    "--volume", "/tmp/.X11-unix:/tmp/.X11-unix:rw",
+    "--group-add=dialout"
   ],
   "mounts": [
     "source=${env:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached",

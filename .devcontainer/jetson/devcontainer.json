@@ -17,7 +17,8 @@
     "--ipc=host",
     "--group-add=video",
     "--group-add=render",
-    "--group-add=systemd-journal"
+    "--group-add=systemd-journal",
+    "--group-add=dialout"
   ],
   "mounts": [
     "source=${env:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached",
