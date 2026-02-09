@@ -25,8 +25,7 @@ def get_included_launch_descriptions(launch_files):
 
 def generate_launch_description():
     launch_files = [
-        ("joystick_control", "controller.launch.py"),
         ("servo_pkg", "usb_servo_launch.launch.py"),
-        ("rosbridge_server", "rosbridge_websocket_launch.xml"),
+        ("gpio_controller", "lights.launch.py"),
     ]
     return LaunchDescription(get_included_launch_descriptions(launch_files))
