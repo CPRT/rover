@@ -41,7 +41,7 @@ void MoveGroupController::execute(
 
   // This isn't real, just a placeholder. You (yes you Seysha) need to implement
   // the movegroup go to a position
-  handle_move()
+  handle_move(goal->poseID);
 
       for (int i = 0; i <= 100; ++i) {
     if (goal_handle->is_canceling()) {
