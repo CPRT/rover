@@ -8,7 +8,7 @@ input_node:
     - "Bottom"
     - "Test"
     Drive:
-      path: "/dev/v4l/by-id/usb-Arducam_Arducam_B0495__USB3_2.3MP_-video-index0"
+      path: "/dev/v4l/by-id/drive_camera"
       type: 0
     EndEffector:
       path: "/dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._USB_2.0_Camera_SN5100-video-index0"
