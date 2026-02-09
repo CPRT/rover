@@ -90,10 +90,11 @@ global_costmap:
   global_costmap:
     ros__parameters:
       update_frequency: 10.0
-      publish_frequency: 0.5
+      publish_frequency: 2.0
       global_frame: map
       robot_base_frame: base_link
       rolling_window: true
+      transform_tolerance: 0.3
       height: 100
       width: 100
       origin_x: -50.0
@@ -247,13 +248,13 @@ behavior_server:
     cycle_frequency: 0.4
     behavior_plugins: [spin, backup, drive_on_heading, wait]
     spin:
-      plugin: nav2_behaviors::Spin
+      plugin: nav2_behaviors/Spin
     backup:
-      plugin: nav2_behaviors::BackUp
+      plugin: nav2_behaviors/BackUp
     drive_on_heading:
-      plugin: nav2_behaviors::DriveOnHeading
+      plugin: nav2_behaviors/DriveOnHeading
     wait:
-      plugin: nav2_behaviors::Wait
+      plugin: nav2_behaviors/Wait
     global_frame: odom
     robot_base_frame: base_link
     transform_tolerance: 0.1
