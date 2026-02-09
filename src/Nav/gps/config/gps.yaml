@@ -11,7 +11,7 @@ ublox_gps_node:
       baudrate: 115200
       in: 32
       out: 32
-    rate: 1.0
+    rate: 5.0
     nav_rate: 1
     enable_ppp: false
     tmode3: 0

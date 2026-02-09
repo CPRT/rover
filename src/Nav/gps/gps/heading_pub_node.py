@@ -70,7 +70,7 @@ class HeadingNode(Node):
         self.persistent = (
             self.get_parameter("Persistent").get_parameter_value().bool_value
         )
-        self.declare_parameter("Freq", 2.0)
+        self.declare_parameter("Freq", 5.0)
         self.freq = self.get_parameter("Freq").get_parameter_value().double_value
         if self.freq <= 0:
             self.get_logger().warn("Frequency must be positive. Defaulting to 2.0 Hz.")
@@ -99,27 +99,28 @@ class HeadingNode(Node):
             if not raw:
                 self.get_logger().warn("No data read from serial port.")
                 return
-            msg = Imu()
-            msg.linear_acceleration_covariance[0] = -1
-            msg.angular_velocity_covariance[0] = -1
-            heading = math.pi / 2 - (parsed_data.relPosHeading / 180.0 * math.pi)
-            orientation = HeadingNode.quaternion_from_euler(0, 0, heading)
-            msg.orientation.x = orientation[0]
-            msg.orientation.y = orientation[1]
-            msg.orientation.z = orientation[2]
-            msg.orientation.w = orientation[3]
-            msg.orientation_covariance[0] = 1000.0
-            msg.orientation_covariance[4] = 1000.0
-            msg.orientation_covariance[8] = 1000.0
-            msg.header.frame_id = self.frame_id
-            msg.header.stamp = self.get_clock().now().to_msg()
-            # When heading is reported to be valid, use accuracy reported in radiance units
-            if parsed_data.relPosValid == 1:
-                msg.orientation_covariance[8] = (
-                    parsed_data.accHeading / 180.0 * math.pi
-                ) ** 2
+            if parsed_data.identity == "NAV-RELPOSNED":
+                msg = Imu()
+                msg.linear_acceleration_covariance[0] = -1
+                msg.angular_velocity_covariance[0] = -1
+                heading = math.pi / 2 - (parsed_data.relPosHeading / 180.0 * math.pi)
+                orientation = HeadingNode.quaternion_from_euler(0, 0, heading)
+                msg.orientation.x = orientation[0]
+                msg.orientation.y = orientation[1]
+                msg.orientation.z = orientation[2]
+                msg.orientation.w = orientation[3]
+                msg.orientation_covariance[0] = 1000.0
+                msg.orientation_covariance[4] = 1000.0
+                msg.orientation_covariance[8] = 1000.0
+                msg.header.frame_id = self.frame_id
+                msg.header.stamp = self.get_clock().now().to_msg()
+                # When heading is reported to be valid, use accuracy reported in radiance units
+                if parsed_data.relPosValid == 1:
+                    msg.orientation_covariance[8] = (
+                        parsed_data.accHeading / 180.0 * math.pi
+                    ) ** 2
 
-            self.heading_pub.publish(msg)
+                self.heading_pub.publish(msg)
 
 
 def main(args=None):
