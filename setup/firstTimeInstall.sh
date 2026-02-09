@@ -25,7 +25,7 @@ echo "$USER ALL=(ALL) NOPASSWD: /usr/local/bin/enablecan.sh" | sudo tee -a /etc/
 
 ./usb_service_setup.sh
 
-UDEV_RULE='SUBSYSTEM=="video4linux", ATTR{name}=="Arducam B0495 (USB3 2.3MP)", ATTRS{idVendor}=="04b4", ATTR{index}=="0", ATTRS{idProduct}=="0495", SYMLINK+="drive_camera", MODE="0666"'
+UDEV_RULE='SUBSYSTEM=="video4linux", ATTR{name}=="Arducam B0495 (USB3 2.3MP)", ATTRS{idVendor}=="04b4", ATTR{index}=="0", ATTRS{idProduct}=="0495", SYMLINK+="v4l/by-id/drive_camera", MODE="0666"'
 echo "$UDEV_RULE" | sudo tee /etc/udev/rules.d/99-arducam.rules > /dev/null
 
 sudo udevadm control --reload-rules
