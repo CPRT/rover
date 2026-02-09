@@ -170,49 +170,52 @@ bool GridmapLayer::getTransform(
 void GridmapLayer::updateCosts(nav2_costmap_2d::Costmap2D &master_grid,
                                int min_i, int min_j, int max_i, int max_j) {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  if (!enabled_ || !has_updated_data_) {
+  if (!enabled_) {
     return;
   }
-  geometry_msgs::msg::TransformStamped transform;
-  if (!getTransform(transform)) {
-    return;
-  }
-  unsigned char *master_array = master_grid.getCharMap();
 
-  has_updated_data_ = false;
-  geometry_msgs::msg::PointStamped grid_map_point, costmap_point;
-
-  // Iterate through the grid map and copy the values to the costmap
-  for (grid_map::GridMapIterator it(gridmap_in_); !it.isPastEnd(); ++it) {
-    const grid_map::Index index(*it);
-    const float value = gridmap_in_.at(layer_name_, index);
-    const auto cost = interpretValue(value);
-    if (cost == NO_INFORMATION) {
-      continue;
+  // When new grid map data has arrived, copy it into the internal buffer
+  if (has_updated_data_) {
+    geometry_msgs::msg::TransformStamped transform;
+    if (!getTransform(transform)) {
+      return;
     }
 
-    // Convert grid_map index to world coordinates
-    grid_map::Position position;
-    gridmap_in_.getPosition(index, position);
+    has_updated_data_ = false;
+    geometry_msgs::msg::PointStamped grid_map_point, costmap_point;
 
-    // Transform the position to the costmap frame
-    grid_map_point.point.x = position.x();
-    grid_map_point.point.y = position.y();
-    grid_map_point.point.z = 0.0;
-    tf2::doTransform(grid_map_point, costmap_point, transform);
+    // Iterate through the grid map and copy values to the internal costmap
+    for (grid_map::GridMapIterator it(gridmap_in_); !it.isPastEnd(); ++it) {
+      const grid_map::Index index(*it);
+      const float value = gridmap_in_.at(layer_name_, index);
+      const auto cost = interpretValue(value);
 
-    // Convert world coordinates to costmap coordinates
-    unsigned int mx, my;
-    const bool isValid =
-        worldToMap(costmap_point.point.x, costmap_point.point.y, mx, my);
-    if (isValid) {
-      auto &index = master_array[getIndex(mx, my)];
-      if (use_maximum_) {
-        index = std::max(index, cost);
-      } else {
-        index = cost;
+      // Convert grid_map index to world coordinates
+      grid_map::Position position;
+      gridmap_in_.getPosition(index, position);
+
+      // Transform the position to the costmap frame
+      grid_map_point.point.x = position.x();
+      grid_map_point.point.y = position.y();
+      grid_map_point.point.z = 0.0;
+      tf2::doTransform(grid_map_point, costmap_point, transform);
+
+      // Convert world coordinates to costmap cell coordinates
+      unsigned int mx, my;
+      const bool isValid =
+          worldToMap(costmap_point.point.x, costmap_point.point.y, mx, my);
+      if (isValid) {
+        // Write to the layer's own internal buffer (not the master)
+        setCost(mx, my, cost);
       }
     }
+  }
+
+  // Always merge the internal buffer into the master costmap
+  if (use_maximum_) {
+    updateWithMax(master_grid, min_i, min_j, max_i, max_j);
+  } else {
+    updateWithTrueOverwrite(master_grid, min_i, min_j, max_i, max_j);
   }
   current_ = true;
 }
