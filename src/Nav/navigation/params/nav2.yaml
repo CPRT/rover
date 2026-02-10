@@ -93,7 +93,7 @@ global_costmap:
       publish_frequency: 2.0
       global_frame: map
       robot_base_frame: base_link
-      rolling_window: true
+      rolling_window: false
       transform_tolerance: 0.3
       height: 100
       width: 100
@@ -206,7 +206,7 @@ controller_server:
       primary_controller: nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
       
       # Rotation Shim Parameters (Swerve Logic - Point Turn Before Driving)
-      angular_dist_threshold: 0.5         # If path angle > 30deg, rotate in place first
+      angular_dist_threshold: 2.0         # If path angle > 30deg, rotate in place first
       forward_sampling_distance: 0.5      # How far ahead to check path orientation
       rotate_to_heading_angular_vel: 1.0  # Angular velocity during point turn
       max_angular_accel: 2.0              # Max angular acceleration

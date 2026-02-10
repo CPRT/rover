@@ -49,16 +49,16 @@ local_ekf:
     pose0_rejection_threshold: 50.0  # High threshold to accept bootstrap poses with high covariance
     # pose0_pose_rejection_threshold: 5.0  # Old parameter name (deprecated)
 
-    odom0: /drive/odom
+    odom0: /chassis_controller/wheel_odom
     odom0_config: [
         # position
         false, false, false,
         # orientation
         false, false, false,
         # lineal vel
-        true, false, false,
+        true, true, false,
         # angular vel
-        false, false, false,
+        false, false, true,
         # lineal acc
         false, false, false,
       ]

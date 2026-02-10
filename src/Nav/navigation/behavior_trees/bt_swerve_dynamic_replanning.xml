@@ -44,7 +44,7 @@
           </Sequence>
 
           <Sequence name="SpinSeq">
-            <Spin spin_dist="3.14" time_allowance="5.0"/>
+            <!-- <Spin spin_dist="3.14" time_allowance="5.0"/> -->
             <Wait wait_duration="1.0"/>
           </Sequence>
 
