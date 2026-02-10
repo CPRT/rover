@@ -108,39 +108,21 @@ void TalonSRXWrapper::pub_status() const {
 void TalonSRXWrapper::write() {
   double output = 0.0;
   if (control_type_ == motors::ControlMode::Position) {
-    output = command_ * sensor_ticks_ / (2.0 * M_PI);
+    output = (command_ + sensor_offset_) * sensor_ticks_ / (2.0 * M_PI);
   } else if (control_type_ == motors::ControlMode::Velocity) {
-    output = command_ * sensor_ticks_ / (2.0 * M_PI) /
-             10.0; // Convert rad/s to ticks per 100ms
+    // Talons use d / 100ms as vel
+    output = (command_ * sensor_ticks_ / (2.0 * M_PI)) / 10.0;
   }
   talon_controller_->Set(control_type_, output);
 }
 
-int TalonSRXWrapper::wrap_symmetric(const int x, const int range) {
-  assert(range > 0);
-
-  const int half = range / 2;
-
-  int y = (x + half) % range;
-  if (y < 0)
-    y += range;
-
-  return y - half;
-}
-
 void TalonSRXWrapper::read() {
-  int raw_ticks =
-      static_cast<int>(talon_controller_->GetSelectedSensorPosition());
-  if (crossover_mode_) {
-    // adjust between -sensor_ticks_/2 and sensor_ticks_/2
-    raw_ticks = wrap_symmetric(raw_ticks, sensor_ticks_);
-  }
-  position_ = raw_ticks * 2.0 * M_PI / sensor_ticks_;
+  position_ = (talon_controller_->GetSelectedSensorPosition() * (2.0 * M_PI) /
+               sensor_ticks_) -
+              sensor_offset_;
   double raw_velocity = talon_controller_->GetSelectedSensorVelocity();
-  // Convert raw velocity to rad/s
-  // The TalonSRX reports velocity in ticks per 100ms, so we need to convert
-  // it to radians per second.
-  velocity_ = (raw_velocity / sensor_ticks_) * 2.0 * M_PI * 10;
+  // Talons use d / 100ms as vel
+  velocity_ = raw_velocity * 10 * (2.0 * M_PI) / sensor_ticks_;
 }
 
 void TalonSRXWrapper::configure() {
@@ -149,7 +131,8 @@ void TalonSRXWrapper::configure() {
     if (talon_controller_->GetFirmwareVersion() == -1) {
       RCLCPP_ERROR_THROTTLE(
           debug_node_->get_logger(), *debug_node_->get_clock(), 500,
-          "%s: Motor controller not responding, retrying...", __FUNCTION__);
+          "%s: Motor controller for id %d not responding, retrying...",
+          __FUNCTION__, id_);
       continue;
     }
     SlotConfiguration slot;
@@ -157,69 +140,34 @@ void TalonSRXWrapper::configure() {
     slot.kI = kI_;
     slot.kD = kD_;
     slot.kF = kF_;
-
-    TalonSRXConfiguration config;
-    config.slot0 = slot;
-    config.voltageCompSaturation = 24.0;
-    config.pulseWidthPeriod_EdgesPerRot = sensor_ticks_;
-    config.continuousCurrentLimit = 10.0;
-    config.peakCurrentLimit = 10.0;
-    config.peakCurrentDuration = 100; // ms
-    talon_controller_->EnableCurrentLimit(true);
-    ErrorCode error =
-        talon_controller_->ConfigAllSettings(config, /*timeout*/ 50);
-    if (error != ErrorCode::OK) {
-      RCLCPP_ERROR_THROTTLE(
-          debug_node_->get_logger(), *debug_node_->get_clock(), 500,
-          "%s: Failed to configure motor controller with code: %d",
-          __FUNCTION__, error);
-      continue;
-    }
     break;
   }
 
-  int current_ticks = 0;
-  int offset_ticks =
-      static_cast<int>(sensor_offset_ * sensor_ticks_ / (2.0 * M_PI));
   if (sensor_type_ == SensorType::PWM) {
-    auto &sc = talon_controller_->GetSensorCollection();
-    current_ticks = sc.GetPulseWidthPosition() & 0xFFF;
+    talon_controller_->ConfigSelectedFeedbackSensor(
+        TalonSRXFeedbackDevice::CTRE_MagEncoder_Absolute);
+    talon_controller_->ConfigPulseWidthPeriod_EdgesPerRot(sensor_ticks_);
   } else if (sensor_type_ == SensorType::ANALOG) {
-    auto &sc = talon_controller_->GetSensorCollection();
-    current_ticks = sc.GetAnalogIn() & 0xFFF;
-  }
-  if (invert_sensor_) {
-    current_ticks = sensor_ticks_ - current_ticks;
-  }
-  if (crossover_mode_) {
-    current_ticks = wrap_symmetric(current_ticks, sensor_ticks_);
-  }
-  int real_ticks = current_ticks - offset_ticks;
-
-  // Talon SRX expects a double for SetSelectedSensorPosition
-  double ticks_double = static_cast<double>(real_ticks);
-  // If exactly one of invert_sensor_ or inverted_ is true, negate the ticks.
-  // This ensures that if both are true (double inversion), the effect cancels
-  // out.
-  bool final_invert = invert_sensor_ != inverted_;
-  if (final_invert) {
-    ticks_double = -ticks_double;
+    talon_controller_->ConfigSelectedFeedbackSensor(
+        TalonSRXFeedbackDevice::Analog);
+  } else {
+    talon_controller_->ConfigSelectedFeedbackSensor(FeedbackDevice::QuadEncoder,
+                                                    0, 0);
   }
 
   talon_controller_->SetNeutralMode(NeutralMode::Brake);
+  talon_controller_->ConfigFeedbackNotContinuous(crossover_mode_);
   talon_controller_->ConfigSelectedFeedbackCoefficient(1.0);
-
-  // The Talons virtualize a QuadEncoder from the PWM signal if no quad encoder
-  // is present. The absolute part is set at the beginning from the
-  // SetSelectedSensorPosition
-  talon_controller_->ConfigSelectedFeedbackSensor(FeedbackDevice::QuadEncoder,
-                                                  0, 0);
   talon_controller_->EnableVoltageCompensation(true);
-  talon_controller_->SetInverted(inverted_);
   talon_controller_->SetSensorPhase(invert_sensor_);
+  talon_controller_->SetInverted(inverted_);
+  talon_controller_->ConfigPulseWidthPeriod_FilterWindowSz(1);
   talon_controller_->SelectProfileSlot(0, 0);
-  talon_controller_->SetSelectedSensorPosition(ticks_double, 0, 50);
+  read();
+  if (control_type_ == motors::ControlMode::Position) {
+    command_ = position_;
+  }
   RCLCPP_INFO(debug_node_->get_logger(),
-              "%s: Successfully configured Motor Controller %d, with offset %d",
-              __FUNCTION__, id_, real_ticks);
+              "%s: Successfully configured Motor Controller %d", __FUNCTION__,
+              id_);
 }
