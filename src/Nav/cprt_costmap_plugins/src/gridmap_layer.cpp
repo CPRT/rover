@@ -118,6 +118,12 @@ void GridmapLayer::incomingMap(
 void GridmapLayer::updateBounds(double robot_x, double robot_y,
                                 double robot_yaw, double *min_x, double *min_y,
                                 double *max_x, double *max_y) {
+  if (!map_received_) {
+    map_received_in_update_bounds_ = false;
+    return;
+  }
+  map_received_in_update_bounds_ = true;
+
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
 
   if (layered_costmap_->isRolling()) {
@@ -174,14 +180,45 @@ void GridmapLayer::updateCosts(nav2_costmap_2d::Costmap2D &master_grid,
     return;
   }
 
-  // When new grid map data has arrived, copy it into the internal buffer
-  if (has_updated_data_) {
+  // Don't write to master costmap until we've received at least one map
+  if (!map_received_in_update_bounds_) {
+    static int count = 0;
+    // throttle warning down to only 1/10 message rate
+    if (++count == 10) {
+      RCLCPP_WARN(logger_, "Can't update gridmap costmap layer, no map received");
+      count = 0;
+    }
+    return;
+  }
+
+  // When new grid map data has arrived OR using rolling costmap, copy it into the internal buffer
+  // For rolling costmaps, we need to re-apply the transformation even without new data
+  // to keep the internal layer synchronized with the moving costmap frame
+  if (has_updated_data_ || layered_costmap_->isRolling()) {
     geometry_msgs::msg::TransformStamped transform;
     if (!getTransform(transform)) {
       return;
     }
 
-    has_updated_data_ = false;
+    // Check if the required layer exists in the grid map to avoid exceptions
+    if (!gridmap_in_.exists(layer_name_)) {
+      RCLCPP_ERROR(
+        logger_,
+        "GridMap layer '%s' does not exist in received grid map. "
+        "Available layers: [%s]. Check your configuration.",
+        layer_name_.c_str(),
+        [&]() {
+          std::string layers;
+          for (const auto& layer : gridmap_in_.getLayers()) {
+            if (!layers.empty()) layers += ", ";
+            layers += layer;
+          }
+          return layers;
+        }().c_str()
+      );
+      return;
+    }
+
     geometry_msgs::msg::PointStamped grid_map_point, costmap_point;
 
     // Iterate through the grid map and copy values to the internal costmap
@@ -209,6 +246,9 @@ void GridmapLayer::updateCosts(nav2_costmap_2d::Costmap2D &master_grid,
         setCost(mx, my, cost);
       }
     }
+
+    // Only mark as processed after successful copy
+    has_updated_data_ = false;
   }
 
   // Always merge the internal buffer into the master costmap
