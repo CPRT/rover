@@ -107,7 +107,6 @@ bool SrtNode::create_pipeline() {
         "caps=\"video/x-raw(memory:NVMM),framerate=%d/1\" ! "
         "nvvidconv ! "
         "nvv4l2h265enc name=h265_enc iframeinterval=%d ! "
-        "h265parse ! "
         "queue ! "
         "mux. mpegtsmux name=mux ! "
         "srtsink name=srt_sink uri=%s latency=%d sync=false",
@@ -213,7 +212,7 @@ SrtNode::on_parameter_change(const std::vector<rclcpp::Parameter> &parameters) {
       change_framerate(target_framerate_);
       RCLCPP_INFO(this->get_logger(), "Cache Update: target_framerate = %d",
                   target_framerate_);
-      needs_restart = false;
+      needs_restart = true;
       continue;
     }
 
