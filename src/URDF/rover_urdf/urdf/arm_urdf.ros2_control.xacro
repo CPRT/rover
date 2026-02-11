@@ -4,38 +4,21 @@
     <ros2_control name="${name}" type="system">
       <hardware>
         <!-- By default, set up controllers for simulation. This won't work on real hardware -->
-        <plugin>mock_components/GenericSystem</plugin>
-        <!-- <plugin>ros2_control_rover_arm/RoverArmHardwareInterface</plugin> -->
+        <!-- <plugin>mock_components/GenericSystem</plugin> -->
+        <plugin>ros2_control_rover_arm/RoverArmHardwareInterface</plugin>
       </hardware>
       <joint name="Joint_1">
         <param name="type">TalonSRX</param>
-        <param name="can_id">10</param>
-        <param name="kP">3.0</param>
+        <param name="can_id">9</param>
+        <param name="kP">0.1</param>
         <param name="kI">0.0</param>
-        <param name="kD">1.0</param>
-        <param name="kF">0.5</param>
+        <param name="kD">0.0</param>
+        <param name="kF">0.0</param>
         <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">0.0</param>
+        <param name="sensor_offset">1.0</param>
         <param name="crossover">true</param> <!-- or "continuous" -->
-        <param name="invert">false</param>
-        <param name="invert_sensor">true</param>
-        <command_interface name="position"/>
-        <state_interface name="position"/>
-        <state_interface name="velocity"/>
-      </joint>
-      <joint name="Joint_2">
-        <param name="type">TalonSRX</param>
-        <param name="can_id">11</param>
-        <param name="kP">10.0</param>
-        <param name="kI">0.0</param>
-        <param name="kD">10.0</param>
-        <param name="kF">100</param>
-        <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
-        <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">-2.7</param>
-        <param name="crossover">true</param> <!-- or "continuous" -->
-        <param name="invert">false</param>
+        <param name="invert">true</param>
         <param name="invert_sensor">true</param>
         <command_interface name="position"/>
         <state_interface name="position"/>
@@ -43,16 +26,16 @@
       </joint>
       <joint name="Joint_3">
         <param name="type">TalonSRX</param>
-        <param name="can_id">14</param>
-        <param name="kP">1.0</param>
-        <param name="kI">0.0</param>
+        <param name="can_id">11</param>
+        <param name="kP">60.0</param>
+        <param name="kI">1.0</param>
         <param name="kD">0.0</param>
-        <param name="kF">60.0</param>
+        <param name="kF">0.0</param>
         <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">3.14</param>
-        <param name="crossover">true</param> <!-- or "continuous" -->
-        <param name="invert">true</param>
+        <param name="sensor_offset">-1.25</param>
+        <param name="crossover">false</param> <!-- or "continuous" -->
+        <param name="invert">false</param>
         <param name="invert_sensor">false</param>
         <command_interface name="position"/>
         <state_interface name="position"/>
@@ -60,31 +43,14 @@
       </joint>
       <joint name="Joint_4">
         <param name="type">TalonSRX</param>
-        <param name="can_id">15</param>
-        <param name="kP">2.0</param>
-        <param name="kI">0.0</param>
-        <param name="kD">0.0</param>
-        <param name="kF">5.0</param>
-        <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
-        <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">-1.0</param>
-        <param name="crossover">true</param> <!-- or "continuous" -->
-        <param name="invert">false</param>
-        <param name="invert_sensor">false</param>
-        <command_interface name="position"/>
-        <state_interface name="position"/>
-        <state_interface name="velocity"/>
-      </joint>
-      <joint name="Joint_5">
-        <param name="type">TalonSRX</param>
         <param name="can_id">12</param>
-        <param name="kP">20.0</param>
+        <param name="kP">1.0</param>
         <param name="kI">0.0</param>
         <param name="kD">0.0</param>
-        <param name="kF">7.8</param>
+        <param name="kF">0.0</param>
         <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">-0.23</param>
+        <param name="sensor_offset">1.57</param>
         <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">true</param>
         <param name="invert_sensor">true</param>
@@ -92,15 +58,54 @@
         <state_interface name="position"/>
         <state_interface name="velocity"/>
       </joint>
+      <joint name="Joint_5">
+        <param name="type">TalonSRX</param>
+        <param name="can_id">19</param>
+        <param name="kP">100.0</param>
+        <param name="kI">0.0</param>
+        <param name="kD">0.0</param>
+        <param name="kF">0.0</param>
+        <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
+        <param name="sensor_ticks">4096</param>
+        <param name="sensor_offset">5.25</param>
+        <param name="crossover">true</param> <!-- or "continuous" -->
+        <param name="invert">false</param>
+        <param name="invert_sensor">false</param>
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+    </ros2_control>
+    <ros2_control name="${name}_odrive" type="system">
+      <hardware>
+        <!-- By default, set up controllers for simulation. This won't work on real hardware -->
+        <!-- <plugin>mock_components/GenericSystem</plugin> -->
+        <plugin>odrive_ros2_control_plugin/ODriveHardwareInterface</plugin>
+        <param name="can">can0</param>
+      </hardware>
+      <joint name="Joint_2">
+        <param name="node_id">10</param>
+        <param name="multiplier">-1.0</param>
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+    </ros2_control>
+
+    <ros2_control name="${name}_fake" type="system">
+      <hardware>
+        <!-- By default, set up controllers for simulation. This won't work on real hardware -->
+        <plugin>mock_components/GenericSystem</plugin>
+      </hardware>
       <joint name="Joint_6">
         <param name="type">TalonSRX</param>
         <param name="can_id">13</param>
-        <param name="kP">0.012</param>
+        <param name="kP">1.0</param>
         <param name="kI">0.0</param>
         <param name="kD">0.0</param>
-        <param name="kF">0.005</param>
-        <param name="sensor_type">quadrature</param> <!-- or "quadrature" -->
-        <param name="sensor_ticks">2163000</param> <!-- TODO: this number is close but not quite -->
+        <param name="kF">0.0</param>
+        <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
+        <param name="sensor_ticks">4096</param> <!-- TODO: this number is close but not quite -->
         <param name="sensor_offset">0.0</param>
         <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">true</param>
