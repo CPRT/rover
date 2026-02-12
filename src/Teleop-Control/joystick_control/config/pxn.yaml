@@ -23,3 +23,8 @@ arm_teleop_node:
     max_act1_speed: 1.0
     max_act2_speed: 1.0
     max_elbow_yaw_speed: 1.0
+science_teleop_node:
+  ros__parameters:
+    drill_button: 2
+    drill_elevation_axis: 1
+    test_servo_button: 3

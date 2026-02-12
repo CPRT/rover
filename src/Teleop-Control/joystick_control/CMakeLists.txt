@@ -14,6 +14,7 @@ find_package(ros_phoenix REQUIRED)
 find_package(interfaces REQUIRED)
 find_package(control_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(std_msgs REQUIRED)
 
 set(CMAKE_CXX_STANDARD 14)
 
@@ -26,6 +27,10 @@ add_executable(drive
 
 add_executable(arm
   src/arm.cpp
+)
+
+add_executable(science
+  src/science.cpp
 )
 
 ament_target_dependencies(drive
@@ -48,9 +53,18 @@ ament_target_dependencies(arm
   std_srvs
 )
 
+ament_target_dependencies(science
+  rclcpp
+  joy
+  ros_phoenix
+  interfaces
+  std_msgs
+)
+
 install(TARGETS
   drive
   arm
+  science
   DESTINATION lib/${PROJECT_NAME})
 
 # Install header files
