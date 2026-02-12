@@ -8,6 +8,8 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(joy REQUIRED)
 find_package(ros_phoenix REQUIRED)
@@ -19,6 +21,9 @@ set(CMAKE_CXX_STANDARD 14)
 
 include_directories(include)
 
+add_library(movegroup_action SHARED
+src/movegroup_controller.cpp
+)
 
 add_executable(drive
   src/drive.cpp
@@ -28,6 +33,15 @@ add_executable(arm
   src/arm.cpp
 )
 
+target_compile_definitions(movegroup_action
+  PRIVATE "ACTION_TUTORIALS_CPP_BUILDING_DLL")
+
+
+ament_target_dependencies(movegroup_action
+  rclcpp
+  rclcpp_action
+  rclcpp_components
+)
 
 ament_target_dependencies(drive
   rclcpp

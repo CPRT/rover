@@ -43,7 +43,7 @@ void MoveGroupController::execute(
   // the movegroup go to a position
   handle_move(goal->poseID);
 
-      for (int i = 0; i <= 100; ++i) {
+  for (int i = 0; i <= 100; ++i) {
     if (goal_handle->is_canceling()) {
       result->success = false;
       goal_handle->canceled(result);
