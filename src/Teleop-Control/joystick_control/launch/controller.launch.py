@@ -78,7 +78,7 @@ def generate_launch_description():
                 package="joystick_control",
                 executable="movegroup_controller",
                 name="movegroup_control_action_server",
-                parameters=[positions_file],
+                parameters=[parameters_file],
             ),
         ]
     )

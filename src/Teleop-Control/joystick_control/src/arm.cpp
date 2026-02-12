@@ -57,6 +57,13 @@ void arm::arm_manual(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
 void arm::mode_switch(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   mode_button_value = joystickMsg->buttons[mode_switch_button];
 
+  // Check which goal pose is pressed
+  if (joystickMsg->buttons[kHomeButton] == 1){
+    send_goal_pose(10);
+  } else if (joystickMsg->buttons[kStowButton] == 1){
+    send_goal_pose(11);
+  }
+
   if ((mode_button_value == 0) && (mode_button_value_prev == 1)) {
     mode = mode + 1;
     // This logic is here to allow us to add more modes like science perhaps
@@ -177,7 +184,11 @@ void arm::declareParameters() {
   this->declare_parameter("arm_ik.max_yaw_speed", 0.1);
 
   this->declare_parameter("mode_switch_button", 7);
+
+  this->declare_parameter("arm_saves.home_button", 10);
+  this->declare_parameter("arm_saves.stow_button", 11);
 }
+
 void arm::loadParameters() {
   this->get_parameter("arm_manual.throttle.axis", kThrottleAxis);
   this->get_parameter("arm_manual.base_axis", kBaseAxis);
@@ -209,6 +220,9 @@ void arm::loadParameters() {
   this->get_parameter("arm_ik.max_yaw_speed", kMaxYawSpeed);
 
   this->get_parameter("mode_switch_button", mode_switch_button);
+
+  this->get_parameter("arm_saves.home_button", kHomeButton);
+  this->get_parameter("arm_saves.stow_button", kStowButton);
 }
 
 int main(int argc, char **argv) {
