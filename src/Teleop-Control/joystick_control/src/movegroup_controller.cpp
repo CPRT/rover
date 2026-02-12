@@ -1,7 +1,6 @@
 #include "movegroup_controller.hpp"
 #include <thread>
 
-// Use placeholders for cleaner bind calls
 using namespace std::placeholders;
 
 MoveGroupController::MoveGroupController(const rclcpp::NodeOptions &options)

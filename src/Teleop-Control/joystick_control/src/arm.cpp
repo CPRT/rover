@@ -1,5 +1,8 @@
 #include "arm.hpp"
 
+using MoveToPose = interfaces::action::MoveToPose;
+using GoalHandleMoveToPose = rclcpp_action::ClientGoalHandle<MoveToPose>;
+using namespace std::placeholders;
 arm::arm() : Node("arm_node") {
 
   declareParameters();
@@ -14,6 +17,9 @@ arm::arm() : Node("arm_node") {
   joint_msg_ = control_msgs::msg::JointJog();
   joint_msg_.joint_names = {"Joint_1", "Joint_2", "Joint_3",
                             "Joint_4", "Joint_5", "Joint_6"};
+
+  this->move_group_action_client_ =
+      rclcpp_action::create_client<MoveToPose>(this, "move_to_pose");
 
   RCLCPP_INFO(this->get_logger(), "Arm controller started");
 }
@@ -79,6 +85,66 @@ void arm::arm_ik(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   twist_msg.twist.angular.z = axes[kYawAxis] * kMaxYawSpeed;
 
   ik_pub_->publish(twist_msg);
+}
+
+void arm::movegroup_goal_response_callback(
+    GoalHandleMoveToPose::SharedPtr goal_handle) {
+  if (!goal_handle) {
+    RCLCPP_ERROR(this->get_logger(), "Goal was rejected by server");
+  } else {
+    RCLCPP_INFO(this->get_logger(),
+                "Goal accepted by server, waiting for result");
+  }
+}
+
+void arm::movegroup_feedback_callback(
+    GoalHandleMoveToPose::SharedPtr,
+    const std::shared_ptr<const MoveToPose::Feedback> feedback) {
+  std::stringstream ss;
+  ss << "Current position: ";
+  for (auto position : feedback->current_position) {
+    ss << position << " ";
+  }
+  RCLCPP_INFO(this->get_logger(), ss.str().c_str());
+}
+
+void arm::movegroup_result_callback(
+    const GoalHandleMoveToPose::WrappedResult &result) {
+  switch (result.code) {
+  case rclcpp_action::ResultCode::SUCCEEDED:
+    break;
+  case rclcpp_action::ResultCode::ABORTED:
+    RCLCPP_ERROR(this->get_logger(), "Goal was aborted");
+    return;
+  case rclcpp_action::ResultCode::CANCELED:
+    RCLCPP_ERROR(this->get_logger(), "Goal was canceled");
+    return;
+  default:
+    RCLCPP_ERROR(this->get_logger(), "Unknown result code");
+    return;
+  }
+  if (result.result->success) {
+    RCLCPP_INFO(this->get_logger(), "Move Completed");
+  }
+
+  rclcpp::shutdown();
+}
+
+void arm::send_goal_pose(int pose_id) {
+  auto goal_msg = MoveToPose::Goal();
+  goal_msg.pose_id = pose_id;
+
+  RCLCPP_INFO(this->get_logger(), "Sending position: %d", pose_id);
+
+  auto send_goal_options = rclcpp_action::Client<MoveToPose>::SendGoalOptions();
+  send_goal_options.goal_response_callback =
+      std::bind(&arm::movegroup_goal_response_callback, this, _1);
+  send_goal_options.feedback_callback =
+      std::bind(&arm::movegroup_feedback_callback, this, _1, _2);
+  send_goal_options.result_callback =
+      std::bind(&arm::movegroup_result_callback, this, _1);
+
+  this->move_group_action_client_->async_send_goal(goal_msg, send_goal_options);
 }
 void arm::declareParameters() {
   this->declare_parameter("arm_manual.throttle.axis", 2);

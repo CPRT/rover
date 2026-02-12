@@ -38,5 +38,7 @@ arm_teleop_node:
       max_roll_speed: 0.1
       max_pitch_speed: 0.1
       max_yaw_speed: 0.1
+    arm_saves:
+      pose1: 0
      
     

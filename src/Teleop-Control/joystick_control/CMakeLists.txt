@@ -74,6 +74,7 @@ ament_target_dependencies(arm
   interfaces
   control_msgs
   std_srvs
+  rclcpp_action
 )
 
 ament_target_dependencies(
