@@ -49,6 +49,9 @@ private:
   int modes = 2;
   int mode = 1;
 
+  int kHomeButton;
+  int kStowButton;
+
   void declareParameters();
   void loadParameters();
 
