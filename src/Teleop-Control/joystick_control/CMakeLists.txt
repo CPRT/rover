@@ -17,6 +17,11 @@ find_package(interfaces REQUIRED)
 find_package(control_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 
+#moveit things
+find_package(moveit_ros_planning_interface REQUIRED)
+find_package(moveit_core REQUIRED)
+find_package(moveit_servo REQUIRED)
+
 set(CMAKE_CXX_STANDARD 14)
 
 include_directories(include)
@@ -31,6 +36,10 @@ add_executable(drive
 
 add_executable(arm
   src/arm.cpp
+)
+
+add_executable(movegroup_controller
+  src/movegroup_controller.cpp
 )
 
 target_compile_definitions(movegroup_action
@@ -63,9 +72,19 @@ ament_target_dependencies(arm
   std_srvs
 )
 
+ament_target_dependencies(
+  movegroup_controller
+  interfaces
+  "moveit_ros_planning_interface"
+  "moveit_core"
+  "rclcpp"
+)
+
+
 install(TARGETS
   drive
   arm
+  movegroup_controller
   DESTINATION lib/${PROJECT_NAME})
 
 # Install header files
