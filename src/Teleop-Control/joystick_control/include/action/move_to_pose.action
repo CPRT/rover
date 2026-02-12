@@ -1,5 +1,0 @@
-int32 poseID
----
-bool success
----
-float32 current_positions[6]

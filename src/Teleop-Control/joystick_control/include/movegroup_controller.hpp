@@ -1,15 +1,16 @@
 #ifndef MOVEGROUP_CONTROLLER_HPP
-#define MOVEGROUP_CONTROLLER_HPP
-#include "<moveit/move_group_interface/move_group_interface.h>"
-#include "action/move_to_pose.action"
+#define MOVEGROUP_CONTROLLER_HPPsu
 #include "geometry_msgs/msg/pose.hpp"
+#include "interfaces/action/move_to_pose.hpp"
+#include "moveit/move_group_interface/move_group_interface.h"
+#include "moveit/robot_state/robot_state.h"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
 class MoveGroupController : public rclcpp::Node {
 public:
-  using MoveToPose = action::MoveToPose;
-  using GoalHandleMoveToPose = rclcpp_action::ClientGoalHandle<MoveToPose>;
+  using MoveToPose = interfaces::action::MoveToPose;
+  using GoalHandleMoveToPose = rclcpp_action::ServerGoalHandle<MoveToPose>;
 
   explicit MoveGroupController(
       const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
@@ -25,8 +26,8 @@ private:
   rclcpp_action::Server<MoveToPose>::SharedPtr action_server_;
   void handle_move(geometry_msgs::msg::Pose target_pose);
   const std::string PLANNING_GROUP = "rover_arm";
-  moveit::planning_interface::MoveGroupInterface move_group_;
-
+  std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_;
   void executeTrajectory(moveit_msgs::msg::RobotTrajectory &traj,
                          moveit::planning_interface::MoveGroupInterfacePtr mgi);
-}
+};
+#endif

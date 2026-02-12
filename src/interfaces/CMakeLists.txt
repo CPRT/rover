@@ -18,6 +18,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(geographic_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(action_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ArucoMarkers.msg"
@@ -31,12 +32,14 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/VideoCapture.srv"
   "srv/GetCameras.srv"
   "srv/Raman.srv"
+  "action/MoveToPose.action"
   DEPENDENCIES 
   builtin_interfaces
   geometry_msgs 
   geographic_msgs # Add packages that above messages depend on
   sensor_msgs
   std_msgs
+  action_msgs
  )
 
 ament_export_dependencies(rosidl_default_runtime)

@@ -50,6 +50,10 @@ ament_target_dependencies(movegroup_action
   rclcpp
   rclcpp_action
   rclcpp_components
+  moveit_ros_planning_interface
+  moveit_core 
+  moveit_servo
+  interfaces
 )
 
 ament_target_dependencies(drive
@@ -78,6 +82,7 @@ ament_target_dependencies(
   "moveit_ros_planning_interface"
   "moveit_core"
   "rclcpp"
+  rclcpp_action
 )
 
 

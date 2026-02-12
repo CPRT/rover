@@ -1,33 +1,48 @@
 #include "movegroup_controller.hpp"
+#include <thread>
+
+// Use placeholders for cleaner bind calls
+using namespace std::placeholders;
 
 MoveGroupController::MoveGroupController(const rclcpp::NodeOptions &options)
     : Node("movegroup_controller", options) {
+
+  // 1. Initialize Action Server
   this->action_server_ = rclcpp_action::create_server<MoveToPose>(
       this, "move_to_pose",
       std::bind(&MoveGroupController::handle_goal, this, _1, _2),
       std::bind(&MoveGroupController::handle_cancel, this, _1),
       std::bind(&MoveGroupController::handle_accepted, this, _1));
 
-  this->move_group_ = moveit::planning_interface::MoveGroupInterface(
-      this, this->PLANNING_GROUP);
+  // 2. Initialize MoveGroupInterface correctly for Humble
+  // Note: PLANNING_GROUP should be a string like "arm"
+  this->move_group_ =
+      std::make_shared<moveit::planning_interface::MoveGroupInterface>(
+          shared_from_this(), "arm_group");
+
   RCLCPP_INFO(this->get_logger(), "MoveGroupController action server started");
 }
 
 rclcpp_action::GoalResponse
-MoveGroupController::handle_goal(const rclcpp::GoalUUID &uuid,
+MoveGroupController::handle_goal(const rclcpp_action::GoalUUID &uuid,
                                  std::shared_ptr<const MoveToPose::Goal> goal) {
-  RCLCPP_INFO(this->get_logger(), "Received goal request");
+  (void)uuid;
+  // Use the lowercase pose_id we defined in the .action file
+  RCLCPP_INFO(this->get_logger(), "Received goal request for ID: %d",
+              goal->pose_id);
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
 rclcpp_action::CancelResponse MoveGroupController::handle_cancel(
     const std::shared_ptr<GoalHandleMoveToPose> goal_handle) {
+  (void)goal_handle;
   RCLCPP_INFO(this->get_logger(), "Received request to cancel goal");
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
 void MoveGroupController::handle_accepted(
     const std::shared_ptr<GoalHandleMoveToPose> goal_handle) {
+  // Use a detached thread to handle long-running execution
   std::thread{std::bind(&MoveGroupController::execute, this, goal_handle)}
       .detach();
 }
@@ -39,10 +54,11 @@ void MoveGroupController::execute(
   auto feedback = std::make_shared<MoveToPose::Feedback>();
   auto result = std::make_shared<MoveToPose::Result>();
 
-  // This isn't real, just a placeholder. You (yes you Seysha) need to implement
-  // the movegroup go to a position
-  handle_move(goal->poseID);
+  // Pass the ID to your movement logic
+  // (Assuming handle_move is updated to take int32_t pose_id)
+  // handle_move(goal->pose_id);
 
+  // Simulation loop for feedback
   for (int i = 0; i <= 100; ++i) {
     if (goal_handle->is_canceling()) {
       result->success = false;
@@ -50,7 +66,10 @@ void MoveGroupController::execute(
       RCLCPP_INFO(this->get_logger(), "Goal canceled");
       return;
     }
-    feedback->progress = i;
+
+    // NOTE: Replace 'progress' with actual fields from your .action file
+    // feedback->current_positions = ...
+
     goal_handle->publish_feedback(feedback);
     rclcpp::sleep_for(std::chrono::milliseconds(50));
   }
@@ -61,18 +80,30 @@ void MoveGroupController::execute(
 }
 
 void MoveGroupController::handle_move(geometry_msgs::msg::Pose target_pose) {
-  // Placeholder for move group logic
-  RCLCPP_INFO(this->get_logger(), "Moving to the desired pose: %f, %f, %f",
+  RCLCPP_INFO(this->get_logger(), "Moving to pose: x:%f, y:%f, z:%f",
               target_pose.position.x, target_pose.position.y,
               target_pose.position.z);
-  move_group_.setPoseTarget(target_pose);
+
+  // Use -> because move_group_ is now a shared_ptr
+  move_group_->setPoseTarget(target_pose);
+
   moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-  bool success = (move_group_.plan(my_plan) ==
-                  moveit::planning_interface::MoveItErrorCode::SUCCESS);
-  if (success) {
+  auto const ok =
+      (move_group_->plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+
+  if (ok) {
     move_group_->execute(my_plan);
-    RCLCPP_INFO(this->get_logger(), "Move executed successfully");
   } else {
-    RCLCPP_ERROR(this->get_logger(), "Failed to plan the move");
+    RCLCPP_ERROR(this->get_logger(), "Planning failed!");
   }
+}
+
+int main(int argc, char **argv) {
+  rclcpp::init(argc, argv);
+
+  auto node = std::make_shared<MoveGroupController>();
+
+  rclcpp::spin(node);
+  rclcpp::shutdown();
+  return 0;
 }

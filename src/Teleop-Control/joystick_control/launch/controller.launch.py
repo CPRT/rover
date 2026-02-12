@@ -28,12 +28,13 @@ def get_joy_id(dev_path, default_id):
 def generate_launch_description():
     pkg_joystick_control = get_package_share_directory("joystick_control")
     parameters_file = os.path.join(pkg_joystick_control, "pxn.yaml")
+    positions_file = os.path.join(pkg_joystick_control, "positions.yaml")
     # Detect IDs dynamically
     # We use 0 and 1 as defaults if the symlinks aren't found
     id_a = get_joy_id("/dev/input/by-id/usb-LiteStar_PXN-2113_Pro-joystick", 0)
     id_b = get_joy_id("/dev/input/by-id/usb-Thrustmaster_T.1600M-joystick", 1)
 
-    return LaunchDescription(
+    return LaunchDescription(s
         [
             Node(
                 package="joy",
@@ -73,5 +74,12 @@ def generate_launch_description():
                 parameters=[parameters_file],
                 remappings=[("/joy", "/drive/joy")],
             ),
+            Node(
+                package="joystick_control",
+                executable="movegroup_controller",
+                name="movegroup_control_action_server",
+                parameters=[positions_file],
+                
+            )
         ]
     )
