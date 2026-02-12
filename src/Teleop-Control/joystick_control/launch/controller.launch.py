@@ -34,7 +34,7 @@ def generate_launch_description():
     id_a = get_joy_id("/dev/input/by-id/usb-LiteStar_PXN-2113_Pro-joystick", 0)
     id_b = get_joy_id("/dev/input/by-id/usb-Thrustmaster_T.1600M-joystick", 1)
 
-    return LaunchDescription(s
+    return LaunchDescription(
         [
             Node(
                 package="joy",

@@ -56,7 +56,10 @@ void MoveGroupController::execute(
 
   // Pass the ID to your movement logic
   // (Assuming handle_move is updated to take int32_t pose_id)
-  // handle_move(goal->pose_id);
+
+  geometry_msgs::msg::Pose
+
+   handle_move(goal->pose_id);
 
   // Simulation loop for feedback
   for (int i = 0; i <= 100; ++i) {
