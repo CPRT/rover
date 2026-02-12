@@ -97,6 +97,19 @@ void arm::movegroup_goal_response_callback(
   }
 }
 
+void arm::request_position(int pose_id) {
+  geometry_msgs::msg::Pose destination;
+  destination.position.x = positions[pose_id][0];
+  destination.position.y = positions[pose_id][1];
+  destination.position.z = positions[pose_id][2];
+  destination.orientation.x = positions[pose_id][3];
+  destination.orientation.y = positions[pose_id][4];
+  destination.orientation.z = positions[pose_id][5];
+  destination.orientation.w = positions[pose_id][6];
+
+  send_goal_pose(destination);
+}
+
 void arm::movegroup_feedback_callback(
     GoalHandleMoveToPose::SharedPtr,
     const std::shared_ptr<const MoveToPose::Feedback> feedback) {
@@ -130,11 +143,11 @@ void arm::movegroup_result_callback(
   rclcpp::shutdown();
 }
 
-void arm::send_goal_pose(int pose_id) {
+void arm::send_goal_pose(geometry_msgs::msg::Pose pose) {
   auto goal_msg = MoveToPose::Goal();
-  goal_msg.pose_id = pose_id;
+  goal_msg.pose_id = pose;
 
-  RCLCPP_INFO(this->get_logger(), "Sending position: %d", pose_id);
+  RCLCPP_INFO(this->get_logger(), "Sending position");
 
   auto send_goal_options = rclcpp_action::Client<MoveToPose>::SendGoalOptions();
   send_goal_options.goal_response_callback =
@@ -177,6 +190,18 @@ void arm::declareParameters() {
   this->declare_parameter("arm_ik.max_yaw_speed", 0.1);
 
   this->declare_parameter("mode_switch_button", 7);
+
+  // If the code is failing to declare parameters correctly, look here first
+
+  auto overrides =
+      this->get_node_parameters_interface()->get_parameter_overrides();
+  for (auto const &[key, value] : overrides) {
+    if (key.find("saves.") == 0) {
+      this->declare_parameter(key, value.get_type());
+      RCLCPP_INFO(this->get_logger(), "Manually declared save: %s",
+                  key.c_str());
+    }
+  }
 }
 void arm::loadParameters() {
   this->get_parameter("arm_manual.throttle.axis", kThrottleAxis);
@@ -209,6 +234,15 @@ void arm::loadParameters() {
   this->get_parameter("arm_ik.max_yaw_speed", kMaxYawSpeed);
 
   this->get_parameter("mode_switch_button", mode_switch_button);
+
+  // If the code is failing to load parameters properly, look here second
+
+  auto result =
+      this->get_node_parameters_interface()->list_parameters({"saves"}, 0);
+  for (auto &name : result.names) {
+    positions.push_back(this->get_parameter(name).as_double_array());
+    RCLCPP_INFO(this->get_logger(), "Found save: %s", name.c_str());
+  }
 }
 
 int main(int argc, char **argv) {

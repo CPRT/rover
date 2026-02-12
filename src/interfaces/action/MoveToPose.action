@@ -1,4 +1,4 @@
-int32 pose_id
+geometry_msgs/Pose pose_id
 ---
 bool success
 ---

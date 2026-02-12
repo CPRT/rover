@@ -6,8 +6,6 @@ using namespace std::placeholders;
 MoveGroupController::MoveGroupController(const rclcpp::NodeOptions &options)
     : Node("movegroup_controller", options) {
 
-  declare_parameters();
-  load_parameters();
   this->action_server_ = rclcpp_action::create_server<MoveToPose>(
       this, "move_to_pose",
       std::bind(&MoveGroupController::handle_goal, this, _1, _2),
@@ -49,17 +47,8 @@ void MoveGroupController::execute(
   const auto goal = goal_handle->get_goal();
   auto feedback = std::make_shared<MoveToPose::Feedback>();
   auto result = std::make_shared<MoveToPose::Result>();
-  int dest_index = goal->pose_id;
 
-  destination.position.x = positions[dest_index][0];
-  destination.position.y = positions[dest_index][1];
-  destination.position.z = positions[dest_index][2];
-  destination.orientation.x = positions[dest_index][3];
-  destination.orientation.y = positions[dest_index][4];
-  destination.orientation.z = positions[dest_index][5];
-  destination.orientation.w = positions[dest_index][6];
-
-  handle_move(destination);
+  handle_move(goal->pose_id);
 
   for (int i = 0; i <= 100; ++i) {
     if (goal_handle->is_canceling()) {
@@ -97,15 +86,6 @@ void MoveGroupController::handle_move(geometry_msgs::msg::Pose target_pose) {
   } else {
     RCLCPP_ERROR(this->get_logger(), "Planning failed!");
   }
-}
-
-void MoveGroupController::declare_parameters() {
-  this->declare_parameter<std::vector<double>>(
-      "pose1", {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0});
-}
-
-void MoveGroupController::load_parameters() {
-  positions.push_back(this->get_parameter("pose1").as_double_array());
 }
 
 int main(int argc, char **argv) {

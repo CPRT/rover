@@ -2,6 +2,7 @@
 #define ARM_HPP
 
 #include "control_msgs/msg/joint_jog.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "interfaces/action/move_to_pose.hpp"
@@ -18,7 +19,7 @@ public:
   arm();
   void arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
 
-  void send_goal_pose(int pose_id);
+  void send_goal_pose(geometry_msgs::msg::Pose pose);
 
 private:
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
@@ -39,6 +40,9 @@ private:
       const std::shared_ptr<const MoveToPose::Feedback> feedback);
   void
   movegroup_result_callback(const GoalHandleMoveToPose::WrappedResult &result);
+  void request_position(int pose_id);
+
+  std::vector<std::vector<double>> positions;
 
   int mode_button_value = 0;
   int mode_button_value_prev = 0;
