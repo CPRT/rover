@@ -6,7 +6,7 @@ from launch_ros.descriptions import ComposableNode
 def generate_launch_description():
     """Generate launch description with multiple components."""
     container = ComposableNodeContainer(
-        name="PhoenixContainerScience",
+        name="PhoenixContainerEEF",
         namespace="",
         package="ros_phoenix",
         executable="phoenix_container",
@@ -15,9 +15,9 @@ def generate_launch_description():
             ComposableNode(
                 package="ros_phoenix",
                 plugin="ros_phoenix::TalonSRX",
-                name="platform",
+                name="end_effector",
                 parameters=[
-                    {"id": 7},  # change to correct talon ID
+                    {"id": 13},
                     {"max_voltage": 24.0},
                     {"brake_mode": True},
                 ],

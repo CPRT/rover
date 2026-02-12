@@ -10,7 +10,7 @@ arm::arm() : Node("arm_node") {
   joint_pub_ = this->create_publisher<control_msgs::msg::JointJog>(
       "/servo_node/delta_joint_cmds", 10);
   eef_pub_ = this->create_publisher<ros_phoenix::msg::MotorControl>(
-      "/platform/set", 10);
+      "/end_effector/set", 10);
   joint_msg_ = control_msgs::msg::JointJog();
   joint_msg_.joint_names = {"Joint_1", "Joint_2", "Joint_3",
                             "Joint_4", "Joint_5", "Joint_6"};
@@ -26,11 +26,11 @@ void arm::arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   ros_phoenix::msg::MotorControl eef_control_msg;
   eef_control_msg.mode = ros_phoenix::msg::MotorControl::PERCENT_OUTPUT;
   // set the value - close is negative
-  double value;
-  if (buttons[kClawOpen] && buttons[kClawClose]) {
+  double value = 0.0;
+  if (buttons[kClawClose]) {
     value = -0.6;
-  } else {
-    value = 0.5 * buttons[kClawOpen] - 0.6 * buttons[kClawClose];
+  } else if (buttons[kClawOpen]) {
+    value = 0.5;
   }
   eef_control_msg.value = value;
   joint_msg_.header = joystickMsg->header;
