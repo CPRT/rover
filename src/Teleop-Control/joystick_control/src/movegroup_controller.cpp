@@ -7,15 +7,13 @@ using namespace std::placeholders;
 MoveGroupController::MoveGroupController(const rclcpp::NodeOptions &options)
     : Node("movegroup_controller", options) {
 
-  // 1. Initialize Action Server
+  declare_parameters();
+  load_parameters();
   this->action_server_ = rclcpp_action::create_server<MoveToPose>(
       this, "move_to_pose",
       std::bind(&MoveGroupController::handle_goal, this, _1, _2),
       std::bind(&MoveGroupController::handle_cancel, this, _1),
       std::bind(&MoveGroupController::handle_accepted, this, _1));
-
-  // 2. Initialize MoveGroupInterface correctly for Humble
-  // Note: PLANNING_GROUP should be a string like "arm"
   this->move_group_ =
       std::make_shared<moveit::planning_interface::MoveGroupInterface>(
           shared_from_this(), "arm_group");
@@ -27,7 +25,6 @@ rclcpp_action::GoalResponse
 MoveGroupController::handle_goal(const rclcpp_action::GoalUUID &uuid,
                                  std::shared_ptr<const MoveToPose::Goal> goal) {
   (void)uuid;
-  // Use the lowercase pose_id we defined in the .action file
   RCLCPP_INFO(this->get_logger(), "Received goal request for ID: %d",
               goal->pose_id);
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
@@ -53,15 +50,18 @@ void MoveGroupController::execute(
   const auto goal = goal_handle->get_goal();
   auto feedback = std::make_shared<MoveToPose::Feedback>();
   auto result = std::make_shared<MoveToPose::Result>();
+  int dest_index = goal->pose_id;
 
-  // Pass the ID to your movement logic
-  // (Assuming handle_move is updated to take int32_t pose_id)
+  destination.position.x = positions[dest_index][0];
+  destination.position.y = positions[dest_index][1];
+  destination.position.z = positions[dest_index][2];
+  destination.orientation.x = positions[dest_index][3];
+  destination.orientation.y = positions[dest_index][4];
+  destination.orientation.z = positions[dest_index][5];
+  destination.orientation.w = positions[dest_index][6];
 
-  geometry_msgs::msg::Pose
+  handle_move(destination);
 
-   handle_move(goal->pose_id);
-
-  // Simulation loop for feedback
   for (int i = 0; i <= 100; ++i) {
     if (goal_handle->is_canceling()) {
       result->success = false;
@@ -70,8 +70,8 @@ void MoveGroupController::execute(
       return;
     }
 
-    // NOTE: Replace 'progress' with actual fields from your .action file
-    // feedback->current_positions = ...
+    // NOTE: Fix this feedback
+    // feedback->current_positions =
 
     goal_handle->publish_feedback(feedback);
     rclcpp::sleep_for(std::chrono::milliseconds(50));
@@ -101,12 +101,24 @@ void MoveGroupController::handle_move(geometry_msgs::msg::Pose target_pose) {
   }
 }
 
+void MoveGroupController::declare_parameters() {
+  this->declare_parameter<std::vector<double>>(
+      "pose1", {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0});
+}
+
+void MoveGroupController::load_parameters() {
+  positions.push_back(this->get_parameter("pose1").as_double_array());
+}
+
 int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
-
   auto node = std::make_shared<MoveGroupController>();
 
-  rclcpp::spin(node);
+  // Use this instead of rclcpp::spin(node)
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(node);
+  executor.spin();
+
   rclcpp::shutdown();
   return 0;
 }

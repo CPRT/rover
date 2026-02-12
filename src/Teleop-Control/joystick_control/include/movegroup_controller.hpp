@@ -30,5 +30,10 @@ private:
   void executeTrajectory(moveit_msgs::msg::RobotTrajectory &traj,
                          moveit::planning_interface::MoveGroupInterfacePtr mgi);
   geometry_msgs::msg::Pose destination;
+
+  std::vector<std::vector<double>> positions;
+
+  void declare_parameters();
+  void load_parameters();
 };
 #endif

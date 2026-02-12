@@ -79,7 +79,6 @@ def generate_launch_description():
                 executable="movegroup_controller",
                 name="movegroup_control_action_server",
                 parameters=[positions_file],
-                
-            )
+            ),
         ]
     )
