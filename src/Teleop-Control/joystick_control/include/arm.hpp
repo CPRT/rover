@@ -5,6 +5,8 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "interfaces/srv/move_servo.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "ros_phoenix/msg/motor_control.hpp"
+#include "ros_phoenix/msg/motor_status.hpp"
 #include "sensor_msgs/msg/joy.hpp"
 #include "std_msgs/msg/float32.hpp"
 
@@ -16,6 +18,7 @@ public:
 private:
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
   rclcpp::Publisher<control_msgs::msg::JointJog>::SharedPtr joint_pub_;
+  rclcpp::Publisher<ros_phoenix::msg::MotorControl>::SharedPtr eef_pub_;
   control_msgs::msg::JointJog joint_msg_;
 
   void declareParameters();

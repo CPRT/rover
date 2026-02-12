@@ -9,10 +9,11 @@ arm::arm() : Node("arm_node") {
       "/joy", 10, std::bind(&arm::arm_control, this, std::placeholders::_1));
   joint_pub_ = this->create_publisher<control_msgs::msg::JointJog>(
       "/servo_node/delta_joint_cmds", 10);
+  eef_pub_ = this->create_publisher<ros_phoenix::msg::MotorControl>(
+      "/platform/set", 10);
   joint_msg_ = control_msgs::msg::JointJog();
   joint_msg_.joint_names = {"Joint_1", "Joint_2", "Joint_3",
-                            "Joint_4", "Joint_5", "Joint_6",
-                            "Joint_7"};
+                            "Joint_4", "Joint_5", "Joint_6"};
 
   RCLCPP_INFO(this->get_logger(), "Arm controller started");
 }
@@ -22,20 +23,30 @@ void arm::arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
 
   auto axes = joystickMsg->axes;
   auto buttons = joystickMsg->buttons;
-
+  ros_phoenix::msg::MotorControl eef_control_msg;
+  eef_control_msg.mode = ros_phoenix::msg::MotorControl::PERCENT_OUTPUT;
+  // set the value - close is negative
+  double value;
+  if (buttons[kClawOpen] && buttons[kClawClose]) {
+    value = -0.6;
+  } else {
+    value = 0.5 * buttons[kClawOpen] - 0.6 * buttons[kClawClose];
+  }
+  eef_control_msg.value = value;
   joint_msg_.header = joystickMsg->header;
 
-
-  joint_msg_.velocities = {axes[kBaseAxis] * kMaxBaseSpeed,
-                           axes[kAct1Axis] * kMaxAct1Speed,
-                           axes[kAct2Axis] * kMaxAct2Speed,
-                           axes[kWristRoll] * kMaxWristRollSpeed,
-                           axes[kElbowYaw] * kMaxElbowYawSpeed,
-                           buttons[kWristYaw_positive] -
-                               buttons[kWristYaw_negative] * kMaxWristSpeed *
-                                   axes[kThrottleAxis],
-                           buttons[kClawOpen] - buttons[kClawClose]};
-
+  joint_msg_.velocities = {
+      axes[kBaseAxis] * kMaxBaseSpeed,
+      axes[kAct1Axis] * kMaxAct1Speed,
+      axes[kAct2Axis] * kMaxAct2Speed,
+      axes[kWristRoll] * kMaxWristRollSpeed,
+      axes[kElbowYaw] * kMaxElbowYawSpeed,
+      buttons[kWristYaw_positive] -
+          buttons[kWristYaw_negative] * kMaxWristSpeed * axes[kThrottleAxis],
+  }; // need to adjust claw speed
+  RCLCPP_INFO(this->get_logger(), "mode: %d, value: %f", eef_control_msg.mode,
+              eef_control_msg.value);
+  eef_pub_->publish(eef_control_msg);
   joint_pub_->publish(joint_msg_);
 }
 
@@ -56,7 +67,6 @@ void arm::declareParameters() {
   this->declare_parameter("max_elbow_yaw_speed", 1.0);
   this->declare_parameter("claw_open", 1);
   this->declare_parameter("claw_close", 0);
-
 }
 void arm::loadParameters() {
   this->get_parameter("throttle.axis", kThrottleAxis);
