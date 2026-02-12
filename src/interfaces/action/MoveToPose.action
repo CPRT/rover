@@ -2,4 +2,4 @@ int32 pose_id
 ---
 bool success
 ---
-float32[6] current_positions
+float64[] current_position

@@ -69,9 +69,9 @@ void MoveGroupController::execute(
       RCLCPP_INFO(this->get_logger(), "Goal canceled");
       return;
     }
-
     // NOTE: Fix this feedback
-    // feedback->current_positions =
+    auto current_joints = move_group_->getCurrentJointValues();
+    feedback->current_position = current_joints;
 
     goal_handle->publish_feedback(feedback);
     rclcpp::sleep_for(std::chrono::milliseconds(50));
@@ -87,7 +87,6 @@ void MoveGroupController::handle_move(geometry_msgs::msg::Pose target_pose) {
               target_pose.position.x, target_pose.position.y,
               target_pose.position.z);
 
-  // Use -> because move_group_ is now a shared_ptr
   move_group_->setPoseTarget(target_pose);
 
   moveit::planning_interface::MoveGroupInterface::Plan my_plan;
@@ -114,7 +113,6 @@ int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<MoveGroupController>();
 
-  // Use this instead of rclcpp::spin(node)
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(node);
   executor.spin();
