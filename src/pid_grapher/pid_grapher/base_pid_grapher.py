@@ -1,4 +1,5 @@
 import math
+from datetime import datetime
 from .joint_data import JointData
 import rclpy
 from rclpy.node import Node
@@ -21,7 +22,7 @@ class BasePIDGrapher(Node):
         period = 1.0 / rate
         for j in self.Joints.values():
             j.plotGraph()
-        self.fig.canvas.draw_idle()  # schedules one redraw for all 6 subplots
+        self.fig.canvas.draw_idle()
         plt.pause(0.000000001)
 
     def __init__(self):
@@ -34,7 +35,7 @@ class BasePIDGrapher(Node):
         )
         self.subscription_targets = self.create_subscription(
             JointTrajectory,
-            "/rover_arm_controller/joint_trajectory",
+            "/arm_controller/joint_trajectory",
             self.trajectory_callback,
             10,
         )
@@ -77,7 +78,7 @@ class BasePIDGrapher(Node):
             if msg.name[i] in self.Joints:
                 Joint = self.Joints[msg.name[i]]
                 Joint.time = x
-                Joint.velocity = msg.velocity[i]
+                Joint.state = msg.position[i]
 
     def _show_plot(self):
         plt.show(block=True)
@@ -87,29 +88,26 @@ class BasePIDGrapher(Node):
             point = msg.points[-1]  # Get the last point in the trajectory
             for i in range(0, len(msg.joint_names)):
                 jointName = msg.joint_names[i]
-                self.Joints[jointName].targetVelocity = point.velocities[i]
+                if jointName in self.Joints:
+                    self.Joints[jointName].target = point.positions[i]
+
 
     def on_key(self, event):
-        if event.key == "s":
-            self.save()
-            print("Saved plot")
+        if event.key == "p":
+            script_dir = os.path.join(os.getcwd(), "pid_grapher")
+            plots_dir = os.path.join(script_dir, "plots")
+            os.makedirs(plots_dir, exist_ok=True)
 
-    def on_key(self, event):
-        if event.key == "r":
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            save_path = os.path.join(plots_dir, f"joint_plot_{timestamp}.png")
+
+            plt.savefig(save_path, bbox_inches="tight", dpi=300)
+            print(f"Plot saved to {save_path}")
+        elif event.key == "r":
             for j in self.Joints.values():
                 j.reset()
             self.beginning = self.get_clock().now()
             print("Reset data")
-
-    def save(self):
-        # OR force the src directory like this:
-        script_dir = os.path.join(os.getcwd(), "pid_grapher")
-        plots_dir = os.path.join(script_dir, "plots")
-        os.makedirs(plots_dir, exist_ok=True)
-
-        save_path = os.path.join(plots_dir, "joint_plot.png")
-        plt.savefig(save_path, bbox_inches="tight", dpi=300)
-        print(f"Plot saved to {save_path}")
 
 
 def main(args=None):
