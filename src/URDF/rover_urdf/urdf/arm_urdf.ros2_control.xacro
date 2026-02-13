@@ -75,23 +75,6 @@
         <state_interface name="position"/>
         <state_interface name="velocity"/>
       </joint>
-      <joint name="Joint_6">
-        <param name="type">TalonSRX</param>
-        <param name="can_id">20</param>
-        <param name="kP">0.1</param>
-        <param name="kI">0.0</param>
-        <param name="kD">0.0</param>
-        <param name="kF">0.0</param>
-        <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
-        <param name="sensor_ticks">4096</param> <!-- TODO: this number is close but not quite -->
-        <param name="sensor_offset">0.0</param>
-        <param name="crossover">true</param> <!-- or "continuous" -->
-        <param name="invert">false</param>
-        <param name="invert_sensor">true</param>
-        <command_interface name="position"/>
-        <state_interface name="position"/>
-        <state_interface name="velocity"/>
-      </joint>
     </ros2_control>
     <ros2_control name="${name}_odrive" type="system">
       <hardware>
@@ -103,6 +86,29 @@
       <joint name="Joint_2">
         <param name="node_id">10</param>
         <param name="multiplier">-1.0</param>
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+    </ros2_control>
+    <ros2_control name="${name}" type="system">
+      <hardware>
+        <!-- By default, set up controllers for simulation. This won't work on real hardware -->
+        <plugin>mock_components/GenericSystem</plugin>
+      </hardware>
+      <joint name="Joint_6">
+        <param name="type">TalonSRX</param>
+        <param name="can_id">20</param>
+        <param name="kP">5.0</param>
+        <param name="kI">0.0</param>
+        <param name="kD">0.0</param>
+        <param name="kF">0.0</param>
+        <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
+        <param name="sensor_ticks">4096</param> <!-- TODO: this number is close but not quite -->
+        <param name="sensor_offset">0.0</param>
+        <param name="crossover">true</param> <!-- or "continuous" -->
+        <param name="invert">false</param>
+        <param name="invert_sensor">true</param>
         <command_interface name="position"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>
