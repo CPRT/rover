@@ -133,6 +133,7 @@ docker buildx build \
   --build-arg BUILD_FLAGS="--parallel-workers $BUILD_WORKERS\
               --cmake-args \
                  $TOOLCHAIN \
-                -DCMAKE_BUILD_TYPE=$BUILD_TYPE" \
+                -DCMAKE_BUILD_TYPE=$BUILD_TYPE\
+                -DBUILD_TESTING=OFF" \
   $MODE \
   .

@@ -1,4 +1,5 @@
 #include "arm.hpp"
+#include "std_srvs/srv/trigger.hpp"
 
 arm::arm() : Node("arm_node") {
 
@@ -10,10 +11,52 @@ arm::arm() : Node("arm_node") {
       "/joy", 10, std::bind(&arm::arm_control, this, std::placeholders::_1));
   joint_pub_ = this->create_publisher<control_msgs::msg::JointJog>(
       "/servo_node/delta_joint_cmds", 10);
-  ik_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
+  ik_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>(
       "/servo_node/delta_twist_cmds", 10);
+  eef_pub_ = this->create_publisher<ros_phoenix::msg::MotorControl>(
+      "/end_effector/set", 10);
 
   RCLCPP_INFO(this->get_logger(), "Arm controller started");
+}
+void arm::endeffector_control(
+    std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
+  auto &buttons = joystickMsg->buttons;
+  auto eef_control_msg = ros_phoenix::msg::MotorControl();
+  eef_control_msg.mode = ros_phoenix::msg::MotorControl::PERCENT_OUTPUT;
+  // set the value - close is negative
+  double value = 0.0;
+  if (buttons[kClawClose]) {
+    value = -0.6;
+  } else if (buttons[kClawOpen]) {
+    value = 0.5;
+  }
+  eef_control_msg.value = value;
+  eef_pub_->publish(eef_control_msg);
+}
+
+bool arm::moveit_servo_state(bool enable) {
+  constexpr int attempts = 3;
+  std::string service_name =
+      enable ? "/servo_node/start_servo" : "/servo_node/stop_servo";
+  if (enable) {
+    RCLCPP_INFO(this->get_logger(), "Enabling MoveIt Servo");
+  } else {
+    RCLCPP_INFO(this->get_logger(), "Disabling MoveIt Servo");
+  }
+  auto moveit_client =
+      this->create_client<std_srvs::srv::Trigger>(service_name.c_str());
+  int i = 0;
+  while (!moveit_client->wait_for_service(std::chrono::milliseconds(500))) {
+    RCLCPP_WARN(this->get_logger(), "Service not available, Waiting...");
+    if (++i >= attempts) {
+      RCLCPP_ERROR(this->get_logger(),
+                   "Service not available after %d attempts. Giving up", i);
+      return false;
+    }
+  }
+  auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
+  moveit_client->async_send_request(request);
+  return true;
 }
 
 void arm::arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
@@ -29,15 +72,18 @@ void arm::arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
     return;
   }
 
-  if (buttons[kDisableButton]) {
+  if (buttons[kDisableButton] && current_state_ != NONE) {
     current_state_ = NONE;
+    moveit_servo_state(false);
     RCLCPP_INFO(this->get_logger(), "Arm disabled");
     return;
-  } else if (buttons[kIkButton]) {
+  } else if (buttons[kIkButton] && current_state_ != IK) {
     current_state_ = IK;
+    moveit_servo_state(true);
     RCLCPP_INFO(this->get_logger(), "Switched to IK control");
-  } else if (buttons[kManualButton]) {
+  } else if (buttons[kManualButton] && current_state_ != MANUAL) {
     current_state_ = MANUAL;
+    moveit_servo_state(true);
     RCLCPP_INFO(this->get_logger(), "Switched to manual control");
   }
 
@@ -68,27 +114,29 @@ void arm::manual_arm_control(
                           axes[kJoint2Axis],
                           axes[kJoint3Axis],
                           axes[kJoint4Axis],
-                          buttons[kWristYaw_positive] -
-                              buttons[kWristYaw_negative],
+                          static_cast<double>(buttons[kWristYaw_positive] -
+                                              buttons[kWristYaw_negative]),
                           axes[kJoint6Axis]};
 
   joint_pub_->publish(joint_msg);
 }
 
 void arm::ik_arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
-  auto twist_msg = geometry_msgs::msg::Twist();
+  auto twist_msg = geometry_msgs::msg::TwistStamped();
+  twist_msg.header = joystickMsg->header;
 
   auto &axes = joystickMsg->axes;
   auto &buttons = joystickMsg->buttons;
 
-  twist_msg.linear.x = axes[kJoint2Axis];
-  twist_msg.linear.y = axes[kJoint1Axis];
-  twist_msg.linear.z = axes[kJoint3Axis];
-  twist_msg.angular.x = axes[kJoint4Axis];
-  twist_msg.angular.y = axes[kJoint6Axis];
-  twist_msg.angular.z = (static_cast<double>(buttons[kWristYaw_positive] -
-                                             buttons[kWristYaw_negative])) *
-                        axes[kThrottleAxis];
+  twist_msg.twist.linear.x = axes[kJoint2Axis];
+  twist_msg.twist.linear.y = axes[kJoint1Axis];
+  twist_msg.twist.linear.z = axes[kJoint3Axis];
+  twist_msg.twist.angular.x = axes[kJoint4Axis];
+  twist_msg.twist.angular.y = axes[kJoint6Axis];
+  twist_msg.twist.angular.z =
+      (static_cast<double>(buttons[kWristYaw_positive] -
+                           buttons[kWristYaw_negative])) *
+      axes[kThrottleAxis];
 
   ik_pub_->publish(twist_msg);
 }
