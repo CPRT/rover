@@ -28,13 +28,13 @@ private:
   bool initialized_ = false;
 
   int kThrottleAxis;
-  int kBaseAxis;
-  int kWristRoll;
+  int kJoint1Axis;
+  int kJoint2Axis;
+  int kJoint3Axis;
+  int kJoint4Axis;
+  int kJoint6Axis;
   int kWristYaw_positive;
   int kWristYaw_negative;
-  int kAct1Axis;
-  int kAct2Axis;
-  int kElbowYaw;
   int kDisableButton;
   int kIkButton;
   int kManualButton;

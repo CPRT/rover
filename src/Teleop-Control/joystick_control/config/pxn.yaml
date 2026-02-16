@@ -5,14 +5,15 @@ drive_teleop_node:
     yaw_axis: 2
     max_linear: 2.0
     max_angular: 1.0
+
 arm_teleop_node:
   ros__parameters:
     throttle:
       axis: 2
-    base_axis: 0
-    wrist_roll: 4
+    joint_1_axis: 0
+    joint_2_axis: 1
+    joint_3_axis: 5
+    joint_4_axis: 3
     wrist_yaw_positive: 3
     wrist_yaw_negative: 5
-    act1_axis: 1
-    act2_axis: 5
-    elbow_yaw: 3
+    joint_6_axis: 4
