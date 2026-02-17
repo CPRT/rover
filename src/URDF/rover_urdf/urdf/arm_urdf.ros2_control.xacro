@@ -9,14 +9,14 @@
       </hardware>
       <joint name="Joint_1">
         <param name="type">TalonSRX</param>
-        <param name="can_id">9</param>
+        <param name="can_id">14</param>
         <param name="kP">0.1</param>
         <param name="kI">0.0</param>
         <param name="kD">0.0</param>
         <param name="kF">0.0</param>
         <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">3.14</param>
+        <param name="sensor_offset">4.14</param>
         <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">true</param>
         <param name="invert_sensor">true</param>
@@ -33,7 +33,7 @@
         <param name="kF">0.0</param>
         <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">-1.25</param>
+        <param name="sensor_offset">0.0</param> <!-- -1.25 -->
         <param name="crossover">false</param> <!-- or "continuous" -->
         <param name="invert">false</param>
         <param name="invert_sensor">false</param>
@@ -67,7 +67,7 @@
         <param name="kF">0.0</param>
         <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">5.25</param>
+        <param name="sensor_offset">4.0</param>
         <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">false</param>
         <param name="invert_sensor">false</param>
@@ -77,15 +77,15 @@
       </joint>
       <joint name="Joint_6">
         <param name="type">TalonSRX</param>
-        <param name="can_id">20</param>
+        <param name="can_id">15</param>
         <param name="kP">1.0</param>
         <param name="kI">0.0</param>
         <param name="kD">0.0</param>
         <param name="kF">0.0</param>
         <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
-        <param name="sensor_ticks">4096</param>
+        <param name="sensor_ticks">1000</param>
         <param name="sensor_offset">0.0</param>
-        <param name="crossover">true</param> <!-- or "continuous" -->
+        <param name="continuous">true</param> <!-- or "crossover" -->
         <param name="invert">false</param>
         <param name="invert_sensor">false</param>
         <command_interface name="position"/>

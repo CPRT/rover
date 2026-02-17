@@ -9,7 +9,8 @@ TalonSRXWrapper::TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
       control_type_(ctre::phoenix::motorcontrol::ControlMode::Disabled),
       sensor_type_(SensorType::RELATIVE), sensor_ticks_(4096),
       sensor_offset_(0.0), crossover_mode_(false), inverted_(false),
-      invert_sensor_(false), debug_pub_(nullptr), talon_controller_(nullptr) {
+      invert_sensor_(false), open_loop_(false), debug_pub_(nullptr),
+      talon_controller_(nullptr) {
   std::string sensor_type_str;
   std::string can_interface = "can0";
 
@@ -120,6 +121,9 @@ void TalonSRXWrapper::read() {
   position_ = (talon_controller_->GetSelectedSensorPosition() * (2.0 * M_PI) /
                sensor_ticks_) -
               sensor_offset_;
+  if (open_loop_ && control_type_ == motors::ControlMode::Position) {
+    position_ = command_;
+  }
   double raw_velocity = talon_controller_->GetSelectedSensorVelocity();
   // Talons use d / 100ms as vel
   velocity_ = raw_velocity * 10 * (2.0 * M_PI) / sensor_ticks_;
@@ -163,6 +167,8 @@ void TalonSRXWrapper::configure() {
   talon_controller_->SetInverted(inverted_);
   talon_controller_->ConfigPulseWidthPeriod_FilterWindowSz(1);
   talon_controller_->SelectProfileSlot(0, 0);
+  talon_controller_->SetStatusFramePeriod(
+      StatusFrameEnhanced::Status_2_Feedback0, 5);
   read();
   if (control_type_ == motors::ControlMode::Position) {
     command_ = position_;

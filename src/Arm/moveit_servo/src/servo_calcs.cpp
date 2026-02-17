@@ -640,8 +640,8 @@ bool ServoCalcs::cartesianServoCalcs(
     kinematics::KinematicsQueryOptions opts;
     opts.return_approximate_solution = true;
     if (ik_solver_->searchPositionIK(next_pose, internal_joint_state_.position,
-                                     parameters_->publish_period, solution, err,
-                                     opts)) {
+                                     parameters_->publish_period / 2.0,
+                                     solution, err, opts)) {
       // find the difference in joint positions that will get us to the desired
       // pose
       for (size_t i = 0; i < num_joints_; ++i) {
