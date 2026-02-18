@@ -49,6 +49,26 @@ global_ekf:
     pose0_rejection_threshold: 50.0  # High threshold to accept bootstrap poses with high covariance
     # pose0_pose_rejection_threshold: 5.0  # Old parameter name (deprecated)
 
+    pose1: /zed/zed_node/pose_with_covariance
+    pose1_config: [
+        # position
+        true, true, true,
+        # orientation
+        false, false, false,
+        # lineal vel 
+        false, false, false,
+        # angular vel
+        false, false, false,
+        # lineal acc
+        false, false, false,
+      ]
+    # pose1_queue_size: 2
+    # pose1_nodelay: false
+    pose1_differential: true
+    pose1_relative: false
+    pose1_pose_rejection_threshold: 5.0 # Mahalanobis Distance
+    # pose1_twist_rejection_threshold: 1.0
+
     odom0: /chassis_controller/wheel_odom
     odom0_config: [
         # position
