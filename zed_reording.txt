@@ -1,0 +1,7 @@
+ros2 service call /zed/zed_node/start_svo_rec zed_msgs/srv/StartSvoRec "{
+    svo_filename: '/usr/local/zed/recordings/Feb17_2026_MissionControl_FromRos_6pm.svo2', 
+    compression_mode: 2, 
+    bitrate: 0, 
+    target_framerate: 0, 
+    input_transcode: false
+}"

@@ -249,7 +249,7 @@ controller_server:
       # Regulated Pure Pursuit Parameters (Driving Logic)
       transform_tolerance: 1.0
 
-      desired_linear_vel: 0.2 # Increase to 1.0 for outdoor swerve agility
+      desired_linear_vel: 0.35 # Increase to 1.0 for outdoor swerve agility
       max_robot_pose_search_dist: 10.0
 
       lookahead_dist: 1.2
@@ -328,8 +328,8 @@ velocity_smoother:
     # max_decel: [-0.5, 0.0, -1.5]
     # INDOOR TESTING 
     # Safe limits for initial testing in confined spaces
-    max_velocity: [0.3, 0.0, 0.8]      # [x, y, theta] in m/s, m/s, rad/s
-    min_velocity: [-0.3, 0.0, -0.8]
-    max_accel: [0.2, 0.0, 0.5]         # [x, y, theta] in m/s², m/s², rad/s²
-    max_decel: [-0.2, 0.0, -0.5]
+    max_velocity: [0.6, 0.0, 0.4]      # [x, y, theta] in m/s, m/s, rad/s
+    min_velocity: [-0.6, 0.0, -0.4]
+    max_accel: [0.3, 0.0, 0.5]         # [x, y, theta] in m/s², m/s², rad/s²
+    max_decel: [-0.3, 0.0, -0.5]
     
