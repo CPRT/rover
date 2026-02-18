@@ -76,7 +76,7 @@ def main(args=None):
     rclpy.init(args=args)
 
     # Set the frequency (in Hz) at which to republish the odometry
-    frequency = 10  # Change to your desired frequency (Hz)
+    frequency = 2  # Change to your desired frequency (Hz)
 
     # Create the node and start spinning
     node = OdometryRepublisher(frequency)
