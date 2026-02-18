@@ -4,7 +4,7 @@ global_ekf:
     # sensor_timeout: 20.0
     use_sim_time: false
 
-    two_d_mode: true
+    two_d_mode: false
 
     # transform_time_offset: 0.25
     # transform_timeout: 3.0
