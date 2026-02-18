@@ -118,6 +118,12 @@ void GridmapLayer::incomingMap(
 void GridmapLayer::updateBounds(double robot_x, double robot_y,
                                 double robot_yaw, double *min_x, double *min_y,
                                 double *max_x, double *max_y) {
+  if (!map_received_) {
+    map_received_in_update_bounds_ = false;
+    return;
+  }
+  map_received_in_update_bounds_ = true;
+
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
 
   if (layered_costmap_->isRolling()) {
@@ -170,23 +176,71 @@ bool GridmapLayer::getTransform(
 void GridmapLayer::updateCosts(nav2_costmap_2d::Costmap2D &master_grid,
                                int min_i, int min_j, int max_i, int max_j) {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  if (!enabled_ || !has_updated_data_) {
+  if (!enabled_) {
     return;
   }
-  geometry_msgs::msg::TransformStamped transform;
-  if (!getTransform(transform)) {
+
+  // Don't write to master costmap until we've received at least one map
+  if (!map_received_in_update_bounds_) {
+    static int count = 0;
+    // throttle warning down to only 1/10 message rate
+    if (++count == 10) {
+      RCLCPP_WARN(logger_,
+                  "Can't update gridmap costmap layer, no map received");
+      count = 0;
+    }
     return;
   }
-  unsigned char *master_array = master_grid.getCharMap();
 
-  has_updated_data_ = false;
-  geometry_msgs::msg::PointStamped grid_map_point, costmap_point;
+  // FIX: For rolling costmaps, we MUST re-project every cycle to prevent
+  // flickering For static costmaps, only update when new data arrives
+  if (!has_updated_data_ && !layered_costmap_->isRolling()) {
+    // No new data and not rolling - skip the update loop but still merge
+    if (use_maximum_) {
+      updateWithMax(master_grid, min_i, min_j, max_i, max_j);
+    } else {
+      updateWithTrueOverwrite(master_grid, min_i, min_j, max_i, max_j);
+    }
+    current_ = true;
+    return;
+  }
 
-  // Iterate through the grid map and copy the values to the costmap
+  geometry_msgs::msg::TransformStamped transform_stamped;
+  if (!getTransform(transform_stamped)) {
+    return;
+  }
+
+  // Check if the required layer exists in the grid map to avoid exceptions
+  if (!gridmap_in_.exists(layer_name_)) {
+    RCLCPP_ERROR(logger_,
+                 "GridMap layer '%s' does not exist in received grid map. "
+                 "Available layers: [%s]. Check your configuration.",
+                 layer_name_.c_str(),
+                 [&]() {
+                   std::string layers;
+                   for (const auto &layer : gridmap_in_.getLayers()) {
+                     if (!layers.empty())
+                       layers += ", ";
+                     layers += layer;
+                   }
+                   return layers;
+                 }()
+                     .c_str());
+    return;
+  }
+
+  // OPTIMIZATION: Convert transform once before the loop to avoid repeated
+  // conversions
+  tf2::Transform tf2_transform;
+  tf2::fromMsg(transform_stamped.transform, tf2_transform);
+
+  // Iterate through the grid map and copy values to the internal costmap
   for (grid_map::GridMapIterator it(gridmap_in_); !it.isPastEnd(); ++it) {
     const grid_map::Index index(*it);
     const float value = gridmap_in_.at(layer_name_, index);
     const auto cost = interpretValue(value);
+
+    // PRESERVE DATA: Skip unknown values to prevent overwriting valid obstacles
     if (cost == NO_INFORMATION) {
       continue;
     }
@@ -195,24 +249,29 @@ void GridmapLayer::updateCosts(nav2_costmap_2d::Costmap2D &master_grid,
     grid_map::Position position;
     gridmap_in_.getPosition(index, position);
 
-    // Transform the position to the costmap frame
-    grid_map_point.point.x = position.x();
-    grid_map_point.point.y = position.y();
-    grid_map_point.point.z = 0.0;
-    tf2::doTransform(grid_map_point, costmap_point, transform);
+    // OPTIMIZATION: Use direct tf2::Transform multiplication instead of
+    // doTransform
+    tf2::Vector3 grid_map_point(position.x(), position.y(), 0.0);
+    tf2::Vector3 costmap_point = tf2_transform * grid_map_point;
 
-    // Convert world coordinates to costmap coordinates
+    // Convert world coordinates to costmap cell coordinates
     unsigned int mx, my;
     const bool isValid =
-        worldToMap(costmap_point.point.x, costmap_point.point.y, mx, my);
+        worldToMap(costmap_point.x(), costmap_point.y(), mx, my);
     if (isValid) {
-      auto &index = master_array[getIndex(mx, my)];
-      if (use_maximum_) {
-        index = std::max(index, cost);
-      } else {
-        index = cost;
-      }
+      // Write to the layer's own internal buffer (not the master)
+      setCost(mx, my, cost);
     }
+  }
+
+  // Mark as processed after successful copy
+  has_updated_data_ = false;
+
+  // Always merge the internal buffer into the master costmap
+  if (use_maximum_) {
+    updateWithMax(master_grid, min_i, min_j, max_i, max_j);
+  } else {
+    updateWithTrueOverwrite(master_grid, min_i, min_j, max_i, max_j);
   }
   current_ = true;
 }
