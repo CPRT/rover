@@ -40,8 +40,11 @@ bool DetectNode::create_pipeline() {
             << " ! queue ! nvdsosd ! nvvidconv ! ";
     break;
   case DetectionType::MALLET:
-    RCLCPP_ERROR(this->get_logger(), "Mallet detection not implemented yet.");
-    desc_ss << "identity ! ";
+    desc_ss << "nvvidconv ! queue ! mux.sink_0 nvstreammux name=mux "
+               "batch-size=1 width=1920 height=1080 live-source=1 ! queue ! "
+               "nvinfer config-file-path="
+            << this->get_parameter("mallet_config").as_string()
+            << " ! queue ! nvdsosd ! nvvidconv ! ";
     break;
   case DetectionType::ROCKPICK:
     RCLCPP_ERROR(this->get_logger(), "Rockpick detection not implemented yet.");

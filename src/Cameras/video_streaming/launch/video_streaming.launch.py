@@ -23,7 +23,12 @@ def generate_launch_description():
         plugin="DetectNode",
         name="detect_node",
         namespace="",
-        parameters=[{"bottle_config": config_dir + "/bottle/bottle.txt"}],
+        parameters=[
+            {
+                "bottle_config": config_dir + "/bottle/bottle.txt",
+                "mallet_config": config_dir + "/mallet/mallet.txt",
+            }
+        ],
     )
 
     streaming_node = ComposableNode(

@@ -11,7 +11,7 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, qos_profile_sensor_data
 
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Int8, Int32MultiArray
+from std_msgs.msg import Int8, Int32
 from std_srvs.srv import Trigger
 
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
@@ -42,7 +42,7 @@ class IncrementalGpsCommander(Node):
         self.mission_state = MissionState.DO_NOTHING
 
         # --- Parameters ---
-        self.declare_parameter("aruco_topic", "/aruco_detections")
+        self.declare_parameter("aruco_topic", "/marker_detected")
         self.aruco_topic = (
             self.get_parameter("aruco_topic").get_parameter_value().string_value
         )
@@ -148,7 +148,7 @@ class IncrementalGpsCommander(Node):
         # Stores (timestamp, detected_id) tuples for all detected tags within the defined window.
         self.aruco_detections_buffer = []
         self.aruco_subscription = self.create_subscription(
-            Int32MultiArray,
+            Int32,
             self.aruco_topic,
             self.aruco_callback,
             qos_profile_sensor_data,
@@ -191,7 +191,7 @@ class IncrementalGpsCommander(Node):
         """Callback to update the current robot pose from odometry."""
         self.current_robot_pose = msg.pose
 
-    def aruco_callback(self, msg: Int32MultiArray):
+    def aruco_callback(self, msg: Int32):
         """
         Callback for Aruco tag detections.
         Tracks the frequency of all detected tags within a configurable sliding window.
@@ -212,12 +212,12 @@ class IncrementalGpsCommander(Node):
             if (current_time - ts) <= self.aruco_detection_window_sec
         ]
 
-        # Add new detections from the current message to the buffer
-        for detected_id in msg.data:
-            self.aruco_detections_buffer.append((current_time, detected_id))
-            self.get_logger().debug(
-                f"Aruco ID {detected_id} detected. Buffer size: {len(self.aruco_detections_buffer)}"
-            )
+        # Add new detection from the current message to the buffer (single marker ID)
+        detected_id = msg.data
+        self.aruco_detections_buffer.append((current_time, detected_id))
+        self.get_logger().debug(
+            f"Aruco ID {detected_id} detected. Buffer size: {len(self.aruco_detections_buffer)}"
+        )
 
         # Count occurrences of each unique tag ID in the current detection window
         tag_ids_in_window = [tag_id for ts, tag_id in self.aruco_detections_buffer]
