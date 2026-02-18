@@ -39,6 +39,8 @@ TalonSRXWrapper::TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
       inverted_ = (param.second == "true");
     } else if (param.first == "invert_sensor") {
       invert_sensor_ = (param.second == "true");
+    } else if (param.first == "open_loop") {
+      open_loop_ = (param.second == "true");
     } else {
       RCLCPP_DEBUG(debug_node_->get_logger(),
                    "[%s] Unknown parameter: %s, ignoring", joint.name.c_str(),

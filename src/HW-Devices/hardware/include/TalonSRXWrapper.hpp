@@ -55,6 +55,7 @@ private:
   bool crossover_mode_;
   bool inverted_;
   bool invert_sensor_;
+  bool open_loop_;
   rclcpp::Publisher<ros_phoenix::msg::MotorStatus>::SharedPtr debug_pub_;
 
   // Talon-specific handle

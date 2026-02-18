@@ -20,6 +20,7 @@
         <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">true</param>
         <param name="invert_sensor">true</param>
+        <param name="open_loop">true</param>
         <command_interface name="position"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>
