@@ -9,8 +9,7 @@ TalonSRXWrapper::TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
       control_type_(ctre::phoenix::motorcontrol::ControlMode::Disabled),
       sensor_type_(SensorType::RELATIVE), sensor_ticks_(4096),
       sensor_offset_(0.0), crossover_mode_(false), inverted_(false),
-      invert_sensor_(false), open_loop_(false), debug_pub_(nullptr),
-      talon_controller_(nullptr) {
+      invert_sensor_(false), debug_pub_(nullptr), talon_controller_(nullptr) {
   std::string sensor_type_str;
   std::string can_interface = "can0";
 
@@ -39,8 +38,6 @@ TalonSRXWrapper::TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
       inverted_ = (param.second == "true");
     } else if (param.first == "invert_sensor") {
       invert_sensor_ = (param.second == "true");
-    } else if (param.first == "open_loop") {
-      open_loop_ = (param.second == "true");
     } else {
       RCLCPP_DEBUG(debug_node_->get_logger(),
                    "[%s] Unknown parameter: %s, ignoring", joint.name.c_str(),
@@ -110,21 +107,48 @@ void TalonSRXWrapper::pub_status() const {
 
 void TalonSRXWrapper::write() {
   double output = 0.0;
+  if (crossover_mode_ && std::abs(command_) > M_PI) {
+    RCLCPP_WARN_THROTTLE(
+        debug_node_->get_logger(), *debug_node_->get_clock(), 1000,
+        "%s: Command %.2f is outside of [-pi, pi] in crossover mode, which may "
+        "cause unexpected behavior for id %d",
+        __FUNCTION__, command_, id_);
+  }
   if (control_type_ == motors::ControlMode::Position) {
-    output = (command_ + sensor_offset_) * sensor_ticks_ / (2.0 * M_PI);
+    if (crossover_mode_) {
+      // Map between [-Pi, Pi] to [0, sensor_ticks_]
+      output =
+          (command_ + sensor_offset_ + M_PI) / (2.0 * M_PI) * sensor_ticks_;
+    } else {
+      // Map directly to sensor ticks, allowing for negative values if supported
+      // by the sensor
+      output = (command_ + sensor_offset_) * sensor_ticks_ / (2.0 * M_PI);
+    }
   } else if (control_type_ == motors::ControlMode::Velocity) {
     // Talons use d / 100ms as vel
     output = (command_ * sensor_ticks_ / (2.0 * M_PI)) / 10.0;
+  }
+  if (invert_sensor_ != inverted_) {
+    output = output - sensor_ticks_;
   }
   talon_controller_->Set(control_type_, output);
 }
 
 void TalonSRXWrapper::read() {
-  position_ = (talon_controller_->GetSelectedSensorPosition() * (2.0 * M_PI) /
-               sensor_ticks_) -
-              sensor_offset_;
-  if (open_loop_ && control_type_ == motors::ControlMode::Position) {
-    position_ = command_;
+  double raw_position = talon_controller_->GetSelectedSensorPosition();
+  if (invert_sensor_ != inverted_) {
+    raw_position = sensor_ticks_ + raw_position;
+  }
+  if (crossover_mode_ && raw_position < 0) {
+    raw_position += sensor_ticks_;
+  } else if (crossover_mode_ && raw_position > sensor_ticks_) {
+    raw_position -= sensor_ticks_;
+  }
+  if (crossover_mode_) {
+    position_ =
+        (raw_position * (2.0 * M_PI) / sensor_ticks_) - M_PI - sensor_offset_;
+  } else {
+    position_ = (raw_position * (2.0 * M_PI) / sensor_ticks_) - sensor_offset_;
   }
   double raw_velocity = talon_controller_->GetSelectedSensorVelocity();
   // Talons use d / 100ms as vel
@@ -170,7 +194,8 @@ void TalonSRXWrapper::configure() {
   talon_controller_->ConfigPulseWidthPeriod_FilterWindowSz(1);
   talon_controller_->SelectProfileSlot(0, 0);
   talon_controller_->SetStatusFramePeriod(
-      StatusFrameEnhanced::Status_2_Feedback0, 5);
+      StatusFrameEnhanced::Status_2_Feedback0, 20);
+  talon_controller_->SetIntegralAccumulator(0);
   read();
   if (control_type_ == motors::ControlMode::Position) {
     command_ = position_;
