@@ -170,6 +170,24 @@ void TalonSRXWrapper::configure() {
     slot.kI = kI_;
     slot.kD = kD_;
     slot.kF = kF_;
+
+    TalonSRXConfiguration config;
+    config.slot0 = slot;
+    config.voltageCompSaturation = 24.0;
+    config.pulseWidthPeriod_EdgesPerRot = sensor_ticks_;
+    config.continuousCurrentLimit = 10.0;
+    config.peakCurrentLimit = 10.0;
+    config.peakCurrentDuration = 100;
+    talon_controller_->EnableCurrentLimit(true);
+    ErrorCode error = talon_controller_->ConfigAllSettings(config, 50);
+
+    if (error != ErrorCode::OK) {
+      RCLCPP_ERROR_THROTTLE(
+          debug_node_->get_logger(), *debug_node_->get_clock(), 500,
+          "%s: Failed to configure motor controller (%d) with code: %d",
+          __FUNCTION__, id_, error);
+      continue;
+    }
     break;
   }
 
