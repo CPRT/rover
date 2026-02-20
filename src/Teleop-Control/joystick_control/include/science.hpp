@@ -14,16 +14,26 @@ public:
 private:
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr drill_pub_;
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr elevator_pub_;
-  rclcpp::Publisher<std_msgs::msg::UInt32>::SharedPtr test_servo_pub_;
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
 
+  std::vector<int> servo_values_;
+  std::vector<rclcpp::Publisher<std_msgs::msg::UInt32>::SharedPtr> servo_pubs_;
+
+  void update_servo_value(int servo_index,
+                          const sensor_msgs::msg::Joy &joystickMsg);
   void declare_parameters();
   void load_parameters();
 
   // Parameters
   int kDrillButton;
   int kDrillElevationAxis;
-  int kTestServoButton;
+  int kServoControlAxis;
+
+  std::vector<std::string> kServoNames;
+  std::vector<int> kServoButtons;
+  std::vector<int> kServoMaxValues;
+  std::vector<int> kServoMinValues;
+  std::vector<int> kServoDefaultValues;
 
   bool initialized_;
 };
