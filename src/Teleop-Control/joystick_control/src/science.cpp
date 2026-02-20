@@ -28,7 +28,7 @@ void science::science_control(
   } else {
     drill_msg_.data = 0.0;
   }
-  elevator_msg_.data = joystickMsg->axes[kDrillElevationAxis];
+  elevator_msg_.data = -(joystickMsg->axes[kDrillElevationAxis]);
 
   for (int i = 0; i < kServoNames.size(); i++) {
     update_servo_value(i, *joystickMsg);
@@ -59,6 +59,8 @@ void science::update_servo_value(int servo_index,
         } else {
           servo_values_[servo_index] += (max_value - min_value) / 10;
         }
+        servo_pubs_[servo_index]->publish(
+            std_msgs::msg::UInt32().set__data(servo_values_[servo_index]));
       } else if (joystickMsg.axes[kServoControlAxis] == -1.0) {
         if (servo_values_[servo_index] - (max_value - min_value) / 10 <
             min_value) {
@@ -66,15 +68,17 @@ void science::update_servo_value(int servo_index,
         } else {
           servo_values_[servo_index] -= (max_value - min_value) / 10;
         }
+        servo_pubs_[servo_index]->publish(
+            std_msgs::msg::UInt32().set__data(servo_values_[servo_index]));
       }
     }
   } else {
     RCLCPP_ERROR(this->get_logger(), "Error: %s value out of bounds: %d",
                  kServoNames[servo_index].c_str(), servo_values_[servo_index]);
     servo_values_[servo_index] = min_value;
+    servo_pubs_[servo_index]->publish(
+        std_msgs::msg::UInt32().set__data(servo_values_[servo_index]));
   }
-  servo_pubs_[servo_index]->publish(
-      std_msgs::msg::UInt32().set__data(servo_values_[servo_index]));
 }
 
 void science::declare_parameters() {

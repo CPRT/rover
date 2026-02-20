@@ -25,7 +25,7 @@ arm_teleop_node:
     max_elbow_yaw_speed: 1.0
 science_teleop_node:
   ros__parameters:
-    drill_button: 2
+    drill_button: 0
     drill_elevation_axis: 1
     servo_control_axis: 5
     servo1:
@@ -55,9 +55,9 @@ science_teleop_node:
     servo5:
       name: "sample_servo"
       button: 16
-      max_value: 65535
-      default_value: 0
-      min_value: 0
+      max_value: 6881
+      default_value: 2949
+      min_value: 2949
     servo6:
       name: "ion_exchange_servo"
       button: 17
