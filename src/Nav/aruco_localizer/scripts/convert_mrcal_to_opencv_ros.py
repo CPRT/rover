@@ -145,9 +145,11 @@ def main():
         "distortion_coefficients": {
             "rows": 1,
             "cols": len(ros_dist_coeffs),
-            "data": ros_dist_coeffs.tolist()
-            if isinstance(ros_dist_coeffs, np.ndarray)
-            else list(ros_dist_coeffs),
+            "data": (
+                ros_dist_coeffs.tolist()
+                if isinstance(ros_dist_coeffs, np.ndarray)
+                else list(ros_dist_coeffs)
+            ),
         },
         "rectification_matrix": {"rows": 3, "cols": 3, "data": R.flatten().tolist()},
         "projection_matrix": {"rows": 3, "cols": 4, "data": P.flatten().tolist()},
