@@ -78,3 +78,10 @@ joint_trajectory_controller
 diff_drive_controller
 joint_state_publisher_gui
 libjsoncpp
+flex
+bison
+libncurses-dev
+usbutils
+tinyxml2
+clang-tidy
+python3-vcstool
