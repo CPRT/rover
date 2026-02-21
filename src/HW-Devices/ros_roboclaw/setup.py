@@ -18,6 +18,10 @@ setup(
     license="Apache-2.0",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": ["roboclaw_node = ros_roboclaw.roboclaw_node:main"],
+        "console_scripts": [
+            "roboclaw_node = ros_roboclaw.roboclaw_node:main",
+            "drill_roboclaw_node = ros_roboclaw.drill_roboclaw_node:main",
+            "elevator_roboclaw_node = ros_roboclaw.elevator_roboclaw_node:main",
+        ],
     },
 )

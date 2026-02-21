@@ -3,8 +3,8 @@
 drive::drive() : Node("drive_node"), initialized_(false) {
   declare_parameters();
   load_parameters();
-  twist_pub = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
-  joy_sub = this->create_subscription<sensor_msgs::msg::Joy>(
+  twist_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
+  joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
       "/joy", 10,
       std::bind(&drive::drive_control, this, std::placeholders::_1));
   RCLCPP_INFO(this->get_logger(), "Drive controller started");
@@ -24,7 +24,7 @@ void drive::drive_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   twist.linear.y = joystickMsg->axes[kStrafeAxis] * kMaxLinear;
   twist.angular.z = joystickMsg->axes[kYawAxis] * kMaxAngular;
 
-  twist_pub->publish(twist);
+  twist_pub_->publish(twist);
 };
 
 void drive::declare_parameters() {
