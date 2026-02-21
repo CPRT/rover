@@ -8,9 +8,7 @@
 use_gazebo: false
 
 ## Properties of outgoing commands
-publish_period: 0.08  # 1/Nominal publish rate [seconds] supposed to be 0.08
-publish_delay: 0.005 #supposed to be 0.005
-max_expected_latency: 0.1  # delay between sending a command and the robot executing it [seconds]
+publish_period: 0.08  # 1/Nominal publish rate [seconds]
 low_latency_mode: false
 
 command_in_type: "unitless"  # "unitless"> in the range [-1:1], as if from joystick. "speed_units"> cmds are in m/s and rad/s
@@ -29,8 +27,6 @@ command_out_type: trajectory_msgs/JointTrajectory
 publish_joint_positions: true
 publish_joint_velocities: false
 publish_joint_accelerations: false
-
-#low_pass_filter_coeff: 2.0
 
 ## Plugins for smoothing outgoing commands
 smoothing_filter_plugin_name: "online_signal_smoothing::ButterworthFilterPlugin"
@@ -73,7 +69,7 @@ status_topic: ~/status  # Publish status to this topic
 command_out_topic: /arm_controller/joint_trajectory  # Publish outgoing commands here
 
 ## Collision checking for the entire robot body
-check_collisions: true  # Check collisions?
+check_collisions: false  # Check collisions?
 collision_check_rate: 10.0  # [Hz] Collision-checking can easily bog down a CPU if done too often.
 self_collision_proximity_threshold: 0.01  # Start decelerating when a self-collision is this far [m]
 scene_collision_proximity_threshold: 0.02  # Start decelerating when a scene collision is this far [m]

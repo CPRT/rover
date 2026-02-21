@@ -54,6 +54,7 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
         moveit_config.joint_limits,
         moveit_config.trajectory_execution,
         moveit_config.planning_scene_monitor,
+        {"publish_robot_description_semantic": True},
     ]
 
     move_group = Node(
@@ -79,6 +80,7 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
         {
             "moveit_servo": servo_yaml,
             "publish_frequency": 15.0,
+            "butterworth_filter_coeff": 10.0,
         },
         moveit_config.robot_description_semantic,
         moveit_config.robot_description_kinematics,
