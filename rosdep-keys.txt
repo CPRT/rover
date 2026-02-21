@@ -78,6 +78,7 @@ joint_trajectory_controller
 diff_drive_controller
 joint_state_publisher_gui
 libjsoncpp
+controller_manager_msgs
 flex
 bison
 libncurses-dev

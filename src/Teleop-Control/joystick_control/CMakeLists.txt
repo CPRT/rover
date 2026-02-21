@@ -14,6 +14,7 @@ find_package(ros_phoenix REQUIRED)
 find_package(interfaces REQUIRED)
 find_package(control_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(controller_manager_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 
 set(CMAKE_CXX_STANDARD 14)
@@ -51,6 +52,7 @@ ament_target_dependencies(arm
   interfaces
   control_msgs
   std_srvs
+  controller_manager_msgs
 )
 
 ament_target_dependencies(science
