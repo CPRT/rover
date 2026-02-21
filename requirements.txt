@@ -18,3 +18,4 @@ ultralytics
 onnx
 onnxruntime
 odrive
+smbus2
