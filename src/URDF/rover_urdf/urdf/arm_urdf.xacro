@@ -108,7 +108,7 @@
     </link>
     <joint
         name="Joint_1"
-        type="continuous">
+        type="revolute">
         <origin
         xyz="0 0 0.0287"
         rpy="0 0 0" />
@@ -117,7 +117,8 @@
         <child
         link="Link_2" />
         <axis
-        xyz="0 0 1" />
+        xyz="0 0 -1" />
+        <limit lower="-3.3" upper="3.3" effort="100.0" velocity="0.1"/>
     </joint>
     <link
         name="Link_3">
@@ -212,7 +213,7 @@
     </link>
     <joint
         name="Joint_2"
-        type="continuous">
+        type="revolute">
         <origin
         xyz="0 0 0.10795"
         rpy="0 0 0" />
@@ -222,6 +223,7 @@
         link="Link_3" />
         <axis
         xyz="0 -1 0" />
+        <limit lower="-3.14" upper="3.14" effort="100.0" velocity="0.2"/>
     </joint>
     <link
         name="Link_4">
@@ -274,7 +276,7 @@
     </link>
     <joint
         name="Joint_3"
-        type="continuous">
+        type="revolute">
         <origin
         xyz="0.068432 0 0.59125"
         rpy="0 0 0" />
@@ -284,6 +286,7 @@
         link="Link_4" />
         <axis
         xyz="0 1 0" />
+        <limit lower="0" upper="2.84489" effort="100.0" velocity="0.2"/>
     </joint>
     <link
         name="Link_5">
@@ -348,7 +351,7 @@
     </link>
     <joint
         name="Joint_4"
-        type="continuous">
+        type="revolute">
         <origin
         xyz="0 0.01165 0.077"
         rpy="0 0 0" />
@@ -358,6 +361,7 @@
         link="Link_5" />
         <axis
         xyz="0 0 -1" />
+        <limit lower="-3.14" upper="3.14" effort="100.0" velocity="0.2"/>
     </joint>
     <link
         name="Link_6">
@@ -416,7 +420,7 @@
     </link>
     <joint
         name="Joint_5"
-        type="continuous">
+        type="revolute">
         <origin
         xyz="0 0 0.45756"
         rpy="0 0 0" />
@@ -425,7 +429,8 @@
         <child
         link="Link_6" />
         <axis
-        xyz="0 1 0" />
+        xyz="0 -1 0" />
+        <limit lower="-1.0" upper="1.0" effort="100.0" velocity="0.1"/>
     </joint>
     <link
         name="EndEffector">
@@ -494,6 +499,7 @@
         link="EndEffector" />
         <axis
         xyz="0 0 1" />
+        <limit effort="100.0" velocity="0.3"/>
     </joint>
 
   </xacro:macro>
