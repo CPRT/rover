@@ -2,11 +2,13 @@ import launch
 import launch_ros.actions
 from launch_ros.actions import Node
 from launch import LaunchDescription
+from launch.conditions import IfCondition
+from launch.substitutions import PythonExpression
 import os
 from ament_index_python.packages import get_package_share_directory
 
 
-def get_joy_id(dev_path, default_id):
+def get_joy_id(dev_path):
     """Checks for a symlink and returns the integer ID, or a default."""
     if os.path.exists(dev_path):
         # Resolves /dev/joy_a -> /dev/input/jsX
@@ -16,44 +18,42 @@ def get_joy_id(dev_path, default_id):
             print(f"Found symlink {dev_path} -> {real_path}")
             return int("".join(filter(str.isdigit, real_path)))
         except ValueError:
-            print(
-                f"Could not parse joystick ID from {real_path}, using default {default_id}"
-            )
-            return default_id
+            print(f"ERROR: Device {real_path} not a event joystick path")
+            return -1
     else:
-        print(f"Symlink {dev_path} does not exist, using default ID {default_id}")
-        return default_id
+        print(f"ERROR: Symlink {dev_path} does not exist")
+        return -1
 
 
 def generate_launch_description():
     pkg_joystick_control = get_package_share_directory("joystick_control")
     parameters_file = os.path.join(pkg_joystick_control, "pxn.yaml")
     # Detect IDs dynamically
-    # We use 0 and 1 as defaults if the symlinks aren't found
-    id_a = get_joy_id("/dev/input/by-id/usb-LiteStar_PXN-2113_Pro-joystick", 1)
-    id_b = get_joy_id("/dev/input/by-id/usb-Thrustmaster_T.1600M-joystick", 0)
+    id_arm = get_joy_id("/dev/input/by-id/usb-LiteStar_PXN-2113_Pro-joystick")
+    id_drive = get_joy_id("/dev/input/by-id/usb-Thrustmaster_T.1600M-joystick")
 
     return LaunchDescription(
         [
+            # Node(
+            #     package="joy",
+            #     executable="joy_node",
+            #     name="joy_node_a",
+            #     parameters=[
+            #         {
+            #             "device_id": id_drive,
+            #             "deadzone": 0.05,
+            #         }
+            #     ],
+            #     remappings=[("/joy", "/drive/joy")],
+            # ),
             Node(
                 package="joy",
                 executable="joy_node",
-                name="joy_node_a",
+                name="joy_node_arm",
+                condition=IfCondition(PythonExpression([str(id_arm), " >= 0"])),
                 parameters=[
                     {
-                        "device_id": id_a,
-                        "deadzone": 0.05,
-                    }
-                ],
-                remappings=[("/joy", "/drive/joy")],
-            ),
-            Node(
-                package="joy",
-                executable="joy_node",
-                name="joy_node_b",
-                parameters=[
-                    {
-                        "device_id": id_b,
+                        "device_id": id_arm,
                         "deadzone": 0.05,
                     }
                 ],
@@ -66,12 +66,12 @@ def generate_launch_description():
                 parameters=[parameters_file],
                 remappings=[("/joy", "/arm/joy")],
             ),
-            Node(
-                package="joystick_control",
-                executable="drive",
-                name="drive_teleop_node",
-                parameters=[parameters_file],
-                remappings=[("/joy", "/drive/joy")],
-            ),
+            # Node(
+            #     package="joystick_control",
+            #     executable="drive",
+            #     name="drive_teleop_node",
+            #     parameters=[parameters_file],
+            #     remappings=[("/joy", "/drive/joy")],
+            # ),
         ]
     )
