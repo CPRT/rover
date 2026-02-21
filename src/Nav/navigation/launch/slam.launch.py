@@ -16,6 +16,10 @@ def generate_launch_description():
     # Launch configurations
     use_sim_time = LaunchConfiguration("use_sim_time")
     svo_path = LaunchConfiguration("svo_path")
+    set_gravity_as_origin = LaunchConfiguration("set_gravity_as_origin")
+    publish_tf = LaunchConfiguration("publish_tf")
+    publish_map_tf = LaunchConfiguration("publish_map_tf")
+    traversability_profile = LaunchConfiguration("traversability_profile")
     launch_traversability = LaunchConfiguration("launch_traversability")
     launch_zed = LaunchConfiguration("launch_zed")
     launch_ouster = LaunchConfiguration("launch_ouster")
@@ -36,6 +40,26 @@ def generate_launch_description():
         default_value=TextSubstitution(text="live"),
         description="Path to an input SVO file.",
     )
+    declare_set_gravity_as_origin = DeclareLaunchArgument(
+        "set_gravity_as_origin",
+        default_value="false",
+        description="If true, align the positional tracking world to IMU gravity measurement.",
+    )
+    declare_publish_tf = DeclareLaunchArgument(
+        "publish_tf",
+        default_value="false",
+        description="If true, ZED publishes odom->base_link TF.",
+    )
+    declare_publish_map_tf = DeclareLaunchArgument(
+        "publish_map_tf",
+        default_value="false",
+        description="If true, ZED publishes map->odom TF.",
+    )
+    declare_traversability_profile = DeclareLaunchArgument(
+        "traversability_profile",
+        default_value="zed_only",
+        description="Elevation mapping profile to use.",
+    )
 
     localization_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -50,28 +74,24 @@ def generate_launch_description():
             os.path.join(pkg_navigation, "launch", "zed.launch.py")
         ),
         condition=IfCondition(launch_zed),
-        launch_arguments={"use_sim_time": use_sim_time, "svo_path": svo_path}.items(),
+        launch_arguments={
+            "use_sim_time": use_sim_time,
+            "svo_path": svo_path,
+            "set_gravity_as_origin": set_gravity_as_origin,
+            "publish_tf": publish_tf,
+            "publish_map_tf": publish_map_tf,
+        }.items(),
     )
-
-    # Include traversability mapping if enabled
-    if launch_zed and launch_ouster:
-        config = "all"
-    elif launch_zed:
-        config = "zed_only"
-    elif launch_ouster:
-        config = "ouster_only"
-    else:
-        print(
-            "Warning: Both ZED and Ouster launch are disabled; traversability mapping will not run."
-        )
-        config = "none"
 
     traversability_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_navigation, "launch", "traversability_gridmap.launch.py")
         ),
         condition=IfCondition(launch_traversability),
-        launch_arguments={"profile": config, "use_sim_time": use_sim_time}.items(),
+        launch_arguments={
+            "profile": traversability_profile,
+            "use_sim_time": use_sim_time,
+        }.items(),
     )
 
     # Include Ouster lidar launch if enabled
@@ -81,10 +101,15 @@ def generate_launch_description():
         ),
         condition=IfCondition(launch_ouster),
     )
+
     return LaunchDescription(
         [
             declare_use_sim_time,
             declare_svo_path,
+            declare_set_gravity_as_origin,
+            declare_publish_tf,
+            declare_publish_map_tf,
+            declare_traversability_profile,
             declare_traversability,
             declare_zed,
             declare_ouster,

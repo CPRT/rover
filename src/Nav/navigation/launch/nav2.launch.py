@@ -28,7 +28,7 @@ from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
     # Constants
-    DEFAULT_BT_XML_FILENAME = "bt_swerve_dynamic_replanning.xml"
+    DEFAULT_BT_XML_FILENAME = "bt_demo_planning_only.xml"
 
     # Get the launch directory
     pkg_dir = get_package_share_directory("navigation")

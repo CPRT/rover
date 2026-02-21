@@ -19,6 +19,17 @@ profiles = {
             "zed2i_pointcloud",
         ],
     },
+    "zed_only_svo": {
+        "config_files": [
+            "spike_robot_svo.yaml",
+            "zed2i_elevation_mapping.yaml",
+            "zed2i_sensor_processor.yaml",
+            "postprocessing_traversability.yaml",
+        ],
+        "input_sources": [
+            "zed2i_pointcloud",
+        ],
+    },
     "lidar_only": {
         "config_files": [
             "spike_robot.yaml",
