@@ -88,21 +88,34 @@ def generate_launch_description():
         condition=IfCondition(use_drive),
     )
 
-    arm_controller_spawner = Node(
+    arm_controller_move_it_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=[
-            "arm_controller",
+            "arm_controller_move_group",
         ],
         parameters=[control_yaml],
         output="screen",
         condition=IfCondition(use_arm),
     )
 
+    arm_controller_servo_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=[
+            "arm_controller_servo",
+            "--inactive",
+        ],
+        parameters=[control_yaml],
+        output="screen",
+        condition=IfCondition(use_arm),
+    )
+
+
     delayed_spawners = RegisterEventHandler(
         OnProcessStart(
             target_action=controller_manager,
-            on_start=[jsb_spawner, chassis_controller_spawner, arm_controller_spawner],
+            on_start=[jsb_spawner, chassis_controller_spawner, arm_controller_move_it_spawner, arm_controller_servo_spawner],
         )
     )
 
@@ -116,6 +129,16 @@ def generate_launch_description():
         ),
         condition=IfCondition(use_arm),
     )
+    eef_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory("arm_control"),
+                "launch",
+                "end_effector.launch.py",
+            )
+        ),
+        condition=IfCondition(use_arm),
+    )
 
     ld = LaunchDescription()
     ld.add_action(declare_use_arm_cmd)
@@ -124,4 +147,5 @@ def generate_launch_description():
     ld.add_action(controller_manager)
     ld.add_action(delayed_spawners)
     ld.add_action(arm_launch)
+    ld.add_action(eef_launch)
     return ld
