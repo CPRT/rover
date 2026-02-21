@@ -49,8 +49,10 @@ private:
 };
 
 struct Axis {
-  Axis(SocketCanIntf *can_intf, uint32_t node_id, double multiplier)
-      : can_intf_(can_intf), node_id_(node_id), multiplier_(multiplier) {}
+  Axis(SocketCanIntf *can_intf, uint32_t node_id, double multiplier,
+       ODriveInputMode input_mode)
+      : can_intf_(can_intf), node_id_(node_id), multiplier_(multiplier),
+        input_mode_(input_mode) {}
 
   void on_can_msg(const rclcpp::Time &timestamp, const can_frame &frame);
 
@@ -93,6 +95,8 @@ struct Axis {
   bool vel_input_enabled_ = false;
   bool torque_input_enabled_ = false;
 
+  ODriveInputMode input_mode_;
+
   template <typename T> bool send(const T &msg) const {
     struct can_frame frame;
     frame.can_id = node_id_ << 5 | msg.cmd_id;
@@ -133,13 +137,31 @@ ODriveHardwareInterface::on_init(const hardware_interface::HardwareInfo &info) {
     double multiplier = 1.0;
     if (joint.parameters.find("multiplier") != joint.parameters.end()) {
       multiplier = std::stod(joint.parameters.at("multiplier"));
-      RCLCPP_ERROR(rclcpp::get_logger("ODriveHardwareInterface"),
-                   "Setting Joint %s multiplier to %f'", joint.name.c_str(),
-                   multiplier);
+      RCLCPP_INFO(rclcpp::get_logger("ODriveHardwareInterface"),
+                  "Setting Joint %s multiplier to %f'", joint.name.c_str(),
+                  multiplier);
     }
-
+    ODriveInputMode input_mode = INPUT_MODE_PASSTHROUGH;
+    if (joint.parameters.find("input_mode") != joint.parameters.end()) {
+      const std::string input_mode_str = joint.parameters.at("input_mode");
+      if (input_mode_str == "Traj") {
+        input_mode = INPUT_MODE_TRAP_TRAJ;
+        RCLCPP_INFO(rclcpp::get_logger("ODriveHardwareInterface"),
+                    "Setting Joint %s input type to Trajectory",
+                    joint.name.c_str());
+      } else if (input_mode_str == "Passthrough") {
+        input_mode = INPUT_MODE_PASSTHROUGH;
+        RCLCPP_INFO(rclcpp::get_logger("ODriveHardwareInterface"),
+                    "Setting Joint %s input type to Passthrough",
+                    joint.name.c_str());
+      } else {
+        RCLCPP_WARN(rclcpp::get_logger("ODriveHardwareInterface"),
+                    "Unknown input type %s on Joint %s", input_mode_str.c_str(),
+                    joint.name.c_str());
+      }
+    }
     axes_.emplace_back(&can_intf_, std::stoi(joint.parameters.at("node_id")),
-                       multiplier);
+                       multiplier, input_mode);
   }
 
   return CallbackReturn::SUCCESS;
