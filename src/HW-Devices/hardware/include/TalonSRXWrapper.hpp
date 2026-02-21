@@ -41,8 +41,6 @@ public:
 
 private:
   enum class SensorType { PWM, RELATIVE, ANALOG };
-  // Wrap to symmetric range [-range/2, range/2)
-  static int wrap_symmetric(int x, int range);
 
   // Parameters
   int id_;
@@ -50,14 +48,17 @@ private:
   double kI_;
   double kD_;
   double kF_;
+  double sensor_offset_ticks_;
   ctre::phoenix::motorcontrol::ControlMode control_type_;
   SensorType sensor_type_;
   int sensor_ticks_;
-  double sensor_offset_;
   bool crossover_mode_;
   bool inverted_;
   bool invert_sensor_;
+  bool initialized_;
+  rclcpp::Time start_time_;
   rclcpp::Publisher<ros_phoenix::msg::MotorStatus>::SharedPtr debug_pub_;
+  static constexpr double kWaitDurationSec = 5.0;
 
   // Talon-specific handle
   std::shared_ptr<ctre::phoenix::motorcontrol::can::TalonSRX> talon_controller_;
