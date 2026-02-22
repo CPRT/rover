@@ -32,25 +32,29 @@ def generate_launch_description():
     id_arm = get_joy_id("/dev/input/by-id/usb-LiteStar_PXN-2113_Pro-joystick")
     id_drive = get_joy_id("/dev/input/by-id/usb-Thrustmaster_T.1600M-joystick")
 
-    return LaunchDescription(
-        [
-            # Node(
-            #     package="joy",
-            #     executable="joy_node",
-            #     name="joy_node_a",
-            #     parameters=[
-            #         {
-            #             "device_id": id_drive,
-            #             "deadzone": 0.05,
-            #         }
-            #     ],
-            #     remappings=[("/joy", "/drive/joy")],
-            # ),
+    ld = LaunchDescription()
+
+    if id_drive != -1:
+        ld.add_action(
+            Node(
+                package="joy",
+                executable="joy_node",
+                name="joy_node_a",
+                parameters=[
+                    {
+                        "device_id": id_drive,
+                        "deadzone": 0.05,
+                    }
+                ],
+                remappings=[("/joy", "/drive/joy")],
+            )
+        )
+    if id_arm != -1:
+        ld.add_action(
             Node(
                 package="joy",
                 executable="joy_node",
                 name="joy_node_arm",
-                condition=IfCondition(PythonExpression([str(id_arm), " >= 0"])),
                 parameters=[
                     {
                         "device_id": id_arm,
@@ -59,19 +63,23 @@ def generate_launch_description():
                 ],
                 remappings=[("/joy", "/arm/joy")],
             ),
-            Node(
-                package="joystick_control",
-                executable="arm",
-                name="arm_teleop_node",
-                parameters=[parameters_file],
-                remappings=[("/joy", "/arm/joy")],
-            ),
-            # Node(
-            #     package="joystick_control",
-            #     executable="drive",
-            #     name="drive_teleop_node",
-            #     parameters=[parameters_file],
-            #     remappings=[("/joy", "/drive/joy")],
-            # ),
-        ]
+        )
+    ld.add_action(
+        Node(
+            package="joystick_control",
+            executable="arm",
+            name="arm_teleop_node",
+            parameters=[parameters_file],
+            remappings=[("/joy", "/arm/joy")],
+        ),
     )
+    ld.add_action(
+        Node(
+            package="joystick_control",
+            executable="drive",
+            name="drive_teleop_node",
+            parameters=[parameters_file],
+            remappings=[("/joy", "/drive/joy")],
+        ),
+    )
+    return ld

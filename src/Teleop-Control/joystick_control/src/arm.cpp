@@ -120,6 +120,9 @@ void arm::arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
     moveit_servo_state(true);
     RCLCPP_INFO(this->get_logger(), "Switched to manual control");
   }
+  if (current_state_ != NONE) {
+    endeffector_control(joystickMsg);
+  }
 
   switch (current_state_) {
   case MANUAL:
@@ -187,6 +190,8 @@ void arm::declareParameters() {
   this->declare_parameter("ik_button", 10);
   this->declare_parameter("manual_button", 11);
   this->declare_parameter("disable_button", 9);
+  this->declare_parameter("claw_close_button", 0);
+  this->declare_parameter("claw_open_button", 1);
 }
 void arm::loadParameters() {
   this->get_parameter("throttle.axis", kThrottleAxis);
@@ -200,6 +205,8 @@ void arm::loadParameters() {
   this->get_parameter("ik_button", kIkButton);
   this->get_parameter("manual_button", kManualButton);
   this->get_parameter("disable_button", kDisableButton);
+  this->get_parameter("claw_close_button", kClawOpen);
+  this->get_parameter("claw_open_button", kClawClose);
 }
 
 int main(int argc, char **argv) {
