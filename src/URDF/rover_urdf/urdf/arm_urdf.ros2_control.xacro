@@ -16,7 +16,7 @@
         <param name="kF">0.0</param>
         <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">1.57</param>
+        <param name="sensor_offset">0.0</param>
         <param name="crossover">false</param> <!-- or "continuous" -->
         <param name="invert">false</param>
         <param name="invert_sensor">false</param>
@@ -33,7 +33,7 @@
         <param name="kF">0.0</param>
         <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">-1.29154</param>
+        <param name="sensor_offset">0.0</param>
         <param name="crossover">false</param> <!-- or "continuous" -->
         <param name="invert">false</param>
         <param name="invert_sensor">false</param>
@@ -50,7 +50,7 @@
         <param name="kF">0.0</param>
         <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">1.6057</param>
+        <param name="sensor_offset">0.0</param>
         <param name="crossover">false</param> <!-- or "continuous" -->
         <param name="invert">true</param>
         <param name="invert_sensor">true</param>
@@ -67,7 +67,7 @@
         <param name="kF">0.0</param>
         <param name="sensor_type">absolute</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">0.191986</param>
+        <param name="sensor_offset">0.0</param>
         <param name="crossover">false</param> <!-- or "continuous" -->
         <param name="invert">false</param>
         <param name="invert_sensor">false</param>

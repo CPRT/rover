@@ -149,8 +149,7 @@ void TalonSRXWrapper::write() {
       if (output < 0)
         output += sensor_ticks_;
     } else {
-      output = (command_ + M_PI) * sensor_ticks_ / (2.0 * M_PI) +
-               sensor_offset_ticks_;
+      output = command_ * sensor_ticks_ / (2.0 * M_PI) + sensor_offset_ticks_;
     }
   } else if (control_type_ == motors::ControlMode::Velocity) {
     // Talons use d / 100ms as vel
@@ -170,7 +169,7 @@ void TalonSRXWrapper::read() {
     double normalized = static_cast<double>(raw_position) / sensor_ticks_;
     position_ = normalized * 2.0 * M_PI - M_PI;
   } else {
-    position_ = raw_position * (2.0 * M_PI) / sensor_ticks_ - M_PI;
+    position_ = raw_position * (2.0 * M_PI) / sensor_ticks_;
   }
   double raw_velocity = talon_controller_->GetSelectedSensorVelocity();
   // Talons use d / 100ms as vel
@@ -239,6 +238,7 @@ void TalonSRXWrapper::configure() {
     command_ = position_;
   }
   talon_controller_->Set(motors::ControlMode::Disabled, 0.0);
+  talon_controller_->ClearStickyFaults();
   RCLCPP_INFO(debug_node_->get_logger(),
               "%s: Successfully configured Motor Controller %d", __FUNCTION__,
               id_);
