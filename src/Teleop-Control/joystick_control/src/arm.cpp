@@ -147,13 +147,13 @@ void arm::manual_arm_control(
 
   joint_msg.header.stamp = joystickMsg->header.stamp;
 
-  joint_msg.velocities = {axes[kJoint1Axis],
-                          axes[kJoint2Axis],
+  joint_msg.velocities = {-axes[kJoint1Axis],
+                          -axes[kJoint2Axis],
                           axes[kJoint3Axis],
                           axes[kJoint4Axis],
-                          static_cast<double>(buttons[kWristYaw_positive] -
-                                              buttons[kWristYaw_negative]),
-                          axes[kJoint6Axis]};
+                          -static_cast<double>(buttons[kWristYaw_positive] -
+                                               buttons[kWristYaw_negative]),
+                          -axes[kJoint6Axis]};
 
   joint_pub_->publish(joint_msg);
 }
@@ -161,6 +161,7 @@ void arm::manual_arm_control(
 void arm::ik_arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   auto twist_msg = geometry_msgs::msg::TwistStamped();
   twist_msg.header.stamp = joystickMsg->header.stamp;
+  twist_msg.header.frame_id = "Link_6";
 
   auto &axes = joystickMsg->axes;
   auto &buttons = joystickMsg->buttons;
