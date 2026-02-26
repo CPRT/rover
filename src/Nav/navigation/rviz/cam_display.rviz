@@ -8,10 +8,10 @@ Panels:
         - /Status1
         - /TF1/Frames1
         - /TF1/Tree1
-        - /TraversibilityMap1
         - /Path2
-        - /Odometry1
-        - /Odometry1/Shape1
+        - /Camera1
+        - /Camera1/Visibility1
+        - /Camera1/Topic1
       Splitter Ratio: 0.5423280596733093
     Tree Height: 725
   - Class: rviz_common/Selection
@@ -93,27 +93,6 @@ Visualization Manager:
         Value: /traversability_map
       Use Rainbow: true
       Value: true
-    - Alpha: 0.699999988079071
-      Class: rviz_default_plugins/Map
-      Color Scheme: map
-      Draw Behind: false
-      Enabled: true
-      Name: GlobalMap
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /global_costmap/costmap
-      Update Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /global_costmap/costmap_updates
-      Use Timestamp: false
-      Value: true
     - Alpha: 1
       Buffer Length: 1
       Class: rviz_default_plugins/Path
@@ -141,18 +120,6 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /plan
-      Value: true
-    - Class: rviz_default_plugins/MarkerArray
-      Enabled: true
-      Name: MarkerArray
-      Namespaces:
-        {}
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /aruco_markers_viz
       Value: true
     - Alpha: 1
       Buffer Length: 1
@@ -202,45 +169,27 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /goal_pose
       Value: true
-    - Angle Tolerance: 0.10000000149011612
-      Class: rviz_default_plugins/Odometry
-      Covariance:
-        Orientation:
-          Alpha: 0.5
-          Color: 255; 255; 127
-          Color Style: Unique
-          Frame: Local
-          Offset: 1
-          Scale: 1
-          Value: true
-        Position:
-          Alpha: 0.30000001192092896
-          Color: 204; 51; 204
-          Scale: 1
-          Value: true
-        Value: false
-      Enabled: true
-      Keep: 100
-      Name: Odometry
-      Position Tolerance: 0.10000000149011612
-      Shape:
-        Alpha: 1
-        Axes Length: 1
-        Axes Radius: 0.10000000149011612
-        Color: 0; 255; 0
-        Head Length: 0.10000000149011612
-        Head Radius: 0.15000000596046448
-        Shaft Length: 0.10000000149011612
-        Shaft Radius: 0.07000000029802322
-        Value: Arrow
+    - Class: rviz_default_plugins/Camera
+      Enabled: false
+      Far Plane Distance: 20
+      Image Rendering: background and overlay
+      Name: Camera
+      Overlay Alpha: 0.5
       Topic:
-        Depth: 5
+        Depth: 50
         Durability Policy: Volatile
-        Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /odometry/filtered/global
-      Value: true
+        Value: /zed/zed_node/left/image_rect_color/compressed
+      Value: false
+      Visibility:
+        Grid: true
+        Path: true
+        Pose: true
+        TF: true
+        TraversibilityMap: true
+        Value: true
+      Zoom Factor: 1
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -287,33 +236,35 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 21.384889602661133
+      Distance: 32.480224609375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -7.168184280395508
-        Y: 0.2619872987270355
-        Z: -0.713226854801178
+        X: 0.9805958867073059
+        Y: -1.988586187362671
+        Z: 0.2913397550582886
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5697963237762451
+      Pitch: 0.46979668736457825
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.9703208208084106
+      Yaw: 2.700317621231079
     Saved: ~
 Window Geometry:
+  Camera:
+    collapsed: false
   Displays:
-    collapsed: true
+    collapsed: false
   Height: 1016
-  Hide Left Dock: true
+  Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000016d0000035efc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073000000003b0000035e000000c700fffffffb0000000a0049006d0061006700650000000298000001010000000000000000fb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c0000026100000001000001750000035efc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003b0000035e000000a000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073a0000003efc0100000002fb0000000800540069006d006501000000000000073a0000025300fffffffb0000000800540069006d006501000000000000045000000000000000000000073a0000035e00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000002180000035efc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003b0000035e000000c700fffffffb0000000a0049006d0061006700650000000298000001010000000000000000fb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d006500720061020000049d00000176000002dc000002b600000001000001750000035efc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003b0000035e000000a000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000003ea0000003efc0100000002fb0000000800540069006d00650100000000000003ea0000025300fffffffb0000000800540069006d00650100000000000004500000000000000000000001cc0000035e00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -322,6 +273,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1850
+  Width: 1002
   X: 70
   Y: 27
