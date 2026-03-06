@@ -25,27 +25,45 @@ def get_joy_id(dev_path):
         return -1
 
 
+def find_ps5():
+    with open("/proc/bus/input/devices") as f:
+        device_block = ""
+        for line in f:
+            if line.strip() == "":
+                if "Wireless Controller" in device_block:
+                    for part in device_block.split():
+                        if part.startswith("js"):
+                            print(f"Found PS5 controller at {part}")
+                            return int(part.replace("js", ""))
+                device_block = ""
+            else:
+                device_block += line
+    print(f"ERROR: PS5 controller not found in /proc/bus/input/devices")
+    return -1
+
+
 def generate_launch_description():
     pkg_joystick_control = get_package_share_directory("joystick_control")
     parameters_file = os.path.join(pkg_joystick_control, "pxn.yaml")
     # Detect IDs dynamically
     id_arm = get_joy_id("/dev/input/by-id/usb-LiteStar_PXN-2113_Pro-joystick")
-    id_drive = get_joy_id("/dev/input/by-id/usb-Thrustmaster_T.1600M-joystick")
+    # id_drive = get_joy_id("/dev/input/by-id/usb-Thrustmaster_T.16000M-joystick")
+    # id_drive = get_joy_id("/dev/input/by-id/bluetooth-Sony_Interactive_Entertainment_DualSense_Wireless_Controller-if03-joystick")
 
     return LaunchDescription(
         [
-            # Node(
-            #     package="joy",
-            #     executable="joy_node",
-            #     name="joy_node_a",
-            #     parameters=[
-            #         {
-            #             "device_id": id_drive,
-            #             "deadzone": 0.05,
-            #         }
-            #     ],
-            #     remappings=[("/joy", "/drive/joy")],
-            # ),
+            Node(
+                package="joy",
+                executable="joy_node",
+                name="joy_node_a",
+                parameters=[
+                    {
+                        "dev": find_ps5(),
+                        "deadzone": 0.05,
+                    }
+                ],
+                remappings=[("/joy", "/drive/joy")],
+            ),
             Node(
                 package="joy",
                 executable="joy_node",
@@ -66,12 +84,12 @@ def generate_launch_description():
                 parameters=[parameters_file],
                 remappings=[("/joy", "/arm/joy")],
             ),
-            # Node(
-            #     package="joystick_control",
-            #     executable="drive",
-            #     name="drive_teleop_node",
-            #     parameters=[parameters_file],
-            #     remappings=[("/joy", "/drive/joy")],
-            # ),
+            Node(
+                package="joystick_control",
+                executable="drive",
+                name="drive_teleop_node",
+                parameters=[parameters_file],
+                remappings=[("/joy", "/drive/joy")],
+            ),
         ]
     )
