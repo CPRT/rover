@@ -111,11 +111,15 @@ def generate_launch_description():
         condition=IfCondition(use_arm),
     )
 
-
     delayed_spawners = RegisterEventHandler(
         OnProcessStart(
             target_action=controller_manager,
-            on_start=[jsb_spawner, chassis_controller_spawner, arm_controller_move_it_spawner, arm_controller_servo_spawner],
+            on_start=[
+                jsb_spawner,
+                chassis_controller_spawner,
+                arm_controller_move_it_spawner,
+                arm_controller_servo_spawner,
+            ],
         )
     )
 

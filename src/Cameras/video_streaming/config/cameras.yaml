@@ -11,7 +11,7 @@ input_node:
       path: "/dev/v4l/by-id/drive_camera"
       type: 0
     EndEffector:
-      path: "/dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._USB_2.0_Camera_SN5100-video-index0"
+      path: "/dev/v4l/by-id/usb-MACROSILICON_USB_Video_20200909-video-index0"
       type: 0
       encoded: true
     Bottom:

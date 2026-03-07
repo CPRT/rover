@@ -120,6 +120,9 @@ void arm::arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
     moveit_servo_state(true);
     RCLCPP_INFO(this->get_logger(), "Switched to manual control");
   }
+  if (current_state_ != NONE) {
+    endeffector_control(joystickMsg);
+  }
 
   switch (current_state_) {
   case MANUAL:
@@ -144,13 +147,13 @@ void arm::manual_arm_control(
 
   joint_msg.header.stamp = joystickMsg->header.stamp;
 
-  joint_msg.velocities = {axes[kJoint1Axis],
-                          axes[kJoint2Axis],
+  joint_msg.velocities = {-axes[kJoint1Axis],
+                          -axes[kJoint2Axis],
                           axes[kJoint3Axis],
                           axes[kJoint4Axis],
-                          static_cast<double>(buttons[kWristYaw_positive] -
-                                              buttons[kWristYaw_negative]),
-                          axes[kJoint6Axis]};
+                          -static_cast<double>(buttons[kWristYaw_positive] -
+                                               buttons[kWristYaw_negative]),
+                          -axes[kJoint6Axis]};
 
   joint_pub_->publish(joint_msg);
 }
@@ -158,6 +161,7 @@ void arm::manual_arm_control(
 void arm::ik_arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   auto twist_msg = geometry_msgs::msg::TwistStamped();
   twist_msg.header.stamp = joystickMsg->header.stamp;
+  twist_msg.header.frame_id = "Link_6";
 
   auto &axes = joystickMsg->axes;
   auto &buttons = joystickMsg->buttons;
@@ -187,6 +191,8 @@ void arm::declareParameters() {
   this->declare_parameter("ik_button", 10);
   this->declare_parameter("manual_button", 11);
   this->declare_parameter("disable_button", 9);
+  this->declare_parameter("claw_close_button", 0);
+  this->declare_parameter("claw_open_button", 1);
 }
 void arm::loadParameters() {
   this->get_parameter("throttle.axis", kThrottleAxis);
@@ -200,6 +206,8 @@ void arm::loadParameters() {
   this->get_parameter("ik_button", kIkButton);
   this->get_parameter("manual_button", kManualButton);
   this->get_parameter("disable_button", kDisableButton);
+  this->get_parameter("claw_close_button", kClawOpen);
+  this->get_parameter("claw_open_button", kClawClose);
 }
 
 int main(int argc, char **argv) {
