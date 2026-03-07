@@ -8,20 +8,27 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 def find_ps5():
-    with open("/proc/bus/input/devices") as f:
-        device_block = ""
-        for line in f:
-            if line.strip() == "":
-                if "Wireless Controller" in device_block:
-                    for part in device_block.split():
-                        if part.startswith("js"):
-                            print(f"Found PS5 controller at {part}")
-                            return int(part.replace("js", ""))
-                device_block = ""
-            else:
-                device_block += line
-    print(f"ERROR: PS5 controller not found in /proc/bus/input/devices")
-    return -1
+    try:
+        with open("/proc/bus/input/devices", "r") as f:
+            device_block = ""
+            for line in f:
+                if line.strip() == "":
+                    if "Wireless Controller" in device_block:
+                        # Find the handlers line, e.g., H: Handlers=event19 js0
+                        for part in device_block.split():
+                            if part.startswith("js"):
+                                # Return the full path string, not just the number
+                                dev_path = f"/dev/input/{part.strip()}"
+                                print(f"Found PS5 controller at {dev_path}")
+                                return dev_path
+                    device_block = ""
+                else:
+                    device_block += line
+    except Exception as e:
+        print(f"Error reading devices: {e}")
+    
+    print("ERROR: PS5 controller not found. Defaulting to /dev/input/js0")
+    return "/dev/input/js0"
 
 
 def generate_launch_description():
