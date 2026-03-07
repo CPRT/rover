@@ -17,8 +17,9 @@ def generate_launch_description():
                 plugin="ros_phoenix::TalonSRX",
                 name="end_effector",
                 parameters=[
-                    {"id": 13},
+                    {"id": 21},
                     {"max_voltage": 24.0},
+                    {"max_current": 6.0},
                     {"brake_mode": True},
                 ],
             ),

@@ -123,6 +123,15 @@ void TalonSRXWrapper::write() {
     }
     return;
   }
+  if (std::abs(command_ - position_) > M_PI &&
+      control_type_ == motors::ControlMode::Position) {
+    RCLCPP_WARN_THROTTLE(
+        debug_node_->get_logger(), *debug_node_->get_clock(), 1000,
+        "%s: Large position error (%.2f) for id %d, which may indicate a "
+        "problem with sensor configuration or an unexpected jump in position",
+        __FUNCTION__, command_ - position_, id_);
+    return;
+  }
   double output = 0.0;
   if (crossover_mode_ && std::abs(command_) > M_PI) {
     RCLCPP_WARN_THROTTLE(
@@ -140,7 +149,7 @@ void TalonSRXWrapper::write() {
       if (output < 0)
         output += sensor_ticks_;
     } else {
-      output = (command_)*sensor_ticks_ / (2.0 * M_PI) + sensor_offset_ticks_;
+      output = command_ * sensor_ticks_ / (2.0 * M_PI) + sensor_offset_ticks_;
     }
   } else if (control_type_ == motors::ControlMode::Velocity) {
     // Talons use d / 100ms as vel
@@ -229,6 +238,7 @@ void TalonSRXWrapper::configure() {
     command_ = position_;
   }
   talon_controller_->Set(motors::ControlMode::Disabled, 0.0);
+  talon_controller_->ClearStickyFaults();
   RCLCPP_INFO(debug_node_->get_logger(),
               "%s: Successfully configured Motor Controller %d", __FUNCTION__,
               id_);

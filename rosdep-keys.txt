@@ -86,3 +86,5 @@ usbutils
 tinyxml2
 clang-tidy
 python3-vcstool
+joy_linux
+position_controllers
