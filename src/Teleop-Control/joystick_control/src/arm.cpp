@@ -58,9 +58,9 @@ void arm::mode_switch(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   mode_button_value = joystickMsg->buttons[mode_switch_button];
 
   // Check which goal pose is pressed
-  if (joystickMsg->buttons[kHomeButton] == 1){
+  if (joystickMsg->buttons[kHomeButton] == 1) {
     send_goal_pose(10);
-  } else if (joystickMsg->buttons[kStowButton] == 1){
+  } else if (joystickMsg->buttons[kStowButton] == 1) {
     send_goal_pose(11);
   }
 

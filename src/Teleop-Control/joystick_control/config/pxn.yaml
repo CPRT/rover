@@ -38,7 +38,6 @@ arm_teleop_node:
       max_roll_speed: 0.1
       max_pitch_speed: 0.1
       max_yaw_speed: 0.1
-<<<<<<< HEAD
     saves:
       pose1: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
       pose2: [0.5, -0.3, 0.2, 0.1, -0.1, 0.4]
@@ -46,10 +45,8 @@ arm_teleop_node:
       pose4: [0.0, -0.3, 0.5, 0.6, 0.8, 0.7]
       pose6: [0.5, -0.3, 0.2, 0.1, -0.1, 0.4]
       pose7: [0.2, 0.1, -0.5, 0.2, -0.6, 0.4]
-=======
     arm_saves:
       home_button: 10 
       stow_button: 11
->>>>>>> 55977ff66dd18313715a7ac91e37191b8b69ff3a
      
     
