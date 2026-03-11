@@ -26,9 +26,11 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr ik_pub_;
   rclcpp::Publisher<control_msgs::msg::JointJog>::SharedPtr joint_pub_;
   control_msgs::msg::JointJog joint_msg_;
+  sensor_msgs::msg::Joy::SharedPtr last_joy_msg_;
 
   void arm_manual(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
   void arm_ik(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
+  void check_preset(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
   void mode_switch(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
 
   rclcpp_action::Client<MoveToPose>::SharedPtr move_group_action_client_;
@@ -40,13 +42,18 @@ private:
       const std::shared_ptr<const MoveToPose::Feedback> feedback);
   void
   movegroup_result_callback(const GoalHandleMoveToPose::WrappedResult &result);
-  void request_position(int pose_id);
+  void request_position(std::string pose_id);
 
-  std::vector<std::vector<double>> positions;
+  bool button_pressed(int index, const sensor_msgs::msg::Joy::SharedPtr& current);
+  
+  std::map<std::string, std::vector<double>> positions;
+
+
+  bool is_moving_ = false;
 
   int mode_button_value = 0;
   int mode_button_value_prev = 0;
-  int modes = 2;
+  int modes = 3;
   int mode = 1;
 
   int kHomeButton;
