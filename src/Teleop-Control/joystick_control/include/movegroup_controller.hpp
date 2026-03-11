@@ -24,7 +24,16 @@ private:
   void handle_accepted(const std::shared_ptr<GoalHandleMoveToPose> goal_handle);
   void execute(const std::shared_ptr<GoalHandleMoveToPose> goal_handle);
   rclcpp_action::Server<MoveToPose>::SharedPtr action_server_;
-  void handle_move(geometry_msgs::msg::Pose target_pose);
+  rclcpp_action::Server<GetPose>::SharedPtr action_server_2_;
+  rclcpp_action::GoalResponse
+  handle_goal_get_pose(const rclcpp_action::GoalUUID &uuid,
+                       std::shared_ptr<const GetPose::Goal> goal);
+  rclcpp_action::CancelResponse
+  handle_cancel_get_pose(const std::shared_ptr<GoalHandleGetPose> goal_handle);
+  void handle_accepted_get_pose(
+      const std::shared_ptr<GoalHandleGetPose> goal_handle);
+  void execute_get_pose(const std::shared_ptr<GoalHandleGetPose> goal_handle);
+  bool handle_move(geometry_msgs::msg::Pose target_pose);
   const std::string PLANNING_GROUP = "rover_arm";
   std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_;
   void executeTrajectory(moveit_msgs::msg::RobotTrajectory &traj,
