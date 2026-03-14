@@ -44,10 +44,10 @@ private:
   movegroup_result_callback(const GoalHandleMoveToPose::WrappedResult &result);
   void request_position(std::string pose_id);
 
-  bool button_pressed(int index, const sensor_msgs::msg::Joy::SharedPtr& current);
-  
-  std::map<std::string, std::vector<double>> positions;
+  bool button_pressed(int index,
+                      const sensor_msgs::msg::Joy::SharedPtr &current);
 
+  std::map<std::string, std::vector<double>> positions;
 
   bool is_moving_ = false;
 

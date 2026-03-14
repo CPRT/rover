@@ -22,17 +22,19 @@ MoveGroupController::MoveGroupController(const rclcpp::NodeOptions &options)
 
   RCLCPP_INFO(this->get_logger(), "MoveGroupController action server started");
 }
-rclcpp_action::GoalResponse MoveGroupController::handle_goal(const rclcpp_action::GoalUUID &uuid,
+rclcpp_action::GoalResponse
+MoveGroupController::handle_goal(const rclcpp_action::GoalUUID &uuid,
                                  std::shared_ptr<const MoveToPose::Goal> goal) {
   (void)uuid;
   (void)goal;
-  RCLCPP_INFO(this->get_logger(), "Received goal request for a new target pose");
+  RCLCPP_INFO(this->get_logger(),
+              "Received goal request for a new target pose");
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
-
-rclcpp_action::GoalResponse MoveGroupController::handle_goal_get_pose(const rclcpp_action::GoalUUID &uuid,
-                                         std::shared_ptr<const GetPose::Goal> goal) {
+rclcpp_action::GoalResponse MoveGroupController::handle_goal_get_pose(
+    const rclcpp_action::GoalUUID &uuid,
+    std::shared_ptr<const GetPose::Goal> goal) {
   (void)uuid;
   RCLCPP_INFO(this->get_logger(), "Received goal request for time: %d",
               goal->time);
@@ -63,7 +65,8 @@ void MoveGroupController::handle_accepted(
 void MoveGroupController::handle_accepted_get_pose(
     const std::shared_ptr<GoalHandleGetPose> goal_handle) {
   // Use a detached thread to handle long-running execution
-  std::thread{std::bind(&MoveGroupController::execute_get_pose, this, goal_handle)}
+  std::thread{
+      std::bind(&MoveGroupController::execute_get_pose, this, goal_handle)}
       .detach();
 }
 
@@ -96,7 +99,7 @@ void MoveGroupController::execute(
 }
 
 void MoveGroupController::execute_get_pose(
-    const std::shared_ptr<GoalHandleGetPose> goal_handle){
+    const std::shared_ptr<GoalHandleGetPose> goal_handle) {
   RCLCPP_INFO(this->get_logger(), "Executing goal");
   const auto goal = goal_handle->get_goal();
   auto feedback = std::make_shared<GetPose::Feedback>();
@@ -108,9 +111,8 @@ void MoveGroupController::execute_get_pose(
       goal_handle->canceled(result);
       RCLCPP_INFO(this->get_logger(), "Goal canceled");
       return;
-      }
-
     }
+  }
   auto current_joints = move_group_->getCurrentJointValues();
   result->current_position = current_joints;
   goal_handle->succeed(result);
