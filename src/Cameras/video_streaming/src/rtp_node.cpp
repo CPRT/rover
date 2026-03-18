@@ -210,7 +210,6 @@ void RtpNode::set_resolution(const int width, const int height) {
 }
 
 void RtpNode::on_iframe_trigger(const std_msgs::msg::Empty::SharedPtr msg) {
-  (void)msg;
   if (h265_encoder_) {
     g_signal_emit_by_name(h265_encoder_, "force-IDR");
   }
