@@ -28,6 +28,7 @@ add_library(${PROJECT_NAME} SHARED
   src/webrtc_node.cpp
   src/srt_node.cpp
   src/srt_node_client.cpp
+  src/rtp_node.cpp
 )
 
 include_directories(
@@ -60,6 +61,7 @@ rclcpp_components_register_nodes(${PROJECT_NAME}
   "WebRtcNode"
   "video_streaming::SrtNode"
   "video_streaming::SrtClientNode"
+  "video_streaming::RtpNode"
 )
 
 # ---- Install
