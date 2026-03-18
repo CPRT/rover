@@ -43,4 +43,5 @@ protected:
 private:
   std::map<std::string, size_t> source_map_;
   rclcpp::Service<interfaces::srv::VideoOut>::SharedPtr video_service_;
+  std::shared_ptr<interfaces::srv::VideoOut::Request> current_video_request_;
 };
