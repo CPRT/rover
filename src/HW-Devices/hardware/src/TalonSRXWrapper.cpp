@@ -18,7 +18,9 @@ TalonSRXWrapper::TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
     if (param.first == "can_id") {
       id_ = std::stoi(param.second);
     } else if (param.first == "sensor_type") {
-      sensor_type_str = param.second;
+      sensor_type_ = sensor_type_from_str(param.second);
+    } else if (param.first == "load_sensor") {
+      load_sensor_ = sensor_type_from_str(param.second);
     } else if (param.first == "sensor_ticks") {
       sensor_ticks_ = std::stoi(param.second);
     } else if (param.first == "sensor_offset") {
@@ -77,18 +79,19 @@ TalonSRXWrapper::TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
   debug_pub_ = debug_node_->create_publisher<ros_phoenix::msg::MotorStatus>(
       joint.name + "/status", rclcpp::SystemDefaultsQoS());
 
-  std::transform(sensor_type_str.begin(), sensor_type_str.end(),
-                 sensor_type_str.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
-  if (sensor_type_str == "quadrature") {
-    sensor_type_ = SensorType::RELATIVE;
-  } else if (sensor_type_str == "absolute") {
-    sensor_type_ = SensorType::PWM;
-  } else if (sensor_type_str == "analog") {
-    sensor_type_ = SensorType::ANALOG;
-  }
   sensor_offset_ticks_ =
       static_cast<int>(sensor_offset * sensor_ticks_ / (2.0 * M_PI));
+}
+
+TalonSRXWrapper::SensorType
+TalonSRXWrapper::sensor_type_from_str(std::string str) {
+  std::transform(str.begin(), str.end(), str.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+  const auto itr = sensor_type_map.find(str);
+  if (itr == sensor_type_map.end()) {
+    return SensorType::NONE;
+  }
+  return itr->second;
 }
 
 void TalonSRXWrapper::pub_status() const {
@@ -176,6 +179,21 @@ void TalonSRXWrapper::read() {
   velocity_ = raw_velocity * 10 * (2.0 * M_PI) / sensor_ticks_;
 }
 
+int TalonSRXWrapper::get_load_enc() const {
+  auto &sensor_collection = talon_controller_->GetSensorCollection();
+  int abs_ticks = 0;
+  switch (load_sensor_) {
+  case SensorType::PWM:
+    return sensor_collection.GetPulseWidthPosition();
+  case SensorType::ANALOG:
+    return sensor_collection.GetAnalogIn();
+  case SensorType::RELATIVE:
+    return sensor_collection.GetQuadraturePosition();
+  default:
+    return 0;
+  }
+}
+
 void TalonSRXWrapper::configure() {
   BaseWrapper::configure();
   while (true) {
@@ -233,6 +251,9 @@ void TalonSRXWrapper::configure() {
   talon_controller_->SetStatusFramePeriod(
       StatusFrameEnhanced::Status_2_Feedback0, 20);
   talon_controller_->SetIntegralAccumulator(0);
+  if (load_sensor_ != SensorType::NONE) {
+    talon_controller_->SetSelectedSensorPosition(get_load_enc());
+  }
   read();
   if (control_type_ == motors::ControlMode::Position) {
     command_ = position_;
