@@ -7,6 +7,7 @@ from launch.substitutions import PythonExpression
 import os
 from ament_index_python.packages import get_package_share_directory
 
+
 def find_ps5():
     try:
         with open("/proc/bus/input/devices", "r") as f:
@@ -26,7 +27,7 @@ def find_ps5():
                     device_block += line
     except Exception as e:
         print(f"Error reading devices: {e}")
-    
+
     print("ERROR: PS5 controller not found. Defaulting to /dev/input/js0")
     return "/dev/input/js0"
 
