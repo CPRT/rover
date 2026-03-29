@@ -19,6 +19,8 @@
   <depend>rclcpp_lifecycle</depend>
   <depend>interfaces</depend>
   <depend>ros_phoenix</depend>
+  <depend>tf2_ros</depend>
+  <depend>geometry_msgs</depend>
 
   <build_depend>rclcpp_components</build_depend>
   <build_depend>rcutils</build_depend>

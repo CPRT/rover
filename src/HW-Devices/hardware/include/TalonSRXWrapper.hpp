@@ -21,6 +21,9 @@
 #include "ros_phoenix/msg/motor_control.hpp"
 #include "ros_phoenix/msg/motor_status.hpp"
 
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+
 #include "BaseWrapper.hpp"
 
 class TalonSRXWrapper : public BaseWrapper {
@@ -43,6 +46,7 @@ private:
   enum class SensorType { PWM, RELATIVE, ANALOG, NONE };
   static SensorType sensor_type_from_str(std::string str);
   int get_load_enc() const;
+  void update_gravity_ff();
 
   // Parameters
   int id_;
@@ -58,7 +62,11 @@ private:
   bool crossover_mode_;
   bool inverted_;
   bool invert_sensor_;
+  double gravity_const_;
+  std::string target_frame_;
+  std::string cur_frame_;
   bool initialized_;
+  int gravity_ff_freq_;
   rclcpp::Time start_time_;
   rclcpp::Publisher<ros_phoenix::msg::MotorStatus>::SharedPtr debug_pub_;
   static constexpr double kWaitDurationSec = 5.0;
@@ -67,6 +75,10 @@ private:
       {"absolute", SensorType::PWM},
       {"analog", SensorType::ANALOG},
       {"none", SensorType::NONE}};
+  std::atomic<double> gravity_ff_{0.0};
+  rclcpp::TimerBase::SharedPtr gravity_ff_timer_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_{nullptr};
 
   // Talon-specific handle
   std::shared_ptr<ctre::phoenix::motorcontrol::can::TalonSRX> talon_controller_;

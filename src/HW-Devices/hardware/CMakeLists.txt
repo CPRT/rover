@@ -92,6 +92,10 @@ find_package(interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(ros_phoenix REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 
 include_directories(
@@ -124,10 +128,15 @@ ament_target_dependencies(${PROJECT_NAME}
   "interfaces"
   "rclcpp_lifecycle"
   "ros_phoenix"
-  )
+  "tf2"
+  "tf2_ros"
+  "tf2_geometry_msgs"
+  "geometry_msgs"
+)
 target_link_libraries(${PROJECT_NAME}
   ${PHOENIX_LIBRARIES}
   Threads::Threads
+  tf2_geometry_msgs::tf2_geometry_msgs
 )
 
 # Register plugins for control
