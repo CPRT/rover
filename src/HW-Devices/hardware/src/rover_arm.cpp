@@ -76,6 +76,9 @@ RoverArmHardwareInterface::export_command_interfaces() {
 
 hardware_interface::CallbackReturn RoverArmHardwareInterface::on_activate(
     const rclcpp_lifecycle::State & /*previous_state*/) {
+  executor_ = rclcpp::executors::SingleThreadedExecutor::make_shared();
+  executor_->add_node(debug_node_);
+  spin_thread_ = std::thread([this]() { this->executor_->spin(); });
   RCLCPP_INFO(rclcpp::get_logger("RoverArmHardwareInterface"),
               "Successfully activated!");
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -83,6 +86,9 @@ hardware_interface::CallbackReturn RoverArmHardwareInterface::on_activate(
 
 hardware_interface::CallbackReturn RoverArmHardwareInterface::on_deactivate(
     const rclcpp_lifecycle::State & /*previous_state*/) {
+  executor_->cancel();
+  spin_thread_.join();
+  executor_.reset();
   RCLCPP_INFO(rclcpp::get_logger("RoverArmHardwareInterface"),
               "Successfully deactivated!");
   return hardware_interface::CallbackReturn::SUCCESS;

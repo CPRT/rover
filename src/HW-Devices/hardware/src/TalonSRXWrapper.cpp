@@ -1,4 +1,7 @@
 #include "TalonSRXWrapper.hpp"
+#include <tf2/convert.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <tf2_ros/transform_listener.h>
 
 namespace motors = ctre::phoenix::motorcontrol;
 
@@ -9,11 +12,14 @@ TalonSRXWrapper::TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
       control_type_(ctre::phoenix::motorcontrol::ControlMode::Disabled),
       sensor_type_(SensorType::RELATIVE), sensor_ticks_(4096),
       sensor_offset_ticks_(0), crossover_mode_(false), inverted_(false),
-      invert_sensor_(false), debug_pub_(nullptr), talon_controller_(nullptr),
-      initialized_(false) {
+      invert_sensor_(false), debug_pub_(nullptr), gravity_const_(0.0),
+      talon_controller_(nullptr), initialized_(false), gravity_ff_(0),
+      gravity_ff_freq_(0) {
   std::string sensor_type_str;
   std::string can_interface = "can0";
   double sensor_offset = 0.0;
+  target_frame_ = "base_link";
+  cur_frame_ = "";
   for (const auto &param : joint.parameters) {
     if (param.first == "can_id") {
       id_ = std::stoi(param.second);
@@ -41,6 +47,14 @@ TalonSRXWrapper::TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
       inverted_ = (param.second == "true");
     } else if (param.first == "invert_sensor") {
       invert_sensor_ = (param.second == "true");
+    } else if (param.first == "gravity_ff_freq") {
+      gravity_ff_freq_ = std::stoi(param.second);
+    } else if (param.first == "gravity_frame") {
+      target_frame_ = param.second;
+    } else if (param.first == "current_frame") {
+      cur_frame_ = param.second;
+    } else if (param.first == "gravity_const") {
+      gravity_const_ = std::stod(param.second);
     } else {
       RCLCPP_DEBUG(debug_node_->get_logger(),
                    "[%s] Unknown parameter: %s, ignoring", joint.name.c_str(),
@@ -73,7 +87,8 @@ TalonSRXWrapper::TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
                  joint.name.c_str(), joint.command_interfaces[0].name.c_str());
     throw std::runtime_error("Invalid command interface for TalonSRX");
   }
-
+  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(debug_node_->get_clock());
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   talon_controller_ =
       std::make_shared<motors::can::TalonSRX>(id_, can_interface);
   debug_pub_ = debug_node_->create_publisher<ros_phoenix::msg::MotorStatus>(
@@ -92,6 +107,35 @@ TalonSRXWrapper::sensor_type_from_str(std::string str) {
     return SensorType::NONE;
   }
   return itr->second;
+}
+
+void TalonSRXWrapper::update_gravity_ff() {
+  if (!tf_buffer_) {
+    RCLCPP_ERROR(debug_node_->get_logger(),
+                 "%s: TF buffer not initialized, cannot update gravity FF",
+                 __FUNCTION__);
+    return;
+  }
+  try {
+    auto tf = tf_buffer_->lookupTransform(
+        target_frame_.c_str(), cur_frame_.c_str(), tf2::TimePointZero);
+
+    tf2::Quaternion q;
+    tf2::fromMsg(tf.transform.rotation, q);
+
+    double roll, pitch, yaw;
+    tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
+    double ff = gravity_const_ * std::sin(pitch);
+    gravity_ff_.store(ff, std::memory_order_relaxed);
+    RCLCPP_DEBUG(
+        debug_node_->get_logger(),
+        "%s: Updated gravity FF to %.2f based on pitch %.2f degrees for id %d",
+        __FUNCTION__, ff, pitch * 180.0 / M_PI, id_);
+  } catch (const tf2::TransformException &err) {
+    RCLCPP_ERROR_THROTTLE(debug_node_->get_logger(), *debug_node_->get_clock(),
+                          500, "%s: Caught exception %s", __FUNCTION__,
+                          err.what());
+  }
 }
 
 void TalonSRXWrapper::pub_status() const {
@@ -158,7 +202,9 @@ void TalonSRXWrapper::write() {
     // Talons use d / 100ms as vel
     output = (command_ * sensor_ticks_ / (2.0 * M_PI)) / 10.0;
   }
-  talon_controller_->Set(control_type_, output);
+  talon_controller_->Set(control_type_, output,
+                         motors::DemandType::DemandType_ArbitraryFeedForward,
+                         gravity_ff_.load(std::memory_order_relaxed));
 }
 
 void TalonSRXWrapper::read() {
@@ -196,6 +242,26 @@ int TalonSRXWrapper::get_load_enc() const {
 
 void TalonSRXWrapper::configure() {
   BaseWrapper::configure();
+  // Start gravity ff timer
+  if (gravity_ff_freq_ > 0 && !target_frame_.empty() && !cur_frame_.empty()) {
+    gravity_ff_timer_ = debug_node_->create_wall_timer(
+        std::chrono::milliseconds(1000 / gravity_ff_freq_),
+        std::bind(&TalonSRXWrapper::update_gravity_ff, this));
+    RCLCPP_INFO(
+        debug_node_->get_logger(),
+        "%s: Gravity FF enabled with frequency %d Hz, target frame '%s', "
+        "current frame '%s', and gravity constant %.2f",
+        __FUNCTION__, gravity_ff_freq_, target_frame_.c_str(),
+        cur_frame_.c_str(), gravity_const_);
+  } else {
+    RCLCPP_INFO(
+        debug_node_->get_logger(),
+        "%s: Gravity FF disabled (frequency %d Hz, target frame '%s', current "
+        "frame '%s')",
+        __FUNCTION__, gravity_ff_freq_, target_frame_.c_str(),
+        cur_frame_.c_str());
+  }
+
   while (true) {
     if (talon_controller_->GetFirmwareVersion() == -1) {
       RCLCPP_ERROR_THROTTLE(

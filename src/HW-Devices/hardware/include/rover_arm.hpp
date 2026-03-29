@@ -70,6 +70,8 @@ public:
 private:
   rclcpp::Node::SharedPtr debug_node_;
   std::vector<std::shared_ptr<BaseWrapper>> controllers_;
+  std::thread spin_thread_;
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
 };
 
 } // namespace ros2_control_rover_arm
