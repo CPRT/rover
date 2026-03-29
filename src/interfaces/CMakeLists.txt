@@ -26,6 +26,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/SystemTelemetry.msg"
   "msg/GasSensorReading.msg"
   "msg/SrtStats.msg"
+  "msg/RtpStats.msg"
   "srv/NavToGPSGeopose.srv"
   "srv/VideoOut.srv"
   "srv/MoveServo.srv"

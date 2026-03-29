@@ -41,7 +41,7 @@ def generate_launch_description():
                     os.path.join(
                         get_package_share_directory("video_streaming"),
                         "launch",
-                        "srt_client.launch.py",
+                        "rtp_client.launch.py",
                     )
                 )
             ),
