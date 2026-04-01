@@ -39,8 +39,9 @@ std::string RtpClientNode::get_pipeline_description() {
        << "clock-rate=90000\" ! rtpjitterbuffer name=rtp_buf mode=4 latency="
        << latency_ms_
        << " drop-on-latency=true ! rtpulpfecdec name=fec_dec ! rtph265depay ! "
-          "h265parse ! "
-       << "nvv4l2decoder ! nvvidconv ! nveglglessink sync=false";
+          "h265parse ! nvv4l2decoder ! nvvidconv ! "
+       << "\"video/x-raw(memory:NVMM), width=1920, height=1080\" ! nvvidconv ! "
+          "nveglglessink sync=false";
   return desc.str();
 }
 
