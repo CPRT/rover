@@ -20,6 +20,8 @@ pkg_check_modules(GST_VIDEO REQUIRED IMPORTED_TARGET gstreamer-video-1.0)
 
 add_subdirectory(gst-plugins)
 
+set(DS_PATH /opt/nvidia/deepstream/deepstream)
+
 # ---- Targets
 add_library(${PROJECT_NAME} SHARED
   src/base_video_node.cpp
@@ -37,10 +39,18 @@ include_directories(
   ${GSTREAMER_INCLUDE_DIRS}
   ${GST_APP_INCLUDE_DIRS}
   ${GST_VIDEO_INCLUDE_DIRS}
+  ${DS_PATH}/sources/includes
 )
 
-target_link_directories(${PROJECT_NAME} PRIVATE ${GST_LIBRARY_DIRS})
-target_link_libraries(${PROJECT_NAME} 
+link_directories(${DS_PATH}/lib)
+
+target_link_directories(${PROJECT_NAME} PRIVATE 
+  ${GST_LIBRARY_DIRS}
+  ${DS_PATH}/lib
+)
+target_link_libraries(${PROJECT_NAME}
+  nvdsgst_meta
+  nvds_meta
   PkgConfig::GSTREAMER
   PkgConfig::GST_APP
   PkgConfig::GST_VIDEO

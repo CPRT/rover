@@ -23,7 +23,13 @@ def generate_launch_description():
         plugin="DetectNode",
         name="detect_node",
         namespace="",
-        parameters=[{"bottle_config": config_dir + "/bottle/bottle.txt"}],
+        parameters=[
+            {
+                "bottle_config": config_dir + "/bottle/bottle.txt",
+                "mallet_config": config_dir + "/mallet/mallet.txt",
+                "detection_type": "NONE",
+            }
+        ],
     )
 
     streaming_node = ComposableNode(
@@ -39,7 +45,7 @@ def generate_launch_description():
         plugin="video_streaming::RtpNode",
         name="rtp_node",
         namespace="",
-        parameters=[{"dest_ip": "192.168.0.20", "dest_port": 5004}],
+        parameters=[{"dest_ip": "192.168.1.100", "dest_port": 5004}],
     )
 
     # Create a container for all 3 components
