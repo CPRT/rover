@@ -19,4 +19,5 @@ private:
   rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr marker_pub_;
   rcl_interfaces::msg::SetParametersResult
   on_parameter_change(const std::vector<rclcpp::Parameter> &parameters);
+  DetectionType string_to_detection_type(const std::string &type_str);
 };

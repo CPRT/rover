@@ -154,8 +154,8 @@ void InputNode::video_cb(
       response->success = false;
       return;
     }
-    g_object_set(G_OBJECT(pad), "xpos", origin_x, "ypos", origin_y, "zorder",
-                 order++, "alpha", 1.0, NULL);
+    g_object_set(G_OBJECT(pad), "xpos", origin_x, "ypos", origin_y, "height",
+                 height, "width", width, "zorder", order++, "alpha", 1.0, NULL);
     gst_object_unref(pad);
   }
   gst_object_unref(compositor);
