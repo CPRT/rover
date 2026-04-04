@@ -34,14 +34,16 @@ RtpClientNode::RtpClientNode(const rclcpp::NodeOptions &options)
 
 std::string RtpClientNode::get_pipeline_description() {
   std::stringstream desc;
+  constexpr guint storage_tolerance_ms = 20;
+  guint64 storage_sz_ns = (latency_ms_ + storage_tolerance_ms) * 1000000ULL;
   desc << "udpsrc port=" << dest_port_ << " caps="
        << "\"application/x-rtp,media=video,encoding-name=H265,payload=96, "
-       << "clock-rate=90000\" ! rtpjitterbuffer name=rtp_buf mode=4 latency="
-       << latency_ms_
-       << " drop-on-latency=true ! rtpulpfecdec name=fec_dec ! rtph265depay ! "
-          "h265parse ! nvv4l2decoder ! nvvidconv ! "
-       << "\"video/x-raw(memory:NVMM), width=1920, height=1080\" ! nvvidconv ! "
-          "nveglglessink sync=false";
+       << "clock-rate=90000\" ! rtpstorage size-time=" << storage_sz_ns
+       << " ! rtpjitterbuffer name=rtp_buf mode=4 latency=" << latency_ms_
+       << " drop-on-latency=true do-lost=1 ! rtpulpfecdec name=fec_dec ! "
+          "rtph265depay ! h265parse ! nvv4l2decoder ! nvvidconv ! "
+       << "capsfilter caps=\"video/x-raw(memory:NVMM),width=1920,height=1080\""
+          " ! nvvidconv ! nveglglessink sync=false";
   return desc.str();
 }
 
