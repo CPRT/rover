@@ -1,7 +1,7 @@
-name: Docker CI/CD Multi-Arch
+name: Build & Lint
 
 on:
-  push:
+  pull_request:
     branches: [ main ]
 
 concurrency:
@@ -28,9 +28,9 @@ jobs:
         id: gstreamer_build
         run: |
           echo "Building gstreamer image"
-          ./gstreamer-config/docker_build.sh --push
+          ./gstreamer-config/docker_build.sh --test
 
-  build-rover-amd64:
+  build-lint:
     runs-on: [self-hosted]
     needs: gstreamer-build
     steps:
@@ -43,27 +43,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build & push (amd64)
-        id: build_rover_amd64
+      - name: Build & lint (amd64)
+        id: build_lint_amd64
         run: |
-          echo "Building for AMD64"
-          ./docker_build.sh --arch amd64 --push
-
-  build-rover-arm64:
-    runs-on: [self-hosted]
-    needs: gstreamer-build
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Docker login
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build & push (arm64)
-        id: build_rover_arm64
-        run: |
-          echo "Building for ARM64"
-          ./docker_build.sh --arch arm64 --push
+          ./docker_build.sh --arch amd64 --test

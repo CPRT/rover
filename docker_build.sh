@@ -10,7 +10,6 @@ GIT_SHA=$(git rev-parse HEAD)
 MODE="--load"
 OVERRIDE_ARCH=""
 GST=FALSE
-BUILD_WORKERS=$(nproc)
 BUILD_TYPE="release"
 
 # Parse args
@@ -36,20 +35,15 @@ while [[ $# -gt 0 ]]; do
       GST=TRUE
       shift
       ;;
-    --workers)
-      BUILD_WORKERS="$2"
-      shift 2
-      ;;
     --build-type)
       BUILD_TYPE="$2"
       shift 2
       ;;
     *)
       echo "Usage: $0"
-      echo "[--push|--load (default)]"
+      echo "[--push|--load (default)|--test (runs lint and build)]"
       echo "[--arch <amd64|arm64> (optional for emulation)]"
       echo "[--gstreamer (to build gstreamer image first)]"
-      echo "[--workers <num> (default: Number of cores in system {$(nproc)})]"
       echo "[--build-type <release|debug> (default: release)]"
       exit 1
       ;;
@@ -89,6 +83,11 @@ DEV_SHA_TAG=${IMAGE_NAME}:dev-${GIT_SHA}-${TARGETARCH}
 APP_TAG=${IMAGE_NAME}:${TARGETARCH}
 APP_SHA_TAG=${IMAGE_NAME}:${GIT_SHA}-${TARGETARCH}
 
+TOOLCHAIN=""
+if { [ "$ARCH" != "$(uname -m)" ] && { [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; }; }; then
+  TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=/rover/aarch64_toolchain.cmake"
+fi
+
 if [ "$MODE" = "--test" ]; then
   echo "Testing dev image..."
   docker buildx build \
@@ -96,8 +95,10 @@ if [ "$MODE" = "--test" ]; then
     -f Dockerfile \
     --platform linux/$TARGETARCH \
     --target linter \
-    --build-arg BUILD_FLAGS="--parallel-workers $BUILD_WORKERS\
-                --cmake-args=-DCMAKE_BUILD_TYPE=$BUILD_TYPE" \
+    --build-arg BUILD_FLAGS="--cmake-args $TOOLCHAIN \
+                  -DCMAKE_BUILD_TYPE=$BUILD_TYPE" \
+    --cache-from type=registry,ref=cprtsoftware/rover:cache-$TARGETARCH \
+    --cache-to type=registry,ref=cprtsoftware/rover:cache-$TARGETARCH,mode=max \
     .
   exit 0
 fi
@@ -111,14 +112,10 @@ docker buildx build \
   --target dev \
   -t $DEV_TAG \
   -t $DEV_SHA_TAG \
+  --cache-from type=registry,ref=cprtsoftware/rover:cache-$TARGETARCH \
+  --cache-to type=registry,ref=cprtsoftware/rover:cache-$TARGETARCH,mode=max \
   $MODE \
   .
-
-
-TOOLCHAIN=""
-if { [ "$ARCH" != "$(uname -m)" ] && { [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; }; }; then
-  TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=/rover/aarch64_toolchain.cmake"
-fi
 
 # --- APP (rover) image ---
 echo "Starting rover image (base: $BASE_IMAGE)"
@@ -129,9 +126,9 @@ docker buildx build \
   --platform linux/$TARGETARCH \
   -t $APP_TAG \
   -t $APP_SHA_TAG \
-  --build-arg BUILD_FLAGS="--parallel-workers $BUILD_WORKERS\
-              --cmake-args \
-                 $TOOLCHAIN \
+  --build-arg BUILD_FLAGS="--cmake-args $TOOLCHAIN \
                 -DCMAKE_BUILD_TYPE=$BUILD_TYPE" \
+  --cache-from type=registry,ref=cprtsoftware/rover:cache-$TARGETARCH \
+  --cache-to type=registry,ref=cprtsoftware/rover:cache-$TARGETARCH,mode=max \
   $MODE \
   .
