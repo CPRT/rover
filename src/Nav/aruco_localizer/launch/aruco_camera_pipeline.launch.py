@@ -2,7 +2,7 @@
 """
 Combined Launch File for Camera Publisher and ArUco Board Detector
 
-This launch file starts both the camera_publisher_node and the 
+This launch file starts both the camera_publisher_node and the
 aruco_board_detector_node together for complete ArUco board detection pipeline.
 Uses config files for most parameters, exposing only essential overrides.
 """

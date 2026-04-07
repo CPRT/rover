@@ -119,7 +119,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     lsb-release \
     gnupg2 libssl-dev libpng16-16 \
     zlib1g-dev libffi-dev \
-    libglib2.0-dev libmount-dev
+    libglib2.0-dev libmount-dev \
+    python3-mrcal \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN source /opt/ros/humble/setup.bash \
     && rosdep init \
@@ -192,3 +194,13 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ENTRYPOINT ["/bin/bash", "-c", "source /ros.sh && exec \"$@\"", "--"]
 
 CMD ["/bin/bash"]
+
+############################
+# Stage 9: Linter (Optional)
+############################
+FROM builder as linter
+RUN black . --exclude "src/third-party/|build|install|\.tox|dist" --check
+RUN find ./src -path ./src/third-party -prune -o \
+    \( -name "*.h" -o -name "*.hpp" -o -name "*.cpp" \) -print \
+    | xargs clang-format --dry-run --Werror
+RUN pylint -E src

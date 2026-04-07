@@ -43,7 +43,7 @@ from geometry_msgs.msg import (
     Pose,
 )
 from visualization_msgs.msg import Marker, MarkerArray
-from tf2_ros import (
+from tf2_ros import (  # pylint: disable=no-name-in-module
     Buffer,
     TransformListener,
     LookupException,

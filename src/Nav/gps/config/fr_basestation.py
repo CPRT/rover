@@ -22,7 +22,7 @@ from serial import Serial
 from pyubx2 import UBXMessage, SET, UBX_PROTOCOL, UBXReader
 
 from time import sleep
-import helper_functions as helpers
+from . import helper_functions as helpers
 import argparse
 
 TMODE_SVIN = 1

@@ -1,5 +1,5 @@
 [MASTER]
-ignore=third-party
+ignore=third-party,yolo_training
 ignore-patterns=
     ^third-party/.*$
 
