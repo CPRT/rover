@@ -597,7 +597,7 @@ class Roboclaw:
     def _write4S444S441(self, address, cmd, val1, val2, val3, val4, val5, val6, val7):
         trys = self._trystimeout
         while trys:
-            self._sendcommand(self, address, cmd)
+            self._sendcommand(address, cmd)
             self._writelong(val1)
             self._writeslong(val2)
             self._writelong(val3)
@@ -765,9 +765,9 @@ class Roboclaw:
         return self._write4444(
             address,
             self.Cmd.SETM1PID,
-            long(d * 65536),
-            long(p * 65536),
-            long(i * 65536),
+            int(d * 65536),
+            int(p * 65536),
+            int(i * 65536),
             qpps,
         )
 
@@ -775,9 +775,9 @@ class Roboclaw:
         return self._write4444(
             address,
             self.Cmd.SETM2PID,
-            long(d * 65536),
-            long(p * 65536),
-            long(i * 65536),
+            int(d * 65536),
+            int(p * 65536),
+            int(i * 65536),
             qpps,
         )
 
@@ -889,7 +889,7 @@ class Roboclaw:
 
     def SpeedAccelM1M2_2(self, address, accel1, speed1, accel2, speed2):
         return self._write4S44S4(
-            address, self.Cmd.MIXEDSPEED2ACCEL, accel, speed1, accel2, speed2
+            address, self.Cmd.MIXEDSPEED2ACCEL, accel1, speed1, accel2, speed2
         )
 
     def SpeedAccelDistanceM1M2_2(
@@ -962,9 +962,9 @@ class Roboclaw:
         return self._write4444444(
             address,
             self.Cmd.SETM1POSPID,
-            long(kd * 1024),
-            long(kp * 1024),
-            long(ki * 1024),
+            int(kd * 1024),
+            int(kp * 1024),
+            int(ki * 1024),
             kimax,
             deadzone,
             min,
@@ -975,9 +975,9 @@ class Roboclaw:
         return self._write4444444(
             address,
             self.Cmd.SETM2POSPID,
-            long(kd * 1024),
-            long(kp * 1024),
-            long(ki * 1024),
+            int(kd * 1024),
+            int(kp * 1024),
+            int(ki * 1024),
             kimax,
             deadzone,
             min,

@@ -12,7 +12,6 @@ OVERRIDE_ARCH=""
 GST=FALSE
 BUILD_WORKERS=$(nproc)
 BUILD_TYPE="release"
-DOCKER_TMP=""
 
 # Parse args
 while [[ $# -gt 0 ]]; do
@@ -43,10 +42,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --build-type)
       BUILD_TYPE="$2"
-      shift 2
-      ;;
-    --docker_tmp)
-      export DOCKER_TMP="$2"
       shift 2
       ;;
     *)
@@ -95,12 +90,16 @@ APP_TAG=${IMAGE_NAME}:${TARGETARCH}
 APP_SHA_TAG=${IMAGE_NAME}:${GIT_SHA}-${TARGETARCH}
 
 if [ "$MODE" = "--test" ]; then
-  MODE=""
-fi
-
-if [ "$DOCKER_TMP" != "" ]; then
-  export DOCKER_TMPDIR="$DOCKER_TMP"
-  export TMPDIR="$DOCKER_TMP"
+  echo "Testing dev image..."
+  docker buildx build \
+    --build-arg BASE_IMAGE=$BASE_IMAGE \
+    -f Dockerfile \
+    --platform linux/$TARGETARCH \
+    --target linter \
+    --build-arg BUILD_FLAGS="--parallel-workers $BUILD_WORKERS\
+                --cmake-args=-DCMAKE_BUILD_TYPE=$BUILD_TYPE" \
+    .
+  exit 0
 fi
 
 # --- DEV image ---

@@ -17,5 +17,6 @@ python-can
 ultralytics
 onnx
 onnxruntime
+onnxslim
 odrive
 smbus2

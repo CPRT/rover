@@ -17,7 +17,7 @@ from time import sleep
 import argparse
 
 # use centralized helpers
-import helper_functions as helpers
+from . import helper_functions as helpers
 
 
 def config_usb_ubx_messages() -> UBXMessage:

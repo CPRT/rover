@@ -16,7 +16,7 @@ from time import sleep
 import argparse
 
 # use the helper module so we can change SHOW_PRESET at runtime
-import helper_functions as helpers
+from . import helper_functions as helpers
 
 
 def config_usb_relposned() -> UBXMessage:

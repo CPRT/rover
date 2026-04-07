@@ -167,12 +167,12 @@ class GenerateArucoBoardConfigZed(Node):
         )
 
         self.get_logger().info("\n" + "=" * 50)
-        self.get_logger().info(f" PHASE 1: DATA COLLECTION")
+        self.get_logger().info(" PHASE 1: DATA COLLECTION")
         self.get_logger().info(
             f" Point camera at BOTH tags ({self.id_anchor} and {self.id_target})."
         )
         self.get_logger().info(f" Capturing every {self.capture_interval}s when valid.")
-        self.get_logger().info(f" Press 'ENTER' in the window to finish and process.")
+        self.get_logger().info(" Press 'ENTER' in the window to finish and process.")
         self.get_logger().info("=" * 50 + "\n")
 
     def load_camera_info(self, yaml_path):

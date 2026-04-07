@@ -30,8 +30,6 @@ setup(
         "console_scripts": [
             "USB_Servo = servo_pkg.USB_Servo:main",
             "servo_client = servo_pkg.servo_client:main",
-            "i2c_Servo = servo_pkg.i2c_Servo:main",
-            "pi_Servo = servo_pkg.pi_Servo:main",
             "pdb_controller = servo_pkg.pdb_controller:main",
         ],
     },
