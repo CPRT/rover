@@ -89,10 +89,6 @@ bool InputNode::create_pipeline() {
   }
 
   pipeline_ = p;
-  if (current_video_request_) {
-    video_cb(current_video_request_,
-             std::make_shared<interfaces::srv::VideoOut::Response>());
-  }
   return true;
 }
 
@@ -170,9 +166,6 @@ void InputNode::video_cb(
   } else {
     RCLCPP_ERROR(this->get_logger(), "Failed to start pipeline");
     response->success = false;
-  }
-  if (response->success) {
-    current_video_request_ = request;
   }
 }
 

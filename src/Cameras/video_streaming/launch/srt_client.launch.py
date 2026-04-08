@@ -5,21 +5,21 @@ from launch_ros.descriptions import ComposableNode
 
 def generate_launch_description():
 
-    rtp_client_node = ComposableNode(
+    srt_client_node = ComposableNode(
         package="video_streaming",
-        plugin="video_streaming::RtpClientNode",
-        name="rtp_client_node",
+        plugin="video_streaming::SrtClientNode",
+        name="srt_client_node",
         namespace="",
-        parameters=[{"port": 5004, "latency_ms": 40}],
+        parameters=[{"srt_uri": "srt://192.168.0.55:7001?mode=caller"}],
     )
 
     # Container_mt
     container = ComposableNodeContainer(
-        name="video_client_container",
+        name="test_client_container",
         namespace="",
         package="rclcpp_components",
         executable="component_container",
-        composable_node_descriptions=[rtp_client_node],
+        composable_node_descriptions=[srt_client_node],
         output="screen",
     )
 

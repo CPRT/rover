@@ -19,3 +19,4 @@ onnx
 onnxruntime
 odrive
 smbus2
+matplotlib

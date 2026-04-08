@@ -34,12 +34,18 @@ def generate_launch_description():
         parameters=[],
     )
 
-    rtp_node = ComposableNode(
+    srt_node = ComposableNode(
         package="video_streaming",
-        plugin="video_streaming::RtpNode",
-        name="rtp_node",
+        plugin="video_streaming::SrtNode",
+        name="srt_node",
         namespace="",
-        parameters=[{"dest_ip": "192.168.1.100", "dest_port": 5004}],
+        parameters=[
+            {
+                "srt_uri": "srt://:7001",
+                "latency": 100,
+                "iframe_interval": 30,
+            }
+        ],
     )
 
     # Create a container for all 3 components
@@ -52,7 +58,7 @@ def generate_launch_description():
             input_node,
             detect_node,
             # streaming_node,
-            rtp_node,
+            srt_node,
         ],
         output="screen",
     )
