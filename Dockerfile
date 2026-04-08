@@ -199,8 +199,12 @@ CMD ["/bin/bash"]
 # Stage 9: Linter (Optional)
 ############################
 FROM builder as linter
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+WORKDIR /rover
+COPY ros.sh .
+COPY .pylintrc .
 RUN black . --exclude "src/third-party/|build|install|\.tox|dist" --check
 RUN find ./src -path ./src/third-party -prune -o \
     \( -name "*.h" -o -name "*.hpp" -o -name "*.cpp" \) -print \
     | xargs clang-format --dry-run --Werror
-RUN pylint -E src
+RUN source ros.sh && pylint -E src
