@@ -34,10 +34,10 @@ def generate_launch_description():
         parameters=[],
     )
 
-    rtp_node = ComposableNode(
+    srt_node = ComposableNode(
         package="video_streaming",
-        plugin="video_streaming::RtpNode",
-        name="rtp_node",
+        plugin="video_streaming::SrtNode",
+        name="srt_node",
         namespace="",
         parameters=[{"dest_ip": "192.168.0.20", "dest_port": 5004}],
     )
@@ -52,7 +52,7 @@ def generate_launch_description():
             input_node,
             detect_node,
             # streaming_node,
-            rtp_node,
+            srt_node,
         ],
         output="screen",
     )

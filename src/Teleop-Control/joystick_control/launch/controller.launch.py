@@ -33,7 +33,7 @@ def generate_launch_description():
     parameters_file = os.path.join(pkg_joystick_control, "pxn.yaml")
     # Detect IDs dynamically
     arm_dev = "/dev/input/by-id/usb-LiteStar_PXN-2113_Pro-joystick"
-    drive_dev = find_ps5()
+    drive_dev = "/dev/input/by-id/usb-Thrustmaster_T.16000M-joystick"
 
     ld = LaunchDescription()
 
