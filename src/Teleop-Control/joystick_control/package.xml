@@ -9,22 +9,16 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-<<<<<<< HEAD
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
-=======
 	<depend>moveit_ros_planning_interface</depend>
   <build_depend>moveit_core</build_depend>
->>>>>>> cc5fb9f (feat: implement modeless teleop and move_group action server)
   <depend>rclcpp</depend>
   <depend>interfaces</depend>
-<<<<<<< HEAD
   <depend>joy</depend>
-=======
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
->>>>>>> cc5fb9f (feat: implement modeless teleop and move_group action server)
 
   <export>
     <build_type>ament_cmake</build_type>
