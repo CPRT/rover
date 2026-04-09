@@ -85,7 +85,10 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
         moveit_config.robot_description_semantic,
         moveit_config.robot_description_kinematics,
     ]
+<<<<<<< HEAD
 
+=======
+>>>>>>> cc5fb9f (feat: implement modeless teleop and move_group action server)
     servo_node = Node(
         package="moveit_servo",
         executable="servo_node_main",
@@ -95,6 +98,11 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
             ("~/robot_description", "/robot_description"),
         ],
     )
+<<<<<<< HEAD
+=======
+
+    # Add actions to launch description
+>>>>>>> cc5fb9f (feat: implement modeless teleop and move_group action server)
     ld.add_action(servo_node)
 
     return ld

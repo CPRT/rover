@@ -13,6 +13,7 @@ SrtClientNode::SrtClientNode(const rclcpp::NodeOptions &options)
                                        "srt://192.168.0.55:7001?mode=caller");
   std::string uri = this->get_parameter("srt_uri").as_string();
 
+<<<<<<< HEAD
   RCLCPP_INFO(this->get_logger(), "SRT URI: %s", uri.c_str());
 
   std::string pipeline_str = "srtsrc uri=\"" + uri +
@@ -26,6 +27,18 @@ SrtClientNode::SrtClientNode(const rclcpp::NodeOptions &options)
 
   RCLCPP_INFO(this->get_logger(), "Pipeline: %s", pipeline_str.c_str());
 
+=======
+  RCLCPP_INFO(this->get_logger(), "Trying to listen on URI: %s", uri.c_str());
+
+  std::string pipeline_str = "srtsrc uri=\"" + uri +
+                             "\" latency=0 ! "
+                             "av1parse ! "
+                             "av1dec !"
+                             "videoconvert ! "
+                             "queue !"
+                             "nveglglessink sync=false";
+
+>>>>>>> cc5fb9f (feat: implement modeless teleop and move_group action server)
   GError *error = nullptr;
   pipeline_ = gst_parse_launch(pipeline_str.c_str(), &error);
 

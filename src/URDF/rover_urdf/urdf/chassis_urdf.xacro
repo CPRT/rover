@@ -801,7 +801,11 @@
     name="Left_back_wheel_arm_joint"
     type="continuous">
     <origin
+<<<<<<< HEAD
       xyz="0 -0.01 0"
+=======
+      xyz="-.1 0 0"
+>>>>>>> cc5fb9f (feat: implement modeless teleop and move_group action server)
       rpy="0 0 0" />
     <parent
       link="Sus_Arm_Back_Left" />

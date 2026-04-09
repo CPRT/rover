@@ -37,5 +37,17 @@
     </joint>
   </xacro:if>
 
+<<<<<<< HEAD
+=======
+    <!-- Chassis ros2_control -->
+  <xacro:include filename="$(find rover_urdf)/urdf/chassis_urdf.ros2_control.xacro" />
+  <xacro:chassis_urdf_ros2_control name="ChassisSystem"/>
+
+  <joint name="base_link_to_chassis" type="fixed">
+    <parent link="base_link"/>
+    <child link="Frame"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+>>>>>>> cc5fb9f (feat: implement modeless teleop and move_group action server)
 
 </robot>

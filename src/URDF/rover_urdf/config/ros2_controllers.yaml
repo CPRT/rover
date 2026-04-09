@@ -3,7 +3,11 @@
   ros__parameters:
     update_rate: 100  # Hz
 
+<<<<<<< HEAD
     arm_controller_move_group:
+=======
+    arm_controller:
+>>>>>>> cc5fb9f (feat: implement modeless teleop and move_group action server)
       type: joint_trajectory_controller/JointTrajectoryController
 
     joint_state_broadcaster:
@@ -11,6 +15,7 @@
 
     chassis_controller:
       type: swerve_controller/SwerveController
+<<<<<<< HEAD
     
     arm_controller_servo:
       type: position_controllers/JointGroupPositionController
@@ -31,6 +36,10 @@ arm_controller_move_group:
       - velocity
 
 arm_controller_servo:
+=======
+
+arm_controller:
+>>>>>>> cc5fb9f (feat: implement modeless teleop and move_group action server)
   ros__parameters:
     joints:
       - Joint_1

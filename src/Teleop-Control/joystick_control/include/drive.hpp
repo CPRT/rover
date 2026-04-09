@@ -11,8 +11,8 @@ public:
   void drive_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
 
 private:
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr twist_pub_;
-  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr twist_pub;
+  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub;
 
   void declare_parameters();
   void load_parameters();

@@ -63,9 +63,12 @@ private:
     std::chrono::steady_clock::time_point last_loss_time;
     int64_t last_total_dropped_pkts = 0;
   } backoff_state_;
+<<<<<<< HEAD
 
   int iframe_interval_ = 0;
   int target_framerate_ = 30;
+=======
+>>>>>>> cc5fb9f (feat: implement modeless teleop and move_group action server)
 };
 
 } // namespace video_streaming

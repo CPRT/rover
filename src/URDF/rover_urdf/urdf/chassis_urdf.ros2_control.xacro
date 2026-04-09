@@ -38,30 +38,46 @@
       </joint>
 
       <joint name="Left_front_wheel_arm_joint">
+<<<<<<< HEAD
         <param name="node_id">2</param>
         <param name="multiplier">-0.0166666667</param>
         <param name="input_mode">Traj</param>
+=======
+        <param name="node_id">1</param>
+>>>>>>> cc5fb9f (feat: implement modeless teleop and move_group action server)
         <command_interface name="position"/>
         <state_interface name="position"/>
       </joint>
       <joint name="Left_back_wheel_arm_joint">
         <param name="node_id">3</param>
+<<<<<<< HEAD
         <param name="multiplier">0.0166666667</param>
         <param name="input_mode">Traj</param>
+=======
+>>>>>>> cc5fb9f (feat: implement modeless teleop and move_group action server)
         <command_interface name="position"/>
         <state_interface name="position"/>
       </joint>
       <joint name="Right_front_wheel_arm_joint">
+<<<<<<< HEAD
         <param name="node_id">1</param>
         <param name="input_mode">Traj</param>
         <param name="multiplier">0.0166666667</param>
+=======
+        <param name="node_id">2</param>
+        <param name="multiplier">1.0</param>
+>>>>>>> cc5fb9f (feat: implement modeless teleop and move_group action server)
         <command_interface name="position"/>
         <state_interface name="position"/>
       </joint>
       <joint name="Right_back_wheel_arm_joint">
         <param name="node_id">4</param>
+<<<<<<< HEAD
         <param name="input_mode">Traj</param>
         <param name="multiplier">-0.0166666667</param>
+=======
+        <param name="multiplier">1.0</param>
+>>>>>>> cc5fb9f (feat: implement modeless teleop and move_group action server)
         <command_interface name="position"/>
         <state_interface name="position"/>
       </joint>
