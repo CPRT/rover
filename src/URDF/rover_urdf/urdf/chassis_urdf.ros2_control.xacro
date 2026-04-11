@@ -7,6 +7,7 @@
         <!-- <plugin>mock_components/GenericSystem</plugin> -->
         <plugin>odrive_ros2_control_plugin/ODriveHardwareInterface</plugin>
         <param name="can">can0</param>
+        <param name="debug_freq">1</param>
       </hardware>
       <joint name="Left_front_wheel_joint">
         <param name="node_id">5</param>
