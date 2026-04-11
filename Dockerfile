@@ -120,7 +120,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gnupg2 libssl-dev libpng16-16 \
     zlib1g-dev libffi-dev \
     libglib2.0-dev libmount-dev \
-    python3-mrcal \
+    python3-mrcal libsnmp-dev snmp \
     && rm -rf /var/lib/apt/lists/*
 
 RUN source /opt/ros/humble/setup.bash \
