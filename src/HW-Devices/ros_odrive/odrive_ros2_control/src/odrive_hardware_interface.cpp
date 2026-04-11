@@ -6,6 +6,7 @@
 #include "odrive_enums.h"
 #include "pluginlib/class_list_macros.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "ros_phoenix/msg/motor_status.hpp"
 #include "socket_can.hpp"
 
 namespace odrive_ros2_control {
@@ -39,6 +40,7 @@ public:
 private:
   void on_can_msg(const can_frame &frame);
   void set_axis_command_mode(const Axis &axis);
+  void pub_status();
 
   bool active_;
   EpollEventLoop event_loop_;
@@ -46,6 +48,11 @@ private:
   std::string can_intf_name_;
   SocketCanIntf can_intf_;
   rclcpp::Time timestamp_;
+  rclcpp::Node::SharedPtr debug_node_;
+  rclcpp::TimerBase::SharedPtr debug_timer_;
+  int debug_frequency_;
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
+  std::thread spin_thread_;
 };
 
 struct Axis {
@@ -83,8 +90,8 @@ struct Axis {
   // uint32_t disarm_reason_ = 0;
   // double fet_temperature_ = NAN;
   // double motor_temperature_ = NAN;
-  // double bus_voltage_ = NAN;
-  // double bus_current_ = NAN;
+  double bus_voltage_ = NAN;
+  double bus_current_ = NAN;
 
   // Indicates which controller inputs are enabled. This is configured by the
   // controller that sits on top of this hardware interface. Multiple inputs
@@ -96,6 +103,8 @@ struct Axis {
   bool torque_input_enabled_ = false;
 
   ODriveInputMode input_mode_;
+
+  rclcpp::Publisher<ros_phoenix::msg::MotorStatus>::SharedPtr debug_pub_;
 
   template <typename T> bool send(const T &msg) const {
     struct can_frame frame;
@@ -126,6 +135,11 @@ ODriveHardwareInterface::on_init(const hardware_interface::HardwareInfo &info) {
   }
 
   can_intf_name_ = info_.hardware_parameters["can"];
+  debug_frequency_ = 0;
+  if (info_.hardware_parameters.find("debug_freq") !=
+      info_.hardware_parameters.end()) {
+    debug_frequency_ = std::stoi(info_.hardware_parameters.at("debug_freq"));
+  }
 
   for (auto &joint : info_.joints) {
     if (joint.parameters.find("node_id") == joint.parameters.end()) {
@@ -197,8 +211,34 @@ CallbackReturn ODriveHardwareInterface::on_activate(const State &) {
   for (auto &axis : axes_) {
     set_axis_command_mode(axis);
   }
+  if (debug_frequency_ > 0) {
+    debug_node_ = std::make_shared<rclcpp::Node>("odrive_system_debug_node");
+    executor_ = rclcpp::executors::SingleThreadedExecutor::make_shared();
+    executor_->add_node(debug_node_);
+    spin_thread_ = std::thread([this]() { this->executor_->spin(); });
+    debug_timer_ = debug_node_->create_wall_timer(
+        std::chrono::milliseconds(1000 / debug_frequency_),
+        std::bind(&ODriveHardwareInterface::pub_status, this));
+    for (auto &axis : axes_) {
+      axis.debug_pub_ =
+          debug_node_->template create_publisher<ros_phoenix::msg::MotorStatus>(
+              info_.joints[&axis - &axes_[0]].name + "/status",
+              rclcpp::SystemDefaultsQoS());
+    }
+  }
 
   return CallbackReturn::SUCCESS;
+}
+
+void ODriveHardwareInterface::pub_status() {
+  for (const auto &axis : axes_) {
+    ros_phoenix::msg::MotorStatus status_msg;
+    status_msg.bus_voltage = axis.bus_voltage_;
+    status_msg.output_current = axis.bus_current_;
+    status_msg.position = axis.pos_estimate_;
+    status_msg.velocity = axis.vel_estimate_;
+    axis.debug_pub_->publish(status_msg);
+  }
 }
 
 CallbackReturn ODriveHardwareInterface::on_deactivate(const State &) {
@@ -410,6 +450,12 @@ void Axis::on_can_msg(const rclcpp::Time &, const can_frame &frame) {
     if (Get_Torques_msg_t msg; try_decode(msg)) {
       torque_target_ = msg.Torque_Target;
       torque_estimate_ = msg.Torque_Estimate;
+    }
+  } break;
+  case Get_Bus_Voltage_Current_msg_t::cmd_id: {
+    if (Get_Bus_Voltage_Current_msg_t msg; try_decode(msg)) {
+      bus_voltage_ = msg.Bus_Voltage;
+      bus_current_ = msg.Bus_Current;
     }
   } break;
     // silently ignore unimplemented command IDs
