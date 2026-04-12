@@ -23,10 +23,10 @@ def convert_to_radians(value, servo_info):
 
 class PDB_Servo(Parent_Config):
     def __init__(self):
-        super().__init__("pdb_servo")
+        super().__init__("pdb_servo", HW_NUM_SERVOS)
 
         # I2C parameters
-        self.declare_parameter("i2c_bus", 1)  # /dev/i2c-1 on most SBCs
+        self.declare_parameter("i2c_bus", 7)  # /dev/i2c-1 on most SBCs
         self.declare_parameter("i2c_address", I2C_DEFAULT_ADDR)
 
         self.i2c_bus = self.get_parameter("i2c_bus").get_parameter_value().integer_value
@@ -40,11 +40,11 @@ class PDB_Servo(Parent_Config):
         for port in range(HW_NUM_SERVOS):
             self.subs[port] = self.create_subscription(
                 Float32,
-                f"/{self.servo_info[port].motor_name}",
+                f"~/{self.servo_info[port].motor_name}",
                 lambda msg, port=port: self.set_position(msg, port),
                 3,
             )
-            self.get_logger().info(f"Topic: /{self.servo_info[port].motor_name}")
+            self.get_logger().info(f"Topic: ~/{self.servo_info[port].motor_name}")
         self._last_pwm_us = {p: None for p in range(HW_NUM_SERVOS)}
 
     def _write_servo_us(self, port: int, pwm_us: int):
