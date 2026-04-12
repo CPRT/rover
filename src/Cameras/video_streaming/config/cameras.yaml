@@ -10,6 +10,10 @@ input_node:
     Drive:
       path: "/dev/v4l/by-id/drive_camera"
       type: 0
+      encoded: false
+      height: 1200
+      width: 1920
+      framerate: 30
     EndEffector:
       path: "/dev/v4l/by-id/usb-MACROSILICON_USB_Video_20200909-video-index0"
       type: 0
