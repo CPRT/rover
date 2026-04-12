@@ -90,8 +90,6 @@ SnmpNetworkStatsNode::snmp_get_int(const std::string &oid_str) {
          vars = vars->next_variable) {
       switch (vars->type) {
       case ASN_INTEGER:
-        result = static_cast<int>(*vars->val.integer);
-        break;
       case ASN_COUNTER:
       case ASN_GAUGE:
       case ASN_TIMETICKS:
@@ -191,8 +189,6 @@ SnmpNetworkStatsNode::snmp_walk_first_int(const std::string &base_oid_str) {
 
     switch (vars->type) {
     case ASN_INTEGER:
-      result = static_cast<int>(*vars->val.integer);
-      break;
     case ASN_COUNTER:
     case ASN_GAUGE:
     case ASN_TIMETICKS:
