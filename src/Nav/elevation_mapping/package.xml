@@ -20,7 +20,6 @@
   <depend>grid_map_ros</depend>
   <depend>grid_map_msgs</depend>
   <depend>grid_map_filters</depend>
-  <depend>kindr</depend>
   <depend>kindr_ros</depend>
   <depend>message_filters</depend>
   <depend>pcl_ros</depend>

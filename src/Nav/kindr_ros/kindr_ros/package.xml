@@ -15,7 +15,6 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <depend>kindr</depend>
   <depend>geometry_msgs</depend>
   <depend>tf2</depend>
 

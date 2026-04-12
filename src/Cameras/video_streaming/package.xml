@@ -15,6 +15,8 @@
   <depend>std_msgs</depend>
   <depend>gstreamer-1.0</depend>
   <depend>glib-2.0</depend>
+  <depend>libssl-dev</depend>
+  <depend>libglib-dev</depend>
 
   <depend>interfaces</depend>
 
