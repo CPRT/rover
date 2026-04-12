@@ -193,7 +193,7 @@ void RtpNode::set_bitrate(const int32_t bitrate) {
     set_resolution(640, 360);
   } else if (bits_per_frame < 100000) {
     set_resolution(854, 480);
-  } else if (bits_per_frame < 200000) {
+  } else if (bits_per_frame < 150000) {
     set_resolution(1280, 720);
   } else {
     set_resolution(1920, 1080);

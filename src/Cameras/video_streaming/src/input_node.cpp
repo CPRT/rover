@@ -13,8 +13,8 @@ InputNode::InputNode(const rclcpp::NodeOptions &options)
 }
 
 void InputNode::declare_parameters() {
-  this->declare_parameter("out_width", 1280);
-  this->declare_parameter("out_height", 720);
+  this->declare_parameter("out_width", 1920);
+  this->declare_parameter("out_height", 1080);
   this->declare_parameter("out_framerate", 30);
   this->declare_parameter("camera_name", std::vector<std::string>());
   std::vector<std::string> camera_name;
@@ -24,12 +24,22 @@ void InputNode::declare_parameters() {
     this->declare_parameter(name + ".type",
                             static_cast<int>(CameraType::V4l2Src));
     this->declare_parameter(name + ".encoded", false);
+    this->declare_parameter(name + ".width", 0);
+    this->declare_parameter(name + ".height", 0);
+    this->declare_parameter(name + ".framerate", 0);
   }
 }
 
 bool InputNode::create_pipeline() {
   std::stringstream desc_stream;
-  size_t index = 0;
+  // Hack: Use a constant videotestsrc for the sink_0 to ensure the compositor
+  // always has a source pad of the correct size
+  desc_stream << "videotestsrc is-live=true pattern=black ! video/x-raw,width="
+              << this->get_parameter("out_width").as_int()
+              << ",height=" << this->get_parameter("out_height").as_int()
+              << ",framerate=" << this->get_parameter("out_framerate").as_int()
+              << "/1 ! nvvidconv ! compositor.sink_0 ";
+  size_t index = 1;
   std::vector<std::string> camera_name;
   this->get_parameter("camera_name", camera_name);
   for (const auto &name : camera_name) {
@@ -58,14 +68,35 @@ bool InputNode::create_pipeline() {
                   name.c_str());
       continue;
     }
+    int cam_width = this->get_parameter(name + ".width").as_int();
+    int cam_height = this->get_parameter(name + ".height").as_int();
+    int cam_framerate = this->get_parameter(name + ".framerate").as_int();
+    if (cam_width > 0 || cam_height > 0 || cam_framerate > 0) {
+      desc_stream << "video/x-raw,";
+      if (cam_width > 0) {
+        desc_stream << "width=" << cam_width << ",";
+      }
+      if (cam_height > 0) {
+        desc_stream << "height=" << cam_height << ",";
+      }
+      if (cam_framerate > 0) {
+        desc_stream << "framerate=" << cam_framerate << "/1,";
+      }
+      // Remove trailing comma
+      std::string current_desc = desc_stream.str();
+      if (current_desc.back() == ',') {
+        current_desc.pop_back();
+        desc_stream.str("");
+        desc_stream << current_desc << " ! ";
+      }
+    }
+
     desc_stream << "nvvidconv ! compositor.sink_" << index << " ";
     source_map_.emplace(name, index);
     ++index;
   }
-  desc_stream << "nvcompositor name=compositor sink_0::width="
-              << this->get_parameter("out_width").as_int() << " sink_0::height="
-              << this->get_parameter("out_height").as_int();
-  desc_stream << " ! nvvidconv ! videorate ! video/x-raw,width="
+  desc_stream << "nvcompositor name=compositor sink_0::alpha=0.0 ! ";
+  desc_stream << "nvvidconv ! videorate ! video/x-raw,width="
               << this->get_parameter("out_width").as_int()
               << ",height=" << this->get_parameter("out_height").as_int()
               << ",framerate=" << this->get_parameter("out_framerate").as_int()
@@ -121,7 +152,7 @@ void InputNode::video_cb(
     return;
   }
   for (size_t i = 0; i < source_map_.size(); ++i) {
-    std::string pad_name = "sink_" + std::to_string(i);
+    std::string pad_name = "sink_" + std::to_string(i + 1);
     GstPad *pad = gst_element_get_static_pad(compositor, pad_name.c_str());
     if (!pad) {
       RCLCPP_ERROR(this->get_logger(), "Failed to get compositor pad: %s",
