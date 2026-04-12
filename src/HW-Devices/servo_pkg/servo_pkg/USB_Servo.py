@@ -16,7 +16,7 @@ def convert_to_radians(value, servo_info):
 
 class USB_Servo(Parent_Config):
     def __init__(self):
-        super().__init__("usb_servo")
+        super().__init__("usb_servo", 12)
 
         # port parameter
         self.declare_parameter("serial_port", "/dev/ttyACM0")

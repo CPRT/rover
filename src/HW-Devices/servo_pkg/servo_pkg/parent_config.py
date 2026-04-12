@@ -18,14 +18,14 @@ class Servo_Info:
 
 # Parent class for all 3 types of servos
 class Parent_Config(Node):
-    def __init__(self, name):
+    def __init__(self, name, num_ports=NUM_PORTS):
         super().__init__(name)
         self.servo_info = {}
-        self.load_config()
+        self.load_config(num_ports)
 
     # Set class attributes based on yaml config
-    def load_config(self):
-        for servo in range(NUM_PORTS):
+    def load_config(self, num_ports):
+        for servo in range(num_ports):
             self.declare_parameter(f"servo{servo}.name", f"motor{servo}")
             motor_name = (
                 self.get_parameter(f"servo{servo}.name")

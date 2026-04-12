@@ -5,6 +5,14 @@ drive_teleop_node:
     yaw_axis: 2
     max_linear: 2.0
     max_angular: 1.0
+    servo_y_axis: 7
+    servo_x_axis: 6
+    servo_home_button: 1
+    servo_increment: 0.01
+    servo_min: 0.0
+    servo_max: 6.28
+    default_servo_x: 3.10
+    default_servo_y: 3.75
 
 arm_teleop_node:
   ros__parameters:
