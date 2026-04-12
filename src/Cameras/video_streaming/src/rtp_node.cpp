@@ -66,9 +66,10 @@ std::string RtpNode::get_pipeline_description() {
        << "/1\" ! nvvidconv ! "
        << "capsfilter caps=\"video/x-raw(memory:NVMM),height=" << height_
        << ",width=" << width_ << "\" ! nvv4l2h265enc bitrate=" << video_bitrate
-       << " name=h265_enc EnableTwopassCBR=true control-rate=1 "
-          "maxperf-enable=true ! queue ! rtph265pay  config-interval=-1 ! "
-          "rtpulpfecenc percentage="
+       << " name=h265_enc bit-packetization=true EnableTwopassCBR=true "
+          "slice-header-spacing=900 control-rate=1 "
+          "maxperf-enable=true ! queue ! rtph265pay pt=96 config-interval=-1 ! "
+          "rtpulpfecenc pt=122 percentage="
        << fec_ << " ! udpsink host=" << dest_ip_ << " port=" << dest_port_;
   return desc.str();
 }
