@@ -28,6 +28,31 @@ BaseVideoNode::BaseVideoNode(const std::string name,
                        "Exception during pipeline restart: %s", e.what());
         }
       });
+  graph_dot_srv_ = create_service<interfaces::srv::GraphDot>(
+      "~/graph_dot",
+      [this](const std::shared_ptr<interfaces::srv::GraphDot::Request> request,
+             std::shared_ptr<interfaces::srv::GraphDot::Response> response) {
+        std::lock_guard<std::mutex> lock(pipeline_mutex_);
+        if (!pipeline_) {
+          RCLCPP_ERROR(this->get_logger(),
+                       "Cannot generate graph dot: pipeline is null.");
+          response->success = false;
+          return;
+        }
+        gchar *dot_data = gst_debug_bin_to_dot_data(GST_BIN(pipeline_),
+                                                    GST_DEBUG_GRAPH_SHOW_ALL);
+        if (!dot_data) {
+          RCLCPP_ERROR(this->get_logger(),
+                       "Cannot generate graph dot: gst_debug_bin_to_dot_data "
+                       "returned null.");
+          response->graph = "";
+          response->success = false;
+          return;
+        }
+        response->graph = dot_data;
+        g_free(dot_data);
+        response->success = true;
+      });
 }
 
 BaseVideoNode::~BaseVideoNode() {

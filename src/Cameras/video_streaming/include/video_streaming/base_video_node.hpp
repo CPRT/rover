@@ -3,6 +3,7 @@
 #include <atomic>
 #include <gst/app/gstappsink.h>
 #include <gst/gst.h>
+#include <interfaces/srv/graph_dot.hpp>
 #include <mutex>
 #include <optional>
 #include <rclcpp/rclcpp.hpp>
@@ -46,4 +47,5 @@ protected:
 
 private:
   rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr restart_sub_;
+  rclcpp::Service<interfaces::srv::GraphDot>::SharedPtr graph_dot_srv_;
 };
