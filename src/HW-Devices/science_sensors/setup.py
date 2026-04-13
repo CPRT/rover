@@ -32,12 +32,7 @@ setup(
     entry_points={
         "console_scripts": [
             "gas_sensor = science_sensors.gas_sensor:main",
-            "microscope_control = science_sensors.microscope_control:main",
-            "raman = science_sensors.raman:main",
-            "pi_gpio_controller = science_sensors.pi_gpio_controller:main",
-            "pi_gpio_reader = science_sensors.pi_gpio_reader:main",
             "panoramic = science_sensors.panoramic:main",
-            "can_module_sensor = science_sensors.can_module_sensor:main",
         ],
     },
 )
