@@ -7,10 +7,10 @@
 #include "ros_phoenix/base_node.hpp"
 
 #define Phoenix_No_WPI // remove WPI dependencies
+#include "ctre/Phoenix.h"
 #include <chrono>
 #include <stdexcept>
-
-#include "ctre/Phoenix.h"
+#include <type_traits>
 
 using namespace rclcpp;
 using namespace std::chrono_literals;
@@ -68,17 +68,28 @@ public:
       // CTRE library expects velocity in units/100ms
       this->controller_->Set(mode, control_msg->value / 10.0 /
                                        this->sensor_multiplier_);
-    } else if (mode == ControlMode::Position) {
+      return;
+    }
+    if (mode == ControlMode::Position) {
       this->controller_->Set(mode, (this->sensor_offset_ + control_msg->value) /
                                        this->sensor_multiplier_);
-    } else if (mode == ControlMode::PercentOutput ||
-               mode == ControlMode::Disabled) {
-      this->controller_->Set(mode, control_msg->value);
-    } else {
-      this->controller_->Set(ControlMode::Disabled, 0.0);
-      RCLCPP_WARN(this->get_logger(), "Invalid control mode: %d",
-                  static_cast<int>(mode));
+      return;
     }
+    if (mode == ControlMode::PercentOutput || mode == ControlMode::Disabled) {
+      this->controller_->Set(mode, control_msg->value);
+      return;
+    }
+    if constexpr (!std::is_same_v<
+                      MotorController,
+                      ctre::phoenix::motorcontrol::can::VictorSPX>) {
+      if (mode == ControlMode::Current) {
+        this->controller_->Set(mode, control_msg->value);
+        return;
+      }
+    }
+    this->controller_->Set(ControlMode::Disabled, 0.0);
+    RCLCPP_WARN(this->get_logger(), "Invalid control mode: %d",
+                static_cast<int>(mode));
   }
 
   virtual rcl_interfaces::msg::SetParametersResult
