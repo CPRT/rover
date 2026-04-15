@@ -117,9 +117,9 @@ RUN git clone https://github.com/ANYbotics/kindr.git \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libsrt1.4-openssl \
     lsb-release \
-    gnupg2 libssl-dev libpng16-16 \
+    gnupg2 libpng16-16 \
     zlib1g-dev libffi-dev \
-    libglib2.0-dev libmount-dev \
+    libmount-dev \
     python3-mrcal libsnmp-dev snmp \
     && rm -rf /var/lib/apt/lists/*
 
@@ -195,10 +195,12 @@ ENTRYPOINT ["/bin/bash", "-c", "source /ros.sh && exec \"$@\"", "--"]
 
 CMD ["/bin/bash"]
 
+
+## Helpers for development and CI pipelines
 ############################
 # Stage 9: Linter (Optional)
 ############################
-FROM builder as linter
+FROM builder AS linter
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 WORKDIR /rover
 COPY ros.sh .
@@ -208,3 +210,22 @@ RUN find ./src -path ./src/third-party -prune -o \
     \( -name "*.h" -o -name "*.hpp" -o -name "*.cpp" \) -print \
     | xargs clang-format --dry-run --Werror
 RUN source ros.sh && pylint -E src
+
+############################
+# Stage 10: Rosdep collector (Optional)
+############################
+FROM ros2_humble-base AS rosdep-collector
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+WORKDIR /rover
+COPY src/ ./src
+RUN source /opt/ros/humble/setup.bash && \
+    rosdep init && rosdep update && \
+    rosdep keys --from-paths src --ignore-src > /rosdep-keys.txt
+RUN sort /rosdep-keys.txt -o /rosdep-keys.txt
+
+
+############################
+# Stage 11: Rosdep exporter (Optional)
+############################
+FROM scratch AS rosdep-exporter
+COPY --from=rosdep-collector /rosdep-keys.txt .

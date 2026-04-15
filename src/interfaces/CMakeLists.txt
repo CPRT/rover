@@ -29,10 +29,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/RtpStats.msg"
   "srv/NavToGPSGeopose.srv"
   "srv/VideoOut.srv"
-  "srv/MoveServo.srv"
   "srv/VideoCapture.srv"
   "srv/GetCameras.srv"
-  "srv/Raman.srv"
   "srv/GraphDot.srv"
   DEPENDENCIES 
   builtin_interfaces

@@ -6,9 +6,9 @@ import time
 from rclpy.node import Node
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
-from interfaces.srv import MoveServo
 from interfaces.srv import VideoCapture
 from threading import Event
+from std_msgs.msg import Float32
 
 
 class PanoramicNode(Node):
@@ -18,10 +18,8 @@ class PanoramicNode(Node):
         self.load_params()
         self.callback_group = MutuallyExclusiveCallbackGroup()
         self.video_callback_group = MutuallyExclusiveCallbackGroup()
-        self.servo_cli = self.create_client(
-            MoveServo,
-            "/servo_service",
-        )
+        self.servo_pan_pub = self.create_publisher(Float32, "/pan", 10)
+        self.servo_tilt_pub = self.create_publisher(Float32, "/tilt", 10)
         self.video_cli = self.create_client(
             VideoCapture, "/capture_frame", callback_group=self.video_callback_group
         )
@@ -33,17 +31,9 @@ class PanoramicNode(Node):
         )
 
     def load_params(self):
-        self.declare_parameter("tilt_port", 0)
-        self.declare_parameter("pan_port", 1)
         self.declare_parameter("camera_name", "Drive")
         self.declare_parameter("images", 10)
         self.declare_parameter("sleep", 2.0)
-        self.pan_port = (
-            self.get_parameter("pan_port").get_parameter_value().integer_value
-        )
-        self.tilt_port = (
-            self.get_parameter("tilt_port").get_parameter_value().integer_value
-        )
         self.camera_name = (
             self.get_parameter("camera_name").get_parameter_value().string_value
         )
@@ -51,23 +41,16 @@ class PanoramicNode(Node):
             self.get_parameter("images").get_parameter_value().integer_value
         )
         self.sleep_time = self.get_parameter("sleep").get_parameter_value().double_value
-        self.get_logger().info(
-            f"Parameters - pan_port: {self.pan_port}, tilt_port: {self.tilt_port}, "
-            f"camera_name: {self.camera_name}, images: {self.num_images}, sleep: {self.sleep_time}"
-        )
 
-    def move_servo(self, port, angle):
-        if not self.servo_cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().error("Servo service not available, exiting...")
-            return
-        request = MoveServo.Request()
-        request.port = port
-        request.pos = angle
-        self.servo_cli.call_async(request)
+    @staticmethod
+    def move_servo(publisher, angle):
+        msg = Float32()
+        msg.data = angle
+        publisher.publish(msg)
 
     def move_panoramic(self, pan_angle, tilt_angle):
-        self.move_servo(self.pan_port, pan_angle)
-        self.move_servo(self.tilt_port, tilt_angle)
+        self.move_servo(self.servo_pan_pub, pan_angle)
+        self.move_servo(self.servo_tilt_pub, tilt_angle)
 
     def capture_image(self) -> npt.NDArray[np.uint8] | None:
         if not self.video_cli.wait_for_service(timeout_sec=1.0):

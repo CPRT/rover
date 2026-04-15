@@ -18,6 +18,7 @@
   <depend>ros_phoenix</depend>
   <depend>interfaces</depend>
   <depend>joy</depend>
+  <depend>joy_linux</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
