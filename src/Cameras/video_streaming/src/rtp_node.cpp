@@ -15,7 +15,6 @@ RtpNode::RtpNode(const rclcpp::NodeOptions &options)
   this->declare_parameter<int>("dest_port", 7001);
   this->declare_parameter<int>("target_framerate", 30);
   this->declare_parameter<int>("bitrate", 2000000);
-  this->declare_parameter<int>("fec_percent", 20);
   this->declare_parameter<int>("default_width", 1280);
   this->declare_parameter<int>("default_height", 720);
 
@@ -27,7 +26,6 @@ RtpNode::RtpNode(const rclcpp::NodeOptions &options)
     throw std::runtime_error("Invalid initial target_framerate");
   }
   bitrate_ = this->get_parameter("bitrate").as_int();
-  fec_ = this->get_parameter("fec_percent").as_int();
   dest_ip_ = this->get_parameter("dest_ip").as_string();
   dest_port_ = this->get_parameter("dest_port").as_int();
   width_ = this->get_parameter("default_width").as_int();
@@ -58,19 +56,16 @@ RtpNode::RtpNode(const rclcpp::NodeOptions &options)
 RtpNode::~RtpNode() { BaseVideoNode::safe_gst_unref(h265_encoder_); }
 
 std::string RtpNode::get_pipeline_description() {
-  int video_bitrate = bitrate_ / (1 + fec_ / 100.0);
   std::stringstream desc;
   desc << "interpipesrc format=3 listen-to=detect is-live=true ! "
        << "nvvidconv ! videorate ! "
        << "capsfilter caps=\"video/x-raw,framerate=" << target_framerate_
        << "/1\" ! nvvidconv ! "
        << "capsfilter caps=\"video/x-raw(memory:NVMM),height=" << height_
-       << ",width=" << width_ << "\" ! nvv4l2h265enc bitrate=" << video_bitrate
-       << " name=h265_enc bit-packetization=true EnableTwopassCBR=true "
-          "slice-header-spacing=900 control-rate=1 "
+       << ",width=" << width_ << "\" ! nvv4l2h265enc bitrate=" << bitrate_
+       << " name=h265_enc EnableTwopassCBR=true control-rate=1 "
           "maxperf-enable=true ! queue ! rtph265pay pt=96 config-interval=-1 ! "
-          "rtpulpfecenc pt=122 percentage="
-       << fec_ << " ! udpsink host=" << dest_ip_ << " port=" << dest_port_;
+       << "udpsink host=" << dest_ip_ << " port=" << dest_port_;
   return desc.str();
 }
 
@@ -119,15 +114,6 @@ RtpNode::on_parameter_change(const std::vector<rclcpp::Parameter> &parameters) {
 
   for (const auto &param : parameters) {
     const std::string &name = param.get_name();
-
-    // Forward error correction
-    if (name == "fec_percent") {
-      fec_ = param.as_int();
-      RCLCPP_INFO(this->get_logger(),
-                  "Param Update: Forward Error Correction set to %d%%", fec_);
-      needs_restart = true;
-      continue;
-    }
     // Framerate
     if (name == "target_framerate") {
       target_framerate_ = param.as_int();
@@ -179,17 +165,16 @@ RtpNode::on_parameter_change(const std::vector<rclcpp::Parameter> &parameters) {
 
 void RtpNode::set_bitrate(const int32_t bitrate) {
   bitrate_ = bitrate;
-  int video_bitrate = bitrate / (1 + fec_ / 100.0);
   if (h265_encoder_) {
     pause_pipeline();
-    g_object_set(h265_encoder_, "bitrate", video_bitrate, NULL);
+    g_object_set(h265_encoder_, "bitrate", bitrate_, NULL);
     resume_pipeline();
-    RCLCPP_DEBUG(this->get_logger(), "Bitrate set to %d", video_bitrate);
+    RCLCPP_DEBUG(this->get_logger(), "Bitrate set to %d", bitrate_);
   }
   // Adjust resolution based on bitrate thresholds
   // TODO: These thresholds are arbitrary and may need tuning based on actual
   // performance and quality requirements
-  int bits_per_frame = video_bitrate / target_framerate_;
+  int bits_per_frame = bitrate_ / target_framerate_;
   if (bits_per_frame < 50000) {
     set_resolution(640, 360);
   } else if (bits_per_frame < 100000) {

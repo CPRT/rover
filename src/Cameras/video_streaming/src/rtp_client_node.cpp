@@ -42,15 +42,11 @@ RtpClientNode::RtpClientNode(const rclcpp::NodeOptions &options)
 
 std::string RtpClientNode::get_pipeline_description() {
   std::stringstream desc;
-  constexpr guint storage_tolerance_ms = 20;
-  guint64 storage_sz_ns = (latency_ms_ + storage_tolerance_ms) * 1000000ULL;
   desc << "udpsrc port=" << dest_port_ << " caps="
-       << "\"application/x-rtp, payload=96, clock-rate=90000\" ! "
-       << "rtpstorage size-time=" << storage_sz_ns
-       << " ! rtpssrcdemux ! capsfilter "
-          "caps=\"application/"
-          "x-rtp,media=video,encoding-name=H265,payload=96,clock-rate=90000\" "
-          "! rtpjitterbuffer name=rtp_buf mode=4 latency="
+       << "\"application/x-rtp, "
+          "media=video,encoding-name=H265,payload=96,clock-rate=90000\" ! "
+       << "rtpssrcdemux ! rtpjitterbuffer name=rtp_buf mode=4 "
+          "drop-on-latency=true latency="
        << latency_ms_
        << " ! rtph265depay ! h265parse ! nvv4l2decoder ! nvvidconv ! "
        << "capsfilter caps=\"video/x-raw(memory:NVMM),width=1920,height=1080\" "
@@ -201,18 +197,6 @@ void RtpClientNode::rtp_stats_cb() {
   gst_structure_get_uint64(stats_struct, "avg-jitter", &avg_jitter);
   gst_structure_free(stats_struct);
 
-  // Get data from fec decoder
-  GstElement *fec_dec = get_element("fec_dec");
-  if (!fec_dec) {
-    RCLCPP_WARN(this->get_logger(), "Could not get fec_dec");
-    return;
-  }
-  guint recovered = 0;
-  guint unrecovered = 0;
-  g_object_get(fec_dec, "recovered", &recovered, "unrecovered", &unrecovered,
-               NULL);
-  g_object_unref(fec_dec);
-
   auto msg = interfaces::msg::RtpStats();
   msg.header.stamp = this->now();
   msg.num_pushed = num_pushed;
@@ -220,8 +204,6 @@ void RtpClientNode::rtp_stats_cb() {
   msg.num_late = num_late;
   msg.num_duplicates = num_duplicates;
   msg.avg_jitter = avg_jitter;
-  msg.recovered = recovered;
-  msg.unrecovered = unrecovered;
   rtp_stats_pub_->publish(msg);
 }
 
