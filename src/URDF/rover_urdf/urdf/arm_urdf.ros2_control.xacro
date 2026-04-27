@@ -6,10 +6,11 @@
         <!-- By default, set up controllers for simulation. This won't work on real hardware -->
         <!-- <plugin>mock_components/GenericSystem</plugin> -->
         <plugin>ros2_control_rover_arm/RoverArmHardwareInterface</plugin>
+        <param name="rw_rate">200</param>
       </hardware>
       <joint name="Joint_1">
         <param name="type">TalonSRX</param>
-        <param name="can_id">14</param>
+        <param name="can_id">9</param>
         <param name="kP">11.0</param>
         <param name="kI">0.0005</param>
         <param name="kD">1.0</param>
@@ -17,7 +18,7 @@
         <param name="sensor_type">quadrature</param> <!-- or "quadrature" -->
         <param name="load_sensor">absolute</param>
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">4.99</param>
+        <param name="sensor_offset">4.88</param>
         <param name="crossover">false</param> <!-- or "continuous" -->
         <param name="invert">false</param>
         <param name="invert_sensor">false</param>
@@ -28,21 +29,21 @@
       <joint name="Joint_3">
         <param name="type">TalonSRX</param>
         <param name="can_id">11</param>
-        <param name="kP">14.0</param>
-        <param name="kI">0.0005</param>
-        <param name="kD">0.3</param>
+        <param name="kP">11.0</param>
+        <param name="kI">0.0</param>
+        <param name="kD">0.0</param>
         <param name="kF">0.0</param>
         <param name="sensor_type">quadrature</param>
         <param name="load_sensor">absolute</param>
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">1.9</param>
+        <param name="sensor_offset">-1.2</param>
         <param name="crossover">false</param> <!-- or "continuous" -->
         <param name="invert">false</param>
-        <param name="gravity_ff_freq">10</param>
-        <param name="current_frame">Link_4</param>
-        <param name="gravity_const">-0.03</param>
         <param name="debug_frequency">1</param>
         <param name="invert_sensor">false</param>
+        <param name="gravity_ff_freq">10</param>
+        <param name="current_frame">Link_4</param>
+        <param name="gravity_const">-0.023</param>
         <command_interface name="position"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>
@@ -50,14 +51,14 @@
       <joint name="Joint_4">
         <param name="type">TalonSRX</param>
         <param name="can_id">12</param>
-        <param name="kP">4.0</param>
+        <param name="kP">6.0</param>
         <param name="kI">0.001</param>
         <param name="kD">0.0</param>
         <param name="kF">0.0</param>
         <param name="sensor_type">quadrature</param>
         <param name="load_sensor">absolute</param>
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">4.69494</param>
+        <param name="sensor_offset">3.5</param>
         <param name="crossover">false</param> <!-- or "continuous" -->
         <param name="invert">true</param>
         <param name="invert_sensor">true</param>
@@ -65,28 +66,10 @@
         <state_interface name="position"/>
         <state_interface name="velocity"/>
       </joint>
-      <joint name="Joint_5">
-        <param name="type">TalonSRX</param>
-        <param name="can_id">19</param>
-        <param name="kP">8.5</param>
-        <param name="kI">0.001</param>
-        <param name="kD">0.001</param>
-        <param name="kF">0.0</param>
-        <param name="sensor_type">quadrature</param>
-        <param name="load_sensor">absolute</param> 
-        <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">3.26377</param>
-        <param name="crossover">false</param> <!-- or "continuous" -->
-        <param name="invert">false</param>
-        <param name="invert_sensor">false</param>
-        <command_interface name="position"/>
-        <state_interface name="position"/>
-        <state_interface name="velocity"/>
-      </joint>
       <joint name="Joint_6">
         <param name="type">TalonSRX</param>
-        <param name="can_id">15</param>
-        <param name="kP">0.01</param>
+        <param name="can_id">14</param>
+        <param name="kP">0.015</param>
         <param name="kI">0.000001</param>
         <param name="kD">0.0</param>
         <param name="kF">0.0</param>
@@ -111,6 +94,16 @@
       <joint name="Joint_2">
         <param name="node_id">10</param>
         <param name="multiplier">-1.0</param>
+        <param name="gravity_ff_freq">30</param>
+        <param name="current_frame">Link_3</param>
+        <param name="gravity_const">-0.035</param>
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+      <joint name="Joint_5">
+        <param name="node_id">13</param>
+        <param name="multiplier">1.0</param>
         <command_interface name="position"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>
