@@ -1,6 +1,8 @@
 #include "arm.hpp"
 #include "controller_manager_msgs/srv/switch_controller.hpp"
 #include "std_srvs/srv/trigger.hpp"
+#include <algorithm>
+#include <memory>
 
 arm::arm() : Node("arm_node") {
 
@@ -16,9 +18,13 @@ arm::arm() : Node("arm_node") {
       "/servo_node/delta_twist_cmds", 10);
   eef_pub_ = this->create_publisher<ros_phoenix::msg::MotorControl>(
       "/end_effector/set", 10);
+  dot_pub_ = this->create_publisher<geometry_msgs::msg::Vector3>(
+      "/rtp_client_node/dot", 10);
+  clear_dot();
 
   RCLCPP_INFO(this->get_logger(), "Arm controller started");
 }
+
 void arm::endeffector_control(
     std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   auto &buttons = joystickMsg->buttons;
@@ -93,6 +99,15 @@ bool arm::moveit_servo_state(bool enable) {
   return true;
 }
 
+void arm::clear_dot() {
+  geometry_msgs::msg::Vector3 msg;
+  msg.x = -1;
+  msg.y = -1;
+  dot_pub_->publish(msg);
+  targetPositionX = kCamWidth / 2;
+  targetPositionY = kCamHeight / 2;
+}
+
 void arm::arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   auto &buttons = joystickMsg->buttons;
   if (!initialized_) {
@@ -102,28 +117,40 @@ void arm::arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
         std::abs(joystickMsg->axes[kJoint4Axis]) < 0.01 &&
         std::abs(joystickMsg->axes[kJoint6Axis]) < 0.01) {
       initialized_ = true;
+    } else {
+      RCLCPP_WARN_THROTTLE(this->get_logger(), *(this->get_clock()), 1,
+                           "Arm Controller not reading zeros correctly");
     }
     return;
   }
-
+  bool state_changed = false;
   if (buttons[kDisableButton] && current_state_ != NONE) {
     current_state_ = NONE;
+    state_changed = true;
     moveit_servo_state(false);
     RCLCPP_INFO(this->get_logger(), "Arm disabled");
-    return;
   } else if (buttons[kIkButton] && current_state_ != IK) {
     current_state_ = IK;
+    state_changed = true;
     moveit_servo_state(true);
     RCLCPP_INFO(this->get_logger(), "Switched to IK control");
   } else if (buttons[kManualButton] && current_state_ != MANUAL) {
     current_state_ = MANUAL;
+    state_changed = true;
     moveit_servo_state(true);
     RCLCPP_INFO(this->get_logger(), "Switched to manual control");
+  } else if (buttons[kPositionButton] && current_state_ != POS) {
+    current_state_ = POS;
+    state_changed = true;
+    moveit_servo_state(false);
+    RCLCPP_INFO(this->get_logger(), "Switched to position tracking control");
   }
-  if (current_state_ != NONE) {
+  if (current_state_ == IK || current_state_ == MANUAL) {
     endeffector_control(joystickMsg);
   }
-
+  if (state_changed && current_state_ != POS) {
+    clear_dot();
+  }
   switch (current_state_) {
   case MANUAL:
     manual_arm_control(joystickMsg);
@@ -131,9 +158,12 @@ void arm::arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   case IK:
     ik_arm_control(joystickMsg);
     break;
+  case POS:
+    ik_pose_control(joystickMsg);
   default:
     break;
   }
+  last_msg_ = joystickMsg;
 }
 
 void arm::manual_arm_control(
@@ -161,7 +191,7 @@ void arm::manual_arm_control(
 void arm::ik_arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   auto twist_msg = geometry_msgs::msg::TwistStamped();
   twist_msg.header.stamp = joystickMsg->header.stamp;
-  twist_msg.header.frame_id = "Link_6";
+  twist_msg.header.frame_id = "EndEffector";
 
   auto &axes = joystickMsg->axes;
   auto &buttons = joystickMsg->buttons;
@@ -179,6 +209,81 @@ void arm::ik_arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   ik_pub_->publish(twist_msg);
 }
 
+void arm::ik_pose_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
+  if (!moveit_client_) {
+    moveit_client_ =
+        std::make_shared<arm_control::MoveGroupClient>(shared_from_this());
+  }
+
+  if (joystickMsg->buttons[kClawOpen]) {
+    moveit_client_->stop();
+    return;
+  }
+
+  if (!last_msg_) {
+    return;
+  }
+  targetPositionX -= joystickMsg->axes[kJoint6Axis] * kDotInc;
+  targetPositionY -= joystickMsg->axes[kJoint3Axis] * kDotInc;
+  targetPositionX =
+      std::clamp(targetPositionX, 0.0, static_cast<double>(kCamWidth));
+  targetPositionY =
+      std::clamp(targetPositionY, 0.0, static_cast<double>(kCamHeight));
+
+  bool wasPressed = last_msg_->buttons[kClawClose];
+  bool isPressed = joystickMsg->buttons[kClawClose];
+  if (wasPressed && !isPressed) {
+    geometry_msgs::msg::Vector3 msg;
+    msg.x = -1;
+    msg.y = -1;
+    dot_pub_->publish(msg);
+    moveit_client_->goToCamCoord(targetPositionX, targetPositionY);
+    targetPositionX = kCamWidth / 2;
+    targetPositionY = kCamHeight / 2;
+  }
+  clipboards_control(joystickMsg);
+  geometry_msgs::msg::Vector3 msg;
+  msg.x = targetPositionX;
+  msg.y = targetPositionY;
+  dot_pub_->publish(msg);
+}
+
+void arm::clipboards_control(
+    std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
+  bool isPressed = joystickMsg->buttons[kClipboard1SaveButton];
+  bool wasPressed = last_msg_->buttons[kClipboard1SaveButton];
+  if (wasPressed && !isPressed) {
+    clipboard1_pose_index_ = moveit_client_->saveCurrentPose();
+    RCLCPP_INFO(this->get_logger(),
+                "Saved current pose to clipboard 1 at index %d",
+                clipboard1_pose_index_);
+  }
+  isPressed = joystickMsg->buttons[kClipboard1ExecuteButton];
+  wasPressed = last_msg_->buttons[kClipboard1ExecuteButton];
+  if (wasPressed && !isPressed && clipboard1_pose_index_ != -1) {
+    moveit_client_->goToSavedPose(clipboard1_pose_index_);
+    RCLCPP_INFO(this->get_logger(),
+                "Executed pose from clipboard 1 at index %d",
+                clipboard1_pose_index_);
+  }
+  isPressed = joystickMsg->buttons[kClipboard2SaveButton];
+  wasPressed = last_msg_->buttons[kClipboard2SaveButton];
+  if (wasPressed && !isPressed) {
+    clipboard2_pose_index_ = moveit_client_->saveCurrentPose();
+    RCLCPP_INFO(this->get_logger(),
+                "Saved current pose to clipboard 2 at index %d",
+                clipboard2_pose_index_);
+  }
+  isPressed = joystickMsg->buttons[kClipboard2ExecuteButton];
+  wasPressed = last_msg_->buttons[kClipboard2ExecuteButton];
+  if (wasPressed && !isPressed && clipboard2_pose_index_ != -1) {
+    moveit_client_->goToSavedPose(clipboard2_pose_index_);
+    RCLCPP_INFO(this->get_logger(),
+                "Executed pose from clipboard 2 at index %d",
+                clipboard2_pose_index_);
+  }
+}
+
 void arm::declareParameters() {
   this->declare_parameter("throttle.axis", 2);
   this->declare_parameter("joint_1_axis", 0);
@@ -190,9 +295,17 @@ void arm::declareParameters() {
   this->declare_parameter("wrist_yaw_negative", 5);
   this->declare_parameter("ik_button", 10);
   this->declare_parameter("manual_button", 11);
+  this->declare_parameter("position_button", 8);
   this->declare_parameter("disable_button", 9);
   this->declare_parameter("claw_close_button", 0);
   this->declare_parameter("claw_open_button", 1);
+  this->declare_parameter("cam_width", 1920);
+  this->declare_parameter("cam_height", 1080);
+  this->declare_parameter("dot_inc", 2);
+  this->declare_parameter("clipboard1.save_button", 2);
+  this->declare_parameter("clipboard1.execute_button", 4);
+  this->declare_parameter("clipboard2.save_button", 3);
+  this->declare_parameter("clipboard2.execute_button", 5);
 }
 void arm::loadParameters() {
   this->get_parameter("throttle.axis", kThrottleAxis);
@@ -205,9 +318,17 @@ void arm::loadParameters() {
   this->get_parameter("wrist_yaw_negative", kWristYaw_negative);
   this->get_parameter("ik_button", kIkButton);
   this->get_parameter("manual_button", kManualButton);
+  this->get_parameter("position_button", kPositionButton);
   this->get_parameter("disable_button", kDisableButton);
-  this->get_parameter("claw_close_button", kClawOpen);
-  this->get_parameter("claw_open_button", kClawClose);
+  this->get_parameter("claw_close_button", kClawClose);
+  this->get_parameter("claw_open_button", kClawOpen);
+  this->get_parameter("cam_width", kCamWidth);
+  this->get_parameter("cam_height", kCamHeight);
+  this->get_parameter("dot_inc", kDotInc);
+  this->get_parameter("clipboard1.save_button", kClipboard1SaveButton);
+  this->get_parameter("clipboard1.execute_button", kClipboard1ExecuteButton);
+  this->get_parameter("clipboard2.save_button", kClipboard2SaveButton);
+  this->get_parameter("clipboard2.execute_button", kClipboard2ExecuteButton);
 }
 
 int main(int argc, char **argv) {

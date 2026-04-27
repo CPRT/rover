@@ -74,6 +74,12 @@ public:
    * implementation, then apply additional configuration as required.
    */
   virtual void configure();
+  /**
+   * @brief Activate motor controllers.
+   *
+   * Optional for derived classes.
+   */
+  virtual void activate(){};
 
 protected:
   /**

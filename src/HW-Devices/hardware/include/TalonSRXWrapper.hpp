@@ -39,6 +39,8 @@ public:
 
   void configure() override;
 
+  void activate() override;
+
   // Optional: type-level setup for Talons if you need it
   static void setup();
 
@@ -63,6 +65,7 @@ private:
   bool inverted_;
   bool invert_sensor_;
   double gravity_const_;
+  double friction_const_;
   std::string target_frame_;
   std::string cur_frame_;
   bool initialized_;

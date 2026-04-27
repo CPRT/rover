@@ -2,8 +2,58 @@ cmake_minimum_required(VERSION 3.22)
 project(arm_control)
 
 find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(moveit_ros_planning_interface REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(interfaces REQUIRED)
 
-ament_package()
+add_library(move_group_client SHARED
+  src/MoveGroupClient.cpp
+)
+
+target_include_directories(move_group_client PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+)
+
+ament_target_dependencies(move_group_client
+  rclcpp
+  geometry_msgs
+  interfaces
+  moveit_ros_planning_interface
+  "tf2"
+  "tf2_ros"
+  "tf2_geometry_msgs"
+  "geometry_msgs"
+)
+
+install(
+  TARGETS move_group_client
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include/${PROJECT_NAME}
+)
+
+install(DIRECTORY include/
+  DESTINATION include/${PROJECT_NAME}
+)
+
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(
+  rclcpp
+  geometry_msgs
+  moveit_ros_planning_interface
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  interfaces
+)
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/launch")
   install(
@@ -14,3 +64,5 @@ endif()
 
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
 install(FILES .setup_assistant DESTINATION share/${PROJECT_NAME})
+
+ament_package()

@@ -23,6 +23,7 @@ link_directories(${GST_LIBRARY_DIRS})
 add_library(gstros2 SHARED
   plugin.cpp
   gstros2src.cpp
+  gstros2overlay.cpp
 )
 target_compile_definitions(gstros2 PRIVATE
   PACKAGE="\\\"gstros2\\\""

@@ -9,7 +9,7 @@ use_gazebo: false
 
 ## Properties of outgoing commands
 publish_period: 0.08  # 1/Nominal publish rate [seconds]
-low_latency_mode: false
+low_latency_mode: true
 
 command_in_type: "unitless"  # "unitless"> in the range [-1:1], as if from joystick. "speed_units"> cmds are in m/s and rad/s
 scale:
@@ -50,7 +50,7 @@ incoming_command_timeout:  0.2  # Stop servoing if X seconds elapse without a ne
 # Important because ROS may drop some messages and we need the robot to halt reliably.
 num_outgoing_halt_msgs_to_publish: 0
 halt_all_joints_in_joint_mode: false
-halt_all_joints_in_cartesian_mode: false
+halt_all_joints_in_cartesian_mode: true
 
 ## Configure handling of singularities and joint limits
 lower_singularity_threshold: 10.0  # Start decelerating when the condition number hits this (close to singularity)
