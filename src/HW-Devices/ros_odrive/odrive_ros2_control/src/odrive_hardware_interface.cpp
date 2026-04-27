@@ -457,8 +457,12 @@ return_type ODriveHardwareInterface::write(const rclcpp::Time &,
   for (auto &axis : axes_) {
     // Send the CAN message that fits the set of enabled setpoints
     if (axis.pos_input_enabled_) {
+      auto target = axis.pos_setpoint_;
+      if (std::isnan(axis.pos_setpoint_)) {
+        target = axis.pos_estimate_;
+      }
       Set_Input_Pos_msg_t msg;
-      msg.Input_Pos = axis.pos_setpoint_ / (2 * M_PI * axis.multiplier_);
+      msg.Input_Pos = target / (2 * M_PI * axis.multiplier_);
       msg.Vel_FF = axis.vel_input_enabled_
                        ? (axis.vel_setpoint_ / (2 * M_PI * axis.multiplier_))
                        : 0.0f;
