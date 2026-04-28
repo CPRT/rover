@@ -7,8 +7,9 @@
   <BehaviorTree ID="MainTree">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
+        
         <RateController hz="2.0">
-          <RecoveryNode number_of_retries="1" name="ComputePathToPose">
+          <RecoveryNode number_of_retries="1" name="ComputeAndSmoothPath">
             <Fallback>
               <ReactiveSequence>
                 <Inverter>
@@ -19,16 +20,24 @@
                 </Inverter>
                 <IsPathValid path="{path}"/>
               </ReactiveSequence>
-              <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+              
+              <Sequence name="PlanAndSmooth">
+                <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+                <SmoothPath unsmoothed_path="{path}" smoothed_path="{smoothed_path}"/>
+              </Sequence>
             </Fallback>
+            
             <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
           </RecoveryNode>
         </RateController>
+
         <RecoveryNode number_of_retries="1" name="FollowPath">
-          <FollowPath path="{path}" controller_id="FollowPath"/>
+          <FollowPath path="{smoothed_path}" controller_id="FollowPath"/>
           <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
         </RecoveryNode>
+        
       </PipelineSequence>
+
       <ReactiveFallback name="RecoveryFallback">
         <GoalUpdated/>
         <RoundRobin name="RecoveryActions">
@@ -44,7 +53,6 @@
           </Sequence>
 
           <Sequence name="SpinSeq">
-            <!-- <Spin spin_dist="3.14" time_allowance="5.0"/> -->
             <Wait wait_duration="1.0"/>
           </Sequence>
 

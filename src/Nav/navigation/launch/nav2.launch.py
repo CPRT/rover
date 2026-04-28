@@ -128,7 +128,7 @@ def generate_launch_description():
 
     cmd_vel_topic_cmd = DeclareLaunchArgument(
         "cmd_vel_topic",
-        default_value="/cmd_vel",
+        default_value="/cmd_vel_tmp",
         description="cmd_vel topic (for remmaping)",
     )
 

@@ -4,7 +4,7 @@
       <PipelineSequence name="NavigateWithReplanning">
         
         <RateController hz="2.0">
-          <RecoveryNode number_of_retries="1" name="ComputePathThroughPoses">
+          <RecoveryNode number_of_retries="1" name="ComputeAndSmoothPathThroughPoses">
             <Fallback>
               
               <ReactiveSequence>
@@ -12,11 +12,12 @@
                   <PathExpiringTimer seconds="15" path="{path}"/>
                 </Inverter>
                 <Inverter>
-                  <IsPathValid path="{path}"/>
+                  <GlobalUpdatedGoal/>
                 </Inverter>
+                <IsPathValid path="{path}"/>
               </ReactiveSequence>
               
-              <Sequence name="FilterAndPlanSequence">
+              <Sequence name="FilterPlanAndSmoothSequence">
                 <RemovePassedGoals input_goals="{goals}" 
                                    radius="0.5" 
                                    robot_base_frame="base_link" 
@@ -30,6 +31,8 @@
                 <ComputePathThroughPoses goals="{safe_poses}" 
                                          path="{path}" 
                                          planner_id="GridBased"/>
+                                         
+                <SmoothPath unsmoothed_path="{path}" smoothed_path="{smoothed_path}"/>
               </Sequence>
 
             </Fallback>
@@ -38,7 +41,7 @@
         </RateController>
 
         <RecoveryNode number_of_retries="1" name="FollowPath">
-          <FollowPath path="{path}" controller_id="FollowPath"/>
+          <FollowPath path="{smoothed_path}" controller_id="FollowPath"/>
           <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
         </RecoveryNode>
 

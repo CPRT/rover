@@ -26,6 +26,10 @@ add_library(cprt_remove_in_collision_goals_bt_node SHARED
   src/remove_in_collision_goals_action.cpp
 )
 
+target_compile_definitions(cprt_remove_in_collision_goals_bt_node
+  PRIVATE BT_PLUGIN_EXPORT
+)
+
 ament_target_dependencies(cprt_remove_in_collision_goals_bt_node
   ${dependencies}
 )
