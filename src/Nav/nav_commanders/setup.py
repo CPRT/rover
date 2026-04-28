@@ -12,8 +12,9 @@ setup(
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
         ("share/" + package_name, ["package.xml"]),
         (os.path.join("share", package_name, "launch"), glob("launch/*")),
+        (os.path.join("share", package_name, "config"), glob("config/*")),
     ],
-    install_requires=["setuptools"],
+    install_requires=["setuptools", "PyYAML"],
     zip_safe=True,
     maintainer="erik",
     maintainer_email="erikcaell@gmail.com",
@@ -27,6 +28,7 @@ setup(
             "aruco_gps_commander_node = nav_commanders.nav_to_gps_aruco:main",
             "nav_then_search_commander_node = nav_commanders.nav_then_search:main",
             "search_pattern_viz_node = nav_commanders.search_pattern_viz:main",
+            "unified_nav_commander_node = nav_commanders.unified_nav_commander:main",
         ],
     },
 )
