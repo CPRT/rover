@@ -15,62 +15,46 @@
 #ifndef CPRT_BEHAVIOR_TREE_PLUGINS__REMOVE_IN_COLLISION_GOALS_ACTION_HPP_
 #define CPRT_BEHAVIOR_TREE_PLUGINS__REMOVE_IN_COLLISION_GOALS_ACTION_HPP_
 
-#include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
-#include "nav2_behavior_tree/bt_service_node.hpp"
-#include "nav2_behavior_tree/json_utils.hpp"
-#include "nav2_msgs/msg/waypoint_status.hpp"
-#include "nav2_msgs/srv/get_costs.hpp"
-#include "nav_msgs/msg/goals.hpp"
+#include "behaviortree_cpp_v3/action_node.h"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
+#include "rclcpp/rclcpp.hpp"
 
-namespace cprt_behavior_tree_plugins {
+namespace nav2_behavior_tree {
 
-class RemoveInCollisionGoals
-    : public nav2_behavior_tree::BtServiceNode<nav2_msgs::srv::GetCosts> {
+class RemoveInCollisionGoals : public BT::SyncActionNode {
 public:
-  RemoveInCollisionGoals(const std::string &service_node_name,
+  RemoveInCollisionGoals(const std::string &xml_tag_name,
                          const BT::NodeConfiguration &conf);
 
-  void on_tick() override;
-
-  BT::NodeStatus on_completion(
-      std::shared_ptr<nav2_msgs::srv::GetCosts::Response> response) override;
-
   static BT::PortsList providedPorts() {
-    // Register JSON definitions for the types used in ports.
-    BT::RegisterJsonDefinition<nav_msgs::msg::Goals>();
-    BT::RegisterJsonDefinition<nav2_msgs::msg::WaypointStatus>();
-    BT::RegisterJsonDefinition<std::vector<nav2_msgs::msg::WaypointStatus>>();
-
-    return providedBasicPorts(
-        {BT::InputPort<nav_msgs::msg::Goals>("input_goals",
-                                             "Original goals to remove from"),
-         BT::InputPort<double>(
-             "cost_threshold", 254.0,
-             "Cost threshold for considering a goal in collision"),
-         BT::InputPort<bool>("use_footprint", true,
-                             "Whether to use footprint cost"),
-         BT::InputPort<bool>("consider_unknown_as_obstacle", false,
-                             "Whether to consider unknown cost as obstacle"),
-         BT::OutputPort<nav_msgs::msg::Goals>(
-             "output_goals", "Goals with in-collision goals removed"),
-         BT::InputPort<std::vector<nav2_msgs::msg::WaypointStatus>>(
-             "input_waypoint_statuses",
-             "Original waypoint_statuses to mark waypoint status from"),
-         BT::OutputPort<std::vector<nav2_msgs::msg::WaypointStatus>>(
-             "output_waypoint_statuses",
-             "Waypoint_statuses with in-collision waypoints marked")});
+    return {BT::InputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
+                "input_goals", "Goals to filter"),
+            BT::InputPort<double>(
+                "cost_threshold", 98.0,
+                "Cost threshold (0-100 scale). 99+ is inscribed/lethal"),
+            BT::InputPort<std::string>("costmap_topic",
+                                       "/global_costmap/costmap",
+                                       "Topic to read costmap from"),
+            BT::OutputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
+                "output_goals", "Filtered goals")};
   }
 
+  BT::NodeStatus tick() override;
+
 private:
-  bool use_footprint_{true};
-  bool consider_unknown_as_obstacle_{false};
-  double cost_threshold_{254.0};
-  nav_msgs::msg::Goals input_goals_;
+  void costmapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+
+  rclcpp::Node::SharedPtr node_;
+  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_sub_;
+  nav_msgs::msg::OccupancyGrid::SharedPtr latest_costmap_;
+  std::mutex costmap_mutex_;
 };
 
-} // namespace cprt_behavior_tree_plugins
+} // namespace nav2_behavior_tree
 
 #endif // CPRT_BEHAVIOR_TREE_PLUGINS__REMOVE_IN_COLLISION_GOALS_ACTION_HPP_

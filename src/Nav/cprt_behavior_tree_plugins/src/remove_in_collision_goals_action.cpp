@@ -12,91 +12,90 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
-#include <string>
-
 #include "cprt_behavior_tree_plugins/remove_in_collision_goals_action.hpp"
-#include "nav2_util/geometry_utils.hpp"
 
-namespace cprt_behavior_tree_plugins {
+#include <functional>
+
+namespace nav2_behavior_tree {
 
 RemoveInCollisionGoals::RemoveInCollisionGoals(
-    const std::string &service_node_name, const BT::NodeConfiguration &conf)
-    : nav2_behavior_tree::BtServiceNode<nav2_msgs::srv::GetCosts>(
-          service_node_name, conf, "/global_costmap/get_cost_global_costmap") {}
+    const std::string &xml_tag_name, const BT::NodeConfiguration &conf)
+    : BT::SyncActionNode(xml_tag_name, conf) {
+  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
-void RemoveInCollisionGoals::on_tick() {
-  getInput("use_footprint", use_footprint_);
-  getInput("cost_threshold", cost_threshold_);
-  getInput("input_goals", input_goals_);
-  getInput("consider_unknown_as_obstacle", consider_unknown_as_obstacle_);
+  std::string costmap_topic;
+  getInput("costmap_topic", costmap_topic);
 
-  if (input_goals_.goals.empty()) {
-    setOutput("output_goals", input_goals_);
-    should_send_request_ = false;
-    return;
-  }
-
-  request_ = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
-  request_->use_footprint = use_footprint_;
-
-  for (const auto &goal : input_goals_.goals) {
-    request_->poses.push_back(goal);
-  }
+  costmap_sub_ = node_->create_subscription<nav_msgs::msg::OccupancyGrid>(
+      costmap_topic,
+      rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
+      std::bind(&RemoveInCollisionGoals::costmapCallback, this,
+                std::placeholders::_1));
 }
 
-BT::NodeStatus RemoveInCollisionGoals::on_completion(
-    std::shared_ptr<nav2_msgs::srv::GetCosts::Response> response) {
-  if (!response->success) {
-    RCLCPP_ERROR(node_->get_logger(), "GetCosts service call failed");
-    setOutput("output_goals", input_goals_);
+void RemoveInCollisionGoals::costmapCallback(
+    const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
+  std::lock_guard<std::mutex> lock(costmap_mutex_);
+  latest_costmap_ = msg;
+}
+
+BT::NodeStatus RemoveInCollisionGoals::tick() {
+  std::vector<geometry_msgs::msg::PoseStamped> input_goals;
+  if (!getInput("input_goals", input_goals)) {
+    RCLCPP_ERROR(node_->get_logger(),
+                 "RemoveInCollisionGoals: input_goals missing");
     return BT::NodeStatus::FAILURE;
   }
 
-  std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses;
-  auto waypoint_statuses_get_res =
-      getInput("input_waypoint_statuses", waypoint_statuses);
-  if (!waypoint_statuses_get_res) {
-    RCLCPP_ERROR(node_->get_logger(),
-                 "Missing [input_waypoint_statuses] port input!");
+  double cost_threshold = 98.0;
+  getInput("cost_threshold", cost_threshold);
+
+  nav_msgs::msg::OccupancyGrid::SharedPtr current_costmap;
+  {
+    std::lock_guard<std::mutex> lock(costmap_mutex_);
+    current_costmap = latest_costmap_;
   }
 
-  nav_msgs::msg::Goals valid_goal_poses;
-  for (size_t i = 0; i < response->costs.size(); ++i) {
-    if ((response->costs[i] == 255 && !consider_unknown_as_obstacle_) ||
-        response->costs[i] < cost_threshold_) {
-      valid_goal_poses.goals.push_back(input_goals_.goals[i]);
-    } else if (waypoint_statuses_get_res) {
-      using namespace nav2_util::geometry_utils; // NOLINT
-      auto cur_waypoint_index = find_next_matching_goal_in_waypoint_statuses(
-          waypoint_statuses, input_goals_.goals[i]);
-      if (cur_waypoint_index == -1) {
-        RCLCPP_ERROR(node_->get_logger(),
-                     "Failed to find matching goal in waypoint_statuses");
-        return BT::NodeStatus::FAILURE;
-      }
+  if (!current_costmap) {
+    RCLCPP_WARN_THROTTLE(node_->get_logger(), *node_->get_clock(), 2000,
+                         "RemoveInCollisionGoals: No costmap received yet.");
+    setOutput("output_goals", input_goals);
+    return BT::NodeStatus::SUCCESS;
+  }
 
-      waypoint_statuses[cur_waypoint_index].waypoint_status =
-          nav2_msgs::msg::WaypointStatus::SKIPPED;
+  std::vector<geometry_msgs::msg::PoseStamped> output_goals;
+  const auto &info = current_costmap->info;
+
+  for (const auto &goal : input_goals) {
+    const double mx = goal.pose.position.x;
+    const double my = goal.pose.position.y;
+
+    const int gx =
+        static_cast<int>((mx - info.origin.position.x) / info.resolution);
+    const int gy =
+        static_cast<int>((my - info.origin.position.y) / info.resolution);
+
+    if (gx >= 0 && gx < static_cast<int>(info.width) && gy >= 0 &&
+        gy < static_cast<int>(info.height)) {
+      const int index = gy * static_cast<int>(info.width) + gx;
+      const int8_t cost = current_costmap->data[index];
+
+      if (cost == -1 || cost < static_cast<int8_t>(cost_threshold)) {
+        output_goals.push_back(goal);
+      }
+    } else {
+      output_goals.push_back(goal);
     }
   }
 
-  if (valid_goal_poses.goals.empty()) {
-    RCLCPP_INFO(
-        node_->get_logger(),
-        "All goals are in collision and have been removed from the list");
-  }
-
-  setOutput("output_goals", valid_goal_poses);
-  setOutput("output_waypoint_statuses", waypoint_statuses);
-
+  setOutput("output_goals", output_goals);
   return BT::NodeStatus::SUCCESS;
 }
 
-} // namespace cprt_behavior_tree_plugins
+} // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp/bt_factory.h"
+#include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory) {
-  factory.registerNodeType<cprt_behavior_tree_plugins::RemoveInCollisionGoals>(
+  factory.registerNodeType<nav2_behavior_tree::RemoveInCollisionGoals>(
       "RemoveInCollisionGoals");
 }

@@ -23,8 +23,8 @@
                                    output_goals="{pending_poses}"/>
 
                 <RemoveInCollisionGoals input_goals="{pending_poses}" 
-                                        service_name="local_costmap/get_cost" 
-                                        cost_threshold="253" 
+                                        costmap_topic="/global_costmap/costmap" 
+                                        cost_threshold="98.0" 
                                         output_goals="{safe_poses}"/>
 
                 <ComputePathThroughPoses goals="{safe_poses}" 
