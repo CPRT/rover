@@ -21,7 +21,9 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "zed_aruco_detector_node = computer_vision.zed_aruco_detector:main"
+            "zed_aruco_detector_node = computer_vision.zed_aruco_detector:main",
+            "yolo_detector_node = computer_vision.yolo_detector:main",
+            "zed_to_images_node = computer_vision.zed_to_images:main",
         ],
     },
 )
