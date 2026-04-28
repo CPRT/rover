@@ -9,8 +9,8 @@ from pyubx2 import (
     UBXMessage,
     UBX_PROTOCOL,
     RTCM3_PROTOCOL,
-    UBX_NAV_CLASS,
-    UBX_NAV_SVIN_ID,
+    # UBX_NAV_CLASS,
+    # UBX_NAV_SVIN_ID,
     SET,
 )
 
@@ -19,7 +19,7 @@ class GpsBaseNode(Node):
     """
     ROS 2 node for managing RTCM data via serial communication.
 
-    1 - Sends UBX config commands to the module to enable Survey-In mode 
+    1 - Sends UBX config commands to the module to enable Survey-In mode
         and request NAV-SVIN status messages.
     2 - Reads combined UBX and RTCM messages from serial port.
     3 - Routes NAV-SVIN messages to /base_station/svin_status topic so other
@@ -27,12 +27,12 @@ class GpsBaseNode(Node):
     4 - Routes RTCM correction bytes to /rtcm topic.
 
     Attributes:
-    - fix_pub (Publisher): "/base_station/fix" Publishes tracker fix with 
+    - fix_pub (Publisher): "/base_station/fix" Publishes tracker fix with
         a depth of 1 (latched) telemetry for web UI and other logging
     - rtcm_pub (Publisher): Publishes RTCM messages to the /rtcm topic.
     - valid_pub (Publisher): Publishes true when survey-in is done (latched)
     - dur_pub (Publisher): Publishes duration of survey-in process for monitoring
-    - acc_pub (Publisher): Publishes running accuracy measurement 
+    - acc_pub (Publisher): Publishes running accuracy measurement
     - serial_conn (IoManager): Manages serial I/O operations.
     - layers (int): Configuration layers for the UBXMessage.
     - timer (Timer): Timer for periodically reading and publishing RTCM data.
@@ -65,19 +65,27 @@ class GpsBaseNode(Node):
             self.freq = 2.0
 
         self.declare_parameter("Baudrate", 38400)
-        self.baudrate = self.get_parameter("Baudrate").get_parameter_value().integer_value
+        self.baudrate = (
+            self.get_parameter("Baudrate").get_parameter_value().integer_value
+        )
 
         self.declare_parameter("Device", "/dev/ttyACM0")
         self.dev = self.get_parameter("Device").get_parameter_value().string_value
 
         self.declare_parameter("QueueDepth", 10)
-        self.queue_depth = self.get_parameter("QueueDepth").get_parameter_value().integer_value
+        self.queue_depth = (
+            self.get_parameter("QueueDepth").get_parameter_value().integer_value
+        )
 
         self.declare_parameter("SvinMinDur", 60)
-        self.svin_min_dur = self.get_parameter("SvinMinDur").get_parameter_value().integer_value
+        self.svin_min_dur = (
+            self.get_parameter("SvinMinDur").get_parameter_value().integer_value
+        )
 
         self.declare_parameter("SvinAccLimit", 10000)  # 10 000 mm
-        self.svin_acc_limit = self.get_parameter("SvinAccLimit").get_parameter_value().integer_value
+        self.svin_acc_limit = (
+            self.get_parameter("SvinAccLimit").get_parameter_value().integer_value
+        )
 
     def _setup_publishers(self):
         # keep depth at one for RTCM and use the new default for svin msgs
@@ -89,17 +97,25 @@ class GpsBaseNode(Node):
             reliability=ReliabilityPolicy.RELIABLE,
             durability=DurabilityPolicy.TRANSIENT_LOCAL,
         )
-        self.fix_pub = self.create_publisher(NavSatFix, "/base_station/fix", latching_qos)
-        self.valid_pub = self.create_publisher(Bool, "/base_station/svin_valid", latching_qos)
-        self.dur_pub = self.create_publisher(UInt32, "/base_station/svin_dur", self.queue_depth)
-        self.acc_pub = self.create_publisher(Float32, "/base_station/svin_acc", self.queue_depth)
+        self.fix_pub = self.create_publisher(
+            NavSatFix, "/base_station/fix", latching_qos
+        )
+        self.valid_pub = self.create_publisher(
+            Bool, "/base_station/svin_valid", latching_qos
+        )
+        self.dur_pub = self.create_publisher(
+            UInt32, "/base_station/svin_dur", self.queue_depth
+        )
+        self.acc_pub = self.create_publisher(
+            Float32, "/base_station/svin_acc", self.queue_depth
+        )
 
     def _configure_module(self):
         """
         Sends two UBX config messages to the GPS module:
 
-        CFG-TMODE3 puts the receiver into Survey-In mode with given params. 
-        The module will average its position and once both thresholds are met, 
+        CFG-TMODE3 puts the receiver into Survey-In mode with given params.
+        The module will average its position and once both thresholds are met,
         declare its position valid and begin outputting RTCM corrections.
 
         CFG-MSG: tells the module to emit NAV-SVIN status messages once per
@@ -115,7 +131,7 @@ class GpsBaseNode(Node):
                 SET,
                 timeMode=1,
                 minDur=self.svin_min_dur,
-                accLimit=self.svin_acc_limit * 10, # converting mm to 0.1mm
+                accLimit=self.svin_acc_limit * 10,  # converting mm to 0.1mm
             )
             self.serial_conn.write(cfg_tmode3.serialize())
             self.get_logger().info(
@@ -131,12 +147,12 @@ class GpsBaseNode(Node):
                 "CFG",
                 "CFG-MSG",
                 SET,
-                msgClass=UBX_NAV_CLASS,
-                msgID=UBX_NAV_SVIN_ID,
+                # msgClass=UBX_NAV_CLASS,
+                # msgID=UBX_NAV_SVIN_ID,
                 rateI2C=0,
                 rateUART1=0,
                 rateUART2=0,
-                rateUSB=1,   # output NAV-SVIN once per epoch on USB
+                rateUSB=1,  # output NAV-SVIN once per epoch on USB
                 rateSPI=0,
             )
             self.serial_conn.write(cfg_msg.serialize())
@@ -144,7 +160,6 @@ class GpsBaseNode(Node):
 
         except Exception as e:
             self.get_logger().error(f"Failed to configure GPS module: {e}")
-
 
     def timer_callback(self):
         """
@@ -182,17 +197,17 @@ class GpsBaseNode(Node):
                 elif raw[0:2] != b"\xb5b":
                     # Not a UBX sync header → it's RTCM
                     self._handle_rtcm(raw)
-                
+
         except Exception as e:
 
             if rclpy.ok():
                 self.get_logger().error(f"Serial read loop terminated with error: {e}")
 
     def _handle_rtcm(self, raw: bytes):
-            """Wrap raw RTCM bytes in a ROS message and publish."""
-            msg = Rtcm()
-            msg.message = list(raw)
-            self.rtcm_pub.publish(msg)
+        """Wrap raw RTCM bytes in a ROS message and publish."""
+        msg = Rtcm()
+        msg.message = list(raw)
+        self.rtcm_pub.publish(msg)
 
     def _handle_svin(self, parsed):
         """
@@ -250,25 +265,29 @@ class GpsBaseNode(Node):
         z = getattr(parsed, "meanZ", 0) * 0.01
 
         # WGS84 ellipsoid constants
-        a = 6_378_137.0          # semi-major axis (m)
+        a = 6_378_137.0  # semi-major axis (m)
         e2 = 6.6943799901414e-3  # first eccentricity squared
 
         lon = math.atan2(y, x)
-        p = math.sqrt(x**2 + y**2)
+        p = math.sqrt(x ** 2 + y ** 2)
         lat = math.atan2(z, p * (1 - e2))  # initial estimate
 
         # Iterate to convergence (usually 3–4 iterations)
         for _ in range(10):
             sin_lat = math.sin(lat)
-            N = a / math.sqrt(1 - e2 * sin_lat**2)
+            N = a / math.sqrt(1 - e2 * sin_lat ** 2)
             lat_new = math.atan2(z + e2 * N * sin_lat, p)
             if abs(lat_new - lat) < 1e-12:
                 break
             lat = lat_new
 
         sin_lat = math.sin(lat)
-        N = a / math.sqrt(1 - e2 * sin_lat**2)
-        alt = p / math.cos(lat) - N if abs(math.cos(lat)) > 1e-10 else abs(z) / abs(sin_lat) - N * (1 - e2)
+        N = a / math.sqrt(1 - e2 * sin_lat ** 2)
+        alt = (
+            p / math.cos(lat) - N
+            if abs(math.cos(lat)) > 1e-10
+            else abs(z) / abs(sin_lat) - N * (1 - e2)
+        )
 
         fix = NavSatFix()
         fix.header.stamp = self.get_clock().now().to_msg()
@@ -283,6 +302,7 @@ class GpsBaseNode(Node):
             f"Base station fix: lat={fix.latitude:.8f}  "
             f"lon={fix.longitude:.8f}  alt={fix.altitude:.3f}m"
         )
+
 
 def main(args=None):
     """

@@ -27,6 +27,7 @@ setup(
         "console_scripts": [
             "rtcm_pub_node = gps.rtcm_pub_node:main",
             "heading_pub_node = gps.heading_pub_node:main",
+            "gps_base_pub_node = gps.gps_base_pub_node:main",
         ],
     },
 )

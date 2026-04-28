@@ -53,10 +53,7 @@ class RoboClawAntennaNode(Node):
         self.encoder_pub = self.create_publisher(Int32, "/antenna/encoder_counts", 10)
 
         self.create_subscription(
-            Float32,
-            "/antenna/delta_angle",
-            self.delta_callback,
-            10
+            Float32, "/antenna/delta_angle", self.delta_callback, 10
         )
 
         self.create_timer(1.0 / self.enc_read_freq, self.encoder_timer)
@@ -114,7 +111,7 @@ class RoboClawAntennaNode(Node):
             self.max_speed,
             self.accel,
             target,
-            0  # 0 = immediate execution
+            0,  # 0 = immediate execution
         )
 
         if not success:
