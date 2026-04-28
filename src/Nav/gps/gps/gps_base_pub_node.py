@@ -1,4 +1,5 @@
 import rclpy
+import time
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
 from rtcm_msgs.msg import Message as Rtcm
@@ -133,6 +134,15 @@ class GpsBaseNode(Node):
                 minDur=self.svin_min_dur,
                 accLimit=self.svin_acc_limit * 10,  # converting mm to 0.1mm
             )
+            cfg_reset = UBXMessage(
+                "CFG",
+                "RST",
+                SET,
+                navBbrMask=0x0001,
+                resetMode=1,
+            )
+            self.serial_conn.write(cfg_reset.serialize()) # <- this resets the ublox to allow for new input stream
+            # time.sleep(5) <- 5s pause for reset does not work
             self.serial_conn.write(cfg_tmode3.serialize())
             self.get_logger().info(
                 f"Configured Survey-In: minDur={self.svin_min_dur}s, "
