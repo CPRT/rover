@@ -18,18 +18,14 @@
 #include "cprt_behavior_tree_plugins/remove_in_collision_goals_action.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
-namespace cprt_behavior_tree_plugins
-{
+namespace cprt_behavior_tree_plugins {
 
 RemoveInCollisionGoals::RemoveInCollisionGoals(
-  const std::string & service_node_name,
-  const BT::NodeConfiguration & conf)
-: nav2_behavior_tree::BtServiceNode<nav2_msgs::srv::GetCosts>(
-    service_node_name, conf, "/global_costmap/get_cost_global_costmap")
-{}
+    const std::string &service_node_name, const BT::NodeConfiguration &conf)
+    : nav2_behavior_tree::BtServiceNode<nav2_msgs::srv::GetCosts>(
+          service_node_name, conf, "/global_costmap/get_cost_global_costmap") {}
 
-void RemoveInCollisionGoals::on_tick()
-{
+void RemoveInCollisionGoals::on_tick() {
   getInput("use_footprint", use_footprint_);
   getInput("cost_threshold", cost_threshold_);
   getInput("input_goals", input_goals_);
@@ -44,52 +40,51 @@ void RemoveInCollisionGoals::on_tick()
   request_ = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
   request_->use_footprint = use_footprint_;
 
-  for (const auto & goal : input_goals_.goals) {
+  for (const auto &goal : input_goals_.goals) {
     request_->poses.push_back(goal);
   }
 }
 
 BT::NodeStatus RemoveInCollisionGoals::on_completion(
-  std::shared_ptr<nav2_msgs::srv::GetCosts::Response> response)
-{
+    std::shared_ptr<nav2_msgs::srv::GetCosts::Response> response) {
   if (!response->success) {
-    RCLCPP_ERROR(
-      node_->get_logger(),
-      "GetCosts service call failed");
+    RCLCPP_ERROR(node_->get_logger(), "GetCosts service call failed");
     setOutput("output_goals", input_goals_);
     return BT::NodeStatus::FAILURE;
   }
 
   std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses;
-  auto waypoint_statuses_get_res = getInput("input_waypoint_statuses", waypoint_statuses);
+  auto waypoint_statuses_get_res =
+      getInput("input_waypoint_statuses", waypoint_statuses);
   if (!waypoint_statuses_get_res) {
-    RCLCPP_ERROR(node_->get_logger(), "Missing [input_waypoint_statuses] port input!");
+    RCLCPP_ERROR(node_->get_logger(),
+                 "Missing [input_waypoint_statuses] port input!");
   }
 
   nav_msgs::msg::Goals valid_goal_poses;
   for (size_t i = 0; i < response->costs.size(); ++i) {
     if ((response->costs[i] == 255 && !consider_unknown_as_obstacle_) ||
-      response->costs[i] < cost_threshold_)
-    {
+        response->costs[i] < cost_threshold_) {
       valid_goal_poses.goals.push_back(input_goals_.goals[i]);
     } else if (waypoint_statuses_get_res) {
-      using namespace nav2_util::geometry_utils;  // NOLINT
-      auto cur_waypoint_index =
-        find_next_matching_goal_in_waypoint_statuses(waypoint_statuses, input_goals_.goals[i]);
+      using namespace nav2_util::geometry_utils; // NOLINT
+      auto cur_waypoint_index = find_next_matching_goal_in_waypoint_statuses(
+          waypoint_statuses, input_goals_.goals[i]);
       if (cur_waypoint_index == -1) {
-        RCLCPP_ERROR(node_->get_logger(), "Failed to find matching goal in waypoint_statuses");
+        RCLCPP_ERROR(node_->get_logger(),
+                     "Failed to find matching goal in waypoint_statuses");
         return BT::NodeStatus::FAILURE;
       }
 
       waypoint_statuses[cur_waypoint_index].waypoint_status =
-        nav2_msgs::msg::WaypointStatus::SKIPPED;
+          nav2_msgs::msg::WaypointStatus::SKIPPED;
     }
   }
 
   if (valid_goal_poses.goals.empty()) {
     RCLCPP_INFO(
-      node_->get_logger(),
-      "All goals are in collision and have been removed from the list");
+        node_->get_logger(),
+        "All goals are in collision and have been removed from the list");
   }
 
   setOutput("output_goals", valid_goal_poses);
@@ -98,11 +93,10 @@ BT::NodeStatus RemoveInCollisionGoals::on_completion(
   return BT::NodeStatus::SUCCESS;
 }
 
-}  // namespace cprt_behavior_tree_plugins
+} // namespace cprt_behavior_tree_plugins
 
 #include "behaviortree_cpp/bt_factory.h"
-BT_REGISTER_NODES(factory)
-{
+BT_REGISTER_NODES(factory) {
   factory.registerNodeType<cprt_behavior_tree_plugins::RemoveInCollisionGoals>(
-    "RemoveInCollisionGoals");
+      "RemoveInCollisionGoals");
 }

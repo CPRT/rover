@@ -40,27 +40,39 @@ class UnifiedNavCommander(Node):
         self.mission_state = MissionState.DO_NOTHING
 
         self.declare_parameter("type", "gps")
-        self.mission_type = self.get_parameter("type").get_parameter_value().string_value
+        self.mission_type = (
+            self.get_parameter("type").get_parameter_value().string_value
+        )
         self.mission_type = self.mission_type.strip().lower()
 
         self.declare_parameter("aruco_topic", "/aruco_detections")
-        self.aruco_topic = self.get_parameter("aruco_topic").get_parameter_value().string_value
+        self.aruco_topic = (
+            self.get_parameter("aruco_topic").get_parameter_value().string_value
+        )
 
         self.declare_parameter("aruco_detection_window_sec", 5.0)
         self.aruco_detection_window_sec = (
-            self.get_parameter("aruco_detection_window_sec").get_parameter_value().double_value
+            self.get_parameter("aruco_detection_window_sec")
+            .get_parameter_value()
+            .double_value
         )
 
         self.declare_parameter("aruco_min_detections", 5)
         self.aruco_min_detections = (
-            self.get_parameter("aruco_min_detections").get_parameter_value().integer_value
+            self.get_parameter("aruco_min_detections")
+            .get_parameter_value()
+            .integer_value
         )
 
         self.declare_parameter("robot_pose_topic", "odometry/filtered/global")
-        self.robot_pose_topic = self.get_parameter("robot_pose_topic").get_parameter_value().string_value
+        self.robot_pose_topic = (
+            self.get_parameter("robot_pose_topic").get_parameter_value().string_value
+        )
 
         self.declare_parameter("frequency", 1 / 5.0)
-        self.frequency = self.get_parameter("frequency").get_parameter_value().double_value
+        self.frequency = (
+            self.get_parameter("frequency").get_parameter_value().double_value
+        )
 
         self.declare_parameter("gps_behavior_tree", "bt_swerve_dynamic_replanning.xml")
         self.gps_behavior_tree_filename = (
@@ -69,7 +81,9 @@ class UnifiedNavCommander(Node):
 
         self.declare_parameter("search_behavior_tree", "bt_swerve_search_tree.xml")
         self.search_behavior_tree_filename = (
-            self.get_parameter("search_behavior_tree").get_parameter_value().string_value
+            self.get_parameter("search_behavior_tree")
+            .get_parameter_value()
+            .string_value
         )
 
         self.qos_profile = QoSProfile(reliability=ReliabilityPolicy.RELIABLE, depth=10)
@@ -154,7 +168,9 @@ class UnifiedNavCommander(Node):
         self.get_logger().info(f"Search BT: {self.search_behavior_tree_path}")
         self.get_logger().info(f"Aruco topic: {self.aruco_topic}")
 
-        self.get_logger().info(f"Waiting for {self.nav_fix_service_name} to be active...")
+        self.get_logger().info(
+            f"Waiting for {self.nav_fix_service_name} to be active..."
+        )
         while not self.localizer_client.wait_for_service(timeout_sec=2.0):
             self.get_logger().info("Waiting for fromLL...")
         self.get_logger().info("fromLL is active")
@@ -256,7 +272,10 @@ class UnifiedNavCommander(Node):
         if not self.stop_on_detection:
             return
 
-        if self.mission_state not in (MissionState.NAV_TO_GPS, MissionState.EXECUTE_SEARCH):
+        if self.mission_state not in (
+            MissionState.NAV_TO_GPS,
+            MissionState.EXECUTE_SEARCH,
+        ):
             return
 
         current_time = self.get_clock().now().nanoseconds / 1e9
@@ -384,7 +403,9 @@ class UnifiedNavCommander(Node):
                 return
 
             if result == TaskResult.CANCELED:
-                self._finish_mission("GPS navigation canceled.", light_code=self.nav_cancelled_light_code)
+                self._finish_mission(
+                    "GPS navigation canceled.", light_code=self.nav_cancelled_light_code
+                )
                 return
 
             self._fail_mission("GPS navigation failed.")

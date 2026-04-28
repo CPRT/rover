@@ -69,9 +69,7 @@ def load_search_pattern_config() -> dict:
         return normalized
 
     searched = ", ".join(str(path) for path in _candidate_config_paths())
-    raise FileNotFoundError(
-        f"Could not find {CONFIG_FILENAME}. Searched: {searched}"
-    )
+    raise FileNotFoundError(f"Could not find {CONFIG_FILENAME}. Searched: {searched}")
 
 
 def _resolve_pattern_config(pattern: str) -> dict:
@@ -288,7 +286,9 @@ def generate_search_pattern(
 
             b = distance_between_loops / (2.0 * math.pi)
             theta_final = float(search_radius) / b
-            num_points = int(math.ceil(max(0.0, theta_final - start_theta) / angle_step))
+            num_points = int(
+                math.ceil(max(0.0, theta_final - start_theta) / angle_step)
+            )
             pattern_config["num_points"] = max(1, num_points)
 
         pattern_config.pop("search_radius", None)

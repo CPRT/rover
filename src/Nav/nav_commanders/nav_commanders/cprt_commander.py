@@ -10,7 +10,12 @@ import rclpy
 from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
-from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, qos_profile_sensor_data
+from rclpy.qos import (
+    QoSProfile,
+    ReliabilityPolicy,
+    DurabilityPolicy,
+    qos_profile_sensor_data,
+)
 
 from ament_index_python.packages import get_package_share_directory
 from geometry_msgs.msg import PoseStamped
@@ -46,41 +51,91 @@ class UnifiedNavCommander(Node):
 
         # --- Parameters ---
         self.declare_parameter("type", "gps")
-        self.mission_type = self.get_parameter("type").get_parameter_value().string_value.strip().lower()
+        self.mission_type = (
+            self.get_parameter("type")
+            .get_parameter_value()
+            .string_value.strip()
+            .lower()
+        )
 
-        self.declare_parameter("frequency", 5.0) # Hz
-        self.frequency = self.get_parameter("frequency").get_parameter_value().double_value
+        self.declare_parameter("frequency", 5.0)  # Hz
+        self.frequency = (
+            self.get_parameter("frequency").get_parameter_value().double_value
+        )
 
         self.declare_parameter("aruco_detection_window_sec", 5.0)
-        self.aruco_detection_window_sec = self.get_parameter("aruco_detection_window_sec").get_parameter_value().double_value
+        self.aruco_detection_window_sec = (
+            self.get_parameter("aruco_detection_window_sec")
+            .get_parameter_value()
+            .double_value
+        )
 
         self.declare_parameter("aruco_min_detections", 5)
-        self.aruco_min_detections = self.get_parameter("aruco_min_detections").get_parameter_value().integer_value
+        self.aruco_min_detections = (
+            self.get_parameter("aruco_min_detections")
+            .get_parameter_value()
+            .integer_value
+        )
 
         self.declare_parameter("nav_bt_file", "bt_swerve_dynamic_replanning.xml")
         self.declare_parameter("search_bt_file", "bt_swerve_search_tree.xml")
-        self.nav_bt_file = self.get_parameter("nav_bt_file").get_parameter_value().string_value
-        self.search_bt_file = self.get_parameter("search_bt_file").get_parameter_value().string_value
+        self.nav_bt_file = (
+            self.get_parameter("nav_bt_file").get_parameter_value().string_value
+        )
+        self.search_bt_file = (
+            self.get_parameter("search_bt_file").get_parameter_value().string_value
+        )
 
         # Dynamically resolve BT paths
-        nav_pkg_share = get_package_share_directory('navigation')
-        self.nav_bt_path = os.path.join(nav_pkg_share, 'behavior_trees', self.nav_bt_file)
-        self.search_bt_path = os.path.join(nav_pkg_share, 'behavior_trees', self.search_bt_file)
+        nav_pkg_share = get_package_share_directory("navigation")
+        self.nav_bt_path = os.path.join(
+            nav_pkg_share, "behavior_trees", self.nav_bt_file
+        )
+        self.search_bt_path = os.path.join(
+            nav_pkg_share, "behavior_trees", self.search_bt_file
+        )
 
         # --- Mission Configurations ---
         # Maps the parameter to the correct YAML string and defines the detection style
         self.mission_configs = {
-            'gps':      {'search': False, 'pattern': None,         'topic': None,                       'is_aruco': False},
-            'aruco10m': {'search': True,  'pattern': 'spiral_10m', 'topic': '/vision/aruco_detected',   'is_aruco': True},
-            'aruco20m': {'search': True,  'pattern': 'spiral_20m', 'topic': '/vision/aruco_detected',   'is_aruco': True},
-            'mallet':   {'search': True,  'pattern': 'spiral_5m',  'topic': '/vision/mallet_detected',  'is_aruco': False},
-            'pick':     {'search': True,  'pattern': 'spiral_5m',  'topic': '/vision/pick_detected',    'is_aruco': False},
-            'bottle':   {'search': True,  'pattern': 'spiral_10m', 'topic': '/vision/bottle_detected',  'is_aruco': False},
+            "gps": {"search": False, "pattern": None, "topic": None, "is_aruco": False},
+            "aruco10m": {
+                "search": True,
+                "pattern": "spiral_10m",
+                "topic": "/vision/aruco_detected",
+                "is_aruco": True,
+            },
+            "aruco20m": {
+                "search": True,
+                "pattern": "spiral_20m",
+                "topic": "/vision/aruco_detected",
+                "is_aruco": True,
+            },
+            "mallet": {
+                "search": True,
+                "pattern": "spiral_5m",
+                "topic": "/vision/mallet_detected",
+                "is_aruco": False,
+            },
+            "pick": {
+                "search": True,
+                "pattern": "spiral_5m",
+                "topic": "/vision/pick_detected",
+                "is_aruco": False,
+            },
+            "bottle": {
+                "search": True,
+                "pattern": "spiral_10m",
+                "topic": "/vision/bottle_detected",
+                "is_aruco": False,
+            },
         }
 
         if self.mission_type not in self.mission_configs:
-            self.get_logger().error(f"Invalid mission type: {self.mission_type}. Defaulting to 'gps'.")
-            self.config = self.mission_configs['gps']
+            self.get_logger().error(
+                f"Invalid mission type: {self.mission_type}. Defaulting to 'gps'."
+            )
+            self.config = self.mission_configs["gps"]
         else:
             self.config = self.mission_configs[self.mission_type]
 
@@ -96,7 +151,11 @@ class UnifiedNavCommander(Node):
         self.nav_completed_light_code = 3
 
         self.qos_profile = QoSProfile(reliability=ReliabilityPolicy.RELIABLE, depth=10)
-        self.path_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL, reliability=ReliabilityPolicy.RELIABLE)
+        self.path_qos = QoSProfile(
+            depth=1,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            reliability=ReliabilityPolicy.RELIABLE,
+        )
 
         # --- Callback Groups ---
         self.localizer_cb_group = MutuallyExclusiveCallbackGroup()
@@ -111,24 +170,45 @@ class UnifiedNavCommander(Node):
             FromLL, self.nav_fix_service_name, callback_group=self.localizer_cb_group
         )
         self.geopose_service = self.create_service(
-            NavToGPSGeopose, self.geopose_service_name, self.geopose_server, callback_group=self.goal_cb_group
+            NavToGPSGeopose,
+            self.geopose_service_name,
+            self.geopose_server,
+            callback_group=self.goal_cb_group,
         )
         self.cancel_nav_service = self.create_service(
-            Trigger, self.cancel_nav_service_name, self.cancel_nav_server, callback_group=self.cancel_cb_group
+            Trigger,
+            self.cancel_nav_service_name,
+            self.cancel_nav_server,
+            callback_group=self.cancel_cb_group,
         )
-        
-        self.lights_publisher = self.create_publisher(Int8, self.lights_topic, qos_profile=self.qos_profile, callback_group=self.lights_cb_group)
-        self.path_publisher = self.create_publisher(Path, self.intended_path_topic, qos_profile=self.path_qos)
+
+        self.lights_publisher = self.create_publisher(
+            Int8,
+            self.lights_topic,
+            qos_profile=self.qos_profile,
+            callback_group=self.lights_cb_group,
+        )
+        self.path_publisher = self.create_publisher(
+            Path, self.intended_path_topic, qos_profile=self.path_qos
+        )
 
         # --- Dynamic Detection Subscription ---
-        if self.config['search'] and self.config['topic']:
-            if self.config['is_aruco']:
+        if self.config["search"] and self.config["topic"]:
+            if self.config["is_aruco"]:
                 self.detection_subscription = self.create_subscription(
-                    Int32MultiArray, self.config['topic'], self.aruco_callback, qos_profile_sensor_data, callback_group=self.detection_cb_group
+                    Int32MultiArray,
+                    self.config["topic"],
+                    self.aruco_callback,
+                    qos_profile_sensor_data,
+                    callback_group=self.detection_cb_group,
                 )
             else:
                 self.detection_subscription = self.create_subscription(
-                    Bool, self.config['topic'], self.custom_object_callback, qos_profile_sensor_data, callback_group=self.detection_cb_group
+                    Bool,
+                    self.config["topic"],
+                    self.custom_object_callback,
+                    qos_profile_sensor_data,
+                    callback_group=self.detection_cb_group,
                 )
 
         # --- State Variables ---
@@ -140,7 +220,11 @@ class UnifiedNavCommander(Node):
         self.detections_buffer: List[Tuple[float, int]] = []
         self.stop_triggered_id: Optional[str] = None
 
-        self.timer = self.create_timer(1.0 / self.frequency, self.timer_callback, callback_group=self.timer_cb_group)
+        self.timer = self.create_timer(
+            1.0 / self.frequency,
+            self.timer_callback,
+            callback_group=self.timer_cb_group,
+        )
 
         # --- Init Checks ---
         self.get_logger().info(f"Waiting for {self.nav_fix_service_name}...")
@@ -149,7 +233,9 @@ class UnifiedNavCommander(Node):
 
         self.get_logger().info("Waiting for Nav2...")
         self.navigator.waitUntilNav2Active(localizer="controller_server")
-        self.get_logger().info(f"Commander Ready. Loaded type '{self.mission_type}' with config: {self.config}")
+        self.get_logger().info(
+            f"Commander Ready. Loaded type '{self.mission_type}' with config: {self.config}"
+        )
 
     # --- Helper Functions ---
 
@@ -187,7 +273,9 @@ class UnifiedNavCommander(Node):
 
     # --- Callbacks & Services ---
 
-    def geopose_server(self, request: NavToGPSGeopose.Request, response: NavToGPSGeopose.Response) -> NavToGPSGeopose.Response:
+    def geopose_server(
+        self, request: NavToGPSGeopose.Request, response: NavToGPSGeopose.Response
+    ) -> NavToGPSGeopose.Response:
         self.get_logger().info(f"Received mission request: {request.goal}")
         self.reset_state_variables()
         self.current_goal_request = (
@@ -202,7 +290,9 @@ class UnifiedNavCommander(Node):
         self._publish_light(self.nav_activate_light_code)
         return response
 
-    def cancel_nav_server(self, request: Trigger.Request, response: Trigger.Response) -> Trigger.Response:
+    def cancel_nav_server(
+        self, request: Trigger.Request, response: Trigger.Response
+    ) -> Trigger.Response:
         self.get_logger().info("Received request to cancel mission.")
         self.navigator.cancelTask()
         self._fail_mission("Mission cancelled by operator.")
@@ -211,18 +301,24 @@ class UnifiedNavCommander(Node):
 
     def _trigger_target_found(self, target_id: str):
         """Halts navigation and completes the mission."""
-        self.get_logger().info(f"Target '{target_id}' detected! Stopping navigation/search immediately.")
+        self.get_logger().info(
+            f"Target '{target_id}' detected! Stopping navigation/search immediately."
+        )
         self.stop_triggered_id = target_id
         self.mission_state = MissionState.FOUND_TARGET
         self.navigator.cancelTask()
 
     def aruco_callback(self, msg: Int32MultiArray) -> None:
-        if self.mission_state not in (MissionState.NAV_TO_GPS, MissionState.EXECUTE_SEARCH):
+        if self.mission_state not in (
+            MissionState.NAV_TO_GPS,
+            MissionState.EXECUTE_SEARCH,
+        ):
             return
 
         current_time = self.get_clock().now().nanoseconds / 1e9
         self.detections_buffer = [
-            (timestamp, tag_id) for timestamp, tag_id in self.detections_buffer
+            (timestamp, tag_id)
+            for timestamp, tag_id in self.detections_buffer
             if (current_time - timestamp) <= self.aruco_detection_window_sec
         ]
 
@@ -236,7 +332,10 @@ class UnifiedNavCommander(Node):
                 return
 
     def custom_object_callback(self, msg: Bool) -> None:
-        if self.mission_state not in (MissionState.NAV_TO_GPS, MissionState.EXECUTE_SEARCH):
+        if self.mission_state not in (
+            MissionState.NAV_TO_GPS,
+            MissionState.EXECUTE_SEARCH,
+        ):
             return
 
         if msg.data:
@@ -244,12 +343,17 @@ class UnifiedNavCommander(Node):
 
     def convert_lat_lon_to_pose(self, latitude, longitude, altitude, orientation):
         req = FromLL.Request()
-        req.ll_point.latitude, req.ll_point.longitude, req.ll_point.altitude = latitude, longitude, altitude
+        req.ll_point.latitude, req.ll_point.longitude, req.ll_point.altitude = (
+            latitude,
+            longitude,
+            altitude,
+        )
         try:
             event = Event()
+
             def done_callback(future):
                 event.set()
-                
+
             future = self.localizer_client.call_async(req)
             future.add_done_callback(done_callback)
             event.wait(timeout=5.0)
@@ -275,7 +379,9 @@ class UnifiedNavCommander(Node):
             return
 
         if self.current_goal_pose is None and self.current_goal_request is not None:
-            self.current_goal_pose = self.convert_lat_lon_to_pose(*self.current_goal_request)
+            self.current_goal_pose = self.convert_lat_lon_to_pose(
+                *self.current_goal_request
+            )
             if self.current_goal_pose is None:
                 self._fail_mission("Failed to convert GPS coordinate to Map frame.")
                 return
@@ -283,8 +389,12 @@ class UnifiedNavCommander(Node):
         # 1. GPS Phase
         if self.mission_state == MissionState.NAV_TO_GPS:
             if self.goal_handle is None:
-                self.get_logger().info(f"Navigating to GPS goal. BT: {self.nav_bt_file}")
-                self.goal_handle = self.navigator.goToPose(self.current_goal_pose, behavior_tree=self.nav_bt_path)
+                self.get_logger().info(
+                    f"Navigating to GPS goal. BT: {self.nav_bt_file}"
+                )
+                self.goal_handle = self.navigator.goToPose(
+                    self.current_goal_pose, behavior_tree=self.nav_bt_path
+                )
                 return
 
             if not self.navigator.isTaskComplete():
@@ -292,17 +402,21 @@ class UnifiedNavCommander(Node):
 
             result = self.navigator.getResult()
             if result == TaskResult.SUCCEEDED:
-                if not self.config['search']:
+                if not self.config["search"]:
                     self._finish_mission("GPS goal reached. Mission complete.")
                 else:
-                    self.get_logger().info("GPS goal reached. Transitioning to Search phase.")
+                    self.get_logger().info(
+                        "GPS goal reached. Transitioning to Search phase."
+                    )
                     self.mission_state = MissionState.EXECUTE_SEARCH
-                    self.goal_handle = None 
+                    self.goal_handle = None
                 return
 
             if result == TaskResult.CANCELED:
                 if self.mission_state == MissionState.FOUND_TARGET:
-                    self._finish_mission(f"Target found early! Stopped at {self.stop_triggered_id}.")
+                    self._finish_mission(
+                        f"Target found early! Stopped at {self.stop_triggered_id}."
+                    )
                 else:
                     self._fail_mission("GPS navigation canceled unexpectedly.")
                 return
@@ -313,19 +427,23 @@ class UnifiedNavCommander(Node):
         elif self.mission_state == MissionState.EXECUTE_SEARCH:
             if self.search_handle is None:
                 self.search_poses = generate_search_pattern(
-                    pattern=self.config['pattern'],
+                    pattern=self.config["pattern"],
                     center_x=self.current_goal_pose.pose.position.x,
-                    center_y=self.current_goal_pose.pose.position.y
+                    center_y=self.current_goal_pose.pose.position.y,
                 )
-                
+
                 if not self.search_poses:
                     self._fail_mission("Search pattern generator returned empty list.")
                     return
 
                 self.publish_search_path(self.search_poses)
-                self.get_logger().info(f"Executing '{self.config['pattern']}' pattern ({len(self.search_poses)} poses). BT: {self.search_bt_file}")
-                
-                self.search_handle = self.navigator.goThroughPoses(self.search_poses, behavior_tree=self.search_bt_path)
+                self.get_logger().info(
+                    f"Executing '{self.config['pattern']}' pattern ({len(self.search_poses)} poses). BT: {self.search_bt_file}"
+                )
+
+                self.search_handle = self.navigator.goThroughPoses(
+                    self.search_poses, behavior_tree=self.search_bt_path
+                )
                 return
 
             if not self.navigator.isTaskComplete():
@@ -333,12 +451,16 @@ class UnifiedNavCommander(Node):
 
             result = self.navigator.getResult()
             if result == TaskResult.SUCCEEDED:
-                self._finish_mission("Search pattern fully traversed without finding object.")
+                self._finish_mission(
+                    "Search pattern fully traversed without finding object."
+                )
                 return
 
             if result == TaskResult.CANCELED:
                 if self.mission_state == MissionState.FOUND_TARGET:
-                    self._finish_mission(f"Search successful! Stopped at {self.stop_triggered_id}.")
+                    self._finish_mission(
+                        f"Search successful! Stopped at {self.stop_triggered_id}."
+                    )
                 else:
                     self._fail_mission("Search pattern canceled unexpectedly.")
                 return
