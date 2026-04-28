@@ -62,16 +62,16 @@ global_ekf:
     # odom0_pose_rejection_threshold: 1000000.0
     # odom0_twist_rejection_threshold: 1.0
 
-    odom1: /drive/odom
+    odom1: /chassis_controller/wheel_odom
     odom1_config: [
         # position
         false, false, false,
         # orientation
         false, false, false,
         # lineal vel
-        true, false, false,
+        true, true, false,
         # angular vel
-        false, false, false,
+        false, false, true,
         # lineal acc
         false, false, false,
       ]
