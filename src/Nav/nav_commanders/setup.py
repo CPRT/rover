@@ -25,6 +25,8 @@ setup(
             "gps_commander_node = nav_commanders.nav_to_gps_coords:main",
             "incremental_gps_commander_node = nav_commanders.incremental_gps_commander:main",
             "aruco_gps_commander_node = nav_commanders.nav_to_gps_aruco:main",
+            "nav_then_search_commander_node = nav_commanders.nav_then_search:main",
+            "search_pattern_viz_node = nav_commanders.search_pattern_viz:main",
         ],
     },
 )
