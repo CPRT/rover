@@ -29,6 +29,7 @@ setup(
             "nav_then_search_commander_node = nav_commanders.nav_then_search:main",
             "search_pattern_viz_node = nav_commanders.search_pattern_viz:main",
             "unified_nav_commander_node = nav_commanders.unified_nav_commander:main",
+            "cprt_commander_node = nav_commanders.cprt_commander:main",
         ],
     },
 )

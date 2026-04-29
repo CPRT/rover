@@ -9,6 +9,7 @@ find_package(ament_cmake REQUIRED)
 find_package(behaviortree_cpp_v3 REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(map_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 
 include_directories(
@@ -19,6 +20,7 @@ set(dependencies
   behaviortree_cpp_v3
   geometry_msgs
   nav_msgs
+  map_msgs
   rclcpp
 )
 

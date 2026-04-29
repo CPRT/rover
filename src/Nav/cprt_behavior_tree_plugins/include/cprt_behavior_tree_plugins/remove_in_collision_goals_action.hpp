@@ -15,18 +15,17 @@
 #ifndef CPRT_BEHAVIOR_TREE_PLUGINS__REMOVE_IN_COLLISION_GOALS_ACTION_HPP_
 #define CPRT_BEHAVIOR_TREE_PLUGINS__REMOVE_IN_COLLISION_GOALS_ACTION_HPP_
 
-#include <mutex>
 #include <string>
 #include <vector>
 
 #include "behaviortree_cpp_v3/action_node.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav_msgs/msg/occupancy_grid.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace nav2_behavior_tree {
 
-class RemoveInCollisionGoals : public BT::SyncActionNode {
+class RemoveInCollisionGoals : public BT::ActionNodeBase {
+
 public:
   RemoveInCollisionGoals(const std::string &xml_tag_name,
                          const BT::NodeConfiguration &conf);
@@ -46,13 +45,14 @@ public:
 
   BT::NodeStatus tick() override;
 
-private:
-  void costmapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+  // Required override for ActionNodeBase. Triggered if the tree is cancelled.
+  void halt() override {
+    // No cleanup needed here
+  }
 
+private:
   rclcpp::Node::SharedPtr node_;
-  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_sub_;
-  nav_msgs::msg::OccupancyGrid::SharedPtr latest_costmap_;
-  std::mutex costmap_mutex_;
+  std::string costmap_topic_;
 };
 
 } // namespace nav2_behavior_tree

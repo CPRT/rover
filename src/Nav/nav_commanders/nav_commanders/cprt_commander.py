@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import threading
 from collections import Counter
 from enum import Enum, auto
 from threading import Event
@@ -10,6 +11,8 @@ import rclpy
 from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
+from rclpy.duration import Duration
+from rclpy.time import Time
 from rclpy.qos import (
     QoSProfile,
     ReliabilityPolicy,
@@ -22,7 +25,10 @@ from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry, Path
 from std_msgs.msg import Int8, Bool, Int32MultiArray
 from std_srvs.srv import Trigger
+import tf2_ros
 
+from action_msgs.msg import GoalInfo
+from action_msgs.srv import CancelGoal
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 from robot_localization.srv import FromLL
 from interfaces.srv import NavToGPSGeopose
@@ -45,8 +51,8 @@ class UnifiedNavCommander(Node):
     """Unified GPS and search commander for ROS 2 Humble."""
 
     def __init__(self):
-        super().__init__("unified_nav_commander")
-        self.navigator = BasicNavigator("unified_navigator")
+        super().__init__("cprt_commander")
+        self.navigator = BasicNavigator("cprt_commander")
         self.mission_state = MissionState.DO_NOTHING
 
         # --- Parameters ---
@@ -98,36 +104,54 @@ class UnifiedNavCommander(Node):
         # --- Mission Configurations ---
         # Maps the parameter to the correct YAML string and defines the detection style
         self.mission_configs = {
-            "gps": {"search": False, "pattern": None, "topic": None, "is_aruco": False},
+            "gps": {
+                "search": False,
+                "pattern": None,
+                "topic": None,
+                "is_aruco": False,
+                "start_at_current_pose": False,
+            },
             "aruco10m": {
                 "search": True,
                 "pattern": "spiral_10m",
                 "topic": "/vision/aruco_detected",
                 "is_aruco": True,
+                "start_at_current_pose": False,
             },
             "aruco20m": {
                 "search": True,
                 "pattern": "spiral_20m",
                 "topic": "/vision/aruco_detected",
                 "is_aruco": True,
+                "start_at_current_pose": False,
             },
             "mallet": {
                 "search": True,
                 "pattern": "spiral_5m",
                 "topic": "/vision/mallet_detected",
                 "is_aruco": False,
+                "start_at_current_pose": False,
             },
             "pick": {
                 "search": True,
                 "pattern": "spiral_5m",
                 "topic": "/vision/pick_detected",
                 "is_aruco": False,
+                "start_at_current_pose": False,
             },
             "bottle": {
                 "search": True,
                 "pattern": "spiral_10m",
                 "topic": "/vision/bottle_detected",
                 "is_aruco": False,
+                "start_at_current_pose": False,
+            },
+            "indoor_spiral": {
+                "search": True,
+                "pattern": "spiral_5m",
+                "topic": None,
+                "is_aruco": False,
+                "start_at_current_pose": True,
             },
         }
 
@@ -145,6 +169,11 @@ class UnifiedNavCommander(Node):
         self.cancel_nav_service_name = "commander/cancel_nav"
         self.lights_topic = "/light"
         self.intended_path_topic = "/intended_search_path"
+
+        self.nav_to_pose_cancel_service = "navigate_to_pose/_action/cancel_goal"
+        self.nav_through_poses_cancel_service = (
+            "navigate_through_poses/_action/cancel_goal"
+        )
 
         self.nav_activate_light_code = 1
         self.nav_cancelled_light_code = 2
@@ -182,6 +211,13 @@ class UnifiedNavCommander(Node):
             callback_group=self.cancel_cb_group,
         )
 
+        self.nav_to_pose_cancel_client = self.create_client(
+            CancelGoal, self.nav_to_pose_cancel_service
+        )
+        self.nav_through_poses_cancel_client = self.create_client(
+            CancelGoal, self.nav_through_poses_cancel_service
+        )
+
         self.lights_publisher = self.create_publisher(
             Int8,
             self.lights_topic,
@@ -191,6 +227,9 @@ class UnifiedNavCommander(Node):
         self.path_publisher = self.create_publisher(
             Path, self.intended_path_topic, qos_profile=self.path_qos
         )
+
+        self.tf_buffer = tf2_ros.Buffer(cache_time=Duration(seconds=10.0))
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
         # --- Dynamic Detection Subscription ---
         if self.config["search"] and self.config["topic"]:
@@ -227,9 +266,10 @@ class UnifiedNavCommander(Node):
         )
 
         # --- Init Checks ---
-        self.get_logger().info(f"Waiting for {self.nav_fix_service_name}...")
-        while not self.localizer_client.wait_for_service(timeout_sec=2.0):
-            pass
+        if not self.config.get("start_at_current_pose"):
+            self.get_logger().info(f"Waiting for {self.nav_fix_service_name}...")
+            while not self.localizer_client.wait_for_service(timeout_sec=2.0):
+                pass
 
         self.get_logger().info("Waiting for Nav2...")
         self.navigator.waitUntilNav2Active(localizer="controller_server")
@@ -264,6 +304,52 @@ class UnifiedNavCommander(Node):
         self.stop_triggered_id = None
         self.mission_state = MissionState.DO_NOTHING
 
+    def _cancel_all_nav_goals(self) -> None:
+        self.get_logger().info("Canceling any active Nav2 goals...")
+        for client, label in (
+            (self.nav_to_pose_cancel_client, "navigate_to_pose"),
+            (self.nav_through_poses_cancel_client, "navigate_through_poses"),
+        ):
+            if not client.wait_for_service(timeout_sec=1.0):
+                self.get_logger().warn(f"Cancel service not available for {label}.")
+                continue
+
+            request = CancelGoal.Request()
+            request.goal_info = GoalInfo()
+
+            # --- FIXED BLOCKING PATTERN ---
+            event = Event()
+
+            def done_callback(future):
+                event.set()
+
+            future = client.call_async(request)
+            future.add_done_callback(done_callback)
+
+            # Wait for up to 1.0 seconds without spinning the node
+            event_set = event.wait(timeout=1.0)
+
+            if not event_set:
+                self.get_logger().warn(f"Cancel request timed out for {label}.")
+                continue
+
+            result = future.result()
+            # ------------------------------
+
+            if result is None:
+                self.get_logger().warn(f"Cancel request failed for {label}.")
+                continue
+
+            if result.return_code not in (
+                CancelGoal.Response.ERROR_NONE,
+                CancelGoal.Response.ERROR_GOAL_TERMINATED,
+                CancelGoal.Response.ERROR_UNKNOWN_GOAL_ID,
+            ):
+                self.get_logger().warn(
+                    f"Cancel request rejected for {label} (code {result.return_code})."
+                )
+        self.get_logger().info("Cancel requests finished.")
+
     def publish_search_path(self, poses):
         path_msg = Path()
         path_msg.header.frame_id = "map"
@@ -271,20 +357,49 @@ class UnifiedNavCommander(Node):
         path_msg.poses = poses
         self.path_publisher.publish(path_msg)
 
+    def get_current_pose(self) -> Optional[PoseStamped]:
+        try:
+            tf = self.tf_buffer.lookup_transform(
+                "map", "base_link", Time(), timeout=Duration(seconds=0.5)
+            )
+        except Exception as exc:
+            self.get_logger().warn(f"TF lookup failed for map->base_link: {exc}")
+            return None
+
+        pose = PoseStamped()
+        pose.header.frame_id = "map"
+        pose.header.stamp = self.get_clock().now().to_msg()
+        pose.pose.position.x = tf.transform.translation.x
+        pose.pose.position.y = tf.transform.translation.y
+        pose.pose.position.z = tf.transform.translation.z
+        pose.pose.orientation = tf.transform.rotation
+        return pose
+
     # --- Callbacks & Services ---
 
     def geopose_server(
         self, request: NavToGPSGeopose.Request, response: NavToGPSGeopose.Response
     ) -> NavToGPSGeopose.Response:
         self.get_logger().info(f"Received mission request: {request.goal}")
+        self._cancel_all_nav_goals()
         self.reset_state_variables()
-        self.current_goal_request = (
-            request.goal.position.latitude,
-            request.goal.position.longitude,
-            request.goal.position.altitude,
-            request.goal.orientation,
-        )
-        self.mission_state = MissionState.NAV_TO_GPS
+        if self.config.get("start_at_current_pose"):
+            self.get_logger().info("Fetching current pose for indoor spiral...")
+            self.current_goal_pose = self.get_current_pose()
+            if self.current_goal_pose is None:
+                response.success = False
+                self._fail_mission("Failed to get current pose for indoor spiral.")
+                return response
+            self.get_logger().info("Current pose acquired. Starting search phase.")
+            self.mission_state = MissionState.EXECUTE_SEARCH
+        else:
+            self.current_goal_request = (
+                request.goal.position.latitude,
+                request.goal.position.longitude,
+                request.goal.position.altitude,
+                request.goal.orientation,
+            )
+            self.mission_state = MissionState.NAV_TO_GPS
         response.success = True
         self.timer.reset()
         self._publish_light(self.nav_activate_light_code)
@@ -375,6 +490,9 @@ class UnifiedNavCommander(Node):
     # --- Main State Machine ---
 
     def timer_callback(self) -> None:
+        # self.get_logger().info(
+        #     f"Timer tick: mission_state={self.mission_state.name}"
+        # )
         if self.mission_state in [MissionState.DO_NOTHING, MissionState.FOUND_TARGET]:
             return
 
@@ -392,9 +510,18 @@ class UnifiedNavCommander(Node):
                 self.get_logger().info(
                     f"Navigating to GPS goal. BT: {self.nav_bt_file}"
                 )
-                self.goal_handle = self.navigator.goToPose(
-                    self.current_goal_pose, behavior_tree=self.nav_bt_path
-                )
+                self.goal_handle = "PENDING_DISPATCH"
+
+                def dispatch_gps():
+                    self.navigator.goToPose(
+                        self.current_goal_pose, behavior_tree=self.nav_bt_path
+                    )
+                    self.goal_handle = True
+
+                threading.Thread(target=dispatch_gps, daemon=True).start()
+                return
+
+            if self.goal_handle == "PENDING_DISPATCH":
                 return
 
             if not self.navigator.isTaskComplete():
@@ -426,6 +553,7 @@ class UnifiedNavCommander(Node):
         # 2. Search Phase
         elif self.mission_state == MissionState.EXECUTE_SEARCH:
             if self.search_handle is None:
+                self.get_logger().info("Starting search pattern generation...")
                 self.search_poses = generate_search_pattern(
                     pattern=self.config["pattern"],
                     center_x=self.current_goal_pose.pose.position.x,
@@ -441,9 +569,18 @@ class UnifiedNavCommander(Node):
                     f"Executing '{self.config['pattern']}' pattern ({len(self.search_poses)} poses). BT: {self.search_bt_file}"
                 )
 
-                self.search_handle = self.navigator.goThroughPoses(
-                    self.search_poses, behavior_tree=self.search_bt_path
-                )
+                self.search_handle = "PENDING_DISPATCH"
+
+                def dispatch_search():
+                    self.navigator.goThroughPoses(
+                        self.search_poses, behavior_tree=self.search_bt_path
+                    )
+                    self.search_handle = True
+
+                threading.Thread(target=dispatch_search, daemon=True).start()
+                return
+
+            if self.search_handle == "PENDING_DISPATCH":
                 return
 
             if not self.navigator.isTaskComplete():
