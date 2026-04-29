@@ -24,7 +24,7 @@
                                    output_goals="{pending_poses}"/>
 
                 <RemoveInCollisionGoals input_goals="{pending_poses}" 
-                                        costmap_topic="/global_costmap/costmap" 
+                                        service_name="trim_lethal_goals" 
                                         cost_threshold="98.0" 
                                         output_goals="{safe_poses}"/>
 

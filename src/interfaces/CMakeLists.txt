@@ -29,6 +29,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/RtpStats.msg"
   "msg/Distance.msg"
   "srv/NavToGPSGeopose.srv"
+  "srv/FilterGoals.srv"
   "srv/VideoOut.srv"
   "srv/VideoCapture.srv"
   "srv/GetCameras.srv"
@@ -36,7 +37,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   DEPENDENCIES 
   builtin_interfaces
   geometry_msgs 
-  geographic_msgs # Add packages that above messages depend on
+  geographic_msgs
   sensor_msgs
   std_msgs
  )

@@ -111,7 +111,7 @@ def archimedean_spiral_xy(
     center_y: float,
     distance_between_loops: float = 2.0,
     num_points: int = 50,
-    angle_step: float = 0.5,
+    arc_length_step: float = 0.8,
     start_theta: float = 0.0,
 ) -> List[Tuple[float, float, float, float]]:
     """
@@ -124,14 +124,19 @@ def archimedean_spiral_xy(
         return []
     if distance_between_loops <= 0.0:
         raise ValueError("distance_between_loops must be > 0")
-    if angle_step <= 0.0:
-        raise ValueError("angle_step must be > 0")
+    if arc_length_step <= 0.0:
+        raise ValueError("arc_length_step must be > 0")
 
     b = distance_between_loops / (2.0 * math.pi)
     samples: List[Tuple[float, float, float, float]] = []
 
-    for i in range(1, num_points + 1):
-        theta = start_theta + i * angle_step
+    theta = start_theta
+    for _ in range(num_points):
+        ds_dtheta = b * math.sqrt((theta * theta) + 1.0)
+        if ds_dtheta <= 0.0:
+            break
+        delta_theta = arc_length_step / ds_dtheta
+        theta += delta_theta
         radius = b * theta
         x = center_x + radius * math.cos(theta)
         y = center_y + radius * math.sin(theta)
@@ -146,27 +151,38 @@ def generate_search_spiral(
     distance_between_loops: float = 2.0,
     num_points: int = 50,
     frame_id: str = "map",
-    angle_step: float = 0.5,
+    arc_length_step: float = 0.8,
     start_theta: float = 0.0,
     face_outward: bool = False,
+    min_radius: float = 0.0,
 ) -> List[PoseStamped]:
     """
     Generate PoseStamped waypoints on an Archimedean spiral.
 
     Orientation is aligned with motion tangent by default. If face_outward is True,
     orientation instead points radially away from the spiral center.
+    Points inside min_radius are skipped to avoid tight inner loops.
+    Points are spaced by approximate arc length using arc_length_step.
     """
+    if min_radius < 0.0:
+        raise ValueError("min_radius must be >= 0")
+    if arc_length_step <= 0.0:
+        raise ValueError("arc_length_step must be > 0")
+
     samples = archimedean_spiral_xy(
         center_x=center_x,
         center_y=center_y,
         distance_between_loops=distance_between_loops,
         num_points=num_points,
-        angle_step=angle_step,
+        arc_length_step=arc_length_step,
         start_theta=start_theta,
     )
 
     poses: List[PoseStamped] = []
-    for x, y, theta, _radius in samples:
+    for x, y, theta, radius in samples:
+        if radius < min_radius:
+            continue
+
         pose = PoseStamped()
         pose.header.frame_id = frame_id
         pose.pose.position.x = float(x)
@@ -275,23 +291,28 @@ def generate_search_pattern(
         distance_between_loops = float(
             pattern_config.get("distance_between_loops", 2.0)
         )
-        angle_step = float(pattern_config.get("angle_step", 0.5))
+        arc_length_step = float(pattern_config.get("arc_length_step", 0.8))
         start_theta = float(pattern_config.get("start_theta", 0.0))
 
         if search_radius is not None:
             if distance_between_loops <= 0.0:
                 raise ValueError("distance_between_loops must be > 0")
-            if angle_step <= 0.0:
-                raise ValueError("angle_step must be > 0")
+            if arc_length_step <= 0.0:
+                raise ValueError("arc_length_step must be > 0")
 
             b = distance_between_loops / (2.0 * math.pi)
             theta_final = float(search_radius) / b
-            num_points = int(
-                math.ceil(max(0.0, theta_final - start_theta) / angle_step)
-            )
+            def spiral_arc_length(theta: float) -> float:
+                return 0.5 * b * (
+                    theta * math.sqrt((theta * theta) + 1.0) + math.asinh(theta)
+                )
+
+            delta_s = spiral_arc_length(theta_final) - spiral_arc_length(start_theta)
+            num_points = int(math.ceil(max(0.0, delta_s) / arc_length_step))
             pattern_config["num_points"] = max(1, num_points)
 
         pattern_config.pop("search_radius", None)
+        pattern_config["arc_length_step"] = arc_length_step
         return generate_search_spiral(
             center_x=center_x,
             center_y=center_y,

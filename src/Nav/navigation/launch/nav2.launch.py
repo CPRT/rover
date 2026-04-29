@@ -236,6 +236,16 @@ def generate_launch_description():
                 respawn_delay=2.0,
                 parameters=[configured_params],
             ),
+            Node(
+                package="cprt_behavior_tree_plugins",
+                executable="trim_lethal_goals_server_node_exe",
+                name="trim_lethal_goals_server",
+                output="screen",
+                namespace=namespace,
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params],
+            ),
         ],
     )
 
@@ -316,6 +326,15 @@ def generate_launch_description():
                 plugin="nav2_velocity_smoother::VelocitySmoother",
                 name="velocity_smoother",
                 parameters=[configured_params],
+            ),
+            ComposableNode(
+                package="cprt_behavior_tree_plugins",
+                plugin="cprt_nav::TrimLethalGoalsServerNode",
+                name="trim_lethal_goals_server",
+                parameters=[configured_params],
+                extra_arguments=[
+                    {"use_intra_process_comms": False}
+                ],  # global costmap is transient local so cant use intra process comms
             ),
         ],
     )

@@ -1,27 +1,50 @@
 cmake_minimum_required(VERSION 3.8)
 project(cprt_behavior_tree_plugins)
 
-# Default to C++14 for ROS 2 Humble compatibility
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(ament_cmake REQUIRED)
 find_package(behaviortree_cpp_v3 REQUIRED)
+find_package(nav2_behavior_tree REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(map_msgs REQUIRED)
-find_package(rclcpp REQUIRED)
+find_package(interfaces REQUIRED)
 
 include_directories(
   include
 )
 
 set(dependencies
-  behaviortree_cpp_v3
+  rclcpp
+  rclcpp_components
   geometry_msgs
   nav_msgs
   map_msgs
-  rclcpp
+  interfaces
+  behaviortree_cpp_v3
+  nav2_behavior_tree
+)
+
+add_library(trim_lethal_goals_server_node SHARED
+  src/trim_lethal_goals_server_node.cpp
+)
+
+target_include_directories(trim_lethal_goals_server_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+ament_target_dependencies(trim_lethal_goals_server_node
+  ${dependencies}
+)
+
+rclcpp_components_register_node(trim_lethal_goals_server_node
+  PLUGIN "cprt_nav::TrimLethalGoalsServerNode"
+  EXECUTABLE trim_lethal_goals_server_node_exe
 )
 
 add_library(cprt_remove_in_collision_goals_bt_node SHARED
@@ -32,13 +55,25 @@ target_compile_definitions(cprt_remove_in_collision_goals_bt_node
   PRIVATE BT_PLUGIN_EXPORT
 )
 
+target_include_directories(cprt_remove_in_collision_goals_bt_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
 ament_target_dependencies(cprt_remove_in_collision_goals_bt_node
   ${dependencies}
 )
 
-install(TARGETS cprt_remove_in_collision_goals_bt_node
+install(TARGETS 
+  trim_lethal_goals_server_node
+  cprt_remove_in_collision_goals_bt_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(TARGETS
+  trim_lethal_goals_server_node_exe
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -52,7 +87,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(cprt_remove_in_collision_goals_bt_node)
+ament_export_libraries(trim_lethal_goals_server_node cprt_remove_in_collision_goals_bt_node)
 ament_export_dependencies(${dependencies})
 
 ament_package()

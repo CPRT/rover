@@ -18,41 +18,41 @@
 #include <string>
 #include <vector>
 
-#include "behaviortree_cpp_v3/action_node.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "interfaces/srv/filter_goals.hpp"
+#include "nav2_behavior_tree/bt_service_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace nav2_behavior_tree {
 
-class RemoveInCollisionGoals : public BT::ActionNodeBase {
+// Inherit directly from BtServiceNode, passing your service type
+class RemoveInCollisionGoals
+    : public BtServiceNode<interfaces::srv::FilterGoals> {
 
 public:
   RemoveInCollisionGoals(const std::string &xml_tag_name,
                          const BT::NodeConfiguration &conf);
 
+  // Called immediately when the BT ticks the node
+  void on_tick() override;
+
+  // Called when the service server replies
+  BT::NodeStatus on_completion(
+      std::shared_ptr<interfaces::srv::FilterGoals::Response> response)
+      override;
+
   static BT::PortsList providedPorts() {
-    return {BT::InputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
-                "input_goals", "Goals to filter"),
-            BT::InputPort<double>(
-                "cost_threshold", 98.0,
-                "Cost threshold (0-100 scale). 99+ is inscribed/lethal"),
-            BT::InputPort<std::string>("costmap_topic",
-                                       "/global_costmap/costmap",
-                                       "Topic to read costmap from"),
-            BT::OutputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
-                "output_goals", "Filtered goals")};
+    // providedBasicPorts automatically injects "server_name" and
+    // "server_timeout" ports
+    return providedBasicPorts(
+        {BT::InputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
+             "input_goals", "Goals to filter"),
+         BT::InputPort<double>(
+             "cost_threshold", 98.0,
+             "Cost threshold (0-100 scale). 99+ is inscribed/lethal"),
+         BT::OutputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
+             "output_goals", "Filtered goals")});
   }
-
-  BT::NodeStatus tick() override;
-
-  // Required override for ActionNodeBase. Triggered if the tree is cancelled.
-  void halt() override {
-    // No cleanup needed here
-  }
-
-private:
-  rclcpp::Node::SharedPtr node_;
-  std::string costmap_topic_;
 };
 
 } // namespace nav2_behavior_tree

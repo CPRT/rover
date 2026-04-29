@@ -148,7 +148,7 @@ class UnifiedNavCommander(Node):
             },
             "indoor_spiral": {
                 "search": True,
-                "pattern": "spiral_5m",
+                "pattern": "spiral_20m",
                 "topic": None,
                 "is_aruco": False,
                 "start_at_current_pose": True,
