@@ -87,6 +87,7 @@ class GpsBaseNode(Node):
         self.svin_acc_limit = (
             self.get_parameter("SvinAccLimit").get_parameter_value().integer_value
         )
+        self.get_logger().info(f"Min duration: {self.svin_min_dur}s, Min acc {self.svin_acc_limit}mm")
 
     def _setup_publishers(self):
         # keep depth at one for RTCM and use the new default for svin msgs
@@ -123,31 +124,27 @@ class GpsBaseNode(Node):
         second on the current serial port, so we can monitor progress.
         """
         try:
-            # Enables Survey-In mode (TMODE3)
-            # timeMode=1 means Survey-In (0=disabled, 2=fixed)
-            # minDur is in seconds, accLimit is in 0.1mm units
-            cfg_tmode3 = UBXMessage(
+            # Send 2 messages with different svinMinDur to restart survey_in
+            msg = UBXMessage(
                 "CFG",
                 "CFG-TMODE3",
                 SET,
-                timeMode=1,
-                minDur=self.svin_min_dur,
-                accLimit=self.svin_acc_limit * 10,  # converting mm to 0.1mm
+                version=0,
+                rcvrMode=1,
+                svinMinDur=1,
+                svinAccLimit=self.svin_acc_limit*10,
             )
-            cfg_reset = UBXMessage(
+            self.serial_conn.write(msg.serialize())
+            time.sleep(1)
+            msg = UBXMessage(
                 "CFG",
-                "RST",
+                "CFG-TMODE3",
                 SET,
-                navBbrMask=0x0001,
-                resetMode=1,
+                rcvrMode=1,
+                svinMinDur=self.svin_min_dur,
+                svinAccLimit=self.svin_acc_limit * 10,
             )
-            self.serial_conn.write(cfg_reset.serialize()) # <- this resets the ublox to allow for new input stream
-            # time.sleep(5) <- 5s pause for reset does not work
-            self.serial_conn.write(cfg_tmode3.serialize())
-            self.get_logger().info(
-                f"Configured Survey-In: minDur={self.svin_min_dur}s, "
-                f"accLimit={self.svin_acc_limit}mm"
-            )
+            self.serial_conn.write(msg.serialize())
 
             # Enable NAV-SVIN output on this port
             # CFG-MSG enables/disables individual message types per port.
