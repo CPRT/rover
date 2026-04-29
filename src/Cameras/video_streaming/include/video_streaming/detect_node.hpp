@@ -1,5 +1,6 @@
 #pragma once
 #include "base_video_node.hpp"
+#include <interfaces/msg/object_detected.hpp>
 #include <std_msgs/msg/int32.hpp>
 
 class DetectNode : public BaseVideoNode {
@@ -17,7 +18,10 @@ private:
   DetectionType detection_type_;
   rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr param_callback_handle_;
   rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr marker_pub_;
+  rclcpp::Publisher<interfaces::msg::ObjectDetected>::SharedPtr
+      object_detected_pub_;
   rcl_interfaces::msg::SetParametersResult
   on_parameter_change(const std::vector<rclcpp::Parameter> &parameters);
   DetectionType string_to_detection_type(const std::string &type_str);
+  std::string detection_type_to_string() const;
 };

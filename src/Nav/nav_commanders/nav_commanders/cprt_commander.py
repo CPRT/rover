@@ -23,7 +23,7 @@ from rclpy.qos import (
 from ament_index_python.packages import get_package_share_directory
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry, Path
-from std_msgs.msg import Int8, Bool, Int32MultiArray
+from std_msgs.msg import Int8, Int32MultiArray
 from std_srvs.srv import Trigger
 import tf2_ros
 
@@ -31,7 +31,10 @@ from action_msgs.msg import GoalInfo
 from action_msgs.srv import CancelGoal
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 from robot_localization.srv import FromLL
+from interfaces.msg import ObjectDetected
 from interfaces.srv import NavToGPSGeopose
+from rcl_interfaces.msg import Parameter, ParameterType, ParameterValue
+from rcl_interfaces.srv import SetParameters
 
 # Import custom search utilities
 try:
@@ -83,6 +86,20 @@ class UnifiedNavCommander(Node):
             .integer_value
         )
 
+        self.declare_parameter("object_detection_window_sec", 5.0)
+        self.object_detection_window_sec = (
+            self.get_parameter("object_detection_window_sec")
+            .get_parameter_value()
+            .double_value
+        )
+
+        self.declare_parameter("object_min_detections", 5)
+        self.object_min_detections = (
+            self.get_parameter("object_min_detections")
+            .get_parameter_value()
+            .integer_value
+        )
+
         self.declare_parameter("nav_bt_file", "bt_swerve_dynamic_replanning.xml")
         self.declare_parameter("search_bt_file", "bt_swerve_search_tree.xml")
         self.nav_bt_file = (
@@ -109,6 +126,7 @@ class UnifiedNavCommander(Node):
                 "pattern": None,
                 "topic": None,
                 "is_aruco": False,
+                "is_object_detection": False,
                 "start_at_current_pose": False,
             },
             "aruco10m": {
@@ -116,6 +134,7 @@ class UnifiedNavCommander(Node):
                 "pattern": "spiral_10m",
                 "topic": "/vision/aruco_detected",
                 "is_aruco": True,
+                "is_object_detection": False,
                 "start_at_current_pose": False,
             },
             "aruco20m": {
@@ -123,27 +142,34 @@ class UnifiedNavCommander(Node):
                 "pattern": "spiral_20m",
                 "topic": "/vision/aruco_detected",
                 "is_aruco": True,
+                "is_object_detection": False,
                 "start_at_current_pose": False,
             },
             "mallet": {
                 "search": True,
                 "pattern": "spiral_5m",
-                "topic": "/vision/mallet_detected",
+                "topic": "/vision/object_detected",
                 "is_aruco": False,
+                "is_object_detection": True,
+                "target_model_type": "MALLET",
                 "start_at_current_pose": False,
             },
             "pick": {
                 "search": True,
                 "pattern": "spiral_5m",
-                "topic": "/vision/pick_detected",
+                "topic": "/vision/object_detected",
                 "is_aruco": False,
+                "is_object_detection": True,
+                "target_model_type": "ROCKPICK",
                 "start_at_current_pose": False,
             },
             "bottle": {
                 "search": True,
                 "pattern": "spiral_10m",
-                "topic": "/vision/bottle_detected",
+                "topic": "/vision/object_detected",
                 "is_aruco": False,
+                "is_object_detection": True,
+                "target_model_type": "WATER_BOTTLE",
                 "start_at_current_pose": False,
             },
             "indoor_spiral": {
@@ -151,6 +177,7 @@ class UnifiedNavCommander(Node):
                 "pattern": "spiral_20m",
                 "topic": None,
                 "is_aruco": False,
+                "is_object_detection": False,
                 "start_at_current_pose": True,
             },
         }
@@ -167,6 +194,10 @@ class UnifiedNavCommander(Node):
         self.nav_fix_service_name = "fromLL"
         self.geopose_service_name = "commander/nav_to_gps_geopose"
         self.cancel_nav_service_name = "commander/cancel_nav"
+        self.detect_node_name = "/detect_node"
+        self.detect_node_set_parameters_service = (
+            f"{self.detect_node_name}/set_parameters"
+        )
         self.lights_topic = "/light"
         self.intended_path_topic = "/intended_search_path"
 
@@ -197,6 +228,9 @@ class UnifiedNavCommander(Node):
         # --- Interfaces ---
         self.localizer_client = self.create_client(
             FromLL, self.nav_fix_service_name, callback_group=self.localizer_cb_group
+        )
+        self.detect_node_param_client = self.create_client(
+            SetParameters, self.detect_node_set_parameters_service
         )
         self.geopose_service = self.create_service(
             NavToGPSGeopose,
@@ -241,13 +275,17 @@ class UnifiedNavCommander(Node):
                     qos_profile_sensor_data,
                     callback_group=self.detection_cb_group,
                 )
-            else:
+            elif self.config.get("is_object_detection"):
                 self.detection_subscription = self.create_subscription(
-                    Bool,
+                    ObjectDetected,
                     self.config["topic"],
-                    self.custom_object_callback,
+                    self.object_detection_callback,
                     qos_profile_sensor_data,
                     callback_group=self.detection_cb_group,
+                )
+            else:
+                self.get_logger().warn(
+                    f"No supported detection message type configured for mission type '{self.mission_type}'."
                 )
 
         # --- State Variables ---
@@ -256,7 +294,7 @@ class UnifiedNavCommander(Node):
         self.goal_handle = None
         self.search_handle = None
         self.search_poses: List[PoseStamped] = []
-        self.detections_buffer: List[Tuple[float, int]] = []
+        self.detections_buffer: List[Tuple[float, str]] = []
         self.stop_triggered_id: Optional[str] = None
 
         self.timer = self.create_timer(
@@ -283,6 +321,55 @@ class UnifiedNavCommander(Node):
         msg = Int8()
         msg.data = code
         self.lights_publisher.publish(msg)
+
+    def _set_detect_node_camera_mode(self, detection_type: str) -> bool:
+        if not self.detect_node_param_client.wait_for_service(timeout_sec=2.0):
+            self.get_logger().error(
+                f"{self.detect_node_set_parameters_service} is not available."
+            )
+            return False
+
+        request = SetParameters.Request()
+        parameter = Parameter()
+        parameter.name = "detection_type"
+        parameter.value = ParameterValue(
+            type=ParameterType.PARAMETER_STRING,
+            string_value=detection_type,
+        )
+        request.parameters = [parameter]
+
+        event = Event()
+
+        def done_callback(_future):
+            event.set()
+
+        future = self.detect_node_param_client.call_async(request)
+        future.add_done_callback(done_callback)
+
+        if not event.wait(timeout=2.0):
+            self.get_logger().error(
+                f"Timed out while setting detect_node detection_type to {detection_type}."
+            )
+            return False
+
+        response = future.result()
+        if response is None:
+            self.get_logger().error(
+                f"Failed to set detect_node detection_type to {detection_type}."
+            )
+            return False
+
+        for result in response.results:
+            if not result.successful:
+                self.get_logger().error(
+                    f"detect_node rejected detection_type={detection_type}: {result.reason}"
+                )
+                return False
+
+        self.get_logger().info(
+            f"Set detect_node detection_type to {detection_type}."
+        )
+        return True
 
     def _finish_mission(self, message: str, light_code: int = 3) -> None:
         self.get_logger().info(message)
@@ -381,6 +468,13 @@ class UnifiedNavCommander(Node):
         self, request: NavToGPSGeopose.Request, response: NavToGPSGeopose.Response
     ) -> NavToGPSGeopose.Response:
         self.get_logger().info(f"Received mission request: {request.goal}")
+        camera_detection_type = self.config.get("camera_detection_type", "NONE")
+        if not self._set_detect_node_camera_mode(camera_detection_type):
+            response.success = False
+            response.status = (
+                f"Failed to set detect_node detection_type to {camera_detection_type}."
+            )
+            return response
         self._cancel_all_nav_goals()
         self.reset_state_variables()
         if self.config.get("start_at_current_pose"):
@@ -438,7 +532,7 @@ class UnifiedNavCommander(Node):
         ]
 
         for detected_id in msg.data:
-            self.detections_buffer.append((current_time, int(detected_id)))
+            self.detections_buffer.append((current_time, str(int(detected_id))))
 
         tag_counts = Counter(tag_id for _timestamp, tag_id in self.detections_buffer)
         for tag_id, count in tag_counts.items():
@@ -446,15 +540,30 @@ class UnifiedNavCommander(Node):
                 self._trigger_target_found(f"Aruco ID {tag_id}")
                 return
 
-    def custom_object_callback(self, msg: Bool) -> None:
+    def object_detection_callback(self, msg: ObjectDetected) -> None:
         if self.mission_state not in (
             MissionState.NAV_TO_GPS,
             MissionState.EXECUTE_SEARCH,
         ):
             return
 
-        if msg.data:
-            self._trigger_target_found(self.mission_type)
+        target_model_type = self.config.get("target_model_type")
+        detected_type = msg.model_type.strip().upper()
+        if detected_type != target_model_type:
+            return
+
+        current_time = self.get_clock().now().nanoseconds / 1e9
+        self.detections_buffer = [
+            (timestamp, label)
+            for timestamp, label in self.detections_buffer
+            if (current_time - timestamp) <= self.object_detection_window_sec
+        ]
+
+        self.detections_buffer.append((current_time, detected_type))
+
+        tag_counts = Counter(label for _timestamp, label in self.detections_buffer)
+        if tag_counts.get(target_model_type, 0) >= self.object_min_detections:
+            self._trigger_target_found(target_model_type)
 
     def convert_lat_lon_to_pose(self, latitude, longitude, altitude, orientation):
         req = FromLL.Request()
