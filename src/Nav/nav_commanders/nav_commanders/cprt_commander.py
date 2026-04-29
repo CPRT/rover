@@ -23,7 +23,7 @@ from rclpy.qos import (
 from ament_index_python.packages import get_package_share_directory
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry, Path
-from std_msgs.msg import Int8, Int32MultiArray
+from std_msgs.msg import Int8, Int32
 from std_srvs.srv import Trigger
 import tf2_ros
 
@@ -127,57 +127,65 @@ class UnifiedNavCommander(Node):
                 "topic": None,
                 "is_aruco": False,
                 "is_object_detection": False,
+                "camera_detection_type": "NONE",
                 "start_at_current_pose": False,
             },
             "aruco10m": {
                 "search": True,
                 "pattern": "spiral_10m",
-                "topic": "/vision/aruco_detected",
+                "topic": "/marker_detected",
                 "is_aruco": True,
                 "is_object_detection": False,
+                "camera_detection_type": "ARUCO",
                 "start_at_current_pose": False,
             },
             "aruco20m": {
                 "search": True,
                 "pattern": "spiral_20m",
-                "topic": "/vision/aruco_detected",
+                "topic": "/marker_detected",
                 "is_aruco": True,
                 "is_object_detection": False,
+                "camera_detection_type": "ARUCO",
                 "start_at_current_pose": False,
             },
             "mallet": {
                 "search": True,
                 "pattern": "spiral_5m",
-                "topic": "/vision/object_detected",
+                "topic": "/object_detected",
                 "is_aruco": False,
                 "is_object_detection": True,
                 "target_model_type": "MALLET",
+                "camera_detection_type": "MALLET",
                 "start_at_current_pose": False,
             },
             "pick": {
                 "search": True,
                 "pattern": "spiral_5m",
-                "topic": "/vision/object_detected",
+                "topic": "/object_detected",
                 "is_aruco": False,
                 "is_object_detection": True,
                 "target_model_type": "ROCKPICK",
+                "camera_detection_type": "ROCKPICK",
                 "start_at_current_pose": False,
             },
             "bottle": {
                 "search": True,
                 "pattern": "spiral_10m",
-                "topic": "/vision/object_detected",
+                "topic": "/object_detected",
                 "is_aruco": False,
                 "is_object_detection": True,
                 "target_model_type": "WATER_BOTTLE",
+                "camera_detection_type": "WATER_BOTTLE",
                 "start_at_current_pose": False,
             },
             "indoor_spiral": {
                 "search": True,
-                "pattern": "spiral_20m",
-                "topic": None,
+                "pattern": "spiral_5m",
+                "topic": "/object_detected",
                 "is_aruco": False,
-                "is_object_detection": False,
+                "is_object_detection": True,
+                "target_model_type": "MALLET",
+                "camera_detection_type": "MALLET",
                 "start_at_current_pose": True,
             },
         }
@@ -269,7 +277,7 @@ class UnifiedNavCommander(Node):
         if self.config["search"] and self.config["topic"]:
             if self.config["is_aruco"]:
                 self.detection_subscription = self.create_subscription(
-                    Int32MultiArray,
+                    Int32,
                     self.config["topic"],
                     self.aruco_callback,
                     qos_profile_sensor_data,
@@ -366,9 +374,7 @@ class UnifiedNavCommander(Node):
                 )
                 return False
 
-        self.get_logger().info(
-            f"Set detect_node detection_type to {detection_type}."
-        )
+        self.get_logger().info(f"Set detect_node detection_type to {detection_type}.")
         return True
 
     def _finish_mission(self, message: str, light_code: int = 3) -> None:
@@ -517,7 +523,7 @@ class UnifiedNavCommander(Node):
         self.mission_state = MissionState.FOUND_TARGET
         self.navigator.cancelTask()
 
-    def aruco_callback(self, msg: Int32MultiArray) -> None:
+    def aruco_callback(self, msg: Int32) -> None:
         if self.mission_state not in (
             MissionState.NAV_TO_GPS,
             MissionState.EXECUTE_SEARCH,
@@ -531,8 +537,7 @@ class UnifiedNavCommander(Node):
             if (current_time - timestamp) <= self.aruco_detection_window_sec
         ]
 
-        for detected_id in msg.data:
-            self.detections_buffer.append((current_time, str(int(detected_id))))
+        self.detections_buffer.append((current_time, str(int(msg.data))))
 
         tag_counts = Counter(tag_id for _timestamp, tag_id in self.detections_buffer)
         for tag_id, count in tag_counts.items():
@@ -549,6 +554,12 @@ class UnifiedNavCommander(Node):
 
         target_model_type = self.config.get("target_model_type")
         detected_type = msg.model_type.strip().upper()
+        valid_models = {"MALLET", "ROCKPICK", "WATER_BOTTLE"}
+        if detected_type not in valid_models:
+            self.get_logger().warn(
+                f"Ignoring object detection with unknown model_type '{msg.model_type}'."
+            )
+            return
         if detected_type != target_model_type:
             return
 

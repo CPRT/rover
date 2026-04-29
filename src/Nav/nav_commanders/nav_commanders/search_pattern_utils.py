@@ -302,9 +302,12 @@ def generate_search_pattern(
 
             b = distance_between_loops / (2.0 * math.pi)
             theta_final = float(search_radius) / b
+
             def spiral_arc_length(theta: float) -> float:
-                return 0.5 * b * (
-                    theta * math.sqrt((theta * theta) + 1.0) + math.asinh(theta)
+                return (
+                    0.5
+                    * b
+                    * (theta * math.sqrt((theta * theta) + 1.0) + math.asinh(theta))
                 )
 
             delta_s = spiral_arc_length(theta_final) - spiral_arc_length(start_theta)

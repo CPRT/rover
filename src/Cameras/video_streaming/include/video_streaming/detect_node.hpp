@@ -8,6 +8,8 @@ public:
   explicit DetectNode(
       const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
   ~DetectNode() override = default;
+  void publish_object_detected(int32_t class_id, float confidence, int32_t xmin,
+                               int32_t ymin, int32_t xmax, int32_t ymax);
 
 protected:
   enum class DetectionType { WATER_BOTTLE, MALLET, ROCKPICK, ARUCO, NONE };
