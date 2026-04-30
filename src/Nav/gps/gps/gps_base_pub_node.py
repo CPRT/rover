@@ -85,7 +85,9 @@ class GpsBaseNode(Node):
         self.svin_acc_limit = (
             self.get_parameter("SvinAccLimit").get_parameter_value().integer_value
         )
-        self.get_logger().info(f"Min duration: {self.svin_min_dur}s, Min acc {self.svin_acc_limit}mm")
+        self.get_logger().info(
+            f"Min duration: {self.svin_min_dur}s, Min acc {self.svin_acc_limit}mm"
+        )
         self._svin_done = False
 
     def _setup_publishers(self):
@@ -128,7 +130,7 @@ class GpsBaseNode(Node):
                 version=0,
                 rcvrMode=1,
                 svinMinDur=1,
-                svinAccLimit=self.svin_acc_limit*10, # conv 1mm -> 0.1mm
+                svinAccLimit=self.svin_acc_limit * 10,  # conv 1mm -> 0.1mm
             )
             self.serial_conn.write(msg.serialize())
             time.sleep(1)
@@ -138,7 +140,7 @@ class GpsBaseNode(Node):
                 SET,
                 rcvrMode=1,
                 svinMinDur=self.svin_min_dur,
-                svinAccLimit=self.svin_acc_limit * 10, # conv 1mm -> 0.1mm
+                svinAccLimit=self.svin_acc_limit * 10,  # conv 1mm -> 0.1mm
             )
             self.serial_conn.write(msg.serialize())
 
@@ -223,7 +225,9 @@ class GpsBaseNode(Node):
             meanX/Y/Z - ECEF position in cm (we convert to lat/lon/alt via WGS84)
         """
         dur = getattr(parsed, "dur", 0)
-        acc_mm = getattr(parsed, "meanAcc", 0) * 0.1 # meanAcc from pyubx2 is in 0.1mm units → convert to mm
+        acc_mm = (
+            getattr(parsed, "meanAcc", 0) * 0.1
+        )  # meanAcc from pyubx2 is in 0.1mm units → convert to mm
         valid = bool(getattr(parsed, "valid", False))
         active = bool(getattr(parsed, "active", False))
 

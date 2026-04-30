@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import rclpy
+import math
 from rclpy.node import Node
 from std_msgs.msg import Float32, Int32
 from .roboclaw_library import Roboclaw
@@ -7,26 +8,29 @@ from .roboclaw_library import Roboclaw
 
 class RoboClawAntennaNode(Node):
     def __init__(self):
-        super().__init__("roboclaw_antenna_node")
+        super().__init__("antenna_roboclaw_node")
         self.get_logger().info("RoboClaw Antenna node started.")
 
-        # Parameters 
-        self.declare_parameter("port", "/dev/ttyACM1")
-        self.declare_parameter("baud_rate", 115200)
-        self.declare_parameter("max_speed", 700)
-        self.declare_parameter("accel", 350)
-        self.declare_parameter("enc_read_freq", 10.0)
+        # Parameters
+        self.declare_parameter("Port", "/dev/ttyACM1")
+        self.declare_parameter("Baudrate", 115200)
+        self.declare_parameter("MaxSpeed", 1000)
+        self.declare_parameter("Accel", 500)
+        self.declare_parameter("EncReadFreq", 10.0)
+        self.declare_parameter("Address", 0x80)  # default address for Roboclaw
+        self.declare_parameter(
+            "CountsPerRev", 8192
+        )  # 4096 * 2 | gear ratio of 2:1 and 4096 count for full encoder rev
 
-        port = self.get_parameter("port").value
-        baud = self.get_parameter("baud_rate").value
-        self.address = 0x80 # default address for Roboclaw
-        self.counts_per_rev = 4096 * 2 # gear ratio of 2:1 and 4096 count for full encoder rev
+        port = self.get_parameter("Port").value
+        baud = self.get_parameter("Baudrate").value
+        self.address = self.get_parameter("Address").value
+        self.counts_per_rev = self.get_parameter("CountsPerRev").value
+        self.max_speed = self.get_parameter("MaxSpeed").value
+        self.accel = self.get_parameter("Accel").value
+        self.enc_read_freq = self.get_parameter("EncReadFreq").value
 
-        self.max_speed = self.get_parameter("max_speed").value
-        self.accel = self.get_parameter("accel").value
-        self.enc_read_freq = self.get_parameter("enc_read_freq").value
-
-        #  RoboClaw Setup 
+        #  RoboClaw Setup
         self.controller = Roboclaw(port, baud)
 
         if not self.controller.Open():
@@ -47,24 +51,22 @@ class RoboClawAntennaNode(Node):
         self.target_encoder = 0
         self.zero_offset = 0
 
-        # ROS Interfaces 
-        self.create_subscription(
-            Float32, "/antenna/bearing", self.delta_callback, 10
-        )
+        # ROS Interfaces
+        self.create_subscription(Float32, "/roboclaw_position", self.pos_callback, 10)
         self.create_timer(1.0 / self.enc_read_freq, self.encoder_timer)
 
     # Angle to Encoder Command
-    def delta_callback(self, msg: Float32):
-        deg = msg.data % 360
+    def pos_callback(self, msg: Float32):
+        deg = math.degrees(msg.data) % 360
 
         self.target_encoder = self.zero_offset + int((deg / 360) * self.counts_per_rev)
 
         error = self.wrap_error(self.target_encoder - self.current_encoder)
-    
+
         # ------ try with testing tomorrow ------
         # deadband
         # if abs(error) < 20:
-            # return
+        # return
 
         # smoothing
         # step = int(error * 0.3)
@@ -74,9 +76,7 @@ class RoboClawAntennaNode(Node):
 
         # command = self.current_encoder + step
 
-        self.get_logger().info(
-            f"target= {deg:.2f}°, {self.target_encoder}"
-        )
+        self.get_logger().info(f"target= {deg:.2f}°, {self.target_encoder}")
 
         self.drive_to_position(self.current_encoder + error)
 
@@ -87,8 +87,8 @@ class RoboClawAntennaNode(Node):
         elif error < -half:
             error += self.counts_per_rev
         return error
-    
-    # Encoder Reading - If we want to check for encoder delta
+
+    # Encoder Reading - To check for encoder delta
     def encoder_timer(self):
         rc, enc, _ = self.controller.ReadEncM1(self.address)
 
@@ -97,7 +97,7 @@ class RoboClawAntennaNode(Node):
             return
 
         self.current_encoder = enc
-    
+
     # Position Control
     def drive_to_position(self, target):
         """
@@ -117,7 +117,7 @@ class RoboClawAntennaNode(Node):
         if not success:
             self.get_logger().error("Failed to send position command")
 
-    # Shutdown Safety    
+    # Shutdown Safety
     def destroy_node(self):
         self.get_logger().info("Stopping motor on shutdown")
         self.controller.DutyM1(self.address, 0)

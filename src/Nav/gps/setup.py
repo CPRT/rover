@@ -28,6 +28,7 @@ setup(
             "rtcm_pub_node = gps.rtcm_pub_node:main",
             "heading_pub_node = gps.heading_pub_node:main",
             "gps_base_pub_node = gps.gps_base_pub_node:main",
+            "antenna_pointing_node = gps.antenna_pointing_node:main",
         ],
     },
 )

@@ -1,4 +1,4 @@
 std_msgs/Header header
 
-UInt32 dur_sec
-Float32 acc_mm
+uint32 dur_sec
+float32 acc_mm
