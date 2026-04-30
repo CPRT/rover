@@ -4,14 +4,13 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
 from rtcm_msgs.msg import Message as Rtcm
 from sensor_msgs.msg import NavSatFix
-from std_msgs.msg import Bool, Float32, UInt32
+from std_msgs.msg import Bool
+from interfaces.msg import SvinStatus
 from .ubx_io_manager import UbxIoManager
 from pyubx2 import (
     UBXMessage,
     UBX_PROTOCOL,
     RTCM3_PROTOCOL,
-    # UBX_NAV_CLASS,
-    # UBX_NAV_SVIN_ID,
     SET,
 )
 
@@ -32,8 +31,7 @@ class GpsBaseNode(Node):
         a depth of 1 (latched) telemetry for web UI and other logging
     - rtcm_pub (Publisher): Publishes RTCM messages to the /rtcm topic.
     - valid_pub (Publisher): Publishes true when survey-in is done (latched)
-    - dur_pub (Publisher): Publishes duration of survey-in process for monitoring
-    - acc_pub (Publisher): Publishes running accuracy measurement
+    - svin_status_pub (Publisher): Publishes duration and mean accuracy of survey-in process for monitoring
     - serial_conn (IoManager): Manages serial I/O operations.
     - layers (int): Configuration layers for the UBXMessage.
     - timer (Timer): Timer for periodically reading and publishing RTCM data.
@@ -88,6 +86,7 @@ class GpsBaseNode(Node):
             self.get_parameter("SvinAccLimit").get_parameter_value().integer_value
         )
         self.get_logger().info(f"Min duration: {self.svin_min_dur}s, Min acc {self.svin_acc_limit}mm")
+        self._svin_done = False
 
     def _setup_publishers(self):
         # keep depth at one for RTCM and use the new default for svin msgs
@@ -105,11 +104,8 @@ class GpsBaseNode(Node):
         self.valid_pub = self.create_publisher(
             Bool, "/base_station/svin_valid", latching_qos
         )
-        self.dur_pub = self.create_publisher(
-            UInt32, "/base_station/svin_dur", self.queue_depth
-        )
-        self.acc_pub = self.create_publisher(
-            Float32, "/base_station/svin_acc", self.queue_depth
+        self.svin_status_pub = self.create_publisher(
+            SvinStatus, "/base_station/svin_status", self.queue_depth
         )
 
     def _configure_module(self):
@@ -132,7 +128,7 @@ class GpsBaseNode(Node):
                 version=0,
                 rcvrMode=1,
                 svinMinDur=1,
-                svinAccLimit=self.svin_acc_limit*10,
+                svinAccLimit=self.svin_acc_limit*10, # conv 1mm -> 0.1mm
             )
             self.serial_conn.write(msg.serialize())
             time.sleep(1)
@@ -142,7 +138,7 @@ class GpsBaseNode(Node):
                 SET,
                 rcvrMode=1,
                 svinMinDur=self.svin_min_dur,
-                svinAccLimit=self.svin_acc_limit * 10,
+                svinAccLimit=self.svin_acc_limit * 10, # conv 1mm -> 0.1mm
             )
             self.serial_conn.write(msg.serialize())
 
@@ -224,27 +220,18 @@ class GpsBaseNode(Node):
             dur     - elapsed survey-in time in seconds
             meanAcc - current mean position accuracy in mm (×0.1 for u-blox raw)
             valid   - True when survey-in has finished successfully
-            active  - True while survey-in is still running
             meanX/Y/Z - ECEF position in cm (we convert to lat/lon/alt via WGS84)
         """
         dur = getattr(parsed, "dur", 0)
-        # meanAcc from pyubx2 is in 0.1mm units → convert to mm
-        acc_mm = getattr(parsed, "meanAcc", 0) * 0.1
+        acc_mm = getattr(parsed, "meanAcc", 0) * 0.1 # meanAcc from pyubx2 is in 0.1mm units → convert to mm
         valid = bool(getattr(parsed, "valid", False))
         active = bool(getattr(parsed, "active", False))
 
         # Publish raw status fields for monitoring/dashboards
-        dur_msg = UInt32()
-        dur_msg.data = int(dur)
-        self.dur_pub.publish(dur_msg)
-
-        acc_msg = Float32()
-        acc_msg.data = float(acc_mm)
-        self.acc_pub.publish(acc_msg)
-
-        valid_msg = Bool()
-        valid_msg.data = valid
-        self.valid_pub.publish(valid_msg)
+        status = SvinStatus()
+        status.dur_sec = int(dur)
+        status.acc_mm = float(acc_mm)
+        self.svin_status_pub.publish(status)
 
         self.get_logger().info(
             f"Survey-In: dur={dur}s  acc={acc_mm:.1f}mm  "
@@ -254,8 +241,13 @@ class GpsBaseNode(Node):
         # Once valid, publish the antenna's surveyed position as a NavSatFix.
         # We only need to do this once; TRANSIENT_LOCAL QoS means late
         # subscribers will still receive it.
-        if valid:
+        # self._svin_done = True disables repeating pubs
+        if valid and not self._svin_done:
+            valid_msg = Bool()
+            valid_msg.data = valid
+            self.valid_pub.publish(valid_msg)
             self._publish_fix_from_ecef(parsed)
+            self._svin_done = True
 
     def _publish_fix_from_ecef(self, parsed):
         """

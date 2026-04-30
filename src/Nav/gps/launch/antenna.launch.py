@@ -29,8 +29,8 @@ def generate_launch_description():
                     },
                     {"Baudrate": 115200},
                     {"Freq": 10.0},  # Publish rate (hz)
-                    {"SvinMindur": 0},  # Survey in time (s)
-                    {"SvinMinAccDur": 10_000},  # Survey in time (s)
+                    {"SvinMindur": 60},  # Survey in time (s)
+                    {"SvinMinAccDur": 10_000},  # Survey in accuracy (mm)
                     {"QueueDepth": 10},
                 ],
             ),
