@@ -1,5 +1,6 @@
 import rclpy
 import time
+from typing import cast
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
 from rtcm_msgs.msg import Message as Rtcm
@@ -195,6 +196,7 @@ class GpsBaseNode(Node):
                         rclpy.spin_once(self, timeout_sec=0.1)
                     continue
 
+                raw = cast(bytes, raw)
                 identity = getattr(parsed_data, "identity", "")
 
                 if identity == "NAV-SVIN":

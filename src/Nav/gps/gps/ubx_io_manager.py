@@ -39,7 +39,7 @@ class UbxIoManager:
             validate=VALCKSUM,
         )
 
-    def read(self) -> tuple:
+    def read(self) -> tuple[bytes | None, object | None]:
         """
         Reads data from the serial port using UBXReader.
 
