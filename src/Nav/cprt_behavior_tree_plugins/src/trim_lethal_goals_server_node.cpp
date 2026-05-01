@@ -82,6 +82,19 @@ void TrimLethalGoalsServerNode::trimGoalsCallback(
   }
 
   const auto &info = latest_costmap_.info;
+  int threshold = static_cast<int>(request->cost_threshold);
+
+  if (threshold > 100) {
+    RCLCPP_WARN(this->get_logger(),
+                "Received cost_threshold > 100. Capping to standard ROS scale max of 100.");
+    threshold = 100;
+  } else if (threshold < 0) {
+    RCLCPP_WARN(this->get_logger(),
+                "Received cost_threshold < 0. Capping to 0.");
+    threshold = 0;
+  }
+
+  const int8_t validated_threshold = static_cast<int8_t>(threshold);
 
   for (const auto &goal : request->input_goals) {
     const double mx = goal.pose.position.x;
@@ -97,7 +110,7 @@ void TrimLethalGoalsServerNode::trimGoalsCallback(
       const int index = gy * static_cast<int>(info.width) + gx;
       const int8_t cost = latest_costmap_.data[index];
 
-      if (cost == -1 || cost < static_cast<int8_t>(request->cost_threshold)) {
+      if (cost == -1 || cost < validated_threshold) {
         response->output_goals.push_back(goal);
       }
     } else {
