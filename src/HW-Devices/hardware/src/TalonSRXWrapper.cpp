@@ -170,6 +170,15 @@ void TalonSRXWrapper::write() {
     }
     return;
   }
+  if (!std::isfinite(command_)) {
+    talon_controller_->Set(motors::ControlMode::Disabled, 0.0);
+    RCLCPP_WARN_THROTTLE(
+        debug_node_->get_logger(), *debug_node_->get_clock(), 1000,
+        "%s: Command is not finite for id %d, disabling motor to prevent "
+        "potential damage. Msg throttled to 1 Hz.",
+        __FUNCTION__, id_);
+    return;
+  }
   if (std::abs(command_ - position_) > M_PI &&
       control_type_ == motors::ControlMode::Position) {
     RCLCPP_WARN_THROTTLE(
@@ -242,25 +251,6 @@ int TalonSRXWrapper::get_load_enc() const {
 
 void TalonSRXWrapper::configure() {
   BaseWrapper::configure();
-  // Start gravity ff timer
-  if (gravity_ff_freq_ > 0 && !target_frame_.empty() && !cur_frame_.empty()) {
-    gravity_ff_timer_ = debug_node_->create_wall_timer(
-        std::chrono::milliseconds(1000 / gravity_ff_freq_),
-        std::bind(&TalonSRXWrapper::update_gravity_ff, this));
-    RCLCPP_INFO(
-        debug_node_->get_logger(),
-        "%s: Gravity FF enabled with frequency %d Hz, target frame '%s', "
-        "current frame '%s', and gravity constant %.2f",
-        __FUNCTION__, gravity_ff_freq_, target_frame_.c_str(),
-        cur_frame_.c_str(), gravity_const_);
-  } else {
-    RCLCPP_INFO(
-        debug_node_->get_logger(),
-        "%s: Gravity FF disabled (frequency %d Hz, target frame '%s', current "
-        "frame '%s')",
-        __FUNCTION__, gravity_ff_freq_, target_frame_.c_str(),
-        cur_frame_.c_str());
-  }
 
   while (true) {
     if (talon_controller_->GetFirmwareVersion() == -1) {
@@ -283,6 +273,7 @@ void TalonSRXWrapper::configure() {
     config.continuousCurrentLimit = 10.0;
     config.peakCurrentLimit = 10.0;
     config.peakCurrentDuration = 100;
+    config.neutralDeadband = 0.001;
     talon_controller_->EnableCurrentLimit(true);
     ErrorCode error = talon_controller_->ConfigAllSettings(config, 50);
 
@@ -316,7 +307,6 @@ void TalonSRXWrapper::configure() {
   talon_controller_->SelectProfileSlot(0, 0);
   talon_controller_->SetStatusFramePeriod(
       StatusFrameEnhanced::Status_2_Feedback0, 20);
-  talon_controller_->SetIntegralAccumulator(0);
   if (load_sensor_ != SensorType::NONE) {
     talon_controller_->SetSelectedSensorPosition(get_load_enc());
   }
@@ -330,4 +320,27 @@ void TalonSRXWrapper::configure() {
               "%s: Successfully configured Motor Controller %d", __FUNCTION__,
               id_);
   start_time_ = debug_node_->now();
+}
+
+void TalonSRXWrapper::activate() {
+  // Start gravity ff timer
+  if (gravity_ff_freq_ > 0 && !target_frame_.empty() && !cur_frame_.empty()) {
+    gravity_ff_timer_ = debug_node_->create_wall_timer(
+        std::chrono::milliseconds(1000 / gravity_ff_freq_),
+        std::bind(&TalonSRXWrapper::update_gravity_ff, this));
+    RCLCPP_INFO(
+        debug_node_->get_logger(),
+        "%s: Gravity FF enabled with frequency %d Hz, target frame '%s', "
+        "current frame '%s', and gravity constant %.2f",
+        __FUNCTION__, gravity_ff_freq_, target_frame_.c_str(),
+        cur_frame_.c_str(), gravity_const_);
+  } else {
+    RCLCPP_INFO(
+        debug_node_->get_logger(),
+        "%s: Gravity FF disabled (frequency %d Hz, target frame '%s', current "
+        "frame '%s')",
+        __FUNCTION__, gravity_ff_freq_, target_frame_.c_str(),
+        cur_frame_.c_str());
+  }
+  talon_controller_->SetIntegralAccumulator(0);
 }

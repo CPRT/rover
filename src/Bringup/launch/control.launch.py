@@ -98,6 +98,12 @@ def generate_launch_description():
         output="screen",
         condition=IfCondition(use_arm),
     )
+    eef_distance = Node(
+        package="gpio_controller",
+        executable="distance_sensor",
+        output="screen",
+        condition=IfCondition(use_arm),
+    )
 
     arm_controller_servo_spawner = Node(
         package="controller_manager",
@@ -152,4 +158,5 @@ def generate_launch_description():
     ld.add_action(delayed_spawners)
     ld.add_action(arm_launch)
     ld.add_action(eef_launch)
+    ld.add_action(eef_distance)
     return ld

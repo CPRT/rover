@@ -1,9 +1,14 @@
+#include "gstros2overlay.hpp"
 #include "gstros2src.hpp"
 #include <gst/gst.h>
 
 static gboolean plugin_init(GstPlugin *plugin) {
   if (!gst_element_register(plugin, "ros2src", GST_RANK_NONE,
                             GST_TYPE_ROS2_IMAGE_SRC)) {
+    return FALSE;
+  }
+  if (!gst_element_register(plugin, "ros2overlay", GST_RANK_NONE,
+                            GST_TYPE_ROS2_OVERLAY)) {
     return FALSE;
   }
   return TRUE;

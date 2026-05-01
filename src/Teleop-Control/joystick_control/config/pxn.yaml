@@ -25,6 +25,7 @@ arm_teleop_node:
     wrist_yaw_positive: 3
     wrist_yaw_negative: 5
     joint_6_axis: 4
+    dot_inc: 4
 
 science_teleop_node:
   ros__parameters:

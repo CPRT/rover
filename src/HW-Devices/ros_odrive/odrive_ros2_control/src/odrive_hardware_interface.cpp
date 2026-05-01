@@ -8,10 +8,15 @@
 #include "rclcpp/rclcpp.hpp"
 #include "ros_phoenix/msg/motor_status.hpp"
 #include "socket_can.hpp"
+#include <tf2/convert.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 
 namespace odrive_ros2_control {
 
 class Axis;
+class GravityFFManager;
 
 class ODriveHardwareInterface final
     : public hardware_interface::SystemInterface {
@@ -57,9 +62,11 @@ private:
 
 struct Axis {
   Axis(SocketCanIntf *can_intf, uint32_t node_id, double multiplier,
-       ODriveInputMode input_mode)
+       ODriveInputMode input_mode,
+       std::shared_ptr<GravityFFManager> gravity_ff_manager = nullptr)
       : can_intf_(can_intf), node_id_(node_id), multiplier_(multiplier),
-        input_mode_(input_mode) {}
+        input_mode_(input_mode),
+        gravity_ff_manager_(std::move(gravity_ff_manager)) {}
 
   void on_can_msg(const rclcpp::Time &timestamp, const can_frame &frame);
 
@@ -105,6 +112,7 @@ struct Axis {
   ODriveInputMode input_mode_;
 
   rclcpp::Publisher<ros_phoenix::msg::MotorStatus>::SharedPtr debug_pub_;
+  std::shared_ptr<GravityFFManager> gravity_ff_manager_;
 
   template <typename T> bool send(const T &msg) const {
     struct can_frame frame;
@@ -120,6 +128,69 @@ struct Axis {
   }
 };
 
+class GravityFFManager {
+public:
+  GravityFFManager(rclcpp::Node::SharedPtr node, double gravity_ff_freq,
+                   std::string link_frame, std::string gravity_frame,
+                   double gravity_const)
+      : node_(node), gravity_ff_freq_(gravity_ff_freq),
+        gravity_frame_(gravity_frame), link_frame_(link_frame),
+        gravity_const_(gravity_const) {
+
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  }
+  double get_ff_value() { return gravity_ff_.load(std::memory_order_relaxed); }
+  void start() {
+    if (gravity_ff_freq_ <= 0 || gravity_frame_.empty() ||
+        link_frame_.empty()) {
+      return;
+    }
+    gravity_ff_timer_ = node_->create_wall_timer(
+        std::chrono::milliseconds(static_cast<int>(1000.0 / gravity_ff_freq_)),
+        std::bind(&GravityFFManager::update_gravity_ff, this));
+  }
+
+private:
+  void update_gravity_ff() {
+    if (!tf_buffer_) {
+      RCLCPP_ERROR(node_->get_logger(),
+                   "%s: TF buffer not initialized, cannot update gravity FF",
+                   __FUNCTION__);
+      return;
+    }
+    try {
+      auto tf = tf_buffer_->lookupTransform(
+          gravity_frame_.c_str(), link_frame_.c_str(), tf2::TimePointZero);
+
+      tf2::Quaternion q;
+      tf2::fromMsg(tf.transform.rotation, q);
+
+      double roll, pitch, yaw;
+      tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
+      double ff = gravity_const_ * std::sin(pitch);
+      gravity_ff_.store(ff, std::memory_order_relaxed);
+      RCLCPP_DEBUG(
+          node_->get_logger(),
+          "%s: Updated gravity FF to %.2f based on pitch %.2f degrees ",
+          __FUNCTION__, ff, pitch * 180.0 / M_PI);
+    } catch (const tf2::TransformException &err) {
+      RCLCPP_ERROR_THROTTLE(node_->get_logger(), *node_->get_clock(), 500,
+                            "%s: Caught exception %s", __FUNCTION__,
+                            err.what());
+    }
+  }
+  rclcpp::Node::SharedPtr node_;
+  double gravity_ff_freq_;
+  std::string gravity_frame_;
+  std::string link_frame_;
+  double gravity_const_;
+  std::atomic<double> gravity_ff_{0.0};
+  rclcpp::TimerBase::SharedPtr gravity_ff_timer_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_{nullptr};
+};
+
 } // namespace odrive_ros2_control
 
 using namespace odrive_ros2_control;
@@ -133,6 +204,10 @@ ODriveHardwareInterface::on_init(const hardware_interface::HardwareInfo &info) {
       CallbackReturn::SUCCESS) {
     return CallbackReturn::ERROR;
   }
+  debug_node_ = std::make_shared<rclcpp::Node>("odrive_system_debug_node");
+  executor_ = rclcpp::executors::SingleThreadedExecutor::make_shared();
+  executor_->add_node(debug_node_);
+  spin_thread_ = std::thread([this]() { this->executor_->spin(); });
 
   can_intf_name_ = info_.hardware_parameters["can"];
   debug_frequency_ = 0;
@@ -174,8 +249,43 @@ ODriveHardwareInterface::on_init(const hardware_interface::HardwareInfo &info) {
                     joint.name.c_str());
       }
     }
+    double gravity_ff_freq = 0.0;
+    if (joint.parameters.find("gravity_ff_freq") != joint.parameters.end()) {
+      gravity_ff_freq = std::stod(joint.parameters.at("gravity_ff_freq"));
+      RCLCPP_INFO(rclcpp::get_logger("ODriveHardwareInterface"),
+                  "Setting Joint %s gravity_ff_freq to %f'", joint.name.c_str(),
+                  gravity_ff_freq);
+    }
+    double gravity_const = 0.0;
+    if (joint.parameters.find("gravity_const") != joint.parameters.end()) {
+      gravity_const = std::stod(joint.parameters.at("gravity_const"));
+      RCLCPP_INFO(rclcpp::get_logger("ODriveHardwareInterface"),
+                  "Setting Joint %s gravity_const to %f'", joint.name.c_str(),
+                  gravity_const);
+    }
+    std::string gravity_frame = "base_link";
+    if (joint.parameters.find("gravity_frame") != joint.parameters.end()) {
+      gravity_frame = std::string(joint.parameters.at("gravity_frame"));
+      RCLCPP_INFO(rclcpp::get_logger("ODriveHardwareInterface"),
+                  "Setting Joint %s gravity_frame to %s'", joint.name.c_str(),
+                  gravity_frame.c_str());
+    }
+    std::string link_frame;
+    if (joint.parameters.find("current_frame") != joint.parameters.end()) {
+      link_frame = std::string(joint.parameters.at("current_frame"));
+      RCLCPP_INFO(rclcpp::get_logger("ODriveHardwareInterface"),
+                  "Setting Joint %s current_frame to %s'", joint.name.c_str(),
+                  link_frame.c_str());
+    }
+    std::shared_ptr<GravityFFManager> gravity_ff_manager = nullptr;
+    if (gravity_ff_freq > 0.0 && !gravity_frame.empty() &&
+        !link_frame.empty()) {
+      gravity_ff_manager = std::make_shared<GravityFFManager>(
+          debug_node_, gravity_ff_freq, link_frame, gravity_frame,
+          gravity_const);
+    }
     axes_.emplace_back(&can_intf_, std::stoi(joint.parameters.at("node_id")),
-                       multiplier, input_mode);
+                       multiplier, input_mode, gravity_ff_manager);
   }
 
   return CallbackReturn::SUCCESS;
@@ -212,10 +322,6 @@ CallbackReturn ODriveHardwareInterface::on_activate(const State &) {
     set_axis_command_mode(axis);
   }
   if (debug_frequency_ > 0) {
-    debug_node_ = std::make_shared<rclcpp::Node>("odrive_system_debug_node");
-    executor_ = rclcpp::executors::SingleThreadedExecutor::make_shared();
-    executor_->add_node(debug_node_);
-    spin_thread_ = std::thread([this]() { this->executor_->spin(); });
     debug_timer_ = debug_node_->create_wall_timer(
         std::chrono::milliseconds(1000 / debug_frequency_),
         std::bind(&ODriveHardwareInterface::pub_status, this));
@@ -224,6 +330,9 @@ CallbackReturn ODriveHardwareInterface::on_activate(const State &) {
           debug_node_->template create_publisher<ros_phoenix::msg::MotorStatus>(
               info_.joints[&axis - &axes_[0]].name + "/status",
               rclcpp::SystemDefaultsQoS());
+      if (axis.gravity_ff_manager_) {
+        axis.gravity_ff_manager_->start();
+      }
     }
   }
 
@@ -348,12 +457,23 @@ return_type ODriveHardwareInterface::write(const rclcpp::Time &,
   for (auto &axis : axes_) {
     // Send the CAN message that fits the set of enabled setpoints
     if (axis.pos_input_enabled_) {
+      auto target = axis.pos_setpoint_;
+      if (std::isnan(axis.pos_setpoint_)) {
+        target = axis.pos_estimate_;
+      }
       Set_Input_Pos_msg_t msg;
-      msg.Input_Pos = axis.pos_setpoint_ / (2 * M_PI * axis.multiplier_);
+      msg.Input_Pos = target / (2 * M_PI * axis.multiplier_);
       msg.Vel_FF = axis.vel_input_enabled_
                        ? (axis.vel_setpoint_ / (2 * M_PI * axis.multiplier_))
                        : 0.0f;
-      msg.Torque_FF = axis.torque_input_enabled_ ? axis.torque_setpoint_ : 0.0f;
+      if (axis.torque_input_enabled_) {
+        msg.Torque_FF = axis.torque_setpoint_;
+      } else if (axis.gravity_ff_manager_) {
+        msg.Torque_FF = axis.gravity_ff_manager_->get_ff_value();
+      } else {
+        msg.Torque_FF = 0.0f;
+      }
+
       axis.send(msg);
     } else if (axis.vel_input_enabled_) {
       Set_Input_Vel_msg_t msg;

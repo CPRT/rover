@@ -90,10 +90,11 @@ global_costmap:
   global_costmap:
     ros__parameters:
       update_frequency: 10.0
-      publish_frequency: 0.5
+      publish_frequency: 2.0
       global_frame: map
       robot_base_frame: base_link
       rolling_window: true
+      transform_tolerance: 0.3
       height: 100
       width: 100
       origin_x: -50.0
@@ -145,11 +146,11 @@ planner_server:
       analytic_expansion_max_length: 3.0  # For Hybrid/Lattice nodes: The maximum length of the analytic expansion to be considered valid to prevent unsafe shortcutting
       analytic_expansion_max_cost: 200.0  # The maximum single cost for any part of an analytic expansion to contain and be valid, except when necessary on approach to goal
       analytic_expansion_max_cost_override: false  #  Whether or not to override the maximum cost setting if within critical distance to goal (ie probably required)
-      minimum_turning_radius: 0.40        # minimum turning radius in m of path / vehicle (Swerve can turn tighter)
+      minimum_turning_radius: 0.3        # minimum turning radius in m of path / vehicle (Swerve can turn tighter)
       reverse_penalty: 2.0                # Penalty to apply if motion is reversing, must be => 1
       change_penalty: 0.0                 # Penalty to apply if motion is changing directions (L to R), must be >= 0
       non_straight_penalty: 1.2           # Penalty to apply if motion is non-straight, must be => 1
-      cost_penalty: 2.0                   # Penalty to apply to higher cost areas when adding into the obstacle map dynamic programming distance expansion heuristic. This drives the robot more towards the center of passages. A value between 1.3 - 3.5 is reasonable.
+      cost_penalty: 1.5                   # Penalty to apply to higher cost areas when adding into the obstacle map dynamic programming distance expansion heuristic. This drives the robot more towards the center of passages. A value between 1.3 - 3.5 is reasonable.
       retrospective_penalty: 0.015
       lookup_table_size: 40.0             # Size of the dubin/reeds-sheep distance window to cache, in meters.
       cache_obstacle_heuristic: true      # Cache the obstacle map dynamic programming distance expansion heuristic between subsequent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.
@@ -161,21 +162,51 @@ planner_server:
 
       smoother:
         max_iterations: 1000
-        w_smooth: 0.3
+        w_smooth: 0.6                  # Increased from 0.3 to produce smoother initial paths
         w_data: 0.2
         tolerance: 1.0e-10
         do_refinement: true
-        refinement_num: 2
+        refinement_num: 4              # Increased from 2 for better initial smoothing
 
 smoother_server:
   ros__parameters:
     use_sim_time: True
-    smoother_plugins: [simple_smoother]
+    # smoother_plugins: [simple_smoother]
+    smoother_plugins: [constrained_smoother]
     simple_smoother:
       plugin: nav2_smoother::SimpleSmoother
       tolerance: 1.0e-10
       max_its: 1000
       do_refinement: True
+    constrained_smoother:
+      plugin: "nav2_constrained_smoother/ConstrainedSmoother"
+      reversing_enabled: false      # whether to detect forward/reverse direction and cusps. Should be set to false for paths without orientations assigned
+      path_downsampling_factor: 5   # every n-th node of the path is taken (increased from 3 to speed up smoothing)
+      path_upsampling_factor: 3     # 0 - path remains downsampled, 1 - path is upsampled back to original granularity using cubic bezier, 2... - more upsampling
+      keep_start_orientation: true  # whether to prevent the start orientation from being smoothed
+      keep_goal_orientation: true   # whether to prevent the gpal orientation from being smoothed
+      minimum_turning_radius: 0.1  # minimum turning radius the robot can perform. Can be set to 0.0 (or w_curve can be set to 0.0 with the same effect) for diff-drive/holonomic robots
+      w_curve: 150.0                # weight to enforce minimum_turning_radius (increased to strongly prefer larger ~0.8m arcs but allow 0.1m when obstacles require)
+      w_dist: 0.0                   # weight to bind path to original as optional replacement for cost weight
+      w_smooth: 2000000.0           # weight to maximize smoothness of path
+      w_cost: 0.5                   # weight to steer robot away from collision and cost (HIGH value to strongly respect elevation/traversability costmap and force tighter turns in rough terrain)
+
+      # Parameters used to improve obstacle avoidance near cusps (forward/reverse movement changes)
+      # See the [docs page](https://navigation.ros.org/configuration/packages/configuring-constrained-smoother) for further clarification
+      w_cost_cusp_multiplier: 1.0   # option to have higher weight during forward/reverse direction change which is often accompanied with dangerous rotations (set to 1.0 since reversing disabled)
+      cusp_zone_length: 2.5         # length of the section around cusp in which nodes use w_cost_cusp_multiplier (w_cost rises gradually inside the zone towards the cusp point, whose costmap weight equals w_cost*w_cost_cusp_multiplier)
+
+      # Points in robot frame to grab costmap values from. Format: [x1, y1, weight1, x2, y2, weight2, ...]
+      # IMPORTANT: Requires much higher number of iterations to actually improve the path. Uncomment only if you really need it (highly elongated/asymmetric robots)
+      # See the [docs page](https://navigation.ros.org/configuration/packages/configuring-constrained-smoother) for further clarification
+      # cost_check_points: [-0.185, 0.0, 1.0]
+
+      optimizer:
+        max_iterations: 50            # max iterations of smoother (reduced from 70 for faster convergence)
+        debug_optimizer: false        # print debug info
+        gradient_tol: 0.01            # Relaxed from 0.005 for faster convergence
+        fn_tol: 1.0e-10               # Relaxed from 1.0e-15 for faster convergence
+        param_tol: 1.0e-15            # Relaxed from 1.0e-20 for faster convergence
 
 controller_server:
   ros__parameters:
@@ -197,18 +228,20 @@ controller_server:
     general_goal_checker:
       stateful: True
       plugin: nav2_controller::SimpleGoalChecker
-      xy_goal_tolerance: 0.5 
+      xy_goal_tolerance: 0.6 
       yaw_goal_tolerance: 0.2 # ~11 degrees
 
     FollowPath:
-      plugin: nav2_rotation_shim_controller::RotationShimController
-      primary_controller: nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
+      # plugin: nav2_rotation_shim_controller::RotationShimController
+      # primary_controller: nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
       
+      plugin: nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
+
       # Rotation Shim Parameters (Swerve Logic - Point Turn Before Driving)
-      angular_dist_threshold: 0.5         # If path angle > 30deg, rotate in place first
+      angular_dist_threshold: 0.3         # If path angle > 30deg, rotate in place first
       forward_sampling_distance: 0.5      # How far ahead to check path orientation
       rotate_to_heading_angular_vel: 1.0  # Angular velocity during point turn
-      max_angular_accel: 2.0              # Max angular acceleration
+      max_angular_accel: 0.8              # Max angular acceleration
       simulate_ahead_time: 1.0            # Simulation time for collision checking
 
       use_rotate_to_heading: false # Disable since using rotation shim controller
@@ -216,7 +249,7 @@ controller_server:
       # Regulated Pure Pursuit Parameters (Driving Logic)
       transform_tolerance: 1.0
 
-      desired_linear_vel: 0.3 # Increase to 1.0 for outdoor swerve agility
+      desired_linear_vel: 0.35 # Increase to 1.0 for outdoor swerve agility
       max_robot_pose_search_dist: 10.0
 
       lookahead_dist: 1.2
@@ -247,13 +280,13 @@ behavior_server:
     cycle_frequency: 0.4
     behavior_plugins: [spin, backup, drive_on_heading, wait]
     spin:
-      plugin: nav2_behaviors::Spin
+      plugin: nav2_behaviors/Spin
     backup:
-      plugin: nav2_behaviors::BackUp
+      plugin: nav2_behaviors/BackUp
     drive_on_heading:
-      plugin: nav2_behaviors::DriveOnHeading
+      plugin: nav2_behaviors/DriveOnHeading
     wait:
-      plugin: nav2_behaviors::Wait
+      plugin: nav2_behaviors/Wait
     global_frame: odom
     robot_base_frame: base_link
     transform_tolerance: 0.1
@@ -295,8 +328,8 @@ velocity_smoother:
     # max_decel: [-0.5, 0.0, -1.5]
     # INDOOR TESTING 
     # Safe limits for initial testing in confined spaces
-    max_velocity: [0.3, 0.0, 0.5]      # [x, y, theta] in m/s, m/s, rad/s
-    min_velocity: [-0.3, 0.0, -0.5]
-    max_accel: [0.2, 0.0, 0.5]         # [x, y, theta] in m/s², m/s², rad/s²
-    max_decel: [-0.2, 0.0, -0.5]
+    max_velocity: [0.6, 0.0, 0.6]      # [x, y, theta] in m/s, m/s, rad/s
+    min_velocity: [-0.6, 0.0, -0.6]
+    max_accel: [0.3, 0.0, 0.5]         # [x, y, theta] in m/s², m/s², rad/s²
+    max_decel: [-0.3, 0.0, -0.5]
     

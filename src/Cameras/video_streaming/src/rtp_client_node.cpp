@@ -1,4 +1,6 @@
 #include "rtp_client_node.hpp"
+#include <gstnvdsmeta.h>
+#include <nvdsmeta.h>
 #include <rclcpp_components/register_node_macro.hpp>
 namespace video_streaming {
 RtpClientNode::RtpClientNode(const rclcpp::NodeOptions &options)
@@ -30,26 +32,70 @@ RtpClientNode::RtpClientNode(const rclcpp::NodeOptions &options)
   rtp_stats_pub_ =
       this->create_publisher<interfaces::msg::RtpStats>("~/rtp_stats", 10);
   RCLCPP_INFO(get_logger(), "RtpClientNode constructed and pipeline started.");
+
+  dot_sub_ = this->create_subscription<geometry_msgs::msg::Vector3>(
+      "~/dot", 2, [this](const geometry_msgs::msg::Vector3::SharedPtr msg) {
+        circle_x_ = static_cast<int>(msg->x);
+        circle_y_ = static_cast<int>(msg->y);
+      });
 }
 
 std::string RtpClientNode::get_pipeline_description() {
   std::stringstream desc;
-  constexpr guint storage_tolerance_ms = 20;
-  guint64 storage_sz_ns = (latency_ms_ + storage_tolerance_ms) * 1000000ULL;
   desc << "udpsrc port=" << dest_port_ << " caps="
-       << "\"application/x-rtp, payload=96, clock-rate=90000\" ! "
-       << "rtpstorage size-time=" << storage_sz_ns
-       << " ! rtpssrcdemux ! capsfilter "
-          "caps=\"application/"
-          "x-rtp,media=video,encoding-name=H265,payload=96,clock-rate=90000\" "
-          "! rtpjitterbuffer name=rtp_buf mode=4 latency="
+       << "\"application/x-rtp, "
+          "media=video,encoding-name=H265,payload=96,clock-rate=90000\" ! "
+       << "rtpssrcdemux ! rtpjitterbuffer name=rtp_buf mode=4 "
+          "drop-on-latency=true latency="
        << latency_ms_
-       << " drop-on-latency=true do-lost=true post-drop-messages=true ! "
-          "rtpulpfecdec name=fec_dec pt=122 ! "
-          "rtph265depay ! h265parse ! nvv4l2decoder ! nvvidconv ! "
-       << "capsfilter caps=\"video/x-raw(memory:NVMM),width=1920,height=1080\""
-          " ! nvvidconv ! nveglglessink sync=false";
+       << " ! rtph265depay ! h265parse ! nvv4l2decoder ! nvvidconv ! "
+       << "capsfilter caps=\"video/x-raw(memory:NVMM),width=1920,height=1080\" "
+       << " ! queue ! mux.sink_0 "
+       << "nvstreammux batch-size=1 width=1920 height=1080 name=mux ! "
+       << "nvdsosd name=render ! nvvidconv ! nveglglessink sync=false";
+
   return desc.str();
+}
+
+void RtpClientNode::draw_circle(NvDsBatchMeta *batch_meta,
+                                NvDsFrameMeta *frame_meta) {
+  if (circle_x_ < 0 || circle_y_ < 0) {
+    return;
+  }
+  NvDsDisplayMeta *display_meta =
+      nvds_acquire_display_meta_from_pool(batch_meta);
+
+  if (!display_meta) {
+    RCLCPP_ERROR(get_logger(), "Failed to acquire display meta.");
+    return;
+  }
+
+  if (display_meta->num_circles >= MAX_ELEMENTS_IN_DISPLAY_META) {
+    RCLCPP_WARN(get_logger(), "Display meta circle limit reached.");
+    return;
+  }
+
+  NvOSD_CircleParams &circle_params =
+      display_meta->circle_params[display_meta->num_circles];
+
+  circle_params.xc = circle_x_;
+  circle_params.yc = circle_y_;
+  circle_params.radius = 10;
+  circle_params.circle_color.red = 1.0;
+  circle_params.circle_color.green = 0.0;
+  circle_params.circle_color.blue = 1.0;
+  circle_params.circle_color.alpha = 1.0;
+
+  circle_params.bg_color.red = 0.0;
+  circle_params.bg_color.green = 1.0;
+  circle_params.bg_color.blue = 0.0;
+  circle_params.bg_color.alpha = 0.3;
+  circle_params.has_bg_color = 1;
+
+  display_meta->num_circles += 1;
+  nvds_add_display_meta_to_frame(frame_meta, display_meta);
+  RCLCPP_DEBUG(this->get_logger(), "Drew circle at (%d, %d)", circle_x_,
+               circle_y_);
 }
 
 bool RtpClientNode::create_pipeline() {
@@ -73,6 +119,52 @@ bool RtpClientNode::create_pipeline() {
     return false;
   }
   pipeline_ = p;
+
+  GstElement *render = get_element("render");
+  if (!render) {
+    RCLCPP_ERROR(get_logger(), "Failed to get nvosd element.");
+    return false;
+  }
+
+  GstPad *sink_pad = gst_element_get_static_pad(render, "sink");
+  gst_object_unref(render);
+
+  if (!sink_pad) {
+    RCLCPP_ERROR(get_logger(), "Failed to get nvosd sink pad.");
+    return false;
+  }
+
+  gst_pad_add_probe(
+      sink_pad, GST_PAD_PROBE_TYPE_BUFFER,
+      [](GstPad *, GstPadProbeInfo *info,
+         gpointer user_data) -> GstPadProbeReturn {
+        auto *self = static_cast<RtpClientNode *>(user_data);
+
+        GstBuffer *buf = GST_PAD_PROBE_INFO_BUFFER(info);
+        if (!buf) {
+          RCLCPP_ERROR(self->get_logger(),
+                       "Failed to get buffer from probe info.");
+          return GST_PAD_PROBE_OK;
+        }
+
+        NvDsBatchMeta *batch_meta = gst_buffer_get_nvds_batch_meta(buf);
+        if (!batch_meta) {
+          RCLCPP_ERROR(self->get_logger(),
+                       "Failed to get batch meta from buffer.");
+          return GST_PAD_PROBE_OK;
+        }
+
+        for (NvDsMetaList *l_frame = batch_meta->frame_meta_list;
+             l_frame != nullptr; l_frame = l_frame->next) {
+          auto *frame_meta = static_cast<NvDsFrameMeta *>(l_frame->data);
+          self->draw_circle(batch_meta, frame_meta);
+        }
+
+        return GST_PAD_PROBE_OK;
+      },
+      this, nullptr);
+
+  gst_object_unref(sink_pad);
 
   RCLCPP_INFO(this->get_logger(), "Pipeline parsed successfully.");
   return true;
@@ -105,18 +197,6 @@ void RtpClientNode::rtp_stats_cb() {
   gst_structure_get_uint64(stats_struct, "avg-jitter", &avg_jitter);
   gst_structure_free(stats_struct);
 
-  // Get data from fec decoder
-  GstElement *fec_dec = get_element("fec_dec");
-  if (!fec_dec) {
-    RCLCPP_WARN(this->get_logger(), "Could not get fec_dec");
-    return;
-  }
-  guint recovered = 0;
-  guint unrecovered = 0;
-  g_object_get(fec_dec, "recovered", &recovered, "unrecovered", &unrecovered,
-               NULL);
-  g_object_unref(fec_dec);
-
   auto msg = interfaces::msg::RtpStats();
   msg.header.stamp = this->now();
   msg.num_pushed = num_pushed;
@@ -124,8 +204,6 @@ void RtpClientNode::rtp_stats_cb() {
   msg.num_late = num_late;
   msg.num_duplicates = num_duplicates;
   msg.avg_jitter = avg_jitter;
-  msg.recovered = recovered;
-  msg.unrecovered = unrecovered;
   rtp_stats_pub_->publish(msg);
 }
 

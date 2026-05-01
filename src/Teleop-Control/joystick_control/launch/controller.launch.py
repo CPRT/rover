@@ -24,8 +24,7 @@ def find_ps5():
     except Exception as e:
         print(f"Error reading devices: {e}")
 
-    print("ERROR: PS5 controller not found. Defaulting to /dev/input/js0")
-    return "/dev/input/js0"
+    print("ERROR: PS5 controller not found.")
 
 
 def generate_launch_description():

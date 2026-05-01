@@ -79,6 +79,9 @@ hardware_interface::CallbackReturn RoverArmHardwareInterface::on_activate(
   executor_ = rclcpp::executors::SingleThreadedExecutor::make_shared();
   executor_->add_node(debug_node_);
   spin_thread_ = std::thread([this]() { this->executor_->spin(); });
+  for (auto &controller : controllers_) {
+    controller->activate();
+  }
   RCLCPP_INFO(rclcpp::get_logger("RoverArmHardwareInterface"),
               "Successfully activated!");
   return hardware_interface::CallbackReturn::SUCCESS;

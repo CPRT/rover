@@ -16,6 +16,10 @@ find_package(control_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(controller_manager_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(arm_control REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 set(CMAKE_CXX_STANDARD 14)
 
@@ -32,6 +36,10 @@ add_executable(arm
 
 add_executable(science
   src/science.cpp
+)
+
+target_link_libraries(arm
+  arm_control::move_group_client
 )
 
 ament_target_dependencies(drive

@@ -118,7 +118,7 @@
         link="Link_2" />
         <axis
         xyz="0 0 -1" />
-        <limit lower="-6.3" upper="6.3" effort="100.0" velocity="0.5"/>
+        <limit lower="-3.2" upper="5.5" effort="100.0" velocity="0.5"/>
     </joint>
     <link
         name="Link_3">
@@ -151,39 +151,27 @@
         </material>
         </visual>
         <collision>
-            <origin xyz="0.070000 -0.034283 0.592000" rpy="1.570000 0.000000 0.000000"/>
+            <origin xyz="-0.008 -0.034283 0.5" rpy="1.570000 0.000000 0.000000"/>
             <geometry>
             <cylinder radius="0.050000" length="0.055272"/>
             </geometry>
         </collision>
         <collision>
-            <origin xyz="0.070000 -0.094283 0.592000" rpy="1.570000 0.000000 0.000000"/>
+            <origin xyz="-0.008 -0.094283 0.50" rpy="1.570000 0.000000 0.000000"/>
             <geometry>
             <cylinder radius="0.015548" length="0.125272"/>
             </geometry>
         </collision>
         <collision>
-            <origin xyz="0.070000 0.065717 0.592000" rpy="1.570000 0.000000 0.000000"/>
+            <origin xyz="-0.008 0.065717 0.50" rpy="1.570000 0.000000 0.000000"/>
             <geometry>
             <cylinder radius="0.025548" length="0.045272"/>
             </geometry>
         </collision>
         <collision>
-            <origin xyz="0.070000 0.040000 0.592000" rpy="1.570000 0.000000 0.000000"/>
+            <origin xyz="-0.008 0.040000 0.50" rpy="1.570000 0.000000 0.000000"/>
             <geometry>
             <cylinder radius="0.045548" length="0.005272"/>
-            </geometry>
-        </collision>
-        <collision>
-            <origin xyz="0.020000 -0.015000 0.519808" rpy="0.000000 0.000000 0.000000"/>
-            <geometry>
-            <box size="0.048322 0.009363 0.148954"/>
-            </geometry>
-        </collision>
-        <collision>
-            <origin xyz="0.020000 0.039500 0.519808" rpy="0.000000 0.000000 0.000000"/>
-            <geometry>
-            <box size="0.048322 0.009363 0.148954"/>
             </geometry>
         </collision>
         <collision>
@@ -223,7 +211,7 @@
         link="Link_3" />
         <axis
         xyz="0 -1 0" />
-        <limit lower="-3.14" upper="3.14" effort="100.0" velocity="0.2"/>
+        <limit lower="-3.14" upper="3.14" effort="100.0" velocity="0.5"/>
     </joint>
     <link
         name="Link_4">
@@ -278,7 +266,7 @@
         name="Joint_3"
         type="revolute">
         <origin
-        xyz="0.068432 0 0.59125"
+        xyz="-0.0084125 0 0.50011"
         rpy="0 0 0" />
         <parent
         link="Link_3" />
@@ -286,7 +274,7 @@
         link="Link_4" />
         <axis
         xyz="0 1 0" />
-        <limit lower="0" upper="2.84489" effort="100.0" velocity="0.2"/>
+        <limit lower="0" upper="1.968" effort="100.0" velocity="0.4"/>
     </joint>
     <link
         name="Link_5">
@@ -321,7 +309,7 @@
         <collision>
             <origin xyz="-0.000000 0.000000 0.211681" rpy="0.000000 0.000000 0.000000"/>
             <geometry>
-            <cylinder radius="0.015267" length="0.397787"/>
+            <cylinder radius="0.015267" length="0.24"/>
             </geometry>
         </collision>
         <collision>
@@ -331,19 +319,13 @@
             </geometry>
         </collision>
         <collision>
-            <origin xyz="-0.000000 0.049800 0.458000" rpy="1.570000 0.000000 0.000000"/>
+            <origin xyz="-0.000000 0.049800 0.288" rpy="1.570000 0.000000 0.000000"/>
             <geometry>
-            <cylinder radius="0.010100" length="0.107787"/>
+            <cylinder radius="0.02" length="0.08"/>
             </geometry>
         </collision>
         <collision>
-            <origin xyz="0.000000 0.019800 0.458000" rpy="1.570000 0.000000 0.000000"/>
-            <geometry>
-            <cylinder radius="0.045267" length="0.027787"/>
-            </geometry>
-        </collision>
-        <collision>
-            <origin xyz="-0.000000 -0.040200 0.451681" rpy="0.000000 0.000000 0.000000"/>
+            <origin xyz="-0.000000 -0.040200 0.271681" rpy="0.000000 0.000000 0.000000"/>
             <geometry>
             <box size="0.022900 0.008300 0.055841"/>
             </geometry>
@@ -353,7 +335,7 @@
         name="Joint_4"
         type="revolute">
         <origin
-        xyz="0 0.01165 0.077"
+        xyz="0 0.014035 0.062"
         rpy="0 0 0" />
         <parent
         link="Link_4" />
@@ -361,7 +343,7 @@
         link="Link_5" />
         <axis
         xyz="0 0 -1" />
-        <limit lower="-3.14" upper="3.14" effort="100.0" velocity="0.8"/>
+        <limit lower="-3.14" upper="3.14" effort="100.0" velocity="1.2"/>
     </joint>
     <link
         name="Link_6">
@@ -394,13 +376,13 @@
         </material>
         </visual>
         <collision>
-            <origin xyz="-0.017000 -0.069000 0.025888" rpy="0.000000 0.000000 0.000000"/>
+            <origin xyz="-0.02 -0.069000 -0.004" rpy="0.000000 0.000000 0.000000"/>
             <geometry>
             <cylinder radius="0.011667" length="0.065592"/>
             </geometry>
         </collision>
         <collision>
-            <origin xyz="-0.017000 -0.069000 0.063000" rpy="0.000000 0.000000 0.000000"/>
+            <origin xyz="-0.02 -0.069000 0.033112" rpy="0.000000 0.000000 0.000000"/>
             <geometry>
             <cylinder radius="0.014000" length="0.009000"/>
             </geometry>
@@ -422,7 +404,7 @@
         name="Joint_5"
         type="revolute">
         <origin
-        xyz="0 0 0.45756"
+        xyz="0 0 0.28676"
         rpy="0 0 0" />
         <parent
         link="Link_5" />
@@ -491,7 +473,7 @@
         name="Joint_6"
         type="continuous">
         <origin
-        xyz="0 -0.02785 0.022092"
+        xyz="0 -0.02585 0.031336"
         rpy="0 0 0" />
         <parent
         link="Link_6" />

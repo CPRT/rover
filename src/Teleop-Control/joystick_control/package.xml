@@ -16,6 +16,7 @@
   <depend>geometry_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>ros_phoenix</depend>
+  <depend>arm_control</depend>
   <depend>interfaces</depend>
   <depend>joy</depend>
   <depend>joy_linux</depend>

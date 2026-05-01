@@ -28,6 +28,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/SrtStats.msg"
   "msg/RtpStats.msg"
   "msg/SvinStatus.msg"
+  "msg/Distance.msg"
   "srv/NavToGPSGeopose.srv"
   "srv/VideoOut.srv"
   "srv/VideoCapture.srv"
