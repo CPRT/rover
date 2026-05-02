@@ -1,0 +1,39 @@
+#Types: 0 for v4l2, 1 for test source, Other types are not supported yet
+
+input_node:
+  ros__parameters:
+    camera_name:
+    - "Strip"
+    - "Benedict"
+    - "HCL"
+    - "Microscope"
+    - "Test"
+    Strip:
+      path: "/dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._USB_2.0_Camera_SN5100-video-index0"
+      type: 0
+      encoded: true
+      height: 480
+      width: 640
+      framerate: 30
+    Benedict:
+      path: "/dev/v4l/by-id/usb-8MP_USB_Camera_8MP_USB_Camera_2022051301-video-index0"
+      type: 0
+      encoded: true
+      height: 480
+      width: 640
+      framerate: 30
+    HCL:
+      path: "/dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._Webcam_Webcam-video-index0"
+      type: 0
+      encoded: true
+      height: 480
+      width: 640
+    Microscope:
+      path: "/dev/v4l/by-id/usb-eb1a_SMI-video-index0"
+      type: 0
+      encoded: true
+      height: 1200
+      width: 1600
+      framerate: 15
+    Test:
+      type: 1

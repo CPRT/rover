@@ -9,6 +9,12 @@
 
 VideoCaptureNode::VideoCaptureNode(const rclcpp::NodeOptions &options)
     : Node("video_capture_node", options) {
+  if (!gst_is_initialized()) {
+    int argc = 0;
+    char **argv = nullptr;
+    gst_init(&argc, &argv);
+  }
+
   this->declare_parameter<std::string>("listen_to", "detect");
   listen_to_ = this->get_parameter("listen_to").as_string();
 
@@ -35,6 +41,12 @@ void VideoCaptureNode::handle_capture(
     RCLCPP_ERROR(this->get_logger(), "Pipeline creation failed: %s",
                  err ? err->message : "unknown");
     response->success = false;
+    if (pipeline) {
+      gst_object_unref(pipeline);
+    }
+    if (err) {
+      g_error_free(err);
+    }
     return;
   }
 
