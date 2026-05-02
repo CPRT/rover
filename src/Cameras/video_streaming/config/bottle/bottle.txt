@@ -8,7 +8,7 @@ model-color-format=0
 
 # Model files
 model-engine-file=bottle.jetson.engine
-onnx-file=bottle_detector.onnx
+onnx-file=bottle.onnx
 
 network-type=0                  # detector
 infer-dims=3;640;640
