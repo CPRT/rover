@@ -1,14 +1,20 @@
 /**:
   ros__parameters:
-    # Tilt
+    # Mast
     servo0:
-      name: "tilt"
+      name: "mast"
       min: 350.0
       max: 2500.0
       rom: 6.2832
     # PAN
     servo1:
       name: "pan"
+      min: 350.0
+      max: 2500.0
+      rom: 6.2832
+    # Tilt
+    servo2:
+      name: "tilt"
       min: 350.0
       max: 2500.0
       rom: 6.2832

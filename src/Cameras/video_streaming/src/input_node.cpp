@@ -9,6 +9,14 @@ InputNode::InputNode(const rclcpp::NodeOptions &options)
   video_service_ = this->create_service<interfaces::srv::VideoOut>(
       "start_video", std::bind(&InputNode::video_cb, this,
                                std::placeholders::_1, std::placeholders::_2));
+  get_cam_service_ = create_service<interfaces::srv::GetCameras>(
+      "~/get_cameras",
+      [this](
+          const std::shared_ptr<interfaces::srv::GetCameras::Request> request,
+          std::shared_ptr<interfaces::srv::GetCameras::Response> response) {
+        this->get_parameter("camera_name", response->sources);
+      });
+
   start_pipeline();
 }
 

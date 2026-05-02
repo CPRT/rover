@@ -1,7 +1,6 @@
 #pragma once
 #include "base_video_node.hpp"
 #include <interfaces/srv/get_cameras.hpp>
-#include <interfaces/srv/video_capture.hpp>
 #include <interfaces/srv/video_out.hpp>
 
 class InputNode : public BaseVideoNode {
@@ -29,19 +28,9 @@ protected:
   video_cb(const std::shared_ptr<interfaces::srv::VideoOut::Request> request,
            std::shared_ptr<interfaces::srv::VideoOut::Response> response);
 
-  /**
-   * @brief Callback function to get available camera sources.
-   *
-   * @param request The request object (not used).
-   * @param response The response object to be populated with the camera
-   * sources.
-   */
-  void get_cameras_cb(
-      const std::shared_ptr<interfaces::srv::GetCameras::Request> request,
-      std::shared_ptr<interfaces::srv::GetCameras::Response> response);
-
 private:
   std::map<std::string, size_t> source_map_;
   rclcpp::Service<interfaces::srv::VideoOut>::SharedPtr video_service_;
+  rclcpp::Service<interfaces::srv::GetCameras>::SharedPtr get_cam_service_;
   std::shared_ptr<interfaces::srv::VideoOut::Request> current_video_request_;
 };

@@ -18,8 +18,7 @@ class PanoramicNode(Node):
         self.load_params()
         self.callback_group = MutuallyExclusiveCallbackGroup()
         self.video_callback_group = MutuallyExclusiveCallbackGroup()
-        self.servo_pan_pub = self.create_publisher(Float32, "/pan", 10)
-        self.servo_tilt_pub = self.create_publisher(Float32, "/tilt", 10)
+        self.servo_pan_pub = self.create_publisher(Float32, "/mast_servo", 10)
         self.video_cli = self.create_client(
             VideoCapture, "/capture_frame", callback_group=self.video_callback_group
         )
@@ -31,12 +30,8 @@ class PanoramicNode(Node):
         )
 
     def load_params(self):
-        self.declare_parameter("camera_name", "Drive")
         self.declare_parameter("images", 10)
         self.declare_parameter("sleep", 2.0)
-        self.camera_name = (
-            self.get_parameter("camera_name").get_parameter_value().string_value
-        )
         self.num_images = (
             self.get_parameter("images").get_parameter_value().integer_value
         )
@@ -48,16 +43,11 @@ class PanoramicNode(Node):
         msg.data = angle
         publisher.publish(msg)
 
-    def move_panoramic(self, pan_angle, tilt_angle):
-        self.move_servo(self.servo_pan_pub, pan_angle)
-        self.move_servo(self.servo_tilt_pub, tilt_angle)
-
     def capture_image(self) -> npt.NDArray[np.uint8] | None:
         if not self.video_cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().error("Video capture service not available, exiting...")
             return None
         request = VideoCapture.Request()
-        request.source = self.camera_name
         # Use an Event to wait for the async call to complete
         # Using ros2 executor blocking calls creates deadlock after first call
         event = Event()
@@ -112,10 +102,9 @@ class PanoramicNode(Node):
     def start(self, request, response):
         self.get_logger().info("Panoramic capture started")
         images = []
-        tilt_angle = 45
         for i in range(self.num_images):
             pan_angle = int(i * (360 / self.num_images))
-            self.move_panoramic(pan_angle, tilt_angle)
+            self.move_servo(self.servo_pan_pub, pan_angle)
             time.sleep(self.sleep_time)
             image = self.capture_image()
             if image is None:

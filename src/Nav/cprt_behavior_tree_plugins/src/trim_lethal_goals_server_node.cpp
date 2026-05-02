@@ -85,8 +85,8 @@ void TrimLethalGoalsServerNode::trimGoalsCallback(
   int threshold = static_cast<int>(request->cost_threshold);
 
   if (threshold > 100) {
-    RCLCPP_WARN(this->get_logger(),
-                "Received cost_threshold > 100. Capping to standard ROS scale max of 100.");
+    RCLCPP_WARN(this->get_logger(), "Received cost_threshold > 100. Capping to "
+                                    "standard ROS scale max of 100.");
     threshold = 100;
   } else if (threshold < 0) {
     RCLCPP_WARN(this->get_logger(),
