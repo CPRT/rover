@@ -14,13 +14,17 @@ def generate_launch_description():
                 package="ros_roboclaw",
                 executable="roboclaw_node",
                 name="roboclaw_elevator_node",
+                namespace="elevator", 
                 parameters=[parameters_file],
+                remappings=[("robo_duty_cycle", "/elevator/set")],
             ),
             Node(
                 package="ros_roboclaw",
                 executable="roboclaw_node",
                 name="roboclaw_drill_node",
+                namespace="drill",    
                 parameters=[parameters_file],
+                remappings=[("robo_duty_cycle", "/drill/set")],  
             ),
             Node(
                 package="micro_ros_agent",
