@@ -20,6 +20,7 @@ find_package(arm_control REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 set(CMAKE_CXX_STANDARD 14)
 
@@ -69,6 +70,7 @@ ament_target_dependencies(science
   ros_phoenix
   interfaces
   std_msgs
+  sensor_msgs
 )
 
 install(TARGETS

@@ -3,235 +3,182 @@
 science::science() : Node("science_node") {
   declare_parameters();
   load_parameters();
+  current_status_ = "-100 Default";
   drill_pub_ = this->create_publisher<std_msgs::msg::Float32>("drill/set", 10);
   elevator_pub_ =
       this->create_publisher<std_msgs::msg::Float32>("elevator/set", 10);
+  status_sub_ = this->create_subscription<std_msgs::msg::String>(
+      "science/status", 10,
+      std::bind(&science::register_status, this, std::placeholders::_1));
+  device_control_pub_ = this->create_publisher<sensor_msgs::msg::NavSatStatus>(
+      "science/device_control", 10);
+  const auto config_timeout = std::chrono::seconds(1);
+
+  for (int i = 0; i < kServoCount; i++) {
+    auto last_config_time = std::chrono::steady_clock::now();
+    device_control_pub_->publish([this, i]() {
+      auto msg = sensor_msgs::msg::NavSatStatus();
+      msg.status = -kServoPins[i];
+      msg.service = 1 << 14 | kServoFrequencies[i];
+      return msg;
+    }());
+    RCLCPP_INFO(this->get_logger(),
+                "Configuring servo %d: button=%d, pin=%d, encoded_value=%u", i,
+                kServoButtons[i], kServoPins[i], kServoCommandsEncoded[i]);
+    while (std::stoi(current_status_) != 0 &&
+           std::stoi(current_status_) != -1) {
+      auto now = std::chrono::steady_clock::now();
+      if (now - last_config_time > config_timeout) {
+        device_control_pub_->publish([this, i]() {
+          auto msg = sensor_msgs::msg::NavSatStatus();
+          msg.status = -kServoPins[i];
+          msg.service = 1 << 14 | kServoFrequencies[i];
+          return msg;
+        }());
+        RCLCPP_INFO(this->get_logger(),
+                    "Resending config for servo %d (timeout after 1s)", i);
+        last_config_time = now;
+      }
+      rclcpp::spin_some(this->get_node_base_interface());
+    }
+    if (std::stoi(current_status_) == 0) {
+      RCLCPP_INFO(this->get_logger(), "Servo %d is ready", i);
+    } else {
+      RCLCPP_ERROR(this->get_logger(), "Failed to initialize servo %d", i);
+    }
+    current_status_ = "-100 Default";
+  }
+
+  for (int i = 0; i < 4; i++) {
+    auto last_config_time = std::chrono::steady_clock::now();
+    device_control_pub_->publish([this, i]() {
+      auto msg = sensor_msgs::msg::NavSatStatus();
+      msg.status = -kSensorPins[i];
+      msg.service = kSensorConfigValues[i];
+      return msg;
+    }());
+    RCLCPP_INFO(this->get_logger(),
+                "Configuring sensor %d: pin=%d, config_value=%d", i,
+                kSensorPins[i], kSensorConfigValues[i]);
+    while (std::stoi(current_status_) != 0 &&
+           std::stoi(current_status_) != -1) {
+      auto now = std::chrono::steady_clock::now();
+      if (now - last_config_time > config_timeout) {
+        device_control_pub_->publish([this, i]() {
+          auto msg = sensor_msgs::msg::NavSatStatus();
+          msg.status = -kSensorPins[i];
+          msg.service = kSensorConfigValues[i];
+          return msg;
+        }());
+        RCLCPP_INFO(this->get_logger(),
+                    "Resending config for sensor %d (timeout after 1s)", i);
+        last_config_time = now;
+      }
+      rclcpp::spin_some(this->get_node_base_interface());
+    }
+    if (std::stoi(current_status_) == 0) {
+      RCLCPP_INFO(this->get_logger(), "Sensor %d is ready", i);
+    } else {
+      RCLCPP_ERROR(this->get_logger(), "Failed to initialize sensor %d", i);
+    }
+    current_status_ = "-100 Default";
+  }
+
   joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
       "/joy", 10,
       std::bind(&science::science_control, this, std::placeholders::_1));
 
-  for (int i = 0; i < kServoNames.size(); i++) {
-    servo_values_.push_back(kServoDefaultValues[i]);
-    servo_pubs_.push_back(
-        this->create_publisher<std_msgs::msg::UInt32>(kServoNames[i], 10));
-  }
-
   RCLCPP_INFO(this->get_logger(), "Science controller started");
 };
+
+void science::register_status(
+    std::shared_ptr<std_msgs::msg::String> status_msg) {
+  current_status_ = status_msg->data;
+  RCLCPP_INFO(this->get_logger(), "Received status: %s",
+              current_status_.c_str());
+}
 
 void science::science_control(
     std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   auto drill_msg_ = std_msgs::msg::Float32();
   auto elevator_msg_ = std_msgs::msg::Float32();
-  if (joystickMsg->buttons[kDrillButton]) {
-    drill_msg_.data = 1.0;
-  } else {
-    drill_msg_.data = 0.0;
-  }
+  drill_msg_.data = (joystickMsg->axes[kDrillPowerAxis] + 1.0) / 2.0;
   elevator_msg_.data = -(joystickMsg->axes[kDrillElevationAxis]);
 
-  for (int i = 0; i < kServoNames.size(); i++) {
-    update_servo_value(i, *joystickMsg);
+  for (int i = 0; i < kServoCount; i++) {
+    if (joystickMsg->buttons[kServoButtons[i]]) {
+      auto msg = sensor_msgs::msg::NavSatStatus();
+      msg.status = kServoPins[i];
+      msg.service = kServoCommandsEncoded[i];
+      device_control_pub_->publish(msg);
+      RCLCPP_INFO(this->get_logger(), "Activating servo %d", i);
+    }
   }
 
   drill_pub_->publish(drill_msg_);
   elevator_pub_->publish(elevator_msg_);
 };
 
-void science::update_servo_value(int servo_index,
-                                 const sensor_msgs::msg::Joy &joystickMsg) {
-  if (servo_index < 0 || servo_index >= kServoButtons.size()) {
-    RCLCPP_ERROR(this->get_logger(), "Invalid servo index: %d", servo_index);
-    return;
-  }
-
-  int button = kServoButtons[servo_index];
-  int max_value = kServoMaxValues[servo_index];
-  int min_value = kServoMinValues[servo_index];
-
-  if (servo_values_[servo_index] <= max_value &&
-      servo_values_[servo_index] >= min_value) {
-    if (joystickMsg.buttons[button]) {
-      if (joystickMsg.axes[kServoControlAxis] == 1.0) {
-        if (servo_values_[servo_index] + (max_value - min_value) / 10 >
-            max_value) {
-          servo_values_[servo_index] = max_value;
-        } else {
-          servo_values_[servo_index] += (max_value - min_value) / 10;
-        }
-        servo_pubs_[servo_index]->publish(
-            std_msgs::msg::UInt32().set__data(servo_values_[servo_index]));
-      } else if (joystickMsg.axes[kServoControlAxis] == -1.0) {
-        if (servo_values_[servo_index] - (max_value - min_value) / 10 <
-            min_value) {
-          servo_values_[servo_index] = min_value;
-        } else {
-          servo_values_[servo_index] -= (max_value - min_value) / 10;
-        }
-        servo_pubs_[servo_index]->publish(
-            std_msgs::msg::UInt32().set__data(servo_values_[servo_index]));
-      }
-    }
-  } else {
-    RCLCPP_ERROR(this->get_logger(), "Error: %s value out of bounds: %d",
-                 kServoNames[servo_index].c_str(), servo_values_[servo_index]);
-    servo_values_[servo_index] = min_value;
-    servo_pubs_[servo_index]->publish(
-        std_msgs::msg::UInt32().set__data(servo_values_[servo_index]));
-  }
-}
-
 void science::declare_parameters() {
-  this->declare_parameter("drill_button", 1);
-  this->declare_parameter("drill_elevation_axis", 2);
-  this->declare_parameter("servo_control_axis", 5);
-
-  this->declare_parameter("servo1.button", 12);
-  this->declare_parameter("servo1.max_value", 65535);
-  this->declare_parameter("servo1.min_value", 0);
-  this->declare_parameter("servo1.default_value", 0);
-  this->declare_parameter("servo1.name", "servo1");
-
-  this->declare_parameter("servo2.button", 13);
-  this->declare_parameter("servo2.max_value", 65535);
-  this->declare_parameter("servo2.min_value", 0);
-  this->declare_parameter("servo2.default_value", 0);
-  this->declare_parameter("servo2.name", "servo2");
-
-  this->declare_parameter("servo3.button", 14);
-  this->declare_parameter("servo3.max_value", 65535);
-  this->declare_parameter("servo3.min_value", 0);
-  this->declare_parameter("servo3.default_value", 0);
-  this->declare_parameter("servo3.name", "servo3");
-
-  this->declare_parameter("servo4.button", 15);
-  this->declare_parameter("servo4.max_value", 65535);
-  this->declare_parameter("servo4.min_value", 0);
-  this->declare_parameter("servo4.default_value", 0);
-  this->declare_parameter("servo4.name", "servo4");
-
-  this->declare_parameter("servo5.button", 16);
-  this->declare_parameter("servo5.max_value", 65535);
-  this->declare_parameter("servo5.min_value", 0);
-  this->declare_parameter("servo5.default_value", 0);
-  this->declare_parameter("servo5.name", "servo5");
-
-  this->declare_parameter("servo6.button", 17);
-  this->declare_parameter("servo6.max_value", 65535);
-  this->declare_parameter("servo6.min_value", 0);
-  this->declare_parameter("servo6.default_value", 0);
-  this->declare_parameter("servo6.name", "servo6");
-
-  this->declare_parameter("servo7.button", 2);
-  this->declare_parameter("servo7.max_value", 65535);
-  this->declare_parameter("servo7.min_value", 0);
-  this->declare_parameter("servo7.default_value", 0);
-  this->declare_parameter("servo7.name", "servo7");
-
-  this->declare_parameter("servo8.button", 1);
-  this->declare_parameter("servo8.max_value", 65535);
-  this->declare_parameter("servo8.min_value", 0);
-  this->declare_parameter("servo8.default_value", 0);
-  this->declare_parameter("servo8.name", "servo8");
+  this->declare_parameter("drill_elevation_axis", 0);
+  this->declare_parameter("drill_power_axis", 0);
+  this->declare_parameter("servo_control_axis", 0);
+  this->declare_parameter("servo_count", kServoCount);
+  for (int i = 0; i < kServoCount; i++) {
+    this->declare_parameter("servos.servo" + std::to_string(i) + ".button", 0);
+    this->declare_parameter("servos.servo" + std::to_string(i) + ".pin", 0);
+    this->declare_parameter("servos.servo" + std::to_string(i) + ".duration",
+                            0);
+    this->declare_parameter("servos.servo" + std::to_string(i) + ".duty_cycle",
+                            0.5);
+    this->declare_parameter("servos.servo" + std::to_string(i) + ".frequency",
+                            50);
+  }
+  for (int i = 0; i < 4; i++) {
+    this->declare_parameter("sensors.sensor" + std::to_string(i) + ".pin", 0);
+    this->declare_parameter("sensors.sensor" + std::to_string(i) + ".type",
+                            ANALOG_SENSOR);
+    this->declare_parameter("sensors.sensor" + std::to_string(i) + ".name",
+                            std::to_string(i) + "sensor");
+  }
 }
 
 void science::load_parameters() {
-  std::string servo_name;
-  int servo_button;
-  int servo_max_value;
-  int servo_min_value;
-  int servo_default_value;
-
-  this->get_parameter("drill_button", kDrillButton);
+  this->get_parameter("drill_power_axis", kDrillPowerAxis);
   this->get_parameter("drill_elevation_axis", kDrillElevationAxis);
-  this->get_parameter("servo_control_axis", kServoControlAxis);
-  this->get_parameter("servo1.name", servo_name);
-  kServoNames.push_back(servo_name);
-  this->get_parameter("servo1.button", servo_button);
-  kServoButtons.push_back(servo_button);
-  this->get_parameter("servo1.max_value", servo_max_value);
-  kServoMaxValues.push_back(servo_max_value);
-  this->get_parameter("servo1.min_value", servo_min_value);
-  kServoMinValues.push_back(servo_min_value);
-  this->get_parameter("servo1.default_value", servo_default_value);
-  kServoDefaultValues.push_back(servo_default_value);
-
-  this->get_parameter("servo2.name", servo_name);
-  kServoNames.push_back(servo_name);
-  this->get_parameter("servo2.button", servo_button);
-  kServoButtons.push_back(servo_button);
-  this->get_parameter("servo2.max_value", servo_max_value);
-  kServoMaxValues.push_back(servo_max_value);
-  this->get_parameter("servo2.min_value", servo_min_value);
-  kServoMinValues.push_back(servo_min_value);
-  this->get_parameter("servo2.default_value", servo_default_value);
-  kServoDefaultValues.push_back(servo_default_value);
-
-  this->get_parameter("servo3.name", servo_name);
-  kServoNames.push_back(servo_name);
-  this->get_parameter("servo3.button", servo_button);
-  kServoButtons.push_back(servo_button);
-  this->get_parameter("servo3.max_value", servo_max_value);
-  kServoMaxValues.push_back(servo_max_value);
-  this->get_parameter("servo3.min_value", servo_min_value);
-  kServoMinValues.push_back(servo_min_value);
-  this->get_parameter("servo3.default_value", servo_default_value);
-  kServoDefaultValues.push_back(servo_default_value);
-
-  this->get_parameter("servo4.name", servo_name);
-  kServoNames.push_back(servo_name);
-  this->get_parameter("servo4.button", servo_button);
-  kServoButtons.push_back(servo_button);
-  this->get_parameter("servo4.max_value", servo_max_value);
-  kServoMaxValues.push_back(servo_max_value);
-  this->get_parameter("servo4.min_value", servo_min_value);
-  kServoMinValues.push_back(servo_min_value);
-  this->get_parameter("servo4.default_value", servo_default_value);
-  kServoDefaultValues.push_back(servo_default_value);
-
-  this->get_parameter("servo5.name", servo_name);
-  kServoNames.push_back(servo_name);
-  this->get_parameter("servo5.button", servo_button);
-  kServoButtons.push_back(servo_button);
-  this->get_parameter("servo5.max_value", servo_max_value);
-  kServoMaxValues.push_back(servo_max_value);
-  this->get_parameter("servo5.min_value", servo_min_value);
-  kServoMinValues.push_back(servo_min_value);
-  this->get_parameter("servo5.default_value", servo_default_value);
-  kServoDefaultValues.push_back(servo_default_value);
-
-  this->get_parameter("servo6.name", servo_name);
-  kServoNames.push_back(servo_name);
-  this->get_parameter("servo6.button", servo_button);
-  kServoButtons.push_back(servo_button);
-  this->get_parameter("servo6.max_value", servo_max_value);
-  kServoMaxValues.push_back(servo_max_value);
-  this->get_parameter("servo6.min_value", servo_min_value);
-  kServoMinValues.push_back(servo_min_value);
-  this->get_parameter("servo6.default_value", servo_default_value);
-  kServoDefaultValues.push_back(servo_default_value);
-
-  this->get_parameter("servo7.name", servo_name);
-  kServoNames.push_back(servo_name);
-  this->get_parameter("servo7.button", servo_button);
-  kServoButtons.push_back(servo_button);
-  this->get_parameter("servo7.max_value", servo_max_value);
-  kServoMaxValues.push_back(servo_max_value);
-  this->get_parameter("servo7.min_value", servo_min_value);
-  kServoMinValues.push_back(servo_min_value);
-  this->get_parameter("servo7.default_value", servo_default_value);
-  kServoDefaultValues.push_back(servo_default_value);
-
-  this->get_parameter("servo8.name", servo_name);
-  kServoNames.push_back(servo_name);
-  this->get_parameter("servo8.button", servo_button);
-  kServoButtons.push_back(servo_button);
-  this->get_parameter("servo8.max_value", servo_max_value);
-  kServoMaxValues.push_back(servo_max_value);
-  this->get_parameter("servo8.min_value", servo_min_value);
-  kServoMinValues.push_back(servo_min_value);
-  this->get_parameter("servo8.default_value", servo_default_value);
-  kServoDefaultValues.push_back(servo_default_value);
+  this->get_parameter("servos.servo_count", kServoCount);
+  for (int i = 0; i < kServoCount; i++) {
+    int button, pin, duration, frequency;
+    double value;
+    uint16_t encoded_value;
+    std::string name;
+    this->get_parameter("servos.servo" + std::to_string(i) + ".button", button);
+    this->get_parameter("servos.servo" + std::to_string(i) + ".pin", pin);
+    this->get_parameter("servos.servo" + std::to_string(i) + ".duration",
+                        duration);
+    this->get_parameter("servos.servo" + std::to_string(i) + ".duty_cycle",
+                        value);
+    this->get_parameter("servos.servo" + std::to_string(i) + ".frequency",
+                        frequency);
+    encoded_value = duration << 10 | (uint16_t)((1 << 10) * value);
+    kServoButtons.push_back(button);
+    kServoPins.push_back(pin);
+    kServoCommandsEncoded.push_back(encoded_value);
+    kServoFrequencies.push_back(frequency);
+  }
+  for (int i = 0; i < 4; i++) {
+    int pin, type;
+    uint16_t config_value;
+    std::string name;
+    this->get_parameter("sensors.sensor" + std::to_string(i) + ".pin", pin);
+    this->get_parameter("sensors.sensor" + std::to_string(i) + ".type", type);
+    this->get_parameter("sensors.sensor" + std::to_string(i) + ".name", name);
+    char first_letter = std::tolower(name[0]);
+    config_value =
+        1 << 15 | (type == ANALOG_SENSOR ? 0 : 1) << 14 | first_letter;
+    kSensorPins.push_back(pin);
+    kSensorConfigValues.push_back(config_value);
+  }
 }
 
 int main(int argc, char **argv) {
