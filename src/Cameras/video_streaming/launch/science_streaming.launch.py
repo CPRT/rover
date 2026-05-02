@@ -8,7 +8,7 @@ from launch_ros.descriptions import ComposableNode
 def generate_launch_description():
     config_dir = os.path.join(get_package_share_directory("video_streaming"), "config")
 
-    camera_params_file = os.path.join(config_dir, "cameras.yaml")
+    camera_params_file = os.path.join(config_dir, "science_cameras.yaml")
     # Define each composable node
     input_node = ComposableNode(
         package="video_streaming",
@@ -51,7 +51,7 @@ def generate_launch_description():
 
     # Create a container for all 3 components
     container = ComposableNodeContainer(
-        name="video_streaming_container",
+        name="science_streaming_container",
         namespace="",
         package="rclcpp_components",
         executable="component_container_mt",

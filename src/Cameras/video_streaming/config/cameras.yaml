@@ -22,5 +22,7 @@ input_node:
       path: "/dev/v4l/by-id/usb-HD_Camera_Manufacturer_USB_2.0_Camera-video-index0"
       type: 0
       encoded: true
+      height: 480
+      width: 640
     Test:
       type: 1
