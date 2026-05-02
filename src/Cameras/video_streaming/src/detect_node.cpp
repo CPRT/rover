@@ -1,4 +1,5 @@
 #include "detect_node.hpp"
+#include <cstdint>
 #include <gstnvdsmeta.h>
 #include <nvdsmeta.h>
 #include <rclcpp_components/register_node_macro.hpp>
@@ -24,6 +25,9 @@ DetectNode::DetectNode(const rclcpp::NodeOptions &options)
       std::bind(&DetectNode::on_parameter_change, this, std::placeholders::_1));
   marker_pub_ = this->create_publisher<std_msgs::msg::Int32>(
       "marker_detected", rclcpp::QoS(rclcpp::KeepLast(10)).reliable());
+  object_detected_pub_ =
+      this->create_publisher<interfaces::msg::ObjectDetected>(
+          "object_detected", rclcpp::QoS(rclcpp::KeepLast(10)).reliable());
   start_pipeline();
 }
 
@@ -150,6 +154,12 @@ GstPadProbeReturn metadata_probe_callback(GstPad *pad, GstPadProbeInfo *info,
                   "bbox=[%d, %d, %d, %d]",
                   class_id, confidence, (int)bbox.left, (int)bbox.top,
                   (int)(bbox.left + bbox.width), (int)(bbox.top + bbox.height));
+
+      self->publish_object_detected(
+          static_cast<int32_t>(class_id), confidence,
+          static_cast<int32_t>(bbox.left), static_cast<int32_t>(bbox.top),
+          static_cast<int32_t>(bbox.left + bbox.width),
+          static_cast<int32_t>(bbox.top + bbox.height));
     }
   }
   return GST_PAD_PROBE_PASS;
@@ -188,6 +198,38 @@ DetectNode::string_to_detection_type(const std::string &type_str) {
     RCLCPP_ERROR(rclcpp::get_logger("DetectNode"),
                  "Invalid detection_type string: %s", type_str.c_str());
     return DetectionType::NONE;
+  }
+}
+
+std::string DetectNode::detection_type_to_string() const {
+  switch (detection_type_) {
+  case DetectionType::WATER_BOTTLE:
+    return "WATER_BOTTLE";
+  case DetectionType::MALLET:
+    return "MALLET";
+  case DetectionType::ROCKPICK:
+    return "ROCKPICK";
+  case DetectionType::ARUCO:
+    return "ARUCO";
+  case DetectionType::NONE:
+  default:
+    return "NONE";
+  }
+}
+
+void DetectNode::publish_object_detected(int32_t class_id, float confidence,
+                                         int32_t xmin, int32_t ymin,
+                                         int32_t xmax, int32_t ymax) {
+  auto msg = interfaces::msg::ObjectDetected();
+  msg.model_type = detection_type_to_string();
+  msg.class_id = class_id;
+  msg.confidence = confidence;
+  msg.xmin = xmin;
+  msg.ymin = ymin;
+  msg.xmax = xmax;
+  msg.ymax = ymax;
+  if (object_detected_pub_) {
+    object_detected_pub_->publish(msg);
   }
 }
 

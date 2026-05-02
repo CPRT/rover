@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(interfaces)
 
-# Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14)
 endif()
@@ -13,13 +12,13 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
-#for msgs
 find_package(geometry_msgs REQUIRED)
 find_package(geographic_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/ObjectDetected.msg"
   "msg/ArucoBoard.msg"
   "msg/ArucoMarkers.msg"
   "msg/VideoSource.msg"
@@ -29,6 +28,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/RtpStats.msg"
   "msg/Distance.msg"
   "srv/NavToGPSGeopose.srv"
+  "srv/FilterGoals.srv"
   "srv/VideoOut.srv"
   "srv/VideoCapture.srv"
   "srv/GetCameras.srv"
@@ -36,7 +36,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   DEPENDENCIES 
   builtin_interfaces
   geometry_msgs 
-  geographic_msgs # Add packages that above messages depend on
+  geographic_msgs
   sensor_msgs
   std_msgs
  )

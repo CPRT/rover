@@ -1,0 +1,5 @@
+geometry_msgs/PoseStamped[] input_goals
+float32 cost_threshold
+---
+geometry_msgs/PoseStamped[] output_goals
+bool success

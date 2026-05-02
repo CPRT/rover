@@ -1,0 +1,26 @@
+spiral_5m:
+  pattern: spiral
+  search_radius: 5.0
+  distance_between_loops: 1.5
+  arc_length_step: 0.8
+  start_theta: 0.5
+  face_outward: false
+  min_radius: 1.5
+
+spiral_10m:
+  pattern: spiral
+  search_radius: 10.0
+  distance_between_loops: 1.5
+  arc_length_step: 0.8
+  start_theta: 0.5
+  face_outward: false
+  min_radius: 1.5
+
+spiral_20m:
+  pattern: spiral
+  search_radius: 20.0
+  distance_between_loops: 1.5
+  arc_length_step: 0.8
+  start_theta: 0.5
+  face_outward: false
+  min_radius: 1.5

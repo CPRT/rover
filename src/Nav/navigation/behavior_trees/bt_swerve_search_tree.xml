@@ -1,16 +1,12 @@
-<!--
-  This Behavior Tree replans the global path once every 15 seconds or if the path becomes invalid. It also has
-  recovery actions specific to planning / control as well as general system issues.
-  This will be continuous if a kinematically valid planner is selected.
--->
-<root main_tree_to_execute="MainTree">
-  <BehaviorTree ID="MainTree">
+<root main_tree_to_execute="SearchTree">
+  <BehaviorTree ID="SearchTree">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
         
         <RateController hz="2.0">
-          <RecoveryNode number_of_retries="1" name="ComputeAndSmoothPath">
+          <RecoveryNode number_of_retries="1" name="ComputeAndSmoothPathThroughPoses">
             <Fallback>
+              
               <ReactiveSequence>
                 <Inverter>
                   <PathExpiringTimer seconds="15" path="{path}"/>
@@ -21,12 +17,25 @@
                 <IsPathValid path="{path}"/>
               </ReactiveSequence>
               
-              <Sequence name="PlanAndSmooth">
-                <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+              <Sequence name="FilterPlanAndSmoothSequence">
+                <RemovePassedGoals input_goals="{goals}" 
+                                   radius="0.5" 
+                                   robot_base_frame="base_link" 
+                                   output_goals="{pending_poses}"/>
+
+                <RemoveInCollisionGoals input_goals="{pending_poses}" 
+                                        service_name="trim_lethal_goals" 
+                                        cost_threshold="98.0" 
+                                        output_goals="{safe_poses}"/>
+
+                <ComputePathThroughPoses goals="{safe_poses}" 
+                                         path="{path}" 
+                                         planner_id="GridBased"/>
+                                         
                 <SmoothPath unsmoothed_path="{path}" smoothed_path="{smoothed_path}"/>
               </Sequence>
+
             </Fallback>
-            
             <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
           </RecoveryNode>
         </RateController>
@@ -35,7 +44,7 @@
           <FollowPath path="{smoothed_path}" controller_id="FollowPath"/>
           <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
         </RecoveryNode>
-        
+
       </PipelineSequence>
 
       <ReactiveFallback name="RecoveryFallback">
@@ -60,6 +69,7 @@
 
         </RoundRobin>
       </ReactiveFallback>
+
     </RecoveryNode>
   </BehaviorTree>
 </root>
