@@ -31,6 +31,15 @@ DetectNode::DetectNode(const rclcpp::NodeOptions &options)
   start_pipeline();
 }
 
+static std::string get_detection_pipeline_str(std::string config_path) {
+  std::stringstream ss;
+  ss << "nvvidconv ! queue ! mux.sink_0 "
+     << "nvstreammux name=mux batch-size=1 width=1920 "
+        "height=1080 live-source=1 ! queue ! nvinfer config-file-path="
+     << config_path << " ! queue ! nvdsosd name=osd ! nvvidconv ! ";
+  return ss.str();
+}
+
 bool DetectNode::create_pipeline() {
 
   std::stringstream desc_ss;
@@ -42,22 +51,16 @@ bool DetectNode::create_pipeline() {
       this->get_parameter("detection_type").as_string());
   switch (detection_type_) {
   case DetectionType::WATER_BOTTLE:
-    desc_ss << "nvvidconv ! queue ! mux.sink_0 nvstreammux name=mux "
-               "batch-size=1 width=1920 height=1080 live-source=1 ! queue ! "
-               "nvinfer config-file-path="
-            << this->get_parameter("bottle_config").as_string()
-            << " ! queue ! nvdsosd ! nvvidconv ! ";
+    desc_ss << get_detection_pipeline_str(
+        this->get_parameter("bottle_config").as_string());
     break;
   case DetectionType::MALLET:
-    desc_ss << "nvvidconv ! queue ! mux.sink_0 nvstreammux name=mux "
-               "batch-size=1 width=1920 height=1080 live-source=1 ! queue ! "
-               "nvinfer config-file-path="
-            << this->get_parameter("mallet_config").as_string()
-            << " ! queue ! nvdsosd name=osd ! nvvidconv ! ";
+    desc_ss << get_detection_pipeline_str(
+        this->get_parameter("mallet_config").as_string());
     break;
   case DetectionType::ROCKPICK:
-    RCLCPP_ERROR(this->get_logger(), "Rockpick detection not implemented yet.");
-    desc_ss << "identity ! ";
+    desc_ss << get_detection_pipeline_str(
+        this->get_parameter("rockpick_config").as_string());
     break;
   case DetectionType::ARUCO:
     desc_ss << "videoconvert ! queue ! videoconvert ! arucomarker "
