@@ -57,9 +57,9 @@ class RoboClawAntennaNode(Node):
 
     # Angle to Encoder Command
     def pos_callback(self, msg: Float32):
-        deg = math.degrees(msg.data) % 360
+        norm = msg.data
 
-        self.target_encoder = self.zero_offset + int((deg / 360) * self.counts_per_rev)
+        self.target_encoder = self.zero_offset + int(norm * self.counts_per_rev)
 
         error = self.wrap_error(self.target_encoder - self.current_encoder)
 
@@ -76,7 +76,7 @@ class RoboClawAntennaNode(Node):
 
         # command = self.current_encoder + step
 
-        self.get_logger().info(f"target= {deg:.2f}°, {self.target_encoder}")
+        self.get_logger().info(f"target= {norm * 360:.2f}°, {self.target_encoder}")
 
         self.drive_to_position(self.current_encoder + error)
 

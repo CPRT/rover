@@ -58,7 +58,7 @@ class GpsBaseNode(Node):
         Parameters include timing mode, survey-in settings, persistence, frequency,
         baud rate, and serial device.
         """
-        self.declare_parameter("Freq", 10.0)
+        self.declare_parameter("Freq", 0.25)
         self.freq = self.get_parameter("Freq").get_parameter_value().double_value
         if self.freq <= 0:
             self.get_logger().warn("Frequency must be positive. Defaulting to 2.0 Hz.")
@@ -69,7 +69,10 @@ class GpsBaseNode(Node):
             self.get_parameter("Baudrate").get_parameter_value().integer_value
         )
 
-        self.declare_parameter("Device", "/dev/ttyACM0")
+        self.declare_parameter(
+            "Device",
+            "/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_GNSS_receiver-if00",
+        )
         self.dev = self.get_parameter("Device").get_parameter_value().string_value
 
         self.declare_parameter("QueueDepth", 10)
@@ -82,30 +85,20 @@ class GpsBaseNode(Node):
             self.get_parameter("SvinMinDur").get_parameter_value().integer_value
         )
 
-        self.declare_parameter("SvinAccLimit", 10000)  # 10 000 mm
+        self.declare_parameter("SvinAccLimit", 10_000)  # 10 000 mm
         self.svin_acc_limit = (
             self.get_parameter("SvinAccLimit").get_parameter_value().integer_value
         )
         self.get_logger().info(
             f"Min duration: {self.svin_min_dur}s, Min acc {self.svin_acc_limit}mm"
         )
-        self._svin_done = False
 
     def _setup_publishers(self):
         # keep depth at one for RTCM and use the new default for svin msgs
         self.rtcm_pub = self.create_publisher(Rtcm, "/rtcm", 1)
 
-        # Latching is used to ensure late subscribing will still receive the msg
-        latching_qos = QoSProfile(
-            depth=1,
-            reliability=ReliabilityPolicy.RELIABLE,
-            durability=DurabilityPolicy.TRANSIENT_LOCAL,
-        )
         self.fix_pub = self.create_publisher(
-            NavSatFix, "/base_station/fix", latching_qos
-        )
-        self.valid_pub = self.create_publisher(
-            Bool, "/base_station/svin_valid", latching_qos
+            NavSatFix, "/base_station/fix", self.queue_depth
         )
         self.svin_status_pub = self.create_publisher(
             SvinStatus, "/base_station/svin_status", self.queue_depth
@@ -201,7 +194,7 @@ class GpsBaseNode(Node):
 
                 if identity == "NAV-SVIN":
                     self._handle_svin(parsed_data)
-                elif raw[0:2] != b"\xb5b":
+                elif raw[0:2] != b"\xb5b":  # pylint: disable=unsubscriptable-object
                     # Not a UBX sync header → it's RTCM
                     self._handle_rtcm(raw)
 
@@ -244,18 +237,9 @@ class GpsBaseNode(Node):
             f"valid={valid}  active={active}"
         )
 
-        # Once valid, publish the antenna's surveyed position as a NavSatFix.
-        # We only need to do this once; TRANSIENT_LOCAL QoS means late
-        # subscribers will still receive it.
-        # self._svin_done = True disables repeating pubs
-        if valid and not self._svin_done:
-            valid_msg = Bool()
-            valid_msg.data = valid
-            self.valid_pub.publish(valid_msg)
-            self._publish_fix_from_ecef(parsed)
-            self._svin_done = True
+        self._publish_fix_from_ecef(parsed, acc_mm)
 
-    def _publish_fix_from_ecef(self, parsed):
+    def _publish_fix_from_ecef(self, parsed, mean_acc):
         """
         Convert Earth-Centred Earth-Fixed (ECEF) coordinates from NAV-SVIN
         into geodetic lat/lon/alt (WGS84) and publish as NavSatFix.
@@ -300,12 +284,14 @@ class GpsBaseNode(Node):
         fix.latitude = math.degrees(lat)
         fix.longitude = math.degrees(lon)
         fix.altitude = alt
-        fix.status.status = 2  # STATUS_GBAS_FIX (RTK)
+        fix.status.status = (
+            2 if self.svin_acc_limit > mean_acc else -2
+        )  # STATUS_GBAS_FIX (RTK)
         self.fix_pub.publish(fix)
 
         self.get_logger().info(
-            f"Base station fix: lat={fix.latitude:.8f}  "
-            f"lon={fix.longitude:.8f}  alt={fix.altitude:.3f}m"
+            f"Base station fix:  status={fix.status.status} "
+            f"lat={fix.latitude:.8f} lon={fix.longitude:.8f}  alt={fix.altitude:.3f}m"
         )
 
 

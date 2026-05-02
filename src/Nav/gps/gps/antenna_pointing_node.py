@@ -24,7 +24,6 @@ class AntennaPointingNode(Node):
         # ROS things
         self.create_subscription(NavSatFix, "/base_station/fix", self.base_cb, 10)
         self.create_subscription(NavSatFix, "/gps/fix", self.rover_cb, 10)
-        self.create_subscription(Bool, "/base_station/svin_valid", self.svin_cb, 10)
 
         self.bearing_pub = self.create_publisher(
             Float32, "/antenna/tracker_bearing", 10
@@ -34,15 +33,13 @@ class AntennaPointingNode(Node):
 
     def base_cb(self, msg):
         self.base_fix = msg
+        self.svin_valid = msg.status.status
 
     def rover_cb(self, msg):
         self.rover_fix = msg
 
-    def svin_cb(self, msg):
-        self.svin_valid = msg
-
     def update(self):
-        if not self.svin_valid or not self.base_fix or not self.rover_fix:
+        if self.svin_valid == -2 or not self.base_fix or not self.rover_fix:
             return
 
         # ----- HANDLE IMU HERE
@@ -60,7 +57,9 @@ class AntennaPointingNode(Node):
 
     def publish_bearing(self, bearing):
         msg = Float32()
-        msg.data = float(bearing)
+        msg.data = float(bearing) / (
+            math.pi * 2
+        )  # normalize the output for the roboclaw
         self.bearing_pub.publish(msg)
 
     def bearing(self, lat1, lon1, lat2, lon2):
