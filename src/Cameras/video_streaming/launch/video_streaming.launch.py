@@ -32,20 +32,20 @@ def generate_launch_description():
         ],
     )
 
-    streaming_node = ComposableNode(
-        package="video_streaming",
-        plugin="WebRtcNode",
-        name="streaming_node",
-        namespace="",
-        parameters=[],
-    )
-
     rtp_node = ComposableNode(
         package="video_streaming",
         plugin="video_streaming::RtpNode",
         name="rtp_node",
         namespace="",
         parameters=[{"dest_ip": "192.168.0.20", "dest_port": 5004}],
+    )
+
+    capture_node = ComposableNode(
+        package="video_streaming",
+        plugin="VideoCaptureNode",
+        name="capture_node",
+        namespace="",
+        parameters=[camera_params_file],
     )
 
     # Create a container for all 3 components
@@ -57,7 +57,7 @@ def generate_launch_description():
         composable_node_descriptions=[
             input_node,
             detect_node,
-            # streaming_node,
+            capture_node,
             rtp_node,
         ],
         output="screen",

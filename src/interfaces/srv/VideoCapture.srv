@@ -1,7 +1,5 @@
 # VideoCapture.srv
 
-string source
-
 # Optional: save image to file if filename is given
 string filename
 

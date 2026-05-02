@@ -32,6 +32,7 @@ add_library(${PROJECT_NAME} SHARED
   src/srt_node_client.cpp
   src/rtp_node.cpp
   src/rtp_client_node.cpp
+  src/capture_node.cpp
 )
 
 include_directories(
@@ -70,6 +71,7 @@ rclcpp_components_register_nodes(${PROJECT_NAME}
   "InputNode"
   "DetectNode"
   "WebRtcNode"
+  "VideoCaptureNode"
   "video_streaming::SrtNode"
   "video_streaming::SrtClientNode"
   "video_streaming::RtpNode"
