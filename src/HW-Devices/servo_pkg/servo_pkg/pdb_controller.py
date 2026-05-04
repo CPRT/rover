@@ -54,7 +54,8 @@ class PDB_Servo(Parent_Config):
         self.bus.write_i2c_block_data(self.i2c_addr, base_reg, [high, low])
 
     def set_position(self, msg, port):
-        self.check_valid_servo(port)
+        if not self.check_valid_servo(port):
+            return
         servo_info = self.servo_info[port]
 
         target_value_us = convert_from_radians(msg.data, servo_info)
