@@ -6,6 +6,8 @@ After=network.target
 Type=simple
 User=%i
 ExecStart=/usr/local/bin/start_rover.sh
+Restart=always
+RestartSec=15
 
 [Install]
 WantedBy=multi-user.target

@@ -26,6 +26,30 @@ git clone --recurse-submodules git@github.com:CPRT/rover.git
 . ros.sh
 ```
 
-## Known limitations:
-1) When using the Dev container sometimes msgs are not received unless you are running as root (Recommended work around is run all ros2 commands as root inside the container)
+## When using alongside webUI launching
+  - Make sure to set `ROS_DISCOVERY_SERVER=<ip of rover>`
+  - To make `ros2 topic list` work, set `ROS_SUPER_CLIENT=TRUE`
+  - Restart the Docker daemon
 
+```bash
+export ROS_DISCOVERY_SERVER=192.168.0.55:11811
+export ROS_SUPER_CLIENT=TRUE
+ros2 daemon stop
+ros2 daemon start
+```
+
+### Launching a docker container like the webUI
+```bash
+docker run -it \
+  --privileged \
+  --network host \
+  --ipc host \
+  --rm \
+  -e ROS_DISCOVERY_SERVER=192.168.0.55:11811 \
+  --runtime=nvidia \
+  --volume /dev/serial/by-id:/dev/serial/by-id \
+  --volume /dev/v4l/by-id:/dev/v4l/by-id \
+  --volume /usr/local/zed:/usr/local/zed \
+  cprtsoftware/rover:arm64 \
+  <COMMAND>
+```
