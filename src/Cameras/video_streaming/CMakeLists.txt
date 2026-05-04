@@ -12,6 +12,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(GSTREAMER REQUIRED IMPORTED_TARGET gstreamer-1.0)
@@ -61,6 +62,7 @@ ament_target_dependencies(${PROJECT_NAME}
   rclcpp_components
   interfaces
   std_msgs
+  sensor_msgs
 )
 
 # If pkg-config provided extra compile flags (e.g., -D, -pthread)
