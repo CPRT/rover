@@ -64,7 +64,8 @@ std::string RtpNode::get_pipeline_description() {
        << "capsfilter caps=\"video/x-raw(memory:NVMM),height=" << height_
        << ",width=" << width_ << "\" ! nvv4l2h265enc bitrate=" << bitrate_
        << " name=h265_enc EnableTwopassCBR=true control-rate=1 "
-          "maxperf-enable=true ! queue ! rtph265pay pt=96 config-interval=-1 ! "
+       << "insert-sps-pps=true maxperf-enable=true ! queue ! "
+       << "rtph265pay pt=96 config-interval=-1 ! "
        << "udpsink host=" << dest_ip_ << " port=" << dest_port_;
   return desc.str();
 }
