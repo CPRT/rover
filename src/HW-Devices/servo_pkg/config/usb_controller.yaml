@@ -13,9 +13,9 @@ USB_Servo_node:
       min: 350.0
       max: 2500.0
       rom: 6.2832
-    # GRIPPER
+    # Mast Camera
     servo3:
-      name: "arm"
+      name: "mast"
       min: 350.0
       max: 2500.0
       rom: 6.2832

@@ -34,21 +34,9 @@ class USB_Servo(Parent_Config):
             )
             self.get_logger().info(f"Topic: /{self.servo_info[port].motor_name}")
 
-        self.set_range()
-        for port, servo in self.servo_info.items():
-            self.servo_controller.setRange(port, servo.min, servo.max)
-
-    def set_range(self):
-        for port in self.servo_info:
-            # Convert microseconds to quarter-microseconds
-            min_qus = self.servo_info[port].min * 4
-            max_qus = self.servo_info[port].max * 4
-            self.get_logger().info(f"Port {port} -> Min: {min_qus}, Max: {max_qus}")
-            self.servo_controller.setRange(port, min_qus, max_qus)
-
     def set_position(self, msg, port):
-        self.get_logger().info(f"port: {port}")
-        self.check_valid_servo(port)
+        if not self.check_valid_servo(port):
+            return
         servo_info = self.servo_info[port]
         target_value = convert_from_radians(msg.data, servo_info)
         self.get_logger().info(f"Target value: {target_value}")
@@ -58,19 +46,14 @@ class USB_Servo(Parent_Config):
 
         if not (servo_info.min <= target_value <= servo_info.max):
             self.get_logger().warning(
-                f"Servo {port} input out of range.\nCurrent position: {current_position}"
+                f"Servo {port} out of range. {target_value} ({servo_info.min},{servo_info.max})"
             )
         else:
             self.get_logger().debug(
                 f"Received request for port {port}: {msg.data} angle -> {target_value}"
             )
-            self.servo_controller.setTarget(port, target_value)
-            current_position = convert_to_radians(
-                self.servo_controller.getPosition(port), servo_info
-            )
-            self.get_logger().info(
-                f"Servo {port} moved to angle: {current_position} with PWM {target_value}"
-            )
+            # Maestro servo controller uses quarter micro seconds
+            self.servo_controller.setTarget(port, int(4 * target_value))
 
 
 def main(args=None):
