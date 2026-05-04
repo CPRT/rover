@@ -42,7 +42,7 @@ RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
     > /etc/apt/sources.list.d/ros2.list
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        ros-humble-ros-base python3-setuptools python3-wheel \
+        ros-humble-ros-base fastdds-tools python3-setuptools python3-wheel \
         libeigen3-dev python3-rosdep \
     && rm -rf /var/lib/apt/lists/*
 
