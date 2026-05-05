@@ -24,7 +24,7 @@ class GridMapCompressor(Node):
 
         nav2_qos = QoSProfile(
             reliability=ReliabilityPolicy.RELIABLE,
-            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            durability=DurabilityPolicy.VOLATILE,
             history=HistoryPolicy.KEEP_LAST,
             depth=1,
         )
@@ -88,8 +88,10 @@ class GridMapCompressor(Node):
             )
 
             # 6. Assemble the binary payload and Compress
+            # Ensure elevation payload is serialized as little-endian int16 on-wire.
+            elev_int16_le = elev_int16.astype(np.dtype("<i2"))
             raw_payload = (
-                metadata + frame_bytes + elev_int16.tobytes() + trav_uint8.tobytes()
+                metadata + frame_bytes + elev_int16_le.tobytes() + trav_uint8.tobytes()
             )
             compressed_bytes = zlib.compress(raw_payload)
 

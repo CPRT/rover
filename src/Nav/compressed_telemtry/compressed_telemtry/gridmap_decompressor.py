@@ -1,8 +1,7 @@
 import rclpy
 from rclpy.node import Node
-from grid_map_msgs.msg import GridMap, GridMapInfo
+from grid_map_msgs.msg import GridMap
 from std_msgs.msg import UInt8MultiArray, Float32MultiArray
-from geometry_msgs.msg import Pose
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 import numpy as np
 import struct
@@ -99,7 +98,8 @@ class GridMapDecompressor(Node):
             trav_bytes = remaining_bytes[num_cells * 2 :]
 
             # 6. Load back into Numpy
-            elev_int16 = np.frombuffer(elev_bytes, dtype=np.int16)
+            # Elevation samples are encoded on-wire as little-endian int16.
+            elev_int16 = np.frombuffer(elev_bytes, dtype=np.dtype("<i2"))
             trav_uint8 = np.frombuffer(trav_bytes, dtype=np.uint8)
 
             # 7. Reconstruct Floats and restore NaNs

@@ -23,7 +23,10 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "costmap_compressor = compressed_telemtry.costmap_compressor:main"
+            "costmap_compressor = compressed_telemtry.costmap_compressor:main",
+            "costmap_decompressor = compressed_telemtry.costmap_decompressor:main",
+            "gridmap_compressor = compressed_telemtry.gridmap_compressor:main",
+            "gridmap_decompressor = compressed_telemtry.gridmap_decompressor:main",
         ],
     },
 )
