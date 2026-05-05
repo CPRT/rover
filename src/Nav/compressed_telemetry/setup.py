@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = "compressed_telemtry"
+package_name = "compressed_telemetry"
 
 setup(
     name=package_name,
@@ -23,10 +23,10 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "costmap_compressor = compressed_telemtry.costmap_compressor:main",
-            "costmap_decompressor = compressed_telemtry.costmap_decompressor:main",
-            "gridmap_compressor = compressed_telemtry.gridmap_compressor:main",
-            "gridmap_decompressor = compressed_telemtry.gridmap_decompressor:main",
+            "costmap_compressor = compressed_telemetry.costmap_compressor:main",
+            "costmap_decompressor = compressed_telemetry.costmap_decompressor:main",
+            "gridmap_compressor = compressed_telemetry.gridmap_compressor:main",
+            "gridmap_decompressor = compressed_telemetry.gridmap_decompressor:main",
         ],
     },
 )
