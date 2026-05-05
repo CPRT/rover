@@ -15,6 +15,15 @@ class CostmapCompressor(Node):
         self.declare_parameter("log_compression_stats", True)
         self.log_compression_stats = self.get_parameter("log_compression_stats").value
 
+        # Stats window for bandwidth/ratio measurement over 10s
+        self.declare_parameter("log_mbps_stats", True)
+        self.log_mbps_stats = self.get_parameter("log_mbps_stats").value
+
+        self._raw_bytes_window = 0
+        self._compressed_bytes_window = 0
+        self._packets_window = 0
+        self._stats_timer = self.create_timer(10.0, self._stats_timer_callback)
+
         radio_qos = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
             durability=DurabilityPolicy.VOLATILE,
@@ -60,11 +69,16 @@ class CostmapCompressor(Node):
         try:
             raw_bytes = serialize_message(msg)
             compressed_bytes = zlib.compress(raw_bytes)
-
-            if self.log_compression_stats:
-                self._log_compression_stats(
-                    "update", len(raw_bytes), len(compressed_bytes)
-                )
+            try:
+                raw_len = len(raw_bytes)
+                compressed_len = len(compressed_bytes)
+                self._raw_bytes_window += raw_len
+                self._compressed_bytes_window += compressed_len
+                self._packets_window += 1
+                if self.log_compression_stats:
+                    self._log_compression_stats("update", raw_len, compressed_len)
+            except Exception:
+                pass
 
             out_msg = UInt8MultiArray()
             out_msg.data = list(compressed_bytes)
@@ -108,6 +122,28 @@ class CostmapCompressor(Node):
             f"Compressed {label}: {raw_size} bytes -> {compressed_size} bytes "
             f"({reduction:.1f}% smaller, {ratio:.2f}x of original)"
         )
+
+    def _stats_timer_callback(self):
+        if not getattr(self, "log_mbps_stats", False):
+            return
+        duration_s = 10.0
+        compressed = float(self._compressed_bytes_window)
+        raw = float(self._raw_bytes_window) if self._raw_bytes_window > 0 else 0.0
+        mbps = (compressed * 8.0) / (1e6 * duration_s)
+        if raw > 0.0:
+            avg_ratio = compressed / raw
+            avg_reduction = (1.0 - avg_ratio) * 100.0
+            self.get_logger().info(
+                f"Compressed send rate: {mbps:.3f} Mbps over last {int(duration_s)}s "
+                f"({int(compressed)} bytes, avg reduction {avg_reduction:.1f}% , avg ratio {avg_ratio:.2f})"
+            )
+        else:
+            self.get_logger().info(
+                f"Compressed send rate: {mbps:.3f} Mbps over last {int(duration_s)}s ({int(compressed)} bytes)"
+            )
+        self._raw_bytes_window = 0
+        self._compressed_bytes_window = 0
+        self._packets_window = 0
 
 
 def main(args=None):
