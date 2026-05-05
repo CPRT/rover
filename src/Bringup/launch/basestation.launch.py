@@ -12,21 +12,6 @@ def generate_launch_description():
 
     return launch.LaunchDescription(
         [
-            launch_ros.actions.Node(
-                package="gps",
-                executable="rtcm_pub_node",
-                name="gps_basestation_node",
-                parameters=[
-                    {"TimingMode": 1},
-                    {"MinTime": 600},
-                    {"MinAcc": 2.0},
-                    {"Freq": 5.0},
-                    {"Baudrate": 9600},
-                    {
-                        "Device": "/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_GNSS_receiver-if00"
-                    },
-                ],
-            ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     os.path.join(
@@ -53,17 +38,6 @@ def generate_launch_description():
                         "rosbridge_websocket_launch.xml",
                     )
                 )
-            ),
-            launch_ros.actions.Node(
-                package="ros_roboclaw",
-                executable="roboclaw_node",
-                name="antenna_roboclaw_node",
-                parameters=[
-                    {
-                        "port": "/dev/serial/by-id/usb-Basicmicro_Inc._USB_Roboclaw_2x30A-if00"
-                    },
-                ],
-                remappings=[("/robo_duty_cycle", "/antenna_control")],
             ),
         ]
     )
