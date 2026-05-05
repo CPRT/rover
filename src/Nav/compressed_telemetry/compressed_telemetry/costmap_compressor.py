@@ -6,6 +6,7 @@ from map_msgs.msg import OccupancyGridUpdate
 from std_msgs.msg import UInt8MultiArray
 from rclpy.serialization import serialize_message
 import zlib
+import array
 
 
 class CostmapCompressor(Node):
@@ -21,7 +22,7 @@ class CostmapCompressor(Node):
 
         self._raw_bytes_window = 0
         self._compressed_bytes_window = 0
-        self._packets_window = 0
+
         self._stats_timer = self.create_timer(10.0, self._stats_timer_callback)
 
         radio_qos = QoSProfile(
@@ -69,20 +70,19 @@ class CostmapCompressor(Node):
         try:
             raw_bytes = serialize_message(msg)
             compressed_bytes = zlib.compress(raw_bytes)
-            try:
-                raw_len = len(raw_bytes)
-                compressed_len = len(compressed_bytes)
-                self._raw_bytes_window += raw_len
-                self._compressed_bytes_window += compressed_len
-                self._packets_window += 1
-                if self.log_compression_stats:
-                    self._log_compression_stats("update", raw_len, compressed_len)
-            except Exception:
-                pass
+
+            # --- Stats Tracking ---
+            raw_len = len(raw_bytes)
+            compressed_len = len(compressed_bytes)
+            self._raw_bytes_window += raw_len
+            self._compressed_bytes_window += compressed_len
+            if self.log_compression_stats:
+                self._log_compression_stats("update", raw_len, compressed_len)
 
             out_msg = UInt8MultiArray()
-            out_msg.data = list(compressed_bytes)
+            out_msg.data = array.array("B", compressed_bytes)
             self.update_pub.publish(out_msg)
+
         except Exception as e:
             self.get_logger().error(f"Failed to compress update: {e}")
 
@@ -97,15 +97,19 @@ class CostmapCompressor(Node):
                 raw_bytes = serialize_message(self.latest_full_map)
                 compressed_bytes = zlib.compress(raw_bytes)
 
+                # --- Stats Tracking ---
+                raw_len = len(raw_bytes)
+                compressed_len = len(compressed_bytes)
+                self._raw_bytes_window += raw_len
+                self._compressed_bytes_window += compressed_len
+
                 if self.log_compression_stats:
-                    self._log_compression_stats(
-                        "full costmap", len(raw_bytes), len(compressed_bytes)
-                    )
+                    self._log_compression_stats("full costmap", raw_len, compressed_len)
 
                 out_msg = UInt8MultiArray()
-                out_msg.data = list(compressed_bytes)
+                out_msg.data = array.array("B", compressed_bytes)
                 self.full_map_pub.publish(out_msg)
-                self.get_logger().debug("Sent full map heartbeat.")
+
             except Exception as e:
                 self.get_logger().error(f"Failed to compress full map: {e}")
 
@@ -130,20 +134,21 @@ class CostmapCompressor(Node):
         compressed = float(self._compressed_bytes_window)
         raw = float(self._raw_bytes_window) if self._raw_bytes_window > 0 else 0.0
         mbps = (compressed * 8.0) / (1e6 * duration_s)
+
         if raw > 0.0:
             avg_ratio = compressed / raw
             avg_reduction = (1.0 - avg_ratio) * 100.0
             self.get_logger().info(
                 f"Compressed send rate: {mbps:.3f} Mbps over last {int(duration_s)}s "
-                f"({int(compressed)} bytes, avg reduction {avg_reduction:.1f}% , avg ratio {avg_ratio:.2f})"
+                f"({int(compressed)} bytes, avg reduction {avg_reduction:.1f}%, avg ratio {avg_ratio:.2f})"
             )
         else:
             self.get_logger().info(
                 f"Compressed send rate: {mbps:.3f} Mbps over last {int(duration_s)}s ({int(compressed)} bytes)"
             )
+
         self._raw_bytes_window = 0
         self._compressed_bytes_window = 0
-        self._packets_window = 0
 
 
 def main(args=None):

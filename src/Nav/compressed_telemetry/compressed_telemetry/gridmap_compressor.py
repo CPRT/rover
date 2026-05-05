@@ -6,6 +6,7 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPo
 import numpy as np
 import struct
 import zlib
+import array
 
 
 class GridMapCompressor(Node):
@@ -23,7 +24,7 @@ class GridMapCompressor(Node):
 
         self._raw_bytes_window = 0
         self._compressed_bytes_window = 0
-        self._packets_window = 0
+
         # Timer to report mbps and average compression every 10 seconds
         self._stats_timer = self.create_timer(10.0, self._stats_timer_callback)
 
@@ -110,21 +111,17 @@ class GridMapCompressor(Node):
 
             # 7. Publish over UDP
             out_msg = UInt8MultiArray()
-            out_msg.data = list(compressed_bytes)
+            out_msg.data = array.array("B", compressed_bytes)
             self.pub.publish(out_msg)
 
-            # Track bytes sent for stats window and optionally log compression stats
-            try:
-                compressed_len = len(compressed_bytes)
-                raw_len = len(raw_payload)
-                self._compressed_bytes_window += compressed_len
-                self._raw_bytes_window += raw_len
-                self._packets_window += 1
-                if self.log_compression_stats:
-                    self._log_compression_stats("gridmap", raw_len, compressed_len)
-            except Exception:
-                # defensive: never crash stats collection
-                pass
+            # 8. Track bytes sent for stats window
+            compressed_len = len(compressed_bytes)
+            raw_len = len(raw_payload)
+            self._compressed_bytes_window += compressed_len
+            self._raw_bytes_window += raw_len
+
+            if self.log_compression_stats:
+                self._log_compression_stats("gridmap", raw_len, compressed_len)
 
         except Exception as e:
             self.get_logger().error(f"Compression failed: {e}")
@@ -151,20 +148,21 @@ class GridMapCompressor(Node):
         compressed = float(self._compressed_bytes_window)
         raw = float(self._raw_bytes_window) if self._raw_bytes_window > 0 else 0.0
         mbps = (compressed * 8.0) / (1e6 * duration_s)  # megabits per second
+
         if raw > 0.0:
             avg_ratio = compressed / raw
             avg_reduction = (1.0 - avg_ratio) * 100.0
             self.get_logger().info(
                 f"Compressed send rate: {mbps:.3f} Mbps over last {int(duration_s)}s "
-                f"({int(compressed)} bytes, avg reduction {avg_reduction:.1f}% , avg ratio {avg_ratio:.2f})"
+                f"({int(compressed)} bytes, avg reduction {avg_reduction:.1f}%, avg ratio {avg_ratio:.2f})"
             )
         else:
             self.get_logger().info(
                 f"Compressed send rate: {mbps:.3f} Mbps over last {int(duration_s)}s ({int(compressed)} bytes)"
             )
+
         self._raw_bytes_window = 0
         self._compressed_bytes_window = 0
-        self._packets_window = 0
 
 
 def main(args=None):
