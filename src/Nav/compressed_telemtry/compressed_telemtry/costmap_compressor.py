@@ -7,12 +7,13 @@ from std_msgs.msg import UInt8MultiArray
 from rclpy.serialization import serialize_message
 import zlib
 
+
 class CostmapCompressor(Node):
     def __init__(self):
-        super().__init__('costmap_compressor')
+        super().__init__("costmap_compressor")
 
-        self.declare_parameter('log_compression_stats', True)
-        self.log_compression_stats = self.get_parameter('log_compression_stats').value
+        self.declare_parameter("log_compression_stats", True)
+        self.log_compression_stats = self.get_parameter("log_compression_stats").value
 
         radio_qos = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -27,24 +28,31 @@ class CostmapCompressor(Node):
             history=HistoryPolicy.KEEP_LAST,
             depth=1,
         )
-        
+
         # --- Publishers (To Radio Link) ---
         self.full_map_pub = self.create_publisher(
-            UInt8MultiArray, '/telemetry/costmap_full_compressed', radio_qos)
+            UInt8MultiArray, "/telemetry/costmap_full_compressed", radio_qos
+        )
         self.update_pub = self.create_publisher(
-            UInt8MultiArray, '/telemetry/costmap_updates_compressed', radio_qos)
+            UInt8MultiArray, "/telemetry/costmap_updates_compressed", radio_qos
+        )
 
         # --- Subscribers (From Local Nav2) ---
         self.map_sub = self.create_subscription(
-            OccupancyGrid, '/global_costmap/costmap', self.map_callback, nav2_qos)
+            OccupancyGrid, "/global_costmap/costmap", self.map_callback, nav2_qos
+        )
         self.update_sub = self.create_subscription(
-            OccupancyGridUpdate, '/global_costmap/costmap_updates', self.update_callback, 10)
+            OccupancyGridUpdate,
+            "/global_costmap/costmap_updates",
+            self.update_callback,
+            10,
+        )
 
         # --- State & Timers ---
         self.latest_full_map = None
         # Heartbeat timer: Send a full map refresh every 10 seconds (0.1 Hz)
         self.heartbeat_timer = self.create_timer(10.0, self.heartbeat_callback)
-        
+
         self.get_logger().info("Costmap Compressor Node Started.")
 
     def update_callback(self, msg):
@@ -55,10 +63,11 @@ class CostmapCompressor(Node):
 
             if self.log_compression_stats:
                 self._log_compression_stats(
-                    'update', len(raw_bytes), len(compressed_bytes))
-            
+                    "update", len(raw_bytes), len(compressed_bytes)
+                )
+
             out_msg = UInt8MultiArray()
-            out_msg.data = list(compressed_bytes) 
+            out_msg.data = list(compressed_bytes)
             self.update_pub.publish(out_msg)
         except Exception as e:
             self.get_logger().error(f"Failed to compress update: {e}")
@@ -76,10 +85,11 @@ class CostmapCompressor(Node):
 
                 if self.log_compression_stats:
                     self._log_compression_stats(
-                        'full costmap', len(raw_bytes), len(compressed_bytes))
-                
+                        "full costmap", len(raw_bytes), len(compressed_bytes)
+                    )
+
                 out_msg = UInt8MultiArray()
-                out_msg.data = list(compressed_bytes) 
+                out_msg.data = list(compressed_bytes)
                 self.full_map_pub.publish(out_msg)
                 self.get_logger().debug("Sent full map heartbeat.")
             except Exception as e:
@@ -87,7 +97,9 @@ class CostmapCompressor(Node):
 
     def _log_compression_stats(self, label, raw_size, compressed_size):
         if raw_size == 0:
-            self.get_logger().info(f"Compressed {label}: 0 bytes -> {compressed_size} bytes")
+            self.get_logger().info(
+                f"Compressed {label}: 0 bytes -> {compressed_size} bytes"
+            )
             return
 
         ratio = compressed_size / raw_size
@@ -97,6 +109,7 @@ class CostmapCompressor(Node):
             f"({reduction:.1f}% smaller, {ratio:.2f}x of original)"
         )
 
+
 def main(args=None):
     rclpy.init(args=args)
     node = CostmapCompressor()
@@ -104,5 +117,6 @@ def main(args=None):
     node.destroy_node()
     rclpy.shutdown()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
