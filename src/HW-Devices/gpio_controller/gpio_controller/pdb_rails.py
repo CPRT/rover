@@ -1,4 +1,5 @@
 import rclpy
+from rclpy.node import Node
 from std_msgs.msg import UInt8
 from smbus2 import SMBus
 
@@ -7,7 +8,7 @@ I2C_DEFAULT_ADDR = 0x21
 TOGGLE_REG = 0x08
 PG_REG = 0x09
 
-class PDB_Rails(rclpy.node.Node):
+class PDB_Rails(Node):
     def __init__(self):
         super().__init__("pdb_rails")
 
@@ -26,7 +27,7 @@ class PDB_Rails(rclpy.node.Node):
         self.pg_pub = self.create_publisher(UInt8, "~/pdb_pg", 3)
         self.toggle_sub = self.create_subscription(UInt8, "~/pdb_toggle", self.toggle, 3)
 
-        self.create_timer(1.f / self.poll_freq, self.loop)
+        self.create_timer(1 / self.poll_freq, self.loop)
         self.get_logger().info("PDB rail monitoring node started")
 
     def loop(self):
