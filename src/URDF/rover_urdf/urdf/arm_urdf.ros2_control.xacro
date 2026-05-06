@@ -18,7 +18,7 @@
         <param name="sensor_type">quadrature</param> <!-- or "quadrature" -->
         <param name="load_sensor">absolute</param>
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset">4.88</param>
+        <param name="sensor_offset"> 0.997</param>
         <param name="crossover">false</param> <!-- or "continuous" -->
         <param name="invert">false</param>
         <param name="invert_sensor">false</param>

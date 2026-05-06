@@ -10,7 +10,7 @@ sudo enablecan.sh
         -v /var/run/docker.sock:/var/run/docker.sock \
         --name disco-server \
         cprtsoftware/rover:arm64 \
-        fastdds discovery -i 0 --port 11811
+        fastdds discovery -i 0 -p 11811
 else
     echo "Discovery server is already running."
 fi
