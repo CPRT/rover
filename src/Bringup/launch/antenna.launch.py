@@ -29,17 +29,17 @@ def generate_launch_description():
                     },
                     {"Baudrate": 115200},
                     {"Freq": 5.0},  # Publish rate (hz)
-                    {"SvinMindur": 60},  # Survey in time (s)
+                    {"SvinMindur": 300},  # Survey in time (s)
                     {"SvinMinAccDur": 10_000},  # Survey in accuracy (mm)
                     {"QueueDepth": 10},
                 ],
             ),
             launch_ros.actions.Node(
-                package="bring",
+                package="gps",
                 executable="antenna_pointing_node",
                 name="antenna_pointing_node",
                 parameters=[
-                    {"Freq": 5},  # based on 4096 encoder resolution and 2:1 gear ratio
+                    {"Freq": 5},
                 ],
             ),
             launch_ros.actions.Node(

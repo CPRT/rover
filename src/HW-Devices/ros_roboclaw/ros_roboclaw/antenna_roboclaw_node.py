@@ -18,9 +18,7 @@ class RoboClawAntennaNode(Node):
         self.declare_parameter("Accel", 500)
         self.declare_parameter("EncReadFreq", 10.0)
         self.declare_parameter("Address", 0x80)  # default address for Roboclaw
-        self.declare_parameter(
-            "CountsPerRev", 8192
-        )  # 4096 * 2 | gear ratio of 2:1 and 4096 count for full encoder rev
+        self.declare_parameter("CountsPerRev", 8192)
 
         port = self.get_parameter("Port").value
         baud = self.get_parameter("Baudrate").value
@@ -62,19 +60,6 @@ class RoboClawAntennaNode(Node):
         self.target_encoder = self.zero_offset + int(norm * self.counts_per_rev)
 
         error = self.wrap_error(self.target_encoder - self.current_encoder)
-
-        # ------ try with testing tomorrow ------
-        # deadband
-        # if abs(error) < 20:
-        # return
-
-        # smoothing
-        # step = int(error * 0.3)
-
-        # max_step = 2000
-        # step = max(-max_step, min(max_step, step))
-
-        # command = self.current_encoder + step
 
         self.get_logger().info(f"target= {norm * 360:.2f}°, {self.target_encoder}")
 

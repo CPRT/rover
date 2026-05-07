@@ -80,7 +80,7 @@ class GpsBaseNode(Node):
             self.get_parameter("QueueDepth").get_parameter_value().integer_value
         )
 
-        self.declare_parameter("SvinMinDur", 60)
+        self.declare_parameter("SvinMinDur", 300)
         self.svin_min_dur = (
             self.get_parameter("SvinMinDur").get_parameter_value().integer_value
         )
