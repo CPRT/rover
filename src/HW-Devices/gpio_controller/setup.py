@@ -27,7 +27,6 @@ setup(
         "console_scripts": [
             "lights = gpio_controller.lights:main",
             "distance_sensor = gpio_controller.esp_distance_sensor:main",
-            "icm20984_publisher = gpio_controller.icm20984_publisher:main",
         ],
     },
 )
