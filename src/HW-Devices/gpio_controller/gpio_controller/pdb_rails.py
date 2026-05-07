@@ -8,6 +8,7 @@ I2C_DEFAULT_ADDR = 0x21
 TOGGLE_REG = 0x08
 PG_REG = 0x09
 
+
 class PDB_Rails(Node):
     def __init__(self):
         super().__init__("pdb_rails")
@@ -20,12 +21,16 @@ class PDB_Rails(Node):
         self.i2c_addr = (
             self.get_parameter("i2c_address").get_parameter_value().integer_value
         )
-        self.poll_freq = self.get_parameter("poll_freq").get_parameter_value().integer_value
+        self.poll_freq = (
+            self.get_parameter("poll_freq").get_parameter_value().integer_value
+        )
 
         self.bus = SMBus(self.i2c_bus)
-        
+
         self.pg_pub = self.create_publisher(UInt8, "~/pdb_pg", 3)
-        self.toggle_sub = self.create_subscription(UInt8, "~/pdb_toggle", self.toggle, 3)
+        self.toggle_sub = self.create_subscription(
+            UInt8, "~/pdb_toggle", self.toggle, 3
+        )
 
         self.create_timer(1 / self.poll_freq, self.loop)
         self.get_logger().info("PDB rail monitoring node started")
@@ -39,13 +44,14 @@ class PDB_Rails(Node):
         self.pg_pub.publish(msg)
 
     def toggle(self, msg):
-        self.bus.write_i2c_block_data(self.i2c_addr, TOGGLE_REG, msg.data)
+        self.bus.write_i2c_block_data(self.i2c_addr, TOGGLE_REG, [msg.data])
 
     def destroy_node(self):
         try:
             self.bus.close()
         finally:
             super().destroy_node()
+
 
 def main(args=None):
     rclpy.init(args=args)
