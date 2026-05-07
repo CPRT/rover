@@ -22,6 +22,7 @@ setup(
             "roboclaw_node = ros_roboclaw.roboclaw_node:main",
             "drill_roboclaw_node = ros_roboclaw.drill_roboclaw_node:main",
             "elevator_roboclaw_node = ros_roboclaw.elevator_roboclaw_node:main",
+            "antenna_roboclaw_node = ros_roboclaw.antenna_roboclaw_node:main",
         ],
     },
 )
