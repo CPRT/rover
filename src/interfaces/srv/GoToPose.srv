@@ -1,0 +1,5 @@
+# GoToPose.srv
+string name
+---
+bool success
+string message

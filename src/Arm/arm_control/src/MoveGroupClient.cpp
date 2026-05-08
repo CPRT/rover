@@ -22,6 +22,38 @@ MoveGroupClient::MoveGroupClient(rclcpp::Node::SharedPtr node)
       });
 
   configureMoveGroup();
+  name_service_ = node_->create_service<interfaces::srv::GetPoses>(
+      "get_names_poses",
+      [this](const std::shared_ptr<interfaces::srv::GetPoses::Request>,
+             std::shared_ptr<interfaces::srv::GetPoses::Response> response) {
+        if (move_group_) {
+          response->pose_names = move_group_->getNamedTargets();
+        }
+      });
+  stop_service_ = node_->create_service<std_srvs::srv::Trigger>(
+      "stop_motion",
+      [this](const std::shared_ptr<std_srvs::srv::Trigger::Request>,
+             std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+        stop();
+        response->success = true;
+        response->message = "Motion stopped";
+      });
+  go_to_pose_service_ = node_->create_service<interfaces::srv::GoToPose>(
+      "go_to_pose",
+      [this](const std::shared_ptr<interfaces::srv::GoToPose::Request> request,
+             std::shared_ptr<interfaces::srv::GoToPose::Response> response) {
+        if (!move_group_) {
+          response->success = false;
+          response->message = "Move group not initialized";
+          return;
+        }
+        move_group_->clearPoseTargets();
+        move_group_->setNamedTarget(request->name);
+        response->success = planAndExecute();
+        response->message = response->success
+                                ? "Planning succeeded..."
+                                : "Failed to plan to pose: " + request->name;
+      });
 
   RCLCPP_INFO(node_->get_logger(),
               "MoveGroupClient ready for planning group %s",
@@ -38,8 +70,8 @@ void MoveGroupClient::declareParams() {
   node_->declare_parameter<double>("acc_scaling", 0.2);
   node_->declare_parameter<int>("cx", 960);
   node_->declare_parameter<int>("cy", 540);
-  node_->declare_parameter<double>("fx", 540);
-  node_->declare_parameter<double>("fy", 540);
+  node_->declare_parameter<double>("fx", 625);
+  node_->declare_parameter<double>("fy", 480);
   node_->declare_parameter<std::string>("camera_link", "EndEffector");
 }
 
