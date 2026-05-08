@@ -109,6 +109,10 @@ void arm::clear_dot() {
 }
 
 void arm::arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
+  if (!moveit_client_) {
+    moveit_client_ =
+        std::make_shared<arm_control::MoveGroupClient>(shared_from_this());
+  }
   auto &buttons = joystickMsg->buttons;
   if (!initialized_) {
     if (std::abs(joystickMsg->axes[kJoint1Axis]) < 0.01 &&
@@ -210,11 +214,6 @@ void arm::ik_arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
 }
 
 void arm::ik_pose_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
-  if (!moveit_client_) {
-    moveit_client_ =
-        std::make_shared<arm_control::MoveGroupClient>(shared_from_this());
-  }
-
   if (joystickMsg->buttons[kClawOpen]) {
     moveit_client_->stop();
     return;

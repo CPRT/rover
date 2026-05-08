@@ -1,0 +1,4 @@
+# GetPoses.srv
+
+---
+string[] pose_names
