@@ -27,6 +27,7 @@ setup(
         "console_scripts": [
             "lights = gpio_controller.lights:main",
             "distance_sensor = gpio_controller.esp_distance_sensor:main",
+            "pdb_rails = gpio_controller.pdb_rails:main",
         ],
     },
 )
