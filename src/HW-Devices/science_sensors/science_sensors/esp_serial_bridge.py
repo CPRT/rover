@@ -51,7 +51,7 @@ class EspSerialBridge(Node):
     def __init__(self):
         super().__init__("esp_serial_bridge")
 
-        self.declare_parameter("port", "/dev/serial/by-id")
+        self.declare_parameter("port", "/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0")
         self.declare_parameter("baudrate", 115200)
         self.declare_parameter("sensor_topic", "esp_sensor_readings")
         self.declare_parameter("pwm_command_topic", "esp_pwm_command")
@@ -180,9 +180,13 @@ class EspSerialBridge(Node):
 
         packet_size = self._SENSOR_STRUCT.size
         while len(self._rx_buffer) >= packet_size:
-            methane, co2, polarimeter, temperature, moisture = (
-                self._SENSOR_STRUCT.unpack_from(self._rx_buffer, 0)
-            )
+            (
+                methane,
+                co2,
+                polarimeter,
+                temperature,
+                moisture,
+            ) = self._SENSOR_STRUCT.unpack_from(self._rx_buffer, 0)
             del self._rx_buffer[:packet_size]
 
             msg = EspSensorReadings()
