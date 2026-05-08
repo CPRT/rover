@@ -14,7 +14,7 @@ def generate_launch_description():
                 package="ros_roboclaw",
                 executable="roboclaw_node",
                 name="roboclaw_elevator_node",
-                namespace="elevator", 
+                namespace="elevator",
                 parameters=[parameters_file],
                 remappings=[("robo_duty_cycle", "/elevator/set")],
             ),
@@ -22,15 +22,9 @@ def generate_launch_description():
                 package="ros_roboclaw",
                 executable="roboclaw_node",
                 name="roboclaw_drill_node",
-                namespace="drill",    
+                namespace="drill",
                 parameters=[parameters_file],
-                remappings=[("robo_duty_cycle", "/drill/set")],  
-            ),
-            Node(
-                package="micro_ros_agent",
-                executable="micro_ros_agent",
-                name="micro_ros_agent_node",
-                arguments=["serial", "--dev", "/dev/ttyUSB0"],
+                remappings=[("robo_duty_cycle", "/drill/set")],
             ),
         ]
     )

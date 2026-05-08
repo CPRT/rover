@@ -35,10 +35,6 @@ add_executable(arm
   src/arm.cpp
 )
 
-add_executable(science
-  src/science.cpp
-)
-
 target_link_libraries(arm
   arm_control::move_group_client
 )
@@ -64,19 +60,9 @@ ament_target_dependencies(arm
   controller_manager_msgs
 )
 
-ament_target_dependencies(science
-  rclcpp
-  joy
-  ros_phoenix
-  interfaces
-  std_msgs
-  sensor_msgs
-)
-
 install(TARGETS
   drive
   arm
-  science
   DESTINATION lib/${PROJECT_NAME})
 
 # Install header files

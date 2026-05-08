@@ -5,7 +5,3 @@
 [submodule "src/third-party/zed-ros2-wrapper"]
 	path = src/third-party/zed-ros2-wrapper
 	url = https://github.com/stereolabs/zed-ros2-wrapper.git
-[submodule "src/third-party/micro_ros_setup"]
-	path = src/third-party/micro_ros_setup
-	url = https://github.com/micro-ROS/micro_ros_setup.git
-	branch = humble

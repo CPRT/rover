@@ -22,7 +22,7 @@ setup(
             glob(os.path.join("launch", "*launch.[pxy][yma]*")),
         ),
     ],
-    install_requires=["setuptools"],
+    install_requires=["setuptools", "pyserial"],
     zip_safe=True,
     maintainer="aydan",
     maintainer_email="aj01cars@outlook.com",
@@ -33,6 +33,7 @@ setup(
         "console_scripts": [
             "gas_sensor = science_sensors.gas_sensor:main",
             "panoramic = science_sensors.panoramic:main",
+            "esp_serial_bridge = science_sensors.esp_serial_bridge:main",
         ],
     },
 )

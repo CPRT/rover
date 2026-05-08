@@ -24,6 +24,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/VideoSource.msg"
   "msg/SystemTelemetry.msg"
   "msg/GasSensorReading.msg"
+  "msg/PwmCommand.msg"
+  "msg/EspSensorReadings.msg"
   "msg/SrtStats.msg"
   "msg/RtpStats.msg"
   "msg/SvinStatus.msg"
