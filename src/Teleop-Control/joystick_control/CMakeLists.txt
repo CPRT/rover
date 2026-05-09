@@ -35,6 +35,10 @@ add_executable(arm
   src/arm.cpp
 )
 
+add_executable(drill
+  src/drill.cpp
+)
+
 target_link_libraries(arm
   arm_control::move_group_client
 )
@@ -60,9 +64,16 @@ ament_target_dependencies(arm
   controller_manager_msgs
 )
 
+ament_target_dependencies(drill
+  rclcpp
+  sensor_msgs
+  std_msgs
+)
+
 install(TARGETS
   drive
   arm
+  drill
   DESTINATION lib/${PROJECT_NAME})
 
 # Install header files
