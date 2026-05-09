@@ -22,6 +22,8 @@ def generate_launch_description():
     control_yaml = os.path.join(desc_dir, "config", "ros2_controllers.yaml")
     use_arm = LaunchConfiguration("use_arm")
     use_drive = LaunchConfiguration("use_drive")
+    joystick_control_dir = get_package_share_directory("joystick_control")
+    joy_parameters_file = os.path.join(joystick_control_dir, "pxn.yaml")
 
     declare_use_arm_cmd = DeclareLaunchArgument(
         "use_arm",
@@ -149,6 +151,20 @@ def generate_launch_description():
         ),
         condition=IfCondition(use_arm),
     )
+    arm_control_node = Node(
+        package="joystick_control",
+        executable="arm",
+        name="arm_teleop_node",
+        parameters=[joy_parameters_file],
+        remappings=[("/joy", "/arm/joy")],
+    )
+    drive_control_node = Node(
+        package="joystick_control",
+        executable="drive",
+        name="drive_teleop_node",
+        parameters=[joy_parameters_file],
+        remappings=[("/joy", "/drive/joy")],
+    )
 
     ld = LaunchDescription()
     ld.add_action(declare_use_arm_cmd)
@@ -159,4 +175,6 @@ def generate_launch_description():
     ld.add_action(arm_launch)
     ld.add_action(eef_launch)
     ld.add_action(eef_distance)
+    ld.add_action(arm_control_node)
+    ld.add_action(drive_control_node)
     return ld
