@@ -26,6 +26,6 @@ def get_included_launch_descriptions(launch_files):
 def generate_launch_description():
     launch_files = [
         ("servo_pkg", "usb_servo_launch.launch.py"),
-        ("gpio_controller", "lights.launch.py"),
+        ("gpio_controller", "core_gpio_devices.launch.py"),
     ]
     return LaunchDescription(get_included_launch_descriptions(launch_files))
