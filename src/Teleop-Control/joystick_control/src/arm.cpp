@@ -21,6 +21,47 @@ arm::arm() : Node("arm_node") {
   dot_pub_ = this->create_publisher<geometry_msgs::msg::Vector3>(
       "/rtp_client_node/dot", 10);
   clear_dot();
+  name_service_ = this->create_service<interfaces::srv::GetPoses>(
+      "get_names_poses",
+      [this](const std::shared_ptr<interfaces::srv::GetPoses::Request>,
+             std::shared_ptr<interfaces::srv::GetPoses::Response> response) {
+        if (moveit_client_) {
+          response->pose_names = moveit_client_->getNamedTargets();
+        }
+      });
+  stop_service_ = this->create_service<std_srvs::srv::Trigger>(
+      "stop_motion",
+      [this](const std::shared_ptr<std_srvs::srv::Trigger::Request>,
+             std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+        if (!moveit_client_) {
+          response->success = false;
+          response->message = "Client not started";
+        }
+        moveit_client_->stop();
+        response->success = true;
+        response->message = "Motion stopped";
+      });
+  go_to_pose_service_ = this->create_service<interfaces::srv::GoToPose>(
+      "go_to_pose",
+      [this](const std::shared_ptr<interfaces::srv::GoToPose::Request> request,
+             std::shared_ptr<interfaces::srv::GoToPose::Response> response) {
+        if (!moveit_client_) {
+          response->success = false;
+          response->message = "Client not started";
+        }
+        if (current_state_ != NONE) {
+          response->success = false;
+          response->message = "Joystick is active";
+          RCLCPP_WARN(this->get_logger(),
+                      "Could not move to pose %s: Joystick is active",
+                      request->name.c_str());
+          return;
+        }
+        response->success = moveit_client_->goToPose(request->name);
+        response->message = response->success
+                                ? "Planning succeeded..."
+                                : "Failed to plan to pose: " + request->name;
+      });
 
   RCLCPP_INFO(this->get_logger(), "Arm controller started");
 }

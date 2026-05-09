@@ -5,10 +5,7 @@
 #include <vector>
 
 #include "interfaces/msg/distance.hpp"
-#include "interfaces/srv/get_poses.hpp"
-#include "interfaces/srv/go_to_pose.hpp"
 #include "std_msgs/msg/float32.hpp"
-#include "std_srvs/srv/trigger.hpp"
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <moveit/move_group_interface/move_group_interface.h>
@@ -25,9 +22,11 @@ public:
 
   void stop();
   bool goToSavedPose(size_t index);
+  bool goToPose(const std::string &name);
   bool goToPose(const geometry_msgs::msg::Pose &pose);
   bool goToPose(const geometry_msgs::msg::PoseStamped &pose);
   bool goToCamCoord(double u, double v);
+  std::vector<std::string> getNamedTargets();
   size_t saveCurrentPose();
 
 private:
@@ -35,9 +34,6 @@ private:
 
   std::unique_ptr<moveit::planning_interface::MoveGroupInterface> move_group_;
   rclcpp::Subscription<interfaces::msg::Distance>::SharedPtr depth_sub_;
-  rclcpp::Service<interfaces::srv::GetPoses>::SharedPtr name_service_;
-  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr stop_service_;
-  rclcpp::Service<interfaces::srv::GoToPose>::SharedPtr go_to_pose_service_;
   rclcpp::Node::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_{nullptr};

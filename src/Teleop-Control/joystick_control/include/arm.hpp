@@ -6,10 +6,13 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "geometry_msgs/msg/vector3.hpp"
+#include "interfaces/srv/get_poses.hpp"
+#include "interfaces/srv/go_to_pose.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "ros_phoenix/msg/motor_control.hpp"
 #include "sensor_msgs/msg/joy.hpp"
 #include "std_msgs/msg/float32.hpp"
+#include "std_srvs/srv/trigger.hpp"
 
 class arm : public rclcpp::Node {
 public:
@@ -29,6 +32,9 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr ik_pub_;
   rclcpp::Publisher<ros_phoenix::msg::MotorControl>::SharedPtr eef_pub_;
   rclcpp::Publisher<geometry_msgs::msg::Vector3>::SharedPtr dot_pub_;
+  rclcpp::Service<interfaces::srv::GetPoses>::SharedPtr name_service_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr stop_service_;
+  rclcpp::Service<interfaces::srv::GoToPose>::SharedPtr go_to_pose_service_;
   std::shared_ptr<arm_control::MoveGroupClient> moveit_client_;
   enum ArmState { NONE = 0, MANUAL, IK, POS };
 
