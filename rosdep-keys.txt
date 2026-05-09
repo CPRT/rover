@@ -33,6 +33,7 @@ libglib-dev
 libpcl-all-dev
 libssl-dev
 liburdfdom-tools
+mavros
 moveit_configs_utils
 moveit_kinematics
 moveit_planners
