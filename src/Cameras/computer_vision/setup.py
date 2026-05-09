@@ -24,6 +24,7 @@ setup(
         "console_scripts": [
             "zed_aruco_detector_node = computer_vision.zed_aruco_detector:main",
             "keyboard_pnp_locator_node = computer_vision.keyboard_pnp_locator:main",
+            "nav_marker_locator_node = computer_vision.nav_marker_locator:main",
         ],
     },
 )

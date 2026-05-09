@@ -6,8 +6,9 @@ from cv_bridge import CvBridge
 from interfaces.msg import ArucoMarkers
 from geometry_msgs.msg import Point, PoseArray, Pose
 
-import cv2
 import numpy as np
+
+from . import cv2_utils
 
 
 class ZEDArucoDetector(Node):
@@ -23,8 +24,8 @@ class ZEDArucoDetector(Node):
         self.fy = 0  # Focal length in y-direction
         self.cx = 0  # Principal point x-coordinate
         self.cy = 0  # Principal point y-coordinate
-        self._aruco_detector_params = cv2.aruco.DetectorParameters_create()
-        self._aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_250)
+        self._aruco_detector_params = cv2_utils.create_detector_parameters()
+        self._aruco_dict = cv2_utils.get_aruco_dictionary("DICT_4X4_250")
 
         # Subscribe to the ZED colour depth image topic
         self.create_subscription(
@@ -81,8 +82,8 @@ class ZEDArucoDetector(Node):
         colour_image = self.colour_image[:, :, :3]
 
         # Detect ArUco markers in the image
-        corners, ids, _ = cv2.aruco.detectMarkers(
-            colour_image, self._aruco_dict, parameters=self._aruco_detector_params
+        corners, ids, _ = cv2_utils.detect_markers(
+            colour_image, self._aruco_dict, self._aruco_detector_params
         )
 
         # Create an ArucoMarkers message
