@@ -1,7 +1,12 @@
 import rclpy
 from rclpy.node import Node
 from grid_map_msgs.msg import GridMap
-from std_msgs.msg import UInt8MultiArray, Float32MultiArray
+from std_msgs.msg import (
+    UInt8MultiArray,
+    Float32MultiArray,
+    MultiArrayLayout,
+    MultiArrayDimension,
+)
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 import numpy as np
 import struct
@@ -131,11 +136,23 @@ class GridMapDecompressor(Node):
             grid_msg.outer_start_index = outer_start
             grid_msg.inner_start_index = inner_start
 
-            # Package arrays into Float32MultiArray wrappers
+            # Package arrays into Float32MultiArray wrappers (with layout metadata)
+            size_x = max(1, int(round(length_x / resolution)))
+            size_y = max(1, int(round(length_y / resolution)))
+
+            layout = MultiArrayLayout()
+            layout.dim = [
+                MultiArrayDimension(label="column_index", size=size_x, stride=size_y),
+                MultiArrayDimension(label="row_index", size=size_y, stride=1),
+            ]
+            layout.data_offset = 0
+
             elev_multi = Float32MultiArray()
+            elev_multi.layout = layout
             elev_multi.data = elev_float.tolist()
 
             trav_multi = Float32MultiArray()
+            trav_multi.layout = layout
             trav_multi.data = trav_float.tolist()
 
             grid_msg.data = [elev_multi, trav_multi]
