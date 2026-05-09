@@ -64,22 +64,4 @@ def generate_launch_description():
             remappings=[("/joy", "/arm/joy")],
         ),
     )
-    ld.add_action(
-        Node(
-            package="joystick_control",
-            executable="arm",
-            name="arm_teleop_node",
-            parameters=[parameters_file],
-            remappings=[("/joy", "/arm/joy")],
-        ),
-    )
-    ld.add_action(
-        Node(
-            package="joystick_control",
-            executable="drive",
-            name="drive_teleop_node",
-            parameters=[parameters_file],
-            remappings=[("/joy", "/drive/joy")],
-        ),
-    )
     return ld
