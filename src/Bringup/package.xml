@@ -7,6 +7,7 @@
   <maintainer email="connor.needham2015@gmail.com">connor</maintainer>
   <license>TODO: License declaration</license>
   <depend>rosbridge_server</depend>
+  <depend>mavros</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
