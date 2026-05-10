@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import os
+import math
 import threading
 from collections import Counter
 from enum import Enum, auto
 from threading import Event
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict, Any
 
 import rclpy
 from rclpy.node import Node
@@ -21,17 +22,18 @@ from rclpy.qos import (
 )
 
 from ament_index_python.packages import get_package_share_directory
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, PointStamped
 from nav_msgs.msg import Odometry, Path
-from std_msgs.msg import Int8, Int32
+from std_msgs.msg import Int8, String
 from std_srvs.srv import Trigger
 import tf2_ros
+import tf2_geometry_msgs
 
 from action_msgs.msg import GoalInfo
 from action_msgs.srv import CancelGoal
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 from robot_localization.srv import FromLL
-from interfaces.msg import ObjectDetected
+from interfaces.msg import ObjectDetected, ArucoMarkers
 from interfaces.srv import NavToGPSGeopose
 from rcl_interfaces.msg import Parameter, ParameterType, ParameterValue
 from rcl_interfaces.srv import SetParameters
@@ -47,6 +49,8 @@ class MissionState(Enum):
     DO_NOTHING = auto()
     NAV_TO_GPS = auto()
     EXECUTE_SEARCH = auto()
+    CALCULATE_APPROACH = auto()
+    NAV_TO_APPROACH = auto()
     FOUND_TARGET = auto()
 
 
@@ -100,6 +104,13 @@ class UnifiedNavCommander(Node):
             .integer_value
         )
 
+        self.declare_parameter("aruco_approach_distance", 0.7)
+        self.aruco_approach_distance = (
+            self.get_parameter("aruco_approach_distance")
+            .get_parameter_value()
+            .double_value
+        )
+
         self.declare_parameter("nav_bt_file", "bt_swerve_dynamic_replanning.xml")
         self.declare_parameter("search_bt_file", "bt_swerve_search_tree.xml")
         self.nav_bt_file = (
@@ -119,12 +130,11 @@ class UnifiedNavCommander(Node):
         )
 
         # --- Mission Configurations ---
-        # Maps the parameter to the correct YAML string and defines the detection style
         self.mission_configs = {
             "gps": {
                 "search": False,
                 "pattern": None,
-                "topic": None,
+                "topics": [],
                 "is_aruco": False,
                 "is_object_detection": False,
                 "camera_detection_type": "NONE",
@@ -132,8 +142,11 @@ class UnifiedNavCommander(Node):
             },
             "aruco10m": {
                 "search": True,
-                "pattern": "spiral_10m",
-                "topic": "/marker_detected",
+                "pattern": "spiral_12m",
+                "topics": [
+                    "/computer_vision/nav_markers",
+                    "/computer_vision/aruco_markers",
+                ],
                 "is_aruco": True,
                 "is_object_detection": False,
                 "camera_detection_type": "ARUCO",
@@ -141,8 +154,11 @@ class UnifiedNavCommander(Node):
             },
             "aruco20m": {
                 "search": True,
-                "pattern": "spiral_20m",
-                "topic": "/marker_detected",
+                "pattern": "spiral_22m",
+                "topics": [
+                    "/computer_vision/nav_markers",
+                    "/computer_vision/aruco_markers",
+                ],
                 "is_aruco": True,
                 "is_object_detection": False,
                 "camera_detection_type": "ARUCO",
@@ -150,8 +166,8 @@ class UnifiedNavCommander(Node):
             },
             "mallet": {
                 "search": True,
-                "pattern": "spiral_5m",
-                "topic": "/object_detected",
+                "pattern": "spiral_7m",
+                "topics": ["/object_detected"],
                 "is_aruco": False,
                 "is_object_detection": True,
                 "target_model_type": "MALLET",
@@ -160,8 +176,8 @@ class UnifiedNavCommander(Node):
             },
             "pick": {
                 "search": True,
-                "pattern": "spiral_5m",
-                "topic": "/object_detected",
+                "pattern": "spiral_7m",
+                "topics": ["/object_detected"],
                 "is_aruco": False,
                 "is_object_detection": True,
                 "target_model_type": "ROCKPICK",
@@ -170,8 +186,8 @@ class UnifiedNavCommander(Node):
             },
             "bottle": {
                 "search": True,
-                "pattern": "spiral_10m",
-                "topic": "/object_detected",
+                "pattern": "spiral_12m",
+                "topics": ["/object_detected"],
                 "is_aruco": False,
                 "is_object_detection": True,
                 "target_model_type": "WATER_BOTTLE",
@@ -180,8 +196,8 @@ class UnifiedNavCommander(Node):
             },
             "indoor_spiral": {
                 "search": True,
-                "pattern": "spiral_5m",
-                "topic": "/object_detected",
+                "pattern": "spiral_7m",
+                "topics": ["/object_detected"],
                 "is_aruco": False,
                 "is_object_detection": True,
                 "target_model_type": "MALLET",
@@ -208,6 +224,7 @@ class UnifiedNavCommander(Node):
         )
         self.lights_topic = "/light"
         self.intended_path_topic = "/intended_search_path"
+        self.operator_alert_topic = "commander/operator_alert"
 
         self.nav_to_pose_cancel_service = "navigate_to_pose/_action/cancel_goal"
         self.nav_through_poses_cancel_service = (
@@ -232,6 +249,7 @@ class UnifiedNavCommander(Node):
         self.timer_cb_group = MutuallyExclusiveCallbackGroup()
         self.lights_cb_group = MutuallyExclusiveCallbackGroup()
         self.detection_cb_group = ReentrantCallbackGroup()
+        self.mission_update_cb_group = MutuallyExclusiveCallbackGroup()
 
         # --- Interfaces ---
         self.localizer_client = self.create_client(
@@ -269,40 +287,38 @@ class UnifiedNavCommander(Node):
         self.path_publisher = self.create_publisher(
             Path, self.intended_path_topic, qos_profile=self.path_qos
         )
+        self.operator_alert_publisher = self.create_publisher(
+            String, self.operator_alert_topic, qos_profile=self.qos_profile
+        )
+
+        self.mission_update_topic = "commander/mission_type"
+        self.mission_update_subscription = self.create_subscription(
+            String,
+            self.mission_update_topic,
+            self.mission_update_callback,
+            self.qos_profile,
+            callback_group=self.mission_update_cb_group,
+        )
 
         self.tf_buffer = tf2_ros.Buffer(cache_time=Duration(seconds=10.0))
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
         # --- Dynamic Detection Subscription ---
-        if self.config["search"] and self.config["topic"]:
-            if self.config["is_aruco"]:
-                self.detection_subscription = self.create_subscription(
-                    Int32,
-                    self.config["topic"],
-                    self.aruco_callback,
-                    qos_profile_sensor_data,
-                    callback_group=self.detection_cb_group,
-                )
-            elif self.config.get("is_object_detection"):
-                self.detection_subscription = self.create_subscription(
-                    ObjectDetected,
-                    self.config["topic"],
-                    self.object_detection_callback,
-                    qos_profile_sensor_data,
-                    callback_group=self.detection_cb_group,
-                )
-            else:
-                self.get_logger().warn(
-                    f"No supported detection message type configured for mission type '{self.mission_type}'."
-                )
+        self.detection_subscriptions = []
+        self.configure_detection_subscription()
 
         # --- State Variables ---
+        self.buffer_lock = threading.Lock()
         self.current_goal_request: Optional[Tuple[float, float, float, object]] = None
         self.current_goal_pose: Optional[PoseStamped] = None
         self.goal_handle = None
         self.search_handle = None
         self.search_poses: List[PoseStamped] = []
-        self.detections_buffer: List[Tuple[float, str]] = []
+        self.search_retry_count = 0
+
+        self.aruco_detections_buffer: List[Dict[str, Any]] = []
+        self.object_detections_buffer: List[Tuple[float, str]] = []
+
         self.stop_triggered_id: Optional[str] = None
 
         self.timer = self.create_timer(
@@ -324,6 +340,11 @@ class UnifiedNavCommander(Node):
         )
 
     # --- Helper Functions ---
+
+    def _publish_operator_alert(self, msg_str: str) -> None:
+        msg = String()
+        msg.data = msg_str
+        self.operator_alert_publisher.publish(msg)
 
     def _publish_light(self, code: int) -> None:
         msg = Int8()
@@ -377,13 +398,49 @@ class UnifiedNavCommander(Node):
         self.get_logger().info(f"Set detect_node detection_type to {detection_type}.")
         return True
 
+    def configure_detection_subscription(self) -> None:
+        for sub in self.detection_subscriptions:
+            self.destroy_subscription(sub)
+        self.detection_subscriptions.clear()
+
+        if not self.config.get("search"):
+            return
+
+        topics = self.config.get("topics", [])
+        if not topics:
+            return
+
+        for topic in topics:
+            if self.config.get("is_aruco"):
+                sub = self.create_subscription(
+                    ArucoMarkers,
+                    topic,
+                    self.aruco_callback,
+                    qos_profile_sensor_data,
+                    callback_group=self.detection_cb_group,
+                )
+                self.detection_subscriptions.append(sub)
+                self.get_logger().info(f"Subscribed to ArUco topic: {topic}")
+            elif self.config.get("is_object_detection"):
+                sub = self.create_subscription(
+                    ObjectDetected,
+                    topic,
+                    self.object_detection_callback,
+                    qos_profile_sensor_data,
+                    callback_group=self.detection_cb_group,
+                )
+                self.detection_subscriptions.append(sub)
+                self.get_logger().info(f"Subscribed to Object Detection topic: {topic}")
+
     def _finish_mission(self, message: str, light_code: int = 3) -> None:
         self.get_logger().info(message)
+        self._publish_operator_alert(f"SUCCESS: {message}")
         self._publish_light(light_code)
         self.reset_state_variables()
 
     def _fail_mission(self, message: str) -> None:
         self.get_logger().error(message)
+        self._publish_operator_alert(f"FAILURE: {message}")
         self._publish_light(self.nav_cancelled_light_code)
         self.reset_state_variables()
 
@@ -393,9 +450,28 @@ class UnifiedNavCommander(Node):
         self.current_goal_request = None
         self.current_goal_pose = None
         self.search_poses = []
-        self.detections_buffer = []
+        self.search_retry_count = 0
+        with self.buffer_lock:
+            self.aruco_detections_buffer.clear()
+            self.object_detections_buffer.clear()
         self.stop_triggered_id = None
         self.mission_state = MissionState.DO_NOTHING
+
+    def update_mission_type(self, mission_type: str) -> bool:
+        mission_type = mission_type.strip().lower()
+        if mission_type not in self.mission_configs:
+            self.get_logger().error(
+                f"Invalid mission type: {mission_type}. Available: {list(self.mission_configs.keys())}"
+            )
+            return False
+
+        self.mission_type = mission_type
+        self.config = self.mission_configs[mission_type]
+        self.configure_detection_subscription()
+        self.get_logger().info(
+            f"Mission type updated to '{self.mission_type}' with config: {self.config}"
+        )
+        return True
 
     def _cancel_all_nav_goals(self) -> None:
         self.get_logger().info("Canceling any active Nav2 goals...")
@@ -410,7 +486,6 @@ class UnifiedNavCommander(Node):
             request = CancelGoal.Request()
             request.goal_info = GoalInfo()
 
-            # --- FIXED BLOCKING PATTERN ---
             event = Event()
 
             def done_callback(future):
@@ -418,8 +493,6 @@ class UnifiedNavCommander(Node):
 
             future = client.call_async(request)
             future.add_done_callback(done_callback)
-
-            # Wait for up to 1.0 seconds without spinning the node
             event_set = event.wait(timeout=1.0)
 
             if not event_set:
@@ -427,7 +500,6 @@ class UnifiedNavCommander(Node):
                 continue
 
             result = future.result()
-            # ------------------------------
 
             if result is None:
                 self.get_logger().warn(f"Cancel request failed for {label}.")
@@ -514,8 +586,22 @@ class UnifiedNavCommander(Node):
         response.success = True
         return response
 
+    def mission_update_callback(self, msg: String) -> None:
+        requested_type = msg.data
+        if not requested_type:
+            self.get_logger().warn("Received empty mission_type update request.")
+            return
+
+        self.get_logger().info(
+            f"Received mission update request: '{requested_type}'. Canceling active missions."
+        )
+        self.navigator.cancelTask()
+        self._cancel_all_nav_goals()
+        self.reset_state_variables()
+        self.update_mission_type(requested_type)
+
     def _trigger_target_found(self, target_id: str):
-        """Halts navigation and completes the mission."""
+        """Standard behavior for generic objects: stops everything."""
         self.get_logger().info(
             f"Target '{target_id}' detected! Stopping navigation/search immediately."
         )
@@ -523,7 +609,16 @@ class UnifiedNavCommander(Node):
         self.mission_state = MissionState.FOUND_TARGET
         self.navigator.cancelTask()
 
-    def aruco_callback(self, msg: Int32) -> None:
+    def _trigger_aruco_approach(self, target_id: str):
+        """ArUco specific behavior: transitions into approach pose calculation."""
+        self.get_logger().info(
+            f"ArUco '{target_id}' detected! Halting search to calculate approach vector."
+        )
+        self.stop_triggered_id = target_id
+        self.mission_state = MissionState.CALCULATE_APPROACH
+        self.navigator.cancelTask()
+
+    def aruco_callback(self, msg: ArucoMarkers) -> None:
         if self.mission_state not in (
             MissionState.NAV_TO_GPS,
             MissionState.EXECUTE_SEARCH,
@@ -531,18 +626,32 @@ class UnifiedNavCommander(Node):
             return
 
         current_time = self.get_clock().now().nanoseconds / 1e9
-        self.detections_buffer = [
-            (timestamp, tag_id)
-            for timestamp, tag_id in self.detections_buffer
-            if (current_time - timestamp) <= self.aruco_detection_window_sec
-        ]
+        frame_id = msg.header.frame_id
 
-        self.detections_buffer.append((current_time, str(int(msg.data))))
+        with self.buffer_lock:
+            # Filter old detections
+            self.aruco_detections_buffer = [
+                d
+                for d in self.aruco_detections_buffer
+                if (current_time - d["timestamp"]) <= self.aruco_detection_window_sec
+            ]
 
-        tag_counts = Counter(tag_id for _timestamp, tag_id in self.detections_buffer)
+            # Add new detections
+            for tag_id, point in zip(msg.marker_ids, msg.points):
+                self.aruco_detections_buffer.append(
+                    {
+                        "timestamp": current_time,
+                        "tag_id": str(tag_id),
+                        "point": point,
+                        "frame_id": frame_id,
+                    }
+                )
+
+            tag_counts = Counter(d["tag_id"] for d in self.aruco_detections_buffer)
+
         for tag_id, count in tag_counts.items():
             if count >= self.aruco_min_detections:
-                self._trigger_target_found(f"Aruco ID {tag_id}")
+                self._trigger_aruco_approach(tag_id)
                 return
 
     def object_detection_callback(self, msg: ObjectDetected) -> None:
@@ -564,15 +673,20 @@ class UnifiedNavCommander(Node):
             return
 
         current_time = self.get_clock().now().nanoseconds / 1e9
-        self.detections_buffer = [
-            (timestamp, label)
-            for timestamp, label in self.detections_buffer
-            if (current_time - timestamp) <= self.object_detection_window_sec
-        ]
 
-        self.detections_buffer.append((current_time, detected_type))
+        with self.buffer_lock:
+            self.object_detections_buffer = [
+                (timestamp, label)
+                for timestamp, label in self.object_detections_buffer
+                if (current_time - timestamp) <= self.object_detection_window_sec
+            ]
 
-        tag_counts = Counter(label for _timestamp, label in self.detections_buffer)
+            self.object_detections_buffer.append((current_time, detected_type))
+
+            tag_counts = Counter(
+                label for _timestamp, label in self.object_detections_buffer
+            )
+
         if tag_counts.get(target_model_type, 0) >= self.object_min_detections:
             self._trigger_target_found(target_model_type)
 
@@ -607,12 +721,84 @@ class UnifiedNavCommander(Node):
             self.get_logger().error(f"Error during lat/lon conversion: {exc}")
             return None
 
+    def calculate_aruco_approach_pose(
+        self, target_tag_id: str
+    ) -> Optional[PoseStamped]:
+        """Calculates a pose 0.7m away from the averaged ArUco tag locations."""
+
+        with self.buffer_lock:
+            buffer_copy = list(self.aruco_detections_buffer)
+
+        points_to_average = []
+        for d in buffer_copy:
+            if d["tag_id"] == target_tag_id:
+                pt_stamped = PointStamped()
+                pt_stamped.header.frame_id = d["frame_id"]
+                pt_stamped.header.stamp = self.get_clock().now().to_msg()
+                pt_stamped.point = d["point"]
+
+                try:
+                    transform = self.tf_buffer.lookup_transform(
+                        "map", d["frame_id"], Time(), timeout=Duration(seconds=0.5)
+                    )
+                    map_pt = tf2_geometry_msgs.do_transform_point(pt_stamped, transform)
+                    points_to_average.append(map_pt.point)
+                except Exception as e:
+                    self.get_logger().warn(f"TF error transforming ArUco point: {e}")
+
+        if not points_to_average:
+            self.get_logger().error("No valid points to average for ArUco approach.")
+            return None
+
+        avg_x = sum(p.x for p in points_to_average) / len(points_to_average)
+        avg_y = sum(p.y for p in points_to_average) / len(points_to_average)
+
+        robot_pose = self.get_current_pose()
+        if not robot_pose:
+            self.get_logger().error(
+                "Could not get robot pose to calculate approach vector."
+            )
+            return None
+
+        rx = robot_pose.pose.position.x
+        ry = robot_pose.pose.position.y
+
+        dx = avg_x - rx
+        dy = avg_y - ry
+        dist = math.hypot(dx, dy)
+
+        if dist <= self.aruco_approach_distance:
+            self.get_logger().info(
+                f"Robot is already within {self.aruco_approach_distance:.2f}m of the tag."
+            )
+            target_x = rx
+            target_y = ry
+        else:
+            target_dist = dist - self.aruco_approach_distance
+            ratio = target_dist / dist
+            target_x = rx + dx * ratio
+            target_y = ry + dy * ratio
+
+        yaw = math.atan2(dy, dx)
+
+        approach_pose = PoseStamped()
+        approach_pose.header.frame_id = "map"
+        approach_pose.header.stamp = self.get_clock().now().to_msg()
+        approach_pose.pose.position.x = target_x
+        approach_pose.pose.position.y = target_y
+        approach_pose.pose.position.z = robot_pose.pose.position.z
+
+        approach_pose.pose.orientation.z = math.sin(yaw / 2.0)
+        approach_pose.pose.orientation.w = math.cos(yaw / 2.0)
+
+        self.get_logger().info(
+            f"Approach pose calculated: x={target_x:.2f}, y={target_y:.2f}, dist_from_tag={self.aruco_approach_distance:.2f}m"
+        )
+        return approach_pose
+
     # --- Main State Machine ---
 
     def timer_callback(self) -> None:
-        # self.get_logger().info(
-        #     f"Timer tick: mission_state={self.mission_state.name}"
-        # )
         if self.mission_state in [MissionState.DO_NOTHING, MissionState.FOUND_TARGET]:
             return
 
@@ -664,6 +850,8 @@ class UnifiedNavCommander(Node):
                     self._finish_mission(
                         f"Target found early! Stopped at {self.stop_triggered_id}."
                     )
+                elif self.mission_state == MissionState.CALCULATE_APPROACH:
+                    pass
                 else:
                     self._fail_mission("GPS navigation canceled unexpectedly.")
                 return
@@ -673,7 +861,9 @@ class UnifiedNavCommander(Node):
         # 2. Search Phase
         elif self.mission_state == MissionState.EXECUTE_SEARCH:
             if self.search_handle is None:
-                self.get_logger().info("Starting search pattern generation...")
+                self.get_logger().info(
+                    f"Starting search pattern generation (Attempt {self.search_retry_count + 1}/2)..."
+                )
                 self.search_poses = generate_search_pattern(
                     pattern=self.config["pattern"],
                     center_x=self.current_goal_pose.pose.position.x,
@@ -708,9 +898,20 @@ class UnifiedNavCommander(Node):
 
             result = self.navigator.getResult()
             if result == TaskResult.SUCCEEDED:
-                self._finish_mission(
-                    "Search pattern fully traversed without finding object."
-                )
+                # Pattern complete but target not triggered via callback
+                if self.search_retry_count < 1:
+                    self.get_logger().warn(
+                        "Search pattern complete. No target found. Retrying (Attempt 2)..."
+                    )
+                    self._publish_operator_alert(
+                        "Search complete with no detection. Retrying..."
+                    )
+                    self.search_retry_count += 1
+                    self.search_handle = None  # Triggers re-dispatch in next tick
+                else:
+                    self._fail_mission(
+                        f"Search pattern fully traversed {self.search_retry_count + 1} times without finding object."
+                    )
                 return
 
             if result == TaskResult.CANCELED:
@@ -718,11 +919,64 @@ class UnifiedNavCommander(Node):
                     self._finish_mission(
                         f"Search successful! Stopped at {self.stop_triggered_id}."
                     )
+                elif self.mission_state == MissionState.CALCULATE_APPROACH:
+                    pass
                 else:
                     self._fail_mission("Search pattern canceled unexpectedly.")
                 return
 
             self._fail_mission("Search pattern failed.")
+
+        # 3. Calculate Approach Phase (ArUco only)
+        elif self.mission_state == MissionState.CALCULATE_APPROACH:
+            if not self.navigator.isTaskComplete():
+                return
+
+            avg_pose = self.calculate_aruco_approach_pose(self.stop_triggered_id)
+            if not avg_pose:
+                self._fail_mission("Failed to calculate approach pose. Aborting.")
+                return
+
+            self.current_goal_pose = avg_pose
+            self.mission_state = MissionState.NAV_TO_APPROACH
+            self.goal_handle = None
+            return
+
+        # 4. Approach Navigation Phase
+        elif self.mission_state == MissionState.NAV_TO_APPROACH:
+            if self.goal_handle is None:
+                self.get_logger().info(
+                    "Dispatching Navigation for ArUco final approach."
+                )
+                self.goal_handle = "PENDING_DISPATCH"
+
+                def dispatch_approach():
+                    self.navigator.goToPose(
+                        self.current_goal_pose, behavior_tree=self.nav_bt_path
+                    )
+                    self.goal_handle = True
+
+                threading.Thread(target=dispatch_approach, daemon=True).start()
+                return
+
+            if self.goal_handle == "PENDING_DISPATCH":
+                return
+
+            if not self.navigator.isTaskComplete():
+                return
+
+            result = self.navigator.getResult()
+            if result == TaskResult.SUCCEEDED:
+                self._finish_mission(
+                    f"Successfully approached ArUco tag {self.stop_triggered_id}."
+                )
+                return
+
+            if result == TaskResult.CANCELED:
+                self._fail_mission("ArUco approach canceled unexpectedly.")
+                return
+
+            self._fail_mission("Failed to complete ArUco approach.")
 
 
 def main(args=None):

@@ -22,6 +22,8 @@
   <exec_depend>navigation</exec_depend>
   <exec_depend>python3-yaml</exec_depend>
   <exec_depend>interfaces</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>rcl_interfaces</exec_depend>
   
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

@@ -149,6 +149,13 @@ def generate_launch_description():
         condition=IfCondition(PythonExpression(["not ", use_composition])),
         actions=[
             Node(
+                package="compressed_telemetry_cpp",
+                executable="costmap_compressor_node",
+                name="costmap_compressor",
+                output="screen",
+                namespace=namespace,
+            ),
+            Node(
                 package="nav2_controller",
                 executable="controller_server",
                 output="screen",
@@ -266,6 +273,11 @@ def generate_launch_description():
         condition=IfCondition(use_composition),
         target_container=container_name,
         composable_node_descriptions=[
+            ComposableNode(
+                package="compressed_telemetry_cpp",
+                plugin="compressed_telemetry_cpp::CostmapCompressor",
+                name="costmap_compressor",
+            ),
             ComposableNode(
                 package="nav2_controller",
                 plugin="nav2_controller::ControllerServer",
