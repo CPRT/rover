@@ -143,7 +143,10 @@ class UnifiedNavCommander(Node):
             "aruco10m": {
                 "search": True,
                 "pattern": "spiral_12m",
-                "topics": ["/computer_vision/nav_markers", "/computer_vision/aruco_markers"],
+                "topics": [
+                    "/computer_vision/nav_markers",
+                    "/computer_vision/aruco_markers",
+                ],
                 "is_aruco": True,
                 "is_object_detection": False,
                 "camera_detection_type": "ARUCO",
@@ -152,7 +155,10 @@ class UnifiedNavCommander(Node):
             "aruco20m": {
                 "search": True,
                 "pattern": "spiral_22m",
-                "topics": ["/computer_vision/nav_markers", "/computer_vision/aruco_markers"],
+                "topics": [
+                    "/computer_vision/nav_markers",
+                    "/computer_vision/aruco_markers",
+                ],
                 "is_aruco": True,
                 "is_object_detection": False,
                 "camera_detection_type": "ARUCO",
@@ -282,9 +288,7 @@ class UnifiedNavCommander(Node):
             Path, self.intended_path_topic, qos_profile=self.path_qos
         )
         self.operator_alert_publisher = self.create_publisher(
-            String,
-            self.operator_alert_topic,
-            qos_profile=self.qos_profile
+            String, self.operator_alert_topic, qos_profile=self.qos_profile
         )
 
         self.mission_update_topic = "commander/mission_type"
@@ -304,7 +308,7 @@ class UnifiedNavCommander(Node):
         self.configure_detection_subscription()
 
         # --- State Variables ---
-        self.buffer_lock = threading.Lock() 
+        self.buffer_lock = threading.Lock()
         self.current_goal_request: Optional[Tuple[float, float, float, object]] = None
         self.current_goal_pose: Optional[PoseStamped] = None
         self.goal_handle = None
@@ -644,7 +648,7 @@ class UnifiedNavCommander(Node):
                 )
 
             tag_counts = Counter(d["tag_id"] for d in self.aruco_detections_buffer)
-            
+
         for tag_id, count in tag_counts.items():
             if count >= self.aruco_min_detections:
                 self._trigger_aruco_approach(tag_id)
@@ -669,7 +673,7 @@ class UnifiedNavCommander(Node):
             return
 
         current_time = self.get_clock().now().nanoseconds / 1e9
-        
+
         with self.buffer_lock:
             self.object_detections_buffer = [
                 (timestamp, label)
@@ -682,7 +686,7 @@ class UnifiedNavCommander(Node):
             tag_counts = Counter(
                 label for _timestamp, label in self.object_detections_buffer
             )
-            
+
         if tag_counts.get(target_model_type, 0) >= self.object_min_detections:
             self._trigger_target_found(target_model_type)
 
@@ -721,10 +725,10 @@ class UnifiedNavCommander(Node):
         self, target_tag_id: str
     ) -> Optional[PoseStamped]:
         """Calculates a pose 0.7m away from the averaged ArUco tag locations."""
-        
+
         with self.buffer_lock:
             buffer_copy = list(self.aruco_detections_buffer)
-            
+
         points_to_average = []
         for d in buffer_copy:
             if d["tag_id"] == target_tag_id:
@@ -857,7 +861,9 @@ class UnifiedNavCommander(Node):
         # 2. Search Phase
         elif self.mission_state == MissionState.EXECUTE_SEARCH:
             if self.search_handle is None:
-                self.get_logger().info(f"Starting search pattern generation (Attempt {self.search_retry_count + 1}/2)...")
+                self.get_logger().info(
+                    f"Starting search pattern generation (Attempt {self.search_retry_count + 1}/2)..."
+                )
                 self.search_poses = generate_search_pattern(
                     pattern=self.config["pattern"],
                     center_x=self.current_goal_pose.pose.position.x,
@@ -894,12 +900,18 @@ class UnifiedNavCommander(Node):
             if result == TaskResult.SUCCEEDED:
                 # Pattern complete but target not triggered via callback
                 if self.search_retry_count < 1:
-                    self.get_logger().warn("Search pattern complete. No target found. Retrying (Attempt 2)...")
-                    self._publish_operator_alert("Search complete with no detection. Retrying...")
+                    self.get_logger().warn(
+                        "Search pattern complete. No target found. Retrying (Attempt 2)..."
+                    )
+                    self._publish_operator_alert(
+                        "Search complete with no detection. Retrying..."
+                    )
                     self.search_retry_count += 1
-                    self.search_handle = None # Triggers re-dispatch in next tick
+                    self.search_handle = None  # Triggers re-dispatch in next tick
                 else:
-                    self._fail_mission(f"Search pattern fully traversed {self.search_retry_count + 1} times without finding object.")
+                    self._fail_mission(
+                        f"Search pattern fully traversed {self.search_retry_count + 1} times without finding object."
+                    )
                 return
 
             if result == TaskResult.CANCELED:
@@ -908,7 +920,7 @@ class UnifiedNavCommander(Node):
                         f"Search successful! Stopped at {self.stop_triggered_id}."
                     )
                 elif self.mission_state == MissionState.CALCULATE_APPROACH:
-                    pass 
+                    pass
                 else:
                     self._fail_mission("Search pattern canceled unexpectedly.")
                 return
