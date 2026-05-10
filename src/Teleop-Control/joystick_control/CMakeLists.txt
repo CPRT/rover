@@ -20,6 +20,7 @@ find_package(arm_control REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 set(CMAKE_CXX_STANDARD 14)
 
@@ -34,8 +35,8 @@ add_executable(arm
   src/arm.cpp
 )
 
-add_executable(science
-  src/science.cpp
+add_executable(drill
+  src/drill.cpp
 )
 
 target_link_libraries(arm
@@ -63,18 +64,16 @@ ament_target_dependencies(arm
   controller_manager_msgs
 )
 
-ament_target_dependencies(science
+ament_target_dependencies(drill
   rclcpp
-  joy
-  ros_phoenix
-  interfaces
+  sensor_msgs
   std_msgs
 )
 
 install(TARGETS
   drive
   arm
-  science
+  drill
   DESTINATION lib/${PROJECT_NAME})
 
 # Install header files

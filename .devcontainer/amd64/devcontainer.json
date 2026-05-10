@@ -8,11 +8,15 @@
     "--privileged",
     "--volume=/dev/v4l/by-id:/dev/v4l/by-id",
     "--volume=/dev/serial/by-id:/dev/serial/by-id",
+    "--volume=/dev/input:/dev/input",
     "--volume=/sys:/sys",
     "--volume=/etc/timezone:/etc/timezone",
     "--ipc=host",
     "--group-add=video",
-    "--group-add=render"
+    "--group-add=render",
+    "--group-add=dialout",
+    "--group-add=input",
+    "--volume=/dev/ttyUSB0:/dev/ttyUSB0"
   ],
   "mounts": [
     "source=${env:SSH_AUTH_SOCK},target=/ssh-agent,type=bind",

@@ -27,57 +27,24 @@ arm_teleop_node:
     joint_6_axis: 4
     dot_inc: 4
 
-science_teleop_node:
+drill_teleop_node:
   ros__parameters:
-    drill_button: 0
+    drill_power_axis: 3
     drill_elevation_axis: 1
-    servo_control_axis: 5
-    servo1:
-      name: "pump1"
-      button: 12
-      max_value: 65535
-      default_value: 0
-      min_value: 0
-    servo2:
-      name: "pump2"
-      button: 13
-      max_value: 65535
-      default_value: 0
-      min_value: 0
-    servo3:
-      name: "pump3"
-      button: 14
-      max_value: 65535
-      default_value: 0
-      min_value: 0
-    servo4:
-      name: "pump4"
-      button: 15
-      max_value: 65535
-      default_value: 0
-      min_value: 0
-    servo5:
-      name: "sample_servo"
-      button: 16
-      max_value: 6881
-      default_value: 2949
-      min_value: 2949
-    servo6:
-      name: "ion_exchange_servo"
-      button: 17
-      max_value: 65535
-      default_value: 0
-      min_value: 0
-    servo7:
-      name: "servo7"
-      button: 2
-      max_value: 65535
-      default_value: 0
-      min_value: 0
-    servo8:
-      name: "servo8"
-      button: 1
-      max_value: 65535
-      default_value: 0
-      min_value: 0
-    
+    joy_first_message_timeout_s: 10.0
+    max_drill_duty: 1.0
+    max_elevator_duty: 1.0
+    drill_cmd_topic: "/drill/set"
+    elevator_cmd_topic: "/elevator/set"
+
+elevator:
+  roboclaw_elevator_node:
+    ros__parameters:
+      port: "/dev/ttyACM0"
+      baudrate: 115200
+
+drill:
+  roboclaw_drill_node:
+    ros__parameters:
+      port: "/dev/ttyACM1"
+      baudrate: 115200
