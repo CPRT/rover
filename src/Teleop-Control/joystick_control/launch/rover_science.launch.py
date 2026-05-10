@@ -106,9 +106,7 @@ def _science_setup(context, *args, **kwargs):
         patterns = (
             tuple(
                 p.strip()
-                for p in os.environ.get(
-                    "SCIENCE_JOY_GLOB", ""
-                ).split(":")
+                for p in os.environ.get("SCIENCE_JOY_GLOB", "").split(":")
                 if p.strip()
             )
             or DEFAULT_JOY_GLOBS
