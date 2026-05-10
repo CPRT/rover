@@ -13,6 +13,9 @@ metadata_probe_callback(GstPad *pad, GstPadProbeInfo *info, gpointer user_data);
 DetectNode::DetectNode(const rclcpp::NodeOptions &options)
     : BaseVideoNode("detect_node", options),
       detection_type_(DetectionType::NONE) {
+
+  aruco_estimator_ = std::make_shared<ArucoPoseEstimator>(this);
+
   this->declare_parameter<std::string>("bottle_config",
                                        "config/bottle/bottle.txt");
   this->declare_parameter<std::string>("detection_type", "NONE");
@@ -21,13 +24,22 @@ DetectNode::DetectNode(const rclcpp::NodeOptions &options)
   this->declare_parameter<std::string>("rockpick_config",
                                        "config/rockpick/rockpick.txt");
   this->declare_parameter<std::string>("listen_to", "input");
+
+  active_camera_sub_ = this->create_subscription<std_msgs::msg::String>(
+      "/active_camera", 10,
+      std::bind(&DetectNode::active_camera_callback, this,
+                std::placeholders::_1));
+
   param_callback_handle_ = this->add_on_set_parameters_callback(
       std::bind(&DetectNode::on_parameter_change, this, std::placeholders::_1));
+
   marker_pub_ = this->create_publisher<std_msgs::msg::Int32>(
       "marker_detected", rclcpp::QoS(rclcpp::KeepLast(10)).reliable());
+
   object_detected_pub_ =
       this->create_publisher<interfaces::msg::ObjectDetected>(
           "object_detected", rclcpp::QoS(rclcpp::KeepLast(10)).reliable());
+
   start_pipeline();
 }
 
@@ -47,8 +59,11 @@ bool DetectNode::create_pipeline() {
           << this->get_parameter("listen_to").as_string()
           << " is-live=true "
              "allow-renegotiation=true name=src ! ";
+
+  bool add_terminator = true;
   detection_type_ = string_to_detection_type(
       this->get_parameter("detection_type").as_string());
+
   switch (detection_type_) {
   case DetectionType::WATER_BOTTLE:
     desc_ss << get_detection_pipeline_str(
@@ -63,15 +78,24 @@ bool DetectNode::create_pipeline() {
         this->get_parameter("rockpick_config").as_string());
     break;
   case DetectionType::ARUCO:
-    desc_ss << "videoconvert ! queue ! videoconvert ! arucomarker "
-               "detect-every=10 "
-               "name=aruco_detector ! queue ! videoconvert ! ";
+    // Added by Gemini: ! videoconvert ! video/x-raw,format=RGB
+    desc_ss << "videoconvert ! queue ! videoconvert ! "
+               "arucomarker detect-every=10 name=aruco_detector ! "
+               "tee name=aruco_tee "
+               "aruco_tee. ! queue ! videoconvert ! nvvidconv ! interpipesink "
+               "name=detect "
+               "aruco_tee. ! queue ! videoconvert ! video/x-raw,format=RGB ! "
+               "appsink name=aruco_cam_sink sync=false max-buffers=1 drop=true";
+    add_terminator = false;
     break;
   case DetectionType::NONE:
     desc_ss << "identity ! ";
     break;
   }
-  desc_ss << "nvvidconv ! interpipesink name=detect";
+
+  if (add_terminator) {
+    desc_ss << "nvvidconv ! interpipesink name=detect";
+  }
 
   RCLCPP_INFO(this->get_logger(), "Creating pipeline: %s",
               desc_ss.str().c_str());
@@ -100,19 +124,31 @@ bool DetectNode::create_pipeline() {
   pipeline_ = p;
   return true;
 }
+
 bool DetectNode::start_pipeline() {
   if (!BaseVideoNode::start_pipeline()) {
     return false;
   }
+
   if (detection_type_ == DetectionType::ARUCO) {
     GstElement *aruco = get_element("aruco_detector");
-    if (!aruco) {
-      RCLCPP_ERROR(this->get_logger(), "Failed to get arucomarker element.");
-      return false;
+    if (aruco) {
+      g_signal_connect(aruco, "marker-detected", G_CALLBACK(on_marker_detected),
+                       marker_pub_.get());
+      gst_object_unref(aruco);
     }
-    g_signal_connect(aruco, "marker-detected", G_CALLBACK(on_marker_detected),
-                     marker_pub_.get());
-    gst_object_unref(aruco);
+
+    GstElement *appsink = get_element("aruco_cam_sink");
+    if (appsink) {
+      GstAppSinkCallbacks callbacks = {};
+      callbacks.new_sample = on_new_sample;
+      gst_app_sink_set_callbacks(GST_APP_SINK(appsink), &callbacks, this,
+                                 nullptr);
+      gst_object_unref(appsink);
+    } else {
+      RCLCPP_ERROR(this->get_logger(), "Failed to get aruco_cam_sink element.");
+    }
+
   } else if (detection_type_ == DetectionType::MALLET ||
              detection_type_ == DetectionType::WATER_BOTTLE) {
     GstElement *osd = get_element("osd");
@@ -128,9 +164,49 @@ bool DetectNode::start_pipeline() {
   return true;
 }
 
+void DetectNode::active_camera_callback(
+    const std_msgs::msg::String::SharedPtr msg) {
+  if (msg->data != active_camera_) {
+    active_camera_ = msg->data;
+    RCLCPP_INFO(this->get_logger(), "Active camera changed to %s",
+                active_camera_.c_str());
+  }
+}
+
+GstFlowReturn DetectNode::on_new_sample(GstAppSink *sink, gpointer user_data) {
+  auto *self = static_cast<DetectNode *>(user_data);
+  GstSample *sample = gst_app_sink_pull_sample(sink);
+  if (!sample)
+    return GST_FLOW_ERROR;
+
+  GstCaps *caps = gst_sample_get_caps(sample);
+  GstBuffer *buffer = gst_sample_get_buffer(sample);
+
+  gint width = 0, height = 0;
+  if (caps) {
+    GstStructure *s = gst_caps_get_structure(caps, 0);
+    gst_structure_get_int(s, "width", &width);
+    gst_structure_get_int(s, "height", &height);
+  }
+
+  GstMapInfo map;
+  if (gst_buffer_map(buffer, &map, GST_MAP_READ)) {
+
+    // 1. Process PnP Math
+    auto stamp = self->now();
+    cv::Mat frame(height, width, CV_8UC3, map.data);
+    if (self->aruco_estimator_) {
+      self->aruco_estimator_->processImage(frame, self->active_camera_, stamp);
+    }
+
+    gst_buffer_unmap(buffer, &map);
+  }
+  gst_sample_unref(sample);
+  return GST_FLOW_OK;
+}
+
 GstPadProbeReturn metadata_probe_callback(GstPad *pad, GstPadProbeInfo *info,
                                           gpointer user_data) {
-  // TODO: (ERIK) Create whatever API you want for autonomy
   DetectNode *self = static_cast<DetectNode *>(user_data);
   GstBuffer *buffer = GST_PAD_PROBE_INFO_BUFFER(info);
   if (!buffer) {
@@ -242,6 +318,7 @@ rcl_interfaces::msg::SetParametersResult DetectNode::on_parameter_change(
   result.successful = true;
   result.reason = "success";
   bool needs_restart = false;
+
   for (const auto &param : parameters) {
     if (param.get_name() == "bottle_config" ||
         param.get_name() == "mallet_config" ||

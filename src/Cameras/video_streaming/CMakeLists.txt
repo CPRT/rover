@@ -12,6 +12,11 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(image_transport REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(GSTREAMER REQUIRED IMPORTED_TARGET gstreamer-1.0)
@@ -27,6 +32,7 @@ add_library(${PROJECT_NAME} SHARED
   src/base_video_node.cpp
   src/input_node.cpp
   src/detect_node.cpp
+  src/aruco_pose_estimate.cpp
   src/webrtc_node.cpp
   src/srt_node.cpp
   src/srt_node_client.cpp
@@ -55,12 +61,17 @@ target_link_libraries(${PROJECT_NAME}
   PkgConfig::GSTREAMER
   PkgConfig::GST_APP
   PkgConfig::GST_VIDEO
+  ${OpenCV_LIBRARIES}
 )
 ament_target_dependencies(${PROJECT_NAME}
   rclcpp
   rclcpp_components
   interfaces
   std_msgs
+  sensor_msgs
+  geometry_msgs
+  cv_bridge
+  image_transport
 )
 
 # If pkg-config provided extra compile flags (e.g., -D, -pthread)
