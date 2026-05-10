@@ -20,17 +20,17 @@ KEY_UNIT = 0.01905  # 1U = 19.05 mm
 # Distance from keyboard surface edge to the centre of the nearest key.
 # Measure on the physical keyboard and update these two values.
 BORDER_LEFT = 0.0105  # metres  ← MEASURE AND UPDATE
-BORDER_TOP  = 0.0155  # metres  ← MEASURE AND UPDATE (fn row centre from top edge)
+BORDER_TOP = 0.0155  # metres  ← MEASURE AND UPDATE (fn row centre from top edge)
 
 # Row Y positions in key units from the fn row centre.
 # The K552 has a ~0.5U gap between the fn row and the number row.
 ROW_Y = {
-    'fn':     0.0,
-    'num':    1.5,
-    'qwerty': 2.5,
-    'asdf':   3.5,
-    'zxcv':   4.5,
-    'bottom': 5.5,
+    "fn": 0.0,
+    "num": 1.5,
+    "qwerty": 2.5,
+    "asdf": 3.5,
+    "zxcv": 4.5,
+    "bottom": 5.5,
 }
 
 NAV_X = 15.5  # X offset (units) where nav/arrow cluster begins
@@ -46,73 +46,106 @@ def _build_layout():
 
     # Function row
     keys += [
-        _key('esc',  0.0,  1.0, 'fn'),
-        _key('f1',   2.0,  1.0, 'fn'),
-        _key('f2',   3.0,  1.0, 'fn'),
-        _key('f3',   4.0,  1.0, 'fn'),
-        _key('f4',   5.0,  1.0, 'fn'),
-        _key('f5',   6.5,  1.0, 'fn'),
-        _key('f6',   7.5,  1.0, 'fn'),
-        _key('f7',   8.5,  1.0, 'fn'),
-        _key('f8',   9.5,  1.0, 'fn'),
-        _key('f9',  11.0,  1.0, 'fn'),
-        _key('f10', 12.0,  1.0, 'fn'),
-        _key('f11', 13.0,  1.0, 'fn'),
-        _key('f12', 14.0,  1.0, 'fn'),
+        _key("esc", 0.0, 1.0, "fn"),
+        _key("f1", 2.0, 1.0, "fn"),
+        _key("f2", 3.0, 1.0, "fn"),
+        _key("f3", 4.0, 1.0, "fn"),
+        _key("f4", 5.0, 1.0, "fn"),
+        _key("f5", 6.5, 1.0, "fn"),
+        _key("f6", 7.5, 1.0, "fn"),
+        _key("f7", 8.5, 1.0, "fn"),
+        _key("f8", 9.5, 1.0, "fn"),
+        _key("f9", 11.0, 1.0, "fn"),
+        _key("f10", 12.0, 1.0, "fn"),
+        _key("f11", 13.0, 1.0, "fn"),
+        _key("f12", 14.0, 1.0, "fn"),
     ]
 
     # Number row
     x = 0.0
-    for name in ['grave', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'minus', 'equal']:
-        keys.append(_key(name, x, 1.0, 'num'))
+    for name in [
+        "grave",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "0",
+        "minus",
+        "equal",
+    ]:
+        keys.append(_key(name, x, 1.0, "num"))
         x += 1.0
-    keys.append(_key('backspace', x, 2.0, 'num'))
+    keys.append(_key("backspace", x, 2.0, "num"))
 
     # QWERTY row
     x = 0.0
-    keys.append(_key('tab', x, 1.5, 'qwerty')); x += 1.5
-    for name in ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'lbracket', 'rbracket']:
-        keys.append(_key(name, x, 1.0, 'qwerty')); x += 1.0
-    keys.append(_key('backslash', x, 1.5, 'qwerty'))
+    keys.append(_key("tab", x, 1.5, "qwerty"))
+    x += 1.5
+    for name in [
+        "q",
+        "w",
+        "e",
+        "r",
+        "t",
+        "y",
+        "u",
+        "i",
+        "o",
+        "p",
+        "lbracket",
+        "rbracket",
+    ]:
+        keys.append(_key(name, x, 1.0, "qwerty"))
+        x += 1.0
+    keys.append(_key("backslash", x, 1.5, "qwerty"))
 
     # ASDF row
     x = 0.0
-    keys.append(_key('capslock', x, 1.75, 'asdf')); x += 1.75
-    for name in ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'semicolon', 'quote']:
-        keys.append(_key(name, x, 1.0, 'asdf')); x += 1.0
-    keys.append(_key('enter', x, 2.25, 'asdf'))
+    keys.append(_key("capslock", x, 1.75, "asdf"))
+    x += 1.75
+    for name in ["a", "s", "d", "f", "g", "h", "j", "k", "l", "semicolon", "quote"]:
+        keys.append(_key(name, x, 1.0, "asdf"))
+        x += 1.0
+    keys.append(_key("enter", x, 2.25, "asdf"))
 
     # ZXCV row
     x = 0.0
-    keys.append(_key('lshift', x, 2.25, 'zxcv')); x += 2.25
-    for name in ['z', 'x', 'c', 'v', 'b', 'n', 'm', 'comma', 'period', 'slash']:
-        keys.append(_key(name, x, 1.0, 'zxcv')); x += 1.0
-    keys.append(_key('rshift', x, 2.75, 'zxcv'))
+    keys.append(_key("lshift", x, 2.25, "zxcv"))
+    x += 2.25
+    for name in ["z", "x", "c", "v", "b", "n", "m", "comma", "period", "slash"]:
+        keys.append(_key(name, x, 1.0, "zxcv"))
+        x += 1.0
+    keys.append(_key("rshift", x, 2.75, "zxcv"))
 
     # Bottom row
     keys += [
-        _key('lctrl',  0.0,   1.25, 'bottom'),
-        _key('win',    1.25,  1.25, 'bottom'),
-        _key('lalt',   2.5,   1.25, 'bottom'),
-        _key('space',  3.75,  6.25, 'bottom'),
-        _key('ralt',   10.0,  1.25, 'bottom'),
-        _key('fn_key', 11.25, 1.25, 'bottom'),
-        _key('menu',   12.5,  1.25, 'bottom'),
-        _key('rctrl',  13.75, 1.25, 'bottom'),
+        _key("lctrl", 0.0, 1.25, "bottom"),
+        _key("win", 1.25, 1.25, "bottom"),
+        _key("lalt", 2.5, 1.25, "bottom"),
+        _key("space", 3.75, 6.25, "bottom"),
+        _key("ralt", 10.0, 1.25, "bottom"),
+        _key("fn_key", 11.25, 1.25, "bottom"),
+        _key("menu", 12.5, 1.25, "bottom"),
+        _key("rctrl", 13.75, 1.25, "bottom"),
     ]
 
     # Navigation cluster
     keys += [
-        _key('insert',   NAV_X + 0.0, 1.0, 'num'),
-        _key('home',     NAV_X + 1.0, 1.0, 'num'),
-        _key('pageup',   NAV_X + 2.0, 1.0, 'num'),
-        _key('delete',   NAV_X + 0.0, 1.0, 'qwerty'),
-        _key('end',      NAV_X + 1.0, 1.0, 'qwerty'),
-        _key('pagedown', NAV_X + 2.0, 1.0, 'qwerty'),
-        _key('up',       NAV_X + 1.0, 1.0, 'zxcv'),
-        _key('left',     NAV_X + 0.0, 1.0, 'bottom'),
-        _key('down',     NAV_X + 1.0, 1.0, 'bottom'),
-        _key('right',    NAV_X + 2.0, 1.0, 'bottom'),
+        _key("insert", NAV_X + 0.0, 1.0, "num"),
+        _key("home", NAV_X + 1.0, 1.0, "num"),
+        _key("pageup", NAV_X + 2.0, 1.0, "num"),
+        _key("delete", NAV_X + 0.0, 1.0, "qwerty"),
+        _key("end", NAV_X + 1.0, 1.0, "qwerty"),
+        _key("pagedown", NAV_X + 2.0, 1.0, "qwerty"),
+        _key("up", NAV_X + 1.0, 1.0, "zxcv"),
+        _key("left", NAV_X + 0.0, 1.0, "bottom"),
+        _key("down", NAV_X + 1.0, 1.0, "bottom"),
+        _key("right", NAV_X + 2.0, 1.0, "bottom"),
     ]
 
     return keys
@@ -124,37 +157,41 @@ def generate(out_path=None):
     keys_dict = {}
     for name, x_u, y_u in layout:
         x_m = round(BORDER_LEFT + x_u * KEY_UNIT, 5)
-        y_m = round(BORDER_TOP  + y_u * KEY_UNIT, 5)
+        y_m = round(BORDER_TOP + y_u * KEY_UNIT, 5)
         keys_dict[name] = [x_m, y_m, 0.0]
 
     config = {
-        'key_unit_m':    KEY_UNIT,
-        'border_left_m': BORDER_LEFT,
-        'border_top_m':  BORDER_TOP,
-        'keys':          keys_dict,
+        "key_unit_m": KEY_UNIT,
+        "border_left_m": BORDER_LEFT,
+        "border_top_m": BORDER_TOP,
+        "keys": keys_dict,
     }
 
     if out_path is None:
         out_path = os.path.normpath(
-            os.path.join(os.path.dirname(__file__), '..', 'config', 'keyboard_key_layout.yaml')
+            os.path.join(
+                os.path.dirname(__file__), "..", "config", "keyboard_key_layout.yaml"
+            )
         )
 
-    with open(out_path, 'w') as f:
+    with open(out_path, "w") as f:
         f.write(
-            '# Redragon K552 ANSI TKL key layout — auto-generated by generate_key_layout.py\n'
-            '# Key positions are keycap centres in the keyboard frame (metres).\n'
-            '# Origin: top-left corner of keyboard surface. +X right, +Y down, +Z out.\n'
-            '#\n'
-            '# To update border offsets: edit BORDER_LEFT / BORDER_TOP in\n'
-            '# scripts/generate_key_layout.py and re-run the script.\n'
-            '#\n'
+            "# Redragon K552 ANSI TKL key layout — auto-generated by generate_key_layout.py\n"
+            "# Key positions are keycap centres in the keyboard frame (metres).\n"
+            "# Origin: top-left corner of keyboard surface. +X right, +Y down, +Z out.\n"
+            "#\n"
+            "# To update border offsets: edit BORDER_LEFT / BORDER_TOP in\n"
+            "# scripts/generate_key_layout.py and re-run the script.\n"
+            "#\n"
         )
-        yaml.dump(config, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+        yaml.dump(
+            config, f, default_flow_style=False, allow_unicode=True, sort_keys=False
+        )
 
     print(f"Written:    {out_path}")
     print(f"Total keys: {len(keys_dict)}")
     return out_path
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     generate()

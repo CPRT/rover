@@ -41,23 +41,25 @@ class KeyboardPnPLocator(Node):
     MIN_MARKERS = 2
 
     def __init__(self):
-        super().__init__('keyboard_pnp_locator')
+        super().__init__("keyboard_pnp_locator")
 
-        self.declare_parameter('config_file', 'config/keyboard_board_config.yaml')
-        self.declare_parameter('camera_calibration_file', 'config/camera_calibration.yaml')
-        self.declare_parameter('output_frame', 'keyboard_center_link')
-        self.declare_parameter('image_topic', '/EndEffector/image_raw')
-        self.declare_parameter('camera_info_topic', '')  # empty = don't subscribe
+        self.declare_parameter("config_file", "config/keyboard_board_config.yaml")
+        self.declare_parameter(
+            "camera_calibration_file", "config/end_effector_calibration.yaml"
+        )
+        self.declare_parameter("output_frame", "keyboard_center_link")
+        self.declare_parameter("image_topic", "/EndEffector/image_raw")
+        self.declare_parameter("camera_info_topic", "")  # empty = don't subscribe
         # URC 2026 navigation posts use DICT_4X4_50; keyboard markers likely the same.
         # Override via launch argument if the organizers specify otherwise.
-        self.declare_parameter('aruco_dict', 'DICT_4X4_50')
+        self.declare_parameter("aruco_dict", "DICT_4X4_50")
 
-        config_file = self.get_parameter('config_file').value
-        calib_file = self.get_parameter('camera_calibration_file').value
-        self.output_frame = self.get_parameter('output_frame').value
-        image_topic = self.get_parameter('image_topic').value
-        camera_info_topic = self.get_parameter('camera_info_topic').value
-        aruco_dict_name = self.get_parameter('aruco_dict').value
+        config_file = self.get_parameter("config_file").value
+        calib_file = self.get_parameter("camera_calibration_file").value
+        self.output_frame = self.get_parameter("output_frame").value
+        image_topic = self.get_parameter("image_topic").value
+        camera_info_topic = self.get_parameter("camera_info_topic").value
+        aruco_dict_name = self.get_parameter("aruco_dict").value
 
         self.tf_broadcaster = TransformBroadcaster(self)
         self.bridge = CvBridge()
@@ -66,7 +68,9 @@ class KeyboardPnPLocator(Node):
         # After remapping, we use new_camera_matrix with zero distortion.
         self._map_x: np.ndarray | None = None
         self._map_y: np.ndarray | None = None
-        self._pose_camera_matrix: np.ndarray | None = None  # new K for undistorted frame
+        self._pose_camera_matrix: np.ndarray | None = (
+            None  # new K for undistorted frame
+        )
 
         self._aruco_dict = cv2_utils.get_aruco_dictionary(aruco_dict_name)
         self._aruco_params = cv2_utils.create_detector_parameters()
@@ -101,29 +105,29 @@ class KeyboardPnPLocator(Node):
     # ------------------------------------------------------------------
 
     def _load_board_config(self, config_file: str) -> tuple[float, np.ndarray | None]:
-        with open(config_file, 'r') as f:
+        with open(config_file, "r") as f:
             cfg = yaml.safe_load(f)
-        marker_size = float(cfg['marker_size'])
+        marker_size = float(cfg["marker_size"])
         # `ids` is optional. If omitted, all detected markers are accepted —
         # useful when the competition has not yet published the marker IDs.
-        valid_ids = (
-            np.array(cfg['ids'], dtype=np.int32) if 'ids' in cfg else None
-        )
+        valid_ids = np.array(cfg["ids"], dtype=np.int32) if "ids" in cfg else None
         return marker_size, valid_ids
 
     def _load_calibration(self, calib_file: str) -> None:
         """Load K and D from a YAML calibration file and pre-compute undistortion maps."""
-        with open(calib_file, 'r') as f:
+        with open(calib_file, "r") as f:
             cfg = yaml.safe_load(f)
 
-        w = int(cfg['image_width'])
-        h = int(cfg['image_height'])
+        w = int(cfg["image_width"])
+        h = int(cfg["image_height"])
 
-        K = np.array(cfg['camera_matrix']['data'], dtype=np.float64).reshape(3, 3)
-        D = np.array(cfg['distortion_coefficients']['data'], dtype=np.float64)
+        K = np.array(cfg["camera_matrix"]["data"], dtype=np.float64).reshape(3, 3)
+        D = np.array(cfg["distortion_coefficients"]["data"], dtype=np.float64)
 
         # alpha=1 keeps all original pixels so corner markers near edges aren't clipped.
-        new_K, _ = cv2.getOptimalNewCameraMatrix(K, D, (w, h), alpha=1, newImgSize=(w, h))
+        new_K, _ = cv2.getOptimalNewCameraMatrix(
+            K, D, (w, h), alpha=1, newImgSize=(w, h)
+        )
         map_x, map_y = cv2.initUndistortRectifyMap(
             K, D, None, new_K, (w, h), cv2.CV_32FC1
         )
@@ -143,7 +147,9 @@ class KeyboardPnPLocator(Node):
         D = np.array(msg.d, dtype=np.float64)
         w, h = msg.width, msg.height
 
-        new_K, _ = cv2.getOptimalNewCameraMatrix(K, D, (w, h), alpha=1, newImgSize=(w, h))
+        new_K, _ = cv2.getOptimalNewCameraMatrix(
+            K, D, (w, h), alpha=1, newImgSize=(w, h)
+        )
         self._map_x, self._map_y = cv2.initUndistortRectifyMap(
             K, D, None, new_K, (w, h), cv2.CV_32FC1
         )
@@ -161,7 +167,7 @@ class KeyboardPnPLocator(Node):
             )
             return
 
-        raw = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+        raw = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
 
         # Pre-undistort the frame — improves ArUco corner detection under
         # high radial distortion (k1 ≈ 0.60 for this camera).
@@ -244,5 +250,5 @@ def main(args=None):
             rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
