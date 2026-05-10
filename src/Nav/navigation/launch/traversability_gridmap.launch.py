@@ -84,6 +84,12 @@ def launch_setup(context):
         extra_arguments=[{"use_intra_process_comms": True}, {"inputs": input_sources}],
     )
 
+    gridmap_compressor_node = ComposableNode(
+        package="compressed_telemetry_cpp",
+        plugin="compressed_telemetry_cpp::GridmapCompressor",
+        name="gridmap_compressor",
+    )
+
     return [
         launch.actions.LogInfo(
             msg=f"Loading elevation mapping with profile: {selected_profile}"
@@ -92,7 +98,7 @@ def launch_setup(context):
             msg="Waiting to compose gridmap node into zed container"
         ),
         LoadComposableNodes(
-            composable_node_descriptions=[node],
+            composable_node_descriptions=[node, gridmap_compressor_node],
             target_container="/zed/zed_container",
         ),
     ]

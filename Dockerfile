@@ -121,6 +121,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zlib1g-dev libffi-dev \
     libmount-dev \
     python3-mrcal libsnmp-dev snmp \
+    tmux \
     && rm -rf /var/lib/apt/lists/*
 
 RUN source /opt/ros/humble/setup.bash \
