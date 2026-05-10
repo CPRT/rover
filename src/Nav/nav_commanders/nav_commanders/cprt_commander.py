@@ -296,7 +296,7 @@ class UnifiedNavCommander(Node):
             String,
             self.mission_update_topic,
             self.mission_update_callback,
-            qos_profile_sensor_data,
+            self.qos_profile,
             callback_group=self.mission_update_cb_group,
         )
 
