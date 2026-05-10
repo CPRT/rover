@@ -35,11 +35,9 @@ class NavMarkerLocator(Node):
 
         self.declare_parameter("config_file", "config/nav_marker_config.yaml")
         self.declare_parameter(
-            "camera_calibration_file", "config/camera_calibration.yaml"
+            "camera_calibration_file", "config/drive_calibration.yaml"
         )
-        self.declare_parameter(
-            "image_topic", "/zed/zed_node/rgb/image_rect_color"
-        )
+        self.declare_parameter("image_topic", "/Drive/image_raw")
         self.declare_parameter("camera_info_topic", "")  # empty = don't subscribe
         self.declare_parameter("aruco_dict", "DICT_4X4_50")
 

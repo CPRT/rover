@@ -205,6 +205,7 @@ def estimate_pose_board(corners, ids, board, camera_matrix, dist_coeffs):
         )
         return num_markers, rvec, tvec
 
+
 def estimate_pose_single_markers(
     corners,
     marker_size: float,
@@ -318,9 +319,9 @@ def average_poses(rvecs, tvecs) -> tuple[np.ndarray, np.ndarray]:
     rvec_mean : np.ndarray, shape ``(3, 1)``
     tvec_mean : np.ndarray, shape ``(3, 1)``
     """
-    tvec_mean = np.mean(
-        [t.flatten() for t in tvecs], axis=0, keepdims=True
-    ).reshape(3, 1)
+    tvec_mean = np.mean([t.flatten() for t in tvecs], axis=0, keepdims=True).reshape(
+        3, 1
+    )
 
     rot_sum = np.zeros((3, 3), dtype=np.float64)
     for rv in rvecs:
