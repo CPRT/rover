@@ -21,7 +21,12 @@ DetectNode::DetectNode(const rclcpp::NodeOptions &options)
   this->declare_parameter<std::string>("rockpick_config",
                                        "config/rockpick/rockpick.txt");
   this->declare_parameter<std::string>("listen_to", "input");
-  this->declare_parameter<std::string>("output_topic", "Drive/image_raw");
+
+  active_camera_sub_ = this->create_subscription<std_msgs::msg::String>(
+      "/active_camera", 10,
+      std::bind(&DetectNode::active_camera_callback, this,
+                std::placeholders::_1));
+
   param_callback_handle_ = this->add_on_set_parameters_callback(
       std::bind(&DetectNode::on_parameter_change, this, std::placeholders::_1));
   marker_pub_ = this->create_publisher<std_msgs::msg::Int32>(
@@ -127,9 +132,8 @@ bool DetectNode::start_pipeline() {
                      marker_pub_.get());
     gst_object_unref(aruco);
 
-    std::string output_topic = this->get_parameter("output_topic").as_string();
     arm_cam_pub_ = this->create_publisher<sensor_msgs::msg::Image>(
-        output_topic, rclcpp::QoS(1).best_effort());
+        active_camera_ + "/image_raw", rclcpp::QoS(1).best_effort());
     GstElement *appsink = get_element("arm_cam_sink");
     if (!appsink) {
       RCLCPP_ERROR(this->get_logger(), "Failed to get arm_cam_sink element.");
@@ -247,6 +251,19 @@ std::string DetectNode::detection_type_to_string() const {
   }
 }
 
+void DetectNode::active_camera_callback(
+    const std_msgs::msg::String::SharedPtr msg) {
+  if (msg->data != active_camera_) {
+    active_camera_ = msg->data;
+    RCLCPP_INFO(this->get_logger(), "Active camera changed to %s",
+                active_camera_.c_str());
+    if (arm_cam_pub_) {
+      arm_cam_pub_ = this->create_publisher<sensor_msgs::msg::Image>(
+          active_camera_ + "/image_raw", rclcpp::QoS(1).best_effort());
+    }
+  }
+}
+
 void DetectNode::publish_object_detected(int32_t class_id, float confidence,
                                          int32_t xmin, int32_t ymin,
                                          int32_t xmax, int32_t ymax) {
@@ -331,8 +348,7 @@ GstFlowReturn DetectNode::on_new_sample(GstAppSink *sink, gpointer user_data) {
   sensor_msgs::msg::Image msg;
   msg.header.stamp = self->now();
 
-  std::string output_topic = self->get_parameter("output_topic").as_string();
-  if (output_topic == "EndEffector/image_raw") {
+  if (self->active_camera_ == "EndEffector") {
     msg.header.frame_id = "EndEffector";
   } else {
     msg.header.frame_id = "DriveCamera";
