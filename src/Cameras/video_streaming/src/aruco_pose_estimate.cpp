@@ -29,16 +29,19 @@ ArucoPoseEstimator::ArucoPoseEstimator(rclcpp::Node *node)
   // Define Intrinsic Calibrations
   // -------------------------------------------------------------
 
-  // Drive Camera (High Distortion)
+  // Drive Camera
   CameraIntrinsics drive_calib;
-  drive_calib.camera_matrix = (cv::Mat_<double>(3, 3) << 234.2702, 0, 346.4237,
-                               0, 255.8694, 287.5284, 0, 0, 1);
-  drive_calib.dist_coeffs = (cv::Mat_<double>(1, 8) << 0.6030, 0.4734, -0.0011,
-                             -0.0004, -0.0708, 0.3530, 0.6553, -0.0759);
+  drive_calib.camera_matrix = (cv::Mat_<double>(3, 3) << 1208.455865000, 0,
+                               953.045426800, 0, 1201.369845000,
+                               590.105458700, 0, 0, 1);
+  drive_calib.dist_coeffs =
+      (cv::Mat_<double>(1, 8)
+           << -1.041143259e-01, -8.638070390e-03, 1.363747596e-03,
+       -2.526459586e-05, 4.666582799e-02, 1.310149040e-04,
+       -5.928740585e-04, 4.767364821e-02);
   calibrations_["Drive"] = drive_calib;
 
   // End Effector Camera  (High Distortion)
-  // NOTE: Replace these values with the actual EE calibration when available
   CameraIntrinsics ee_calib;
   ee_calib.camera_matrix = (cv::Mat_<double>(3, 3) << 234.2702, 0, 346.4237, 0,
                             255.8694, 287.5284, 0, 0, 1);
