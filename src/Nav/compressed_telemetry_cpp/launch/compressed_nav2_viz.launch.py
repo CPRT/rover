@@ -31,8 +31,10 @@ def generate_launch_description():
         arguments=["-d", rviz_config],
     )
 
-    return LaunchDescription([
-        costmap_decompressor,
-        gridmap_decompressor,
-        rviz,
-    ])
+    return LaunchDescription(
+        [
+            costmap_decompressor,
+            gridmap_decompressor,
+            rviz,
+        ]
+    )

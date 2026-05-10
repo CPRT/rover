@@ -25,7 +25,8 @@ std::vector<uint8_t> DecompressZlib(const uint8_t *data, size_t size) {
   constexpr size_t kMaxDecompressed = 100 * 1024 * 1024;
   size_t output_size = std::max<size_t>(size * 4, 1024);
 
-  for (int attempt = 0; attempt < 8 && output_size <= kMaxDecompressed; ++attempt) {
+  for (int attempt = 0; attempt < 8 && output_size <= kMaxDecompressed;
+       ++attempt) {
     std::vector<uint8_t> output(output_size);
     uLongf dest_len = output_size;
     int ret = uncompress(reinterpret_cast<Bytef *>(output.data()), &dest_len,
@@ -42,11 +43,12 @@ std::vector<uint8_t> DecompressZlib(const uint8_t *data, size_t size) {
 
   throw std::runtime_error("zlib decompression exceeded size limits");
 }
-}  // namespace
+} // namespace
 
 class CostmapDecompressor : public rclcpp::Node {
- public:
-  explicit CostmapDecompressor(const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
+public:
+  explicit CostmapDecompressor(
+      const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
       : rclcpp::Node("costmap_decompressor", options) {
     auto radio_qos = rclcpp::QoS(1).best_effort().durability_volatile();
     auto rviz_qos = rclcpp::QoS(1).reliable().transient_local();
@@ -58,15 +60,17 @@ class CostmapDecompressor : public rclcpp::Node {
 
     full_map_sub_ = this->create_subscription<std_msgs::msg::UInt8MultiArray>(
         "/telemetry/costmap_full_compressed", radio_qos,
-        std::bind(&CostmapDecompressor::fullMapCallback, this, std::placeholders::_1));
+        std::bind(&CostmapDecompressor::fullMapCallback, this,
+                  std::placeholders::_1));
     update_sub_ = this->create_subscription<std_msgs::msg::UInt8MultiArray>(
         "/telemetry/costmap_updates_compressed", radio_qos,
-        std::bind(&CostmapDecompressor::updateCallback, this, std::placeholders::_1));
+        std::bind(&CostmapDecompressor::updateCallback, this,
+                  std::placeholders::_1));
 
     RCLCPP_INFO(this->get_logger(), "Costmap Decompressor Node Started.");
   }
 
- private:
+private:
   void fullMapCallback(const std_msgs::msg::UInt8MultiArray::SharedPtr msg) {
     try {
       auto raw = DecompressZlib(msg->data.data(), msg->data.size());
@@ -77,13 +81,15 @@ class CostmapDecompressor : public rclcpp::Node {
 
       nav_msgs::msg::OccupancyGrid grid_msg;
       serializer_map_.deserialize_message(&serialized_msg, &grid_msg);
-  const auto now = this->get_clock()->now();
-  const auto now_ns = now.nanoseconds();
-  grid_msg.header.stamp.sec = static_cast<int32_t>(now_ns / 1000000000LL);
-  grid_msg.header.stamp.nanosec = static_cast<uint32_t>(now_ns % 1000000000LL);
+      const auto now = this->get_clock()->now();
+      const auto now_ns = now.nanoseconds();
+      grid_msg.header.stamp.sec = static_cast<int32_t>(now_ns / 1000000000LL);
+      grid_msg.header.stamp.nanosec =
+          static_cast<uint32_t>(now_ns % 1000000000LL);
       full_map_pub_->publish(grid_msg);
     } catch (const std::exception &e) {
-      RCLCPP_ERROR(this->get_logger(), "Failed to unpack full map: %s", e.what());
+      RCLCPP_ERROR(this->get_logger(), "Failed to unpack full map: %s",
+                   e.what());
     }
   }
 
@@ -97,13 +103,15 @@ class CostmapDecompressor : public rclcpp::Node {
 
       map_msgs::msg::OccupancyGridUpdate update_msg;
       serializer_update_.deserialize_message(&serialized_msg, &update_msg);
-  const auto now = this->get_clock()->now();
-  const auto now_ns = now.nanoseconds();
-  update_msg.header.stamp.sec = static_cast<int32_t>(now_ns / 1000000000LL);
-  update_msg.header.stamp.nanosec = static_cast<uint32_t>(now_ns % 1000000000LL);
+      const auto now = this->get_clock()->now();
+      const auto now_ns = now.nanoseconds();
+      update_msg.header.stamp.sec = static_cast<int32_t>(now_ns / 1000000000LL);
+      update_msg.header.stamp.nanosec =
+          static_cast<uint32_t>(now_ns % 1000000000LL);
       update_pub_->publish(update_msg);
     } catch (const std::exception &e) {
-      RCLCPP_ERROR(this->get_logger(), "Failed to unpack map update: %s", e.what());
+      RCLCPP_ERROR(this->get_logger(), "Failed to unpack map update: %s",
+                   e.what());
     }
   }
 
@@ -116,6 +124,6 @@ class CostmapDecompressor : public rclcpp::Node {
   rclcpp::Subscription<std_msgs::msg::UInt8MultiArray>::SharedPtr update_sub_;
 };
 
-}  // namespace compressed_telemetry_cpp
+} // namespace compressed_telemetry_cpp
 
 RCLCPP_COMPONENTS_REGISTER_NODE(compressed_telemetry_cpp::CostmapDecompressor)

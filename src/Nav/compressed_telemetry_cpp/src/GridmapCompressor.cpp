@@ -39,37 +39,38 @@ void AppendLittleEndian(std::vector<uint8_t> &buffer, T value) {
 std::vector<uint8_t> CompressZlib(const uint8_t *data, size_t size) {
   uLongf compressed_size = compressBound(size);
   std::vector<uint8_t> compressed(compressed_size);
-  int ret = compress2(
-      compressed.data(), &compressed_size, reinterpret_cast<const Bytef *>(data),
-      size, Z_DEFAULT_COMPRESSION);
+  int ret = compress2(compressed.data(), &compressed_size,
+                      reinterpret_cast<const Bytef *>(data), size,
+                      Z_DEFAULT_COMPRESSION);
   if (ret != Z_OK) {
     throw std::runtime_error("zlib compression failed");
   }
   compressed.resize(compressed_size);
   return compressed;
 }
-}  // namespace
+} // namespace
 
 class GridmapCompressor : public rclcpp::Node {
- public:
-  explicit GridmapCompressor(const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
+public:
+  explicit GridmapCompressor(
+      const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
       : rclcpp::Node("gridmap_compressor", options),
-  log_mbps_stats_(this->declare_parameter<bool>("log_mbps_stats", true)),
-    raw_bytes_window_(0),
-    compressed_bytes_window_(0),
-  message_count_window_(0),
-  received_count_window_(0) {
+        log_mbps_stats_(this->declare_parameter<bool>("log_mbps_stats", true)),
+        raw_bytes_window_(0), compressed_bytes_window_(0),
+        message_count_window_(0), received_count_window_(0) {
     auto radio_qos = rclcpp::QoS(1).best_effort().durability_volatile();
-  auto sensor_qos = rclcpp::SensorDataQoS();
+    auto sensor_qos = rclcpp::SensorDataQoS();
 
     pub_ = this->create_publisher<std_msgs::msg::UInt8MultiArray>(
         "/telemetry/gridmap_compressed", radio_qos);
-  sub_ = this->create_subscription<grid_map_msgs::msg::GridMap>(
-    "/traversability_map", sensor_qos,
-        std::bind(&GridmapCompressor::mapCallback, this, std::placeholders::_1));
+    sub_ = this->create_subscription<grid_map_msgs::msg::GridMap>(
+        "/traversability_map", sensor_qos,
+        std::bind(&GridmapCompressor::mapCallback, this,
+                  std::placeholders::_1));
 
-  stats_timer_ = this->create_wall_timer(
-    std::chrono::seconds(20), std::bind(&GridmapCompressor::statsTimerCallback, this));
+    stats_timer_ = this->create_wall_timer(
+        std::chrono::seconds(20),
+        std::bind(&GridmapCompressor::statsTimerCallback, this));
 
     processing_thread_ = std::thread(&GridmapCompressor::processingLoop, this);
   }
@@ -85,7 +86,7 @@ class GridmapCompressor : public rclcpp::Node {
     }
   }
 
- private:
+private:
   void mapCallback(const grid_map_msgs::msg::GridMap::SharedPtr msg) {
     received_count_window_.fetch_add(1, std::memory_order_relaxed);
     {
@@ -113,17 +114,19 @@ class GridmapCompressor : public rclcpp::Node {
       }
 
       try {
-        auto elev_it = std::find(current->layers.begin(), current->layers.end(), "elevation");
-        auto trav_it =
-            std::find(current->layers.begin(), current->layers.end(), "traversability");
-        if (elev_it == current->layers.end() || trav_it == current->layers.end()) {
+        auto elev_it = std::find(current->layers.begin(), current->layers.end(),
+                                 "elevation");
+        auto trav_it = std::find(current->layers.begin(), current->layers.end(),
+                                 "traversability");
+        if (elev_it == current->layers.end() ||
+            trav_it == current->layers.end()) {
           continue;
         }
 
-        const size_t elev_idx =
-            static_cast<size_t>(std::distance(current->layers.begin(), elev_it));
-        const size_t trav_idx =
-            static_cast<size_t>(std::distance(current->layers.begin(), trav_it));
+        const size_t elev_idx = static_cast<size_t>(
+            std::distance(current->layers.begin(), elev_it));
+        const size_t trav_idx = static_cast<size_t>(
+            std::distance(current->layers.begin(), trav_it));
 
         const auto &elev_data = current->data[elev_idx].data;
         const auto &trav_data = current->data[trav_idx].data;
@@ -140,7 +143,8 @@ class GridmapCompressor : public rclcpp::Node {
           if (std::isnan(elev_val)) {
             elev_int16[i] = -32768;
           } else {
-            const float scaled = std::clamp(elev_val * 1000.0f, -32767.0f, 32767.0f);
+            const float scaled =
+                std::clamp(elev_val * 1000.0f, -32767.0f, 32767.0f);
             elev_int16[i] = static_cast<int16_t>(scaled);
           }
 
@@ -155,12 +159,14 @@ class GridmapCompressor : public rclcpp::Node {
 
         const std::string frame_id = current->header.frame_id;
         if (frame_id.size() > 255) {
-          RCLCPP_WARN(this->get_logger(), "Frame id too long for gridmap packet.");
+          RCLCPP_WARN(this->get_logger(),
+                      "Frame id too long for gridmap packet.");
           continue;
         }
 
         std::vector<uint8_t> payload;
-        payload.reserve(86 + frame_id.size() + elev_int16.size() * sizeof(int16_t) +
+        payload.reserve(86 + frame_id.size() +
+                        elev_int16.size() * sizeof(int16_t) +
                         trav_uint8.size());
 
         payload.push_back(kProtocolVersion);
@@ -181,7 +187,8 @@ class GridmapCompressor : public rclcpp::Node {
 
         payload.insert(payload.end(), frame_id.begin(), frame_id.end());
 
-        const uint8_t *elev_bytes = reinterpret_cast<const uint8_t *>(elev_int16.data());
+        const uint8_t *elev_bytes =
+            reinterpret_cast<const uint8_t *>(elev_int16.data());
         payload.insert(payload.end(), elev_bytes,
                        elev_bytes + elev_int16.size() * sizeof(int16_t));
         payload.insert(payload.end(), trav_uint8.begin(), trav_uint8.end());
@@ -193,7 +200,8 @@ class GridmapCompressor : public rclcpp::Node {
         pub_->publish(out_msg);
 
         raw_bytes_window_.fetch_add(payload.size(), std::memory_order_relaxed);
-        compressed_bytes_window_.fetch_add(out_msg.data.size(), std::memory_order_relaxed);
+        compressed_bytes_window_.fetch_add(out_msg.data.size(),
+                                           std::memory_order_relaxed);
         message_count_window_.fetch_add(1, std::memory_order_relaxed);
       } catch (const std::exception &e) {
         RCLCPP_ERROR(this->get_logger(), "Compression failed: %s", e.what());
@@ -206,11 +214,11 @@ class GridmapCompressor : public rclcpp::Node {
       return;
     }
 
-  constexpr double duration_s = 20.0;
-  const double compressed = static_cast<double>(
-    compressed_bytes_window_.exchange(0, std::memory_order_relaxed));
-  const double raw =
-    static_cast<double>(raw_bytes_window_.exchange(0, std::memory_order_relaxed));
+    constexpr double duration_s = 20.0;
+    const double compressed = static_cast<double>(
+        compressed_bytes_window_.exchange(0, std::memory_order_relaxed));
+    const double raw = static_cast<double>(
+        raw_bytes_window_.exchange(0, std::memory_order_relaxed));
     const double sent_count = static_cast<double>(
         message_count_window_.exchange(0, std::memory_order_relaxed));
     const double received_count = static_cast<double>(
@@ -225,12 +233,14 @@ class GridmapCompressor : public rclcpp::Node {
       const double avg_ratio = compressed / raw;
       const double avg_reduction = (1.0 - avg_ratio) * 100.0;
       RCLCPP_INFO(this->get_logger(),
-                  "Avg compression over %d s: %.1f%% (avg %.0f bytes -> %.0f bytes), %.3f Mbps, incoming %.2f Hz, compressed %.2f Hz",
-                  static_cast<int>(duration_s), avg_reduction, avg_raw, avg_compressed, mbps,
-                  recv_hz, sent_hz);
+                  "Avg compression over %d s: %.1f%% (avg %.0f bytes -> %.0f "
+                  "bytes), %.3f Mbps, incoming %.2f Hz, compressed %.2f Hz",
+                  static_cast<int>(duration_s), avg_reduction, avg_raw,
+                  avg_compressed, mbps, recv_hz, sent_hz);
     } else {
       RCLCPP_INFO(this->get_logger(),
-                  "Avg compression over %d s: no data (%.3f Mbps, incoming %.2f Hz, compressed %.2f Hz)",
+                  "Avg compression over %d s: no data (%.3f Mbps, incoming "
+                  "%.2f Hz, compressed %.2f Hz)",
                   static_cast<int>(duration_s), mbps, recv_hz, sent_hz);
     }
 
@@ -253,6 +263,6 @@ class GridmapCompressor : public rclcpp::Node {
   std::atomic<bool> stop_processing_{false};
 };
 
-}  // namespace compressed_telemetry_cpp
+} // namespace compressed_telemetry_cpp
 
 RCLCPP_COMPONENTS_REGISTER_NODE(compressed_telemetry_cpp::GridmapCompressor)
