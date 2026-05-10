@@ -13,7 +13,7 @@ Subscriptions:
 Published Topics:
     /aruco_boards (interfaces.msg.ArucoBoard)
        Pose of detected ArUco boards
-    
+
     /aruco_debug (sensor_msgs.msg.Image)
        Debug image with detected boards and axes drawn
 

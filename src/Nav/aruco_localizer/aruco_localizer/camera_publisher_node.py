@@ -8,7 +8,7 @@ from a YAML file, and publishes both the camera images and camera_info to ROS2 t
 Published Topics:
     /camera/image_raw (sensor_msgs.msg.Image)
        Raw camera images
-    
+
     /camera/camera_info (sensor_msgs.msg.CameraInfo)
        Camera calibration information
 
