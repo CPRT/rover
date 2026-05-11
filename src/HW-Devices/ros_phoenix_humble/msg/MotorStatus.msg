@@ -10,3 +10,5 @@ float64 velocity
 
 bool fwd_limit
 bool rev_limit
+
+bool error
