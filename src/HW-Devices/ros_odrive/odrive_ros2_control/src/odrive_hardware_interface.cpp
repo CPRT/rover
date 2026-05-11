@@ -93,8 +93,8 @@ struct Axis {
   // double iq_measured_ = NAN;
   double torque_target_ = NAN;   // [Nm]
   double torque_estimate_ = NAN; // [Nm]
-  // uint32_t active_errors_ = 0;
-  // uint32_t disarm_reason_ = 0;
+  uint32_t active_errors_ = 0;
+  uint32_t disarm_reason_ = 0;
   // double fet_temperature_ = NAN;
   // double motor_temperature_ = NAN;
   double bus_voltage_ = NAN;
@@ -346,6 +346,7 @@ void ODriveHardwareInterface::pub_status() {
     status_msg.output_current = axis.bus_current_;
     status_msg.position = axis.pos_estimate_;
     status_msg.velocity = axis.vel_estimate_;
+    status_msg.error = axis.active_errors_ || axis.disarm_reason_;
     axis.debug_pub_->publish(status_msg);
   }
 }
@@ -576,6 +577,12 @@ void Axis::on_can_msg(const rclcpp::Time &, const can_frame &frame) {
     if (Get_Bus_Voltage_Current_msg_t msg; try_decode(msg)) {
       bus_voltage_ = msg.Bus_Voltage;
       bus_current_ = msg.Bus_Current;
+    }
+  } break;
+  case Get_Error_msg_t::cmd_id: {
+    if (Get_Error_msg_t msg; try_decode(msg)) {
+      active_errors_ = msg.Active_Errors;
+      disarm_reason_ = msg.Disarm_Reason;
     }
   } break;
     // silently ignore unimplemented command IDs
