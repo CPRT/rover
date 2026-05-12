@@ -132,6 +132,7 @@ COPY rosdep-keys.txt .
 RUN apt-get update && \
     apt-get install -y \
         $(xargs rosdep resolve < rosdep-keys.txt 2> /dev/null | sed '/^#/d')
+RUN geographiclib-get-geoids egm96-5
 
 COPY --from=deepstream-base /target/ /
 ENV GST_PLUGIN_PATH=/opt/gstreamer/lib/gstreamer-1.0:/usr/lib/aarch64-linux-gnu/gstreamer-1.0:/opt/nvidia/deepstream/deepstream/lib/gst-plugins
