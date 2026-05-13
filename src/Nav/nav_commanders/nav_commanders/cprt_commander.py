@@ -601,10 +601,10 @@ class UnifiedNavCommander(Node):
         def process_mission_update():
             # Now this can safely block without freezing the ROS 2 executor
             self.navigator.cancelTask()
-            
+
             # Since cancelTask() is no longer deadlocking, it will cleanly handle the action server.
             # You can safely remove self._cancel_all_nav_goals() here.
-            
+
             self.reset_state_variables()
             self.update_mission_type(requested_type)
             self.get_logger().info("Mission update and cancellation complete.")
@@ -612,7 +612,7 @@ class UnifiedNavCommander(Node):
         # Start the thread
         threading.Thread(target=process_mission_update, daemon=True).start()
 
-    def _trigger_target_found(self, target_id: str):    
+    def _trigger_target_found(self, target_id: str):
         """Standard behavior for generic objects: stops everything."""
         self.get_logger().info(
             f"Target '{target_id}' detected! Stopping navigation/search immediately."
@@ -893,6 +893,7 @@ class UnifiedNavCommander(Node):
 
                 self.search_handle = "PENDING_DISPATCH"
                 self.get_logger().info(f"self.search_bt_path: {self.search_bt_path}")
+
                 def dispatch_search():
                     self.navigator.goThroughPoses(
                         self.search_poses, behavior_tree=self.search_bt_path
