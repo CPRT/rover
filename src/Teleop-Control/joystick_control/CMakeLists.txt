@@ -67,7 +67,7 @@ ament_target_dependencies(arm
 ament_target_dependencies(drill
   rclcpp
   sensor_msgs
-  std_msgs
+  ros_phoenix
 )
 
 install(TARGETS

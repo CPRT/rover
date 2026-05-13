@@ -36,15 +36,3 @@ drill_teleop_node:
     max_elevator_duty: 1.0
     drill_cmd_topic: "/drill/set"
     elevator_cmd_topic: "/elevator/set"
-
-elevator:
-  roboclaw_elevator_node:
-    ros__parameters:
-      port: "/dev/ttyACM0"
-      baudrate: 115200
-
-drill:
-  roboclaw_drill_node:
-    ros__parameters:
-      port: "/dev/ttyACM1"
-      baudrate: 115200
