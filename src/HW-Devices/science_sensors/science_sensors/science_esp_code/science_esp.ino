@@ -29,10 +29,10 @@ static const uint32_t PWM_TICK_MS    = 10;
 
 static const uint32_t SENSOR_PERIOD_MS = 100;
 
-static const int METHANE_PIN     = 4;
-static const int CO2_PIN         = 12;
-static const int POLARIMETER_PIN = 14;
-static const int DHT_PIN = 2;
+static const int METHANE_PIN     = 12;
+static const int CO2_PIN         = 33;
+static const int POLARIMETER_PIN = 4;
+static const int DHT_PIN = 14;
 
 #define DHT_TYPE DHT22
 
