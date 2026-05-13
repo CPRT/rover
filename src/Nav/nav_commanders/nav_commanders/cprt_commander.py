@@ -121,7 +121,8 @@ class UnifiedNavCommander(Node):
         )
 
         # Dynamically resolve BT paths
-        nav_pkg_share = get_package_share_directory("navigation")
+        # nav_pkg_share = get_package_share_directory("navigation")
+        nav_pkg_share = "/rover/install/navigation/share/navigation"
         self.nav_bt_path = os.path.join(
             nav_pkg_share, "behavior_trees", self.nav_bt_file
         )
@@ -581,7 +582,7 @@ class UnifiedNavCommander(Node):
         self, request: Trigger.Request, response: Trigger.Response
     ) -> Trigger.Response:
         self.get_logger().info("Received request to cancel mission.")
-        self.navigator.cancelTask()
+        threading.Thread(target=self.navigator.cancelTask, daemon=True).start()
         self._fail_mission("Mission cancelled by operator.")
         response.success = True
         return response
@@ -593,12 +594,23 @@ class UnifiedNavCommander(Node):
             return
 
         self.get_logger().info(
-            f"Received mission update request: '{requested_type}'. Canceling active missions."
+            f"Received mission update request: '{requested_type}'. Initiating background cancellation."
         )
-        self.navigator.cancelTask()
-        self._cancel_all_nav_goals()
-        self.reset_state_variables()
-        self.update_mission_type(requested_type)
+
+        # Offload the blocking operations to a background thread to prevent ROS 2 deadlocks
+        def process_mission_update():
+            # Now this can safely block without freezing the ROS 2 executor
+            self.navigator.cancelTask()
+
+            # Since cancelTask() is no longer deadlocking, it will cleanly handle the action server.
+            # You can safely remove self._cancel_all_nav_goals() here.
+
+            self.reset_state_variables()
+            self.update_mission_type(requested_type)
+            self.get_logger().info("Mission update and cancellation complete.")
+
+        # Start the thread
+        threading.Thread(target=process_mission_update, daemon=True).start()
 
     def _trigger_target_found(self, target_id: str):
         """Standard behavior for generic objects: stops everything."""
@@ -607,7 +619,7 @@ class UnifiedNavCommander(Node):
         )
         self.stop_triggered_id = target_id
         self.mission_state = MissionState.FOUND_TARGET
-        self.navigator.cancelTask()
+        threading.Thread(target=self.navigator.cancelTask, daemon=True).start()
 
     def _trigger_aruco_approach(self, target_id: str):
         """ArUco specific behavior: transitions into approach pose calculation."""
@@ -616,7 +628,7 @@ class UnifiedNavCommander(Node):
         )
         self.stop_triggered_id = target_id
         self.mission_state = MissionState.CALCULATE_APPROACH
-        self.navigator.cancelTask()
+        threading.Thread(target=self.navigator.cancelTask, daemon=True).start()
 
     def aruco_callback(self, msg: ArucoMarkers) -> None:
         if self.mission_state not in (
@@ -880,6 +892,7 @@ class UnifiedNavCommander(Node):
                 )
 
                 self.search_handle = "PENDING_DISPATCH"
+                self.get_logger().info(f"self.search_bt_path: {self.search_bt_path}")
 
                 def dispatch_search():
                     self.navigator.goThroughPoses(
