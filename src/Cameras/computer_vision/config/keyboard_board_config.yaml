@@ -1,0 +1,13 @@
+# Keyboard ArUco Marker Configuration — URC 2026
+#
+# Only marker_size is required. ids is optional:
+#   - Omit ids (or comment it out) to accept ANY detected marker.
+#   - Set ids once the competition publishes which IDs will be used.
+#
+# Per URC 2026 rules: markers are 2 x 2 cm squares placed at keyboard corners.
+
+# Printed side length of each ArUco marker (metres). Fixed by URC 2026 rules.
+marker_size: 0.020
+
+# Marker IDs — uncomment and set once the organizers publish them.
+# ids: [0, 1, 2, 3]

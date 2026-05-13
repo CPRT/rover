@@ -6,6 +6,8 @@ InputNode::InputNode(const rclcpp::NodeOptions &options)
     : BaseVideoNode("input_node", options) {
   RCLCPP_INFO(this->get_logger(), "InputNode constructed.");
   declare_parameters();
+  active_camera_pub_ =
+      this->create_publisher<std_msgs::msg::String>("/active_camera", 10);
   video_service_ = this->create_service<interfaces::srv::VideoOut>(
       "start_video", std::bind(&InputNode::video_cb, this,
                                std::placeholders::_1, std::placeholders::_2));
@@ -212,6 +214,11 @@ void InputNode::video_cb(
   }
   if (response->success) {
     current_video_request_ = request;
+    if (!request->sources.empty()) {
+      std_msgs::msg::String msg;
+      msg.data = request->sources[0].name;
+      active_camera_pub_->publish(msg);
+    }
   }
 }
 

@@ -21,6 +21,12 @@ DetectNode::DetectNode(const rclcpp::NodeOptions &options)
   this->declare_parameter<std::string>("rockpick_config",
                                        "config/rockpick/rockpick.txt");
   this->declare_parameter<std::string>("listen_to", "input");
+
+  active_camera_sub_ = this->create_subscription<std_msgs::msg::String>(
+      "/active_camera", 10,
+      std::bind(&DetectNode::active_camera_callback, this,
+                std::placeholders::_1));
+
   param_callback_handle_ = this->add_on_set_parameters_callback(
       std::bind(&DetectNode::on_parameter_change, this, std::placeholders::_1));
   marker_pub_ = this->create_publisher<std_msgs::msg::Int32>(
@@ -49,6 +55,7 @@ bool DetectNode::create_pipeline() {
              "allow-renegotiation=true name=src ! ";
   detection_type_ = string_to_detection_type(
       this->get_parameter("detection_type").as_string());
+  bool add_terminator = true;
   switch (detection_type_) {
   case DetectionType::WATER_BOTTLE:
     desc_ss << get_detection_pipeline_str(
@@ -63,15 +70,26 @@ bool DetectNode::create_pipeline() {
         this->get_parameter("rockpick_config").as_string());
     break;
   case DetectionType::ARUCO:
-    desc_ss << "videoconvert ! queue ! videoconvert ! arucomarker "
-               "detect-every=10 "
-               "name=aruco_detector ! queue ! videoconvert ! ";
+    // Split stream: one branch to interpipesink (for downstream streaming),
+    // another to appsink so the Python PnP locator can read frames over ROS
+    // without opening the USB device directly (which would conflict with
+    // GStreamer).
+    desc_ss << "videoconvert ! queue ! videoconvert ! "
+               "arucomarker detect-every=10 name=aruco_detector ! "
+               "tee name=aruco_tee "
+               "aruco_tee. ! queue ! videoconvert ! nvvidconv ! interpipesink "
+               "name=detect "
+               "aruco_tee. ! queue ! "
+               "appsink name=arm_cam_sink sync=false max-buffers=1 drop=true";
+    add_terminator = false;
     break;
   case DetectionType::NONE:
     desc_ss << "identity ! ";
     break;
   }
-  desc_ss << "nvvidconv ! interpipesink name=detect";
+  if (add_terminator) {
+    desc_ss << "nvvidconv ! interpipesink name=detect";
+  }
 
   RCLCPP_INFO(this->get_logger(), "Creating pipeline: %s",
               desc_ss.str().c_str());
@@ -113,6 +131,19 @@ bool DetectNode::start_pipeline() {
     g_signal_connect(aruco, "marker-detected", G_CALLBACK(on_marker_detected),
                      marker_pub_.get());
     gst_object_unref(aruco);
+
+    arm_cam_pub_ = this->create_publisher<sensor_msgs::msg::Image>(
+        active_camera_ + "/image_raw", rclcpp::QoS(1).best_effort());
+    GstElement *appsink = get_element("arm_cam_sink");
+    if (!appsink) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to get arm_cam_sink element.");
+      return false;
+    }
+    GstAppSinkCallbacks callbacks = {};
+    callbacks.new_sample = on_new_sample;
+    gst_app_sink_set_callbacks(GST_APP_SINK(appsink), &callbacks, this,
+                               nullptr);
+    gst_object_unref(appsink);
   } else if (detection_type_ == DetectionType::MALLET ||
              detection_type_ == DetectionType::WATER_BOTTLE) {
     GstElement *osd = get_element("osd");
@@ -220,6 +251,19 @@ std::string DetectNode::detection_type_to_string() const {
   }
 }
 
+void DetectNode::active_camera_callback(
+    const std_msgs::msg::String::SharedPtr msg) {
+  if (msg->data != active_camera_) {
+    active_camera_ = msg->data;
+    RCLCPP_INFO(this->get_logger(), "Active camera changed to %s",
+                active_camera_.c_str());
+    if (arm_cam_pub_) {
+      arm_cam_pub_ = this->create_publisher<sensor_msgs::msg::Image>(
+          active_camera_ + "/image_raw", rclcpp::QoS(1).best_effort());
+    }
+  }
+}
+
 void DetectNode::publish_object_detected(int32_t class_id, float confidence,
                                          int32_t xmin, int32_t ymin,
                                          int32_t xmax, int32_t ymax) {
@@ -272,6 +316,54 @@ rcl_interfaces::msg::SetParametersResult DetectNode::on_parameter_change(
     }
   }
   return result;
+}
+
+GstFlowReturn DetectNode::on_new_sample(GstAppSink *sink, gpointer user_data) {
+  auto *self = static_cast<DetectNode *>(user_data);
+  if (!self->arm_cam_pub_) {
+    return GST_FLOW_OK;
+  }
+
+  GstSample *sample = gst_app_sink_pull_sample(sink);
+  if (!sample) {
+    return GST_FLOW_ERROR;
+  }
+
+  GstCaps *caps = gst_sample_get_caps(sample);
+  GstBuffer *buffer = gst_sample_get_buffer(sample);
+
+  gint width = 0, height = 0;
+  if (caps) {
+    GstStructure *s = gst_caps_get_structure(caps, 0);
+    gst_structure_get_int(s, "width", &width);
+    gst_structure_get_int(s, "height", &height);
+  }
+
+  GstMapInfo map;
+  if (!gst_buffer_map(buffer, &map, GST_MAP_READ)) {
+    gst_sample_unref(sample);
+    return GST_FLOW_ERROR;
+  }
+
+  sensor_msgs::msg::Image msg;
+  msg.header.stamp = self->now();
+
+  if (self->active_camera_ == "EndEffector") {
+    msg.header.frame_id = "EndEffector";
+  } else {
+    msg.header.frame_id = "DriveCamera";
+  }
+  msg.height = static_cast<uint32_t>(height);
+  msg.width = static_cast<uint32_t>(width);
+  msg.encoding = "rgb8";
+  msg.is_bigendian = 0;
+  msg.step = static_cast<uint32_t>(width * 3);
+  msg.data.assign(map.data, map.data + map.size);
+  self->arm_cam_pub_->publish(std::move(msg));
+
+  gst_buffer_unmap(buffer, &map);
+  gst_sample_unref(sample);
+  return GST_FLOW_OK;
 }
 
 RCLCPP_COMPONENTS_REGISTER_NODE(DetectNode)

@@ -1,0 +1,22 @@
+# Camera calibration for camera-0 (wireless USB arm camera)
+# Lens model: LENSMODEL_OPENCV8 / rational_polynomial
+# Image size: 720 x 576
+#
+# D = [k1, k2, p1, p2, k3, k4, k5, k6]  (8-coefficient rational polynomial)
+# k1 = 0.60 is high distortion — frame must be pre-undistorted before detection.
+
+image_width: 720
+image_height: 576
+
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [234.270200500, 0.000000000, 346.423740500,
+         0.000000000,  255.869438100, 287.528427900,
+         0.000000000,   0.000000000,   1.000000000]
+
+distortion_coefficients:
+  rows: 1
+  cols: 8
+  data: [ 6.030760110e-01,  4.734409150e-01, -1.139866073e-03, -4.822030303e-04,
+         -7.081831399e-02,  3.530105362e-01,  6.553218691e-01, -7.595088572e-02]

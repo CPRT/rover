@@ -1,0 +1,4 @@
+# Navigation marker configuration
+# marker_size is in metres
+marker_size: 0.15
+# ids: [1, 2, 3, 4]

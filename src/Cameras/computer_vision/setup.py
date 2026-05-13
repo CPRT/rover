@@ -10,7 +10,8 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
         ("share/" + package_name, ["package.xml"]),
-        ("share/" + package_name, glob("launch/*.py")),
+        ("share/" + package_name + "/launch", glob("launch/*.py")),
+        ("share/" + package_name + "/config", glob("config/*.yaml")),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
@@ -21,7 +22,9 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "zed_aruco_detector_node = computer_vision.zed_aruco_detector:main"
+            "zed_aruco_detector_node = computer_vision.zed_aruco_detector:main",
+            "keyboard_pnp_locator_node = computer_vision.keyboard_pnp_locator:main",
+            "nav_marker_locator_node = computer_vision.nav_marker_locator:main",
         ],
     },
 )
