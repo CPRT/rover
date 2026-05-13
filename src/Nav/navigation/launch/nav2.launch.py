@@ -163,7 +163,7 @@ def generate_launch_description():
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params],
-                remappings=remappings,
+                remappings=[("cmd_vel", "cmd_vel_nav")],
             ),
             Node(
                 package="nav2_smoother",
@@ -242,6 +242,7 @@ def generate_launch_description():
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params],
+                remappings=[("cmd_vel", "cmd_vel_nav"), ("cmd_vel_smoothed", "cmd_vel")],
             ),
             Node(
                 package="cprt_behavior_tree_plugins",
@@ -283,7 +284,7 @@ def generate_launch_description():
                 plugin="nav2_controller::ControllerServer",
                 name="controller_server",
                 parameters=[configured_params],
-                remappings=remappings,
+                remappings=[("cmd_vel", "cmd_vel_nav")],
             ),
             ComposableNode(
                 package="nav2_smoother",
@@ -338,6 +339,7 @@ def generate_launch_description():
                 plugin="nav2_velocity_smoother::VelocitySmoother",
                 name="velocity_smoother",
                 parameters=[configured_params],
+                remappings=[("cmd_vel", "cmd_vel_nav"), ("cmd_vel_smoothed", "cmd_vel")],
             ),
             ComposableNode(
                 package="cprt_behavior_tree_plugins",
