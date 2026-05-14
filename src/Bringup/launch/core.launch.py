@@ -3,6 +3,7 @@ from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.substitutions import FindPackageShare
+from launch_ros.actions import Node
 from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
 
 
@@ -20,6 +21,7 @@ def get_included_launch_descriptions(launch_files):
             raise ValueError(f"Unsupported launch file format: {file}")
 
         included_launches.append(IncludeLaunchDescription(source))
+
     return included_launches
 
 
@@ -28,4 +30,17 @@ def generate_launch_description():
         ("servo_pkg", "usb_servo_launch.launch.py"),
         ("gpio_controller", "core_gpio_devices.launch.py"),
     ]
-    return LaunchDescription(get_included_launch_descriptions(launch_files))
+
+    snmp_node = Node(
+        package="system-telemetry-cpp",
+        executable="snmp_network_stats",
+        name="snmp_network_stats",
+        output="screen",
+    )
+
+    return LaunchDescription(
+        get_included_launch_descriptions(launch_files)
+        + [
+            snmp_node,
+        ]
+    )
