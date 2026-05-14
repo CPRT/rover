@@ -13,9 +13,6 @@ class AntennaPointingNode(Node):
         self.declare_parameter("Freq", 10)
         self.freq = self.get_parameter("Freq").value
 
-        self.declare_parameter("AutoThreshold", 10)
-        self.freq = self.get_parameter("AutoThreshold").value
-
         # State and fix values
         self.base_fix = None
         self.rover_fix = None
