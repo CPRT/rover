@@ -89,6 +89,7 @@ class AntennaPointingNode(Node):
         y = math.cos(p1) * math.sin(p2) - math.sin(p1) * math.cos(p2) * math.cos(dl)
         return (math.atan2(x, y) + math.pi * 2) % (math.pi * 2)
 
+
 def main(args=None):
     rclpy.init(args=args)
     node = AntennaPointingNode()
