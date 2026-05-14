@@ -157,6 +157,7 @@ def generate_launch_description():
         name="arm_teleop_node",
         parameters=[joy_parameters_file],
         remappings=[("/joy", "/arm/joy")],
+        condition=IfCondition(use_arm),
     )
     drive_control_node = Node(
         package="joystick_control",
@@ -164,6 +165,7 @@ def generate_launch_description():
         name="drive_teleop_node",
         parameters=[joy_parameters_file],
         remappings=[("/joy", "/drive/joy")],
+        condition=IfCondition(use_drive),
     )
 
     ld = LaunchDescription()
