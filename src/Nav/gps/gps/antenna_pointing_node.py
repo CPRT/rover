@@ -73,9 +73,7 @@ class AntennaPointingNode(Node):
 
             self.publish_bearing(bearing)
         else:  # is manual mode
-            msg = Float32()
-            msg.data = float(self.manual_value)
-            self.bearing_pub.publish(msg)
+            self.publish_bearing(self.manual_value)
 
     def publish_bearing(self, bearing):
         msg = Float32()
