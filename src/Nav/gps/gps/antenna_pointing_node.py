@@ -13,6 +13,9 @@ class AntennaPointingNode(Node):
         self.declare_parameter("Freq", 10)
         self.freq = self.get_parameter("Freq").value
 
+        self.declare_parameter("AutoThreshold", 10)
+        self.freq = self.get_parameter("AutoThreshold").value
+
         # State and fix values
         self.base_fix = None
         self.rover_fix = None
@@ -68,16 +71,6 @@ class AntennaPointingNode(Node):
                 self.rover_fix.longitude,
             )
 
-            distance = self.haversine(
-                self.base_fix.latitude,
-                self.base_fix.longitude,
-                self.rover_fix.latitude,
-                self.rover_fix.longitude,
-            )
-
-            if distance < 5.0:
-                bearing = (bearing + math.pi / 2) % (math.pi * 2)
-
             self.publish_bearing(bearing)
         else:  # is manual mode
             msg = Float32()
@@ -97,14 +90,6 @@ class AntennaPointingNode(Node):
         x = math.sin(dl) * math.cos(p2)
         y = math.cos(p1) * math.sin(p2) - math.sin(p1) * math.cos(p2) * math.cos(dl)
         return (math.atan2(x, y) + math.pi * 2) % (math.pi * 2)
-    
-    def haversine(self, lat1, lon1, lat2, lon2):
-        R = 6_371_000  # Earth radius in metres, haversine method returns dist in meters
-        p1, p2 = math.radians(lat1), math.radians(lat2)
-        dp = math.radians(lat2 - lat1)
-        dl = math.radians(lon2 - lon1)
-        a = math.sin(dp / 2)**2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2)**2
-        return 2 * R * math.asin(math.sqrt(a))
 
 def main(args=None):
     rclpy.init(args=args)
