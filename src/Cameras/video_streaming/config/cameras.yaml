@@ -6,6 +6,7 @@ input_node:
     - "Drive"
     - "EndEffector"
     - "Bottom"
+    - "Mast"
     - "Test"
     Drive:
       path: "/dev/v4l/by-id/drive_camera"
@@ -24,5 +25,11 @@ input_node:
       encoded: true
       height: 480
       width: 640
+    Mast:
+      path: "/dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._Webcam_Webcam-video-index0"
+      type: 0
+      encoded: true
+      height: 720
+      width: 1280
     Test:
       type: 1
