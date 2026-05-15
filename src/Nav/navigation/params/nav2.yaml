@@ -129,7 +129,7 @@ global_costmap:
 
       # plugin: "nav2_smac_planner/SmacPlannerHybrid" # Hybrid planner plugin
 
-      interpolation_resolution: 0.2       
+      interpolation_resolution: 0.05       
       horizon_distance: 40.0              # distance from start pose for which an intermediate goal should be created by EventHorizonPlanner
       intermediate_tolerance: 10.0        # tolerance value for intermediate goal created by EventHorizonPlanner
 
@@ -148,7 +148,7 @@ global_costmap:
       analytic_expansion_max_length: 3.0  # For Hybrid/Lattice nodes: The maximum length of the analytic expansion to be considered valid to prevent unsafe shortcutting
       analytic_expansion_max_cost: 200.0  # The maximum single cost for any part of an analytic expansion to contain and be valid, except when necessary on approach to goal
       analytic_expansion_max_cost_override: false  #  Whether or not to override the maximum cost setting if within critical distance to goal (ie probably required)
-      minimum_turning_radius: 0.6        # minimum turning radius in m of path / vehicle (Swerve can turn tighter)
+      minimum_turning_radius: 1.4        # minimum turning radius in m of path / vehicle (Swerve can turn tighter)
       reverse_penalty: 2.0                # Penalty to apply if motion is reversing, must be => 1
       change_penalty: 0.0                 # Penalty to apply if motion is changing directions (L to R), must be >= 0
       non_straight_penalty: 1.8           # Penalty to apply if motion is non-straight, must be => 1
@@ -163,12 +163,12 @@ global_costmap:
       smooth_path: True                   # If true, does a simple and quick smoothing post-processing to the path
 
       smoother:
-        max_iterations: 1000
-        w_smooth: 0.6                  # Increased from 0.3 to produce smoother initial paths
+        max_iterations: 2000
+        w_smooth: 1.0
         w_data: 0.2
         tolerance: 1.0e-10
         do_refinement: true
-        refinement_num: 4              # Increased from 2 for better initial smoothing
+        refinement_num: 4
 
     GridBasedSearch:
       plugin: "cprt_planner_plugins::EventHorizonPlanner" # In Iron and older versions, "/" was used instead of "::"
@@ -176,7 +176,7 @@ global_costmap:
 
       # plugin: "nav2_smac_planner/SmacPlannerHybrid" # Hybrid planner plugin
 
-      interpolation_resolution: 0.2       
+      interpolation_resolution: 0.05       
       horizon_distance: 40.0              # distance from start pose for which an intermediate goal should be created by EventHorizonPlanner
       intermediate_tolerance: 10.0        # tolerance value for intermediate goal created by EventHorizonPlanner
 
@@ -210,12 +210,12 @@ global_costmap:
       smooth_path: True                   # If true, does a simple and quick smoothing post-processing to the path
 
       smoother:
-        max_iterations: 1000
-        w_smooth: 0.6                  # Increased from 0.3 to produce smoother initial paths
+        max_iterations: 2000
+        w_smooth: 1.0
         w_data: 0.2
         tolerance: 1.0e-10
         do_refinement: true
-        refinement_num: 4              # Increased from 2 for better initial smoothing
+        refinement_num: 4
 
 smoother_server:
   ros__parameters:
@@ -330,12 +330,12 @@ controller_server:
       # Regulated Pure Pursuit Parameters (Driving Logic)
       transform_tolerance: 0.4
 
-      desired_linear_vel: 1.2 # Increase to 1.0 for outdoor swerve agility
+      desired_linear_vel: 1.5
       max_robot_pose_search_dist: 5.0
 
-      lookahead_dist: 1.0
+      lookahead_dist: 1.4
       min_lookahead_dist: 1.1
-      max_lookahead_dist: 1.7
+      max_lookahead_dist: 2.0
       lookahead_time: 1.0
       use_velocity_scaled_lookahead_dist: true
 
@@ -343,13 +343,13 @@ controller_server:
       max_allowed_time_to_collision_up_to_carrot: 5.0
 
       use_regulated_linear_velocity_scaling: true
-      regulated_linear_scaling_min_radius: 1.3
-      regulated_linear_scaling_min_speed: 0.4
+      regulated_linear_scaling_min_radius: 1.5
+      regulated_linear_scaling_min_speed: 0.5
 
       use_interpolation: true
       use_cost_regulated_linear_velocity_scaling: true
       cost_scaling_dist: 0.3
-      cost_scaling_gain: 0.4
+      cost_scaling_gain: 0.3
       inflation_cost_scaling_factor: 10.0
 
       allow_reversing: false
@@ -453,7 +453,7 @@ velocity_smoother:
     # OUTDOOR SWERVE
     max_velocity: [1.5, 0.0, 3.5]    # [x, y, theta] in m/s, m/s, rad/s
     min_velocity: [-1.5, 0.0, -3.5]
-    max_accel: [1.5, 0.0, 4.0]       # [x, y, theta] in m/s², m/s², rad/s²
+    max_accel: [0.8, 0.0, 4.0]       # [x, y, theta] in m/s², m/s², rad/s²
     max_decel: [-2.0, 0.0, -4.0]
     # INDOOR TESTING 
     # Safe limits for initial testing in confined spaces
