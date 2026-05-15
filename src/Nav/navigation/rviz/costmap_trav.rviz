@@ -8,9 +8,10 @@ Panels:
         - /Status1
         - /TF1/Frames1
         - /TF1/Tree1
-        - /TraversibilityMap1
+        - /GlobalMap1
         - /Path1
         - /Path2
+        - /Path3
       Splitter Ratio: 0.5423280596733093
     Tree Height: 725
   - Class: rviz_common/Selection
@@ -57,48 +58,6 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        Antenna_Back:
-          Value: true
-        Antenna_Front:
-          Value: true
-        Frame:
-          Value: true
-        GPS_Left:
-          Value: true
-        GPS_Right:
-          Value: true
-        Link_1:
-          Value: true
-        Rocker_Left:
-          Value: true
-        Rocker_Right:
-          Value: true
-        Sus_Arm_Back_Left:
-          Value: true
-        Sus_Arm_Back_Right:
-          Value: true
-        Sus_Arm_Front_Left:
-          Value: true
-        Sus_Arm_Front_Right:
-          Value: true
-        Wheel_Arm_Back_Left:
-          Value: true
-        Wheel_Arm_Back_Right:
-          Value: true
-        Wheel_Arm_Front_Left:
-          Value: true
-        Wheel_Arm_Front_Right:
-          Value: true
-        Wheel_Back_Left:
-          Value: true
-        Wheel_Back_Right:
-          Value: true
-        Wheel_Front_Left:
-          Value: true
-        Wheel_Front_Right:
-          Value: true
-        Zed:
-          Value: true
         base_link:
           Value: true
         gps_link:
@@ -114,8 +73,6 @@ Visualization Manager:
         zed_camera_center:
           Value: true
         zed_camera_link:
-          Value: true
-        zed_imu_link:
           Value: true
         zed_left_camera_frame:
           Value: true
@@ -134,37 +91,6 @@ Visualization Manager:
         map:
           odom:
             base_link:
-              Frame:
-                Antenna_Back:
-                  {}
-                Antenna_Front:
-                  {}
-                GPS_Left:
-                  {}
-                GPS_Right:
-                  {}
-                Rocker_Left:
-                  Sus_Arm_Back_Left:
-                    Wheel_Arm_Back_Left:
-                      Wheel_Back_Left:
-                        {}
-                  Sus_Arm_Front_Left:
-                    Wheel_Arm_Front_Left:
-                      Wheel_Front_Left:
-                        {}
-                Rocker_Right:
-                  Sus_Arm_Back_Right:
-                    Wheel_Arm_Back_Right:
-                      Wheel_Back_Right:
-                        {}
-                  Sus_Arm_Front_Right:
-                    Wheel_Arm_Front_Right:
-                      Wheel_Front_Right:
-                        {}
-                Zed:
-                  {}
-              Link_1:
-                {}
               gps_link:
                 {}
               imu_link:
@@ -174,8 +100,6 @@ Visualization Manager:
               zed_camera_link:
                 zed_camera_center:
                   zed_left_camera_frame:
-                    zed_imu_link:
-                      {}
                     zed_left_camera_optical_frame:
                       {}
                   zed_right_camera_frame:
@@ -320,6 +244,7 @@ Visualization Manager:
         Value: /zed/zed_node/left/image_rect_color
       Value: false
       Visibility:
+        "": true
         GlobalMap: true
         Grid: true
         Path: true
@@ -328,6 +253,34 @@ Visualization Manager:
         TraversibilityMap: true
         Value: true
       Zoom Factor: 1
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz_default_plugins/Path
+      Color: 0; 0; 255
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Billboards
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /intended_search_path
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -374,25 +327,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 32.33910369873047
+      Distance: 25.190412521362305
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.234550952911377
-        Y: -1.2085336446762085
-        Z: -0.7941077947616577
+        X: 11.739980697631836
+        Y: -0.6300888657569885
+        Z: -7.657690525054932
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.549796223640442
+      Pitch: 0.7097970843315125
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.1353251934051514
+      Yaw: 3.3303186893463135
     Saved: ~
 Window Geometry:
   Camera:

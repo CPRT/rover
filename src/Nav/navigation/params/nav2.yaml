@@ -73,12 +73,12 @@ local_costmap:
       robot_base_frame: base_link
       use_sim_time: True
       rolling_window: True
-      use_maximum: False
+      use_maximum: True
       lethal_cost_threshold: 200
       trinary_costmap: False
       width: 5
       height: 5
-      resolution: 0.2
+      resolution: 0.05
       robot_radius: 0.1
       plugins: [obstacle_layer]
       obstacle_layer:
@@ -92,10 +92,11 @@ global_costmap:
   global_costmap:
     ros__parameters:
       update_frequency: 10.0
-      publish_frequency: 2.0
+      publish_frequency: 10.0
       global_frame: map
       robot_base_frame: base_link
       rolling_window: true
+      use_maximum: True
       transform_tolerance: 0.3
       height: 100
       width: 100
@@ -103,7 +104,7 @@ global_costmap:
       origin_y: -50.0
       use_sim_time: True
       robot_radius: 0.3
-      resolution: 0.2
+      resolution: 0.05
       track_unknown_space: true
       trinary_costmap: false
       lethal_cost_threshold: 200

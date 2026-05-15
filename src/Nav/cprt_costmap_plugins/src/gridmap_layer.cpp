@@ -1,10 +1,10 @@
-
 #include "cprt_costmap_plugins/gridmap_layer.hpp"
 
 #include <tf2/convert.h>
 #include <tf2_ros/transform_listener.h>
 
 #include <algorithm>
+#include <chrono>
 #include <pluginlib/class_list_macros.hpp>
 #include <string>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
@@ -15,7 +15,9 @@ using nav2_costmap_2d::NO_INFORMATION;
 
 namespace cprt_costmap_plugins {
 
-GridmapLayer::GridmapLayer() {}
+GridmapLayer::GridmapLayer() : total_execution_time_(0.0), sample_count_(0) {
+  last_log_time_ = std::chrono::steady_clock::now();
+}
 
 GridmapLayer::~GridmapLayer() {}
 
@@ -46,14 +48,13 @@ void GridmapLayer::reset() {
   has_updated_data_ = true;
   current_ = false;
 }
+
 void GridmapLayer::matchSize() {
-  Costmap2D *master = layered_costmap_->getCostmap();
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  nav2_costmap_2d::Costmap2D *master = layered_costmap_->getCostmap();
+  std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> guard(*getMutex());
   resizeMap(master->getSizeInCellsX(), master->getSizeInCellsY(),
             master->getResolution(), master->getOriginX(),
             master->getOriginY());
-  RCLCPP_INFO(logger_, "sx:%f, sy: %f, ox: %f, oy %f", getSizeInMetersX(),
-              getSizeInMetersY(), getOriginX(), getOriginY());
 }
 
 void GridmapLayer::getParameters() {
@@ -61,12 +62,11 @@ void GridmapLayer::getParameters() {
   double temp_tf_tol = 0.0;
 
   declareParameter("enabled", rclcpp::ParameterValue(true));
-  declareParameter("map_subscribe_transient_local",
-                   rclcpp::ParameterValue(true));
-  declareParameter("transform_tolerance", rclcpp::ParameterValue(0.0));
   declareParameter("map_topic", rclcpp::ParameterValue("/map"));
   declareParameter("layer_name", rclcpp::ParameterValue("traversability_map"));
-  declareParameter("footprint_clearing_enabled", rclcpp::ParameterValue(false));
+  declareParameter("use_interpolation", rclcpp::ParameterValue(true));
+  declareParameter("enable_log", rclcpp::ParameterValue(false));
+  declareParameter("transform_tolerance", rclcpp::ParameterValue(0.0));
 
   auto node = node_.lock();
   if (!node) {
@@ -76,40 +76,44 @@ void GridmapLayer::getParameters() {
   node->get_parameter(name_ + "." + "enabled", enabled_);
   node->get_parameter(name_ + "." + "map_topic", map_topic_);
   node->get_parameter(name_ + "." + "layer_name", layer_name_);
+  node->get_parameter(name_ + "." + "use_interpolation", use_interpolation_);
+  node->get_parameter(name_ + "." + "enable_log", enable_log_);
+
   node->get_parameter("track_unknown_space", track_unknown_space_);
   node->get_parameter("use_maximum", use_maximum_);
   node->get_parameter("lethal_cost_threshold", temp_lethal_threshold);
-  node->get_parameter("unknown_cost_value", unknown_cost_value_);
   node->get_parameter("trinary_costmap", trinary_costmap_);
   node->get_parameter("transform_tolerance", temp_tf_tol);
 
-  // Enforce bounds
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 255), 0);
   map_received_ = false;
-
   transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
+
+  setDefaultValue(track_unknown_space_ ? NO_INFORMATION : FREE_SPACE);
 }
 
 unsigned char GridmapLayer::interpretValue(double value) {
-  // Gridmap unknown is NaN
   if (!std::isfinite(value)) {
     return track_unknown_space_ ? NO_INFORMATION : FREE_SPACE;
   }
-  value = value * 255;
-  if (value >= lethal_threshold_) {
+
+  // Gridmap values are typically 0.0-1.0
+  double scaled_value = value * 255.0;
+
+  if (scaled_value >= lethal_threshold_) {
     return LETHAL_OBSTACLE;
   }
   if (trinary_costmap_) {
     return FREE_SPACE;
   }
 
-  const double scale = value / lethal_threshold_;
-  return scale * LETHAL_OBSTACLE;
+  const double scale = scaled_value / lethal_threshold_;
+  return static_cast<unsigned char>(scale * LETHAL_OBSTACLE);
 }
 
 void GridmapLayer::incomingMap(
     const grid_map_msgs::msg::GridMap::SharedPtr new_map) {
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> guard(*getMutex());
   grid_map::GridMapRosConverter::fromMessage(*new_map, gridmap_in_);
   map_received_ = true;
   has_updated_data_ = true;
@@ -124,40 +128,154 @@ void GridmapLayer::updateBounds(double robot_x, double robot_y,
   }
   map_received_in_update_bounds_ = true;
 
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> guard(*getMutex());
 
   if (layered_costmap_->isRolling()) {
     updateOrigin(robot_x - getSizeInMetersX() / 2,
                  robot_y - getSizeInMetersY() / 2);
   }
 
-  if (!layered_costmap_->isRolling()) {
-    if (!(has_updated_data_ || has_extra_bounds_)) {
-      return;
+  useExtraBounds(min_x, min_y, max_x, max_y);
+
+  geometry_msgs::msg::TransformStamped transform;
+  if (!getTransform(transform))
+    return;
+
+  double width = gridmap_in_.getLength().x();
+  double height = gridmap_in_.getLength().y();
+
+  geometry_msgs::msg::PointStamped gm_p, cp_p;
+  gm_p.point.x = gridmap_in_.getPosition().x();
+  gm_p.point.y = gridmap_in_.getPosition().y();
+  tf2::doTransform(gm_p, cp_p, transform);
+
+  // 1. Calculate CURRENT bounding box
+  double current_min_x = cp_p.point.x - width / 2.0;
+  double current_min_y = cp_p.point.y - height / 2.0;
+  double current_max_x = cp_p.point.x + width / 2.0;
+  double current_max_y = cp_p.point.y + height / 2.0;
+
+  // 2. Expand Master bounds to cover the CURRENT position
+  *min_x = std::min(current_min_x, *min_x);
+  *min_y = std::min(current_min_y, *min_y);
+  *max_x = std::max(current_max_x, *max_x);
+  *max_y = std::max(current_max_y, *max_y);
+
+  // 3. Expand Master bounds to cover the PREVIOUS position
+  // This forces Nav2 to wipe the old area if localization jumped!
+  if (has_last_bounds_) {
+    *min_x = std::min(last_min_x_, *min_x);
+    *min_y = std::min(last_min_y_, *min_y);
+    *max_x = std::max(last_max_x_, *max_x);
+    *max_y = std::max(last_max_y_, *max_y);
+  }
+
+  // 4. Save current position for the NEXT cycle
+  last_min_x_ = current_min_x;
+  last_min_y_ = current_min_y;
+  last_max_x_ = current_max_x;
+  last_max_y_ = current_max_y;
+  has_last_bounds_ = true;
+}
+
+void GridmapLayer::updateCosts(nav2_costmap_2d::Costmap2D &master_grid,
+                               int min_i, int min_j, int max_i, int max_j) {
+  auto start_time = std::chrono::steady_clock::now();
+
+  std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> guard(*getMutex());
+  if (!enabled_ || !map_received_in_update_bounds_)
+    return;
+
+  geometry_msgs::msg::TransformStamped tf_msg;
+  if (!getTransform(tf_msg))
+    return;
+
+  tf2::Transform tf2_transform;
+  tf2::fromMsg(tf_msg.transform, tf2_transform);
+  tf2::Transform tf2_inv = tf2_transform.inverse();
+
+  if (!gridmap_in_.exists(layer_name_)) {
+    RCLCPP_ERROR_THROTTLE(logger_, *(clock_), 5000, "Layer %s missing",
+                          layer_name_.c_str());
+    return;
+  }
+
+  // CREATE SAFE ZONE (Prevents Edge Interpolation Tearing)
+  double gm_res = gridmap_in_.getResolution();
+  double safe_half_width =
+      std::max(0.0, (gridmap_in_.getLength().x() / 2.0) - (2.0 * gm_res));
+  double safe_half_height =
+      std::max(0.0, (gridmap_in_.getLength().y() / 2.0) - (2.0 * gm_res));
+  grid_map::Position gm_center = gridmap_in_.getPosition();
+
+  // Iterate over the requested Costmap update window
+  for (int j = min_j; j < max_j; j++) {
+    for (int i = min_i; i < max_i; i++) {
+
+      double wx, wy;
+      mapToWorld(i, j, wx, wy);
+
+      tf2::Vector3 cp(wx, wy, 0.0);
+      tf2::Vector3 gp = tf2_inv * cp;
+      grid_map::Position pos(gp.x(), gp.y());
+
+      // Only attempt interpolation if we are strictly INSIDE the safe zone
+      if (std::abs(pos.x() - gm_center.x()) <= safe_half_width &&
+          std::abs(pos.y() - gm_center.y()) <= safe_half_height) {
+        try {
+          float value;
+          if (use_interpolation_) {
+            value = gridmap_in_.atPosition(
+                layer_name_, pos, grid_map::InterpolationMethods::INTER_LINEAR);
+          } else {
+            value = gridmap_in_.atPosition(layer_name_, pos);
+          }
+
+          unsigned char interpreted_cost = interpretValue(value);
+          if (interpreted_cost != NO_INFORMATION) {
+            // ONLY overwrite the layer memory if we have valid gridmap data
+            setCost(i, j, interpreted_cost);
+          }
+        } catch (const std::out_of_range &) {
+          // Fallback just in case
+        }
+      }
+      // CRITICAL FIX: If outside the safe zone, DO NOTHING.
+      // This leaves your internal layer buffer exactly as it was, preserving
+      // memory!
     }
   }
 
-  useExtraBounds(min_x, min_y, max_x, max_y);
-  geometry_msgs::msg::TransformStamped transform;
-  if (!getTransform(transform)) {
-    return;
-  }
-  geometry_msgs::msg::PointStamped grid_map_point, costmap_point;
-  width_ = gridmap_in_.getLength().x();
-  height_ = gridmap_in_.getLength().y();
-  grid_map_point.point.x = gridmap_in_.getPosition().x();
-  grid_map_point.point.y = gridmap_in_.getPosition().y();
-  grid_map_point.point.z = 0.0;
-  tf2::doTransform(grid_map_point, costmap_point, transform);
-  x_ = costmap_point.point.x;
-  y_ = costmap_point.point.y;
+  // Merge the cleanly preserved buffer into the Master Costmap
+  if (use_maximum_)
+    updateWithMax(master_grid, min_i, min_j, max_i, max_j);
+  else
+    updateWithTrueOverwrite(master_grid, min_i, min_j, max_i, max_j);
 
-  const double rad_x = width_ * 0.5;
-  const double rad_y = height_ * 0.5;
-  *min_x = std::min(x_ - rad_x, *min_x);
-  *min_y = std::min(y_ - rad_y, *min_y);
-  *max_x = std::max(x_ + rad_x, *max_x);
-  *max_y = std::max(y_ + rad_y, *max_y);
+  current_ = true;
+  has_updated_data_ = false;
+
+  // Logging Logic
+  if (enable_log_) {
+    auto end_time = std::chrono::steady_clock::now();
+    std::chrono::duration<double, std::milli> duration = end_time - start_time;
+    total_execution_time_ += duration.count();
+    sample_count_++;
+
+    auto now = std::chrono::steady_clock::now();
+    if (std::chrono::duration_cast<std::chrono::seconds>(now - last_log_time_)
+            .count() >= 20) {
+      double avg = total_execution_time_ / sample_count_;
+      RCLCPP_INFO(
+          logger_,
+          "GridmapLayer [%s] Avg Update Time: %.3f ms (over %d samples)",
+          name_.c_str(), avg, sample_count_);
+
+      total_execution_time_ = 0.0;
+      sample_count_ = 0;
+      last_log_time_ = now;
+    }
+  }
 }
 
 bool GridmapLayer::getTransform(
@@ -168,112 +286,9 @@ bool GridmapLayer::getTransform(
         tf2::TimePointZero);
     return true;
   } catch (tf2::TransformException &ex) {
-    RCLCPP_WARN(logger_, "Gridmap layer: %s", ex.what());
+    RCLCPP_WARN_THROTTLE(logger_, *(clock_), 5000, "TF Error: %s", ex.what());
     return false;
   }
-}
-
-void GridmapLayer::updateCosts(nav2_costmap_2d::Costmap2D &master_grid,
-                               int min_i, int min_j, int max_i, int max_j) {
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  if (!enabled_) {
-    return;
-  }
-
-  // Don't write to master costmap until we've received at least one map
-  if (!map_received_in_update_bounds_) {
-    static int count = 0;
-    // throttle warning down to only 1/10 message rate
-    if (++count == 10) {
-      RCLCPP_WARN(logger_,
-                  "Can't update gridmap costmap layer, no map received");
-      count = 0;
-    }
-    return;
-  }
-
-  // FIX: For rolling costmaps, we MUST re-project every cycle to prevent
-  // flickering For static costmaps, only update when new data arrives
-  if (!has_updated_data_ && !layered_costmap_->isRolling()) {
-    // No new data and not rolling - skip the update loop but still merge
-    if (use_maximum_) {
-      updateWithMax(master_grid, min_i, min_j, max_i, max_j);
-    } else {
-      updateWithTrueOverwrite(master_grid, min_i, min_j, max_i, max_j);
-    }
-    current_ = true;
-    return;
-  }
-
-  geometry_msgs::msg::TransformStamped transform_stamped;
-  if (!getTransform(transform_stamped)) {
-    return;
-  }
-
-  // Check if the required layer exists in the grid map to avoid exceptions
-  if (!gridmap_in_.exists(layer_name_)) {
-    RCLCPP_ERROR(logger_,
-                 "GridMap layer '%s' does not exist in received grid map. "
-                 "Available layers: [%s]. Check your configuration.",
-                 layer_name_.c_str(),
-                 [&]() {
-                   std::string layers;
-                   for (const auto &layer : gridmap_in_.getLayers()) {
-                     if (!layers.empty())
-                       layers += ", ";
-                     layers += layer;
-                   }
-                   return layers;
-                 }()
-                     .c_str());
-    return;
-  }
-
-  // OPTIMIZATION: Convert transform once before the loop to avoid repeated
-  // conversions
-  tf2::Transform tf2_transform;
-  tf2::fromMsg(transform_stamped.transform, tf2_transform);
-
-  // Iterate through the grid map and copy values to the internal costmap
-  for (grid_map::GridMapIterator it(gridmap_in_); !it.isPastEnd(); ++it) {
-    const grid_map::Index index(*it);
-    const float value = gridmap_in_.at(layer_name_, index);
-    const auto cost = interpretValue(value);
-
-    // PRESERVE DATA: Skip unknown values to prevent overwriting valid obstacles
-    if (cost == NO_INFORMATION) {
-      continue;
-    }
-
-    // Convert grid_map index to world coordinates
-    grid_map::Position position;
-    gridmap_in_.getPosition(index, position);
-
-    // OPTIMIZATION: Use direct tf2::Transform multiplication instead of
-    // doTransform
-    tf2::Vector3 grid_map_point(position.x(), position.y(), 0.0);
-    tf2::Vector3 costmap_point = tf2_transform * grid_map_point;
-
-    // Convert world coordinates to costmap cell coordinates
-    unsigned int mx, my;
-    const bool isValid =
-        worldToMap(costmap_point.x(), costmap_point.y(), mx, my);
-    if (isValid) {
-      // Write to the layer's own internal buffer (not the master)
-      setCost(mx, my, cost);
-    }
-  }
-
-  // Mark as processed after successful copy
-  has_updated_data_ = false;
-
-  // Always merge the internal buffer into the master costmap
-  if (use_maximum_) {
-    updateWithMax(master_grid, min_i, min_j, max_i, max_j);
-  } else {
-    updateWithTrueOverwrite(master_grid, min_i, min_j, max_i, max_j);
-  }
-  current_ = true;
 }
 
 } // namespace cprt_costmap_plugins

@@ -57,46 +57,6 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        Antenna_Back:
-          Value: true
-        Antenna_Front:
-          Value: true
-        Frame:
-          Value: true
-        GPS_Left:
-          Value: true
-        GPS_Right:
-          Value: true
-        Rocker_Left:
-          Value: true
-        Rocker_Right:
-          Value: true
-        Sus_Arm_Back_Left:
-          Value: true
-        Sus_Arm_Back_Right:
-          Value: true
-        Sus_Arm_Front_Left:
-          Value: true
-        Sus_Arm_Front_Right:
-          Value: true
-        Wheel_Arm_Back_Left:
-          Value: true
-        Wheel_Arm_Back_Right:
-          Value: true
-        Wheel_Arm_Front_Left:
-          Value: true
-        Wheel_Arm_Front_Right:
-          Value: true
-        Wheel_Back_Left:
-          Value: true
-        Wheel_Back_Right:
-          Value: true
-        Wheel_Front_Left:
-          Value: true
-        Wheel_Front_Right:
-          Value: true
-        Zed:
-          Value: true
         base_link:
           Value: true
         gps_link:
@@ -109,13 +69,9 @@ Visualization Manager:
           Value: true
         odom:
           Value: true
-        utm:
-          Value: true
         zed_camera_center:
           Value: true
         zed_camera_link:
-          Value: true
-        zed_imu_link:
           Value: true
         zed_left_camera_frame:
           Value: true
@@ -134,35 +90,6 @@ Visualization Manager:
         map:
           odom:
             base_link:
-              Frame:
-                Antenna_Back:
-                  {}
-                Antenna_Front:
-                  {}
-                GPS_Left:
-                  {}
-                GPS_Right:
-                  {}
-                Rocker_Left:
-                  Sus_Arm_Back_Left:
-                    Wheel_Arm_Back_Left:
-                      Wheel_Back_Left:
-                        {}
-                  Sus_Arm_Front_Left:
-                    Wheel_Arm_Front_Left:
-                      Wheel_Front_Left:
-                        {}
-                Rocker_Right:
-                  Sus_Arm_Back_Right:
-                    Wheel_Arm_Back_Right:
-                      Wheel_Back_Right:
-                        {}
-                  Sus_Arm_Front_Right:
-                    Wheel_Arm_Front_Right:
-                      Wheel_Front_Right:
-                        {}
-                Zed:
-                  {}
               gps_link:
                 {}
               imu_link:
@@ -172,15 +99,11 @@ Visualization Manager:
               zed_camera_link:
                 zed_camera_center:
                   zed_left_camera_frame:
-                    zed_imu_link:
-                      {}
                     zed_left_camera_optical_frame:
                       {}
                   zed_right_camera_frame:
                     zed_right_camera_optical_frame:
                       {}
-          utm:
-            {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -352,25 +275,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 30.784473419189453
+      Distance: 13.961050987243652
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 6.122574806213379
-        Y: 2.1688928604125977
-        Z: -8.647008895874023
+        X: 18.71556854248047
+        Y: -1.2846412658691406
+        Z: 6.945093154907227
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5547963380813599
+      Pitch: 0.5447972416877747
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.2721421718597412
+      Yaw: 3.092137098312378
     Saved: ~
 Window Geometry:
   Displays:

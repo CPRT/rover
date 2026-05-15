@@ -125,6 +125,8 @@ protected:
   std::string map_frame_;    /// @brief frame that map is located in
 
   bool has_updated_data_{false};
+  bool has_last_bounds_{false};
+  double last_min_x_, last_min_y_, last_max_x_, last_max_y_;
 
   double x_{0};
   double y_{0};
@@ -138,6 +140,7 @@ protected:
   // Parameters
   std::string map_topic_;
   std::string layer_name_;
+  bool use_interpolation_;
   bool track_unknown_space_;
   bool use_maximum_;
   unsigned char lethal_threshold_;
@@ -147,6 +150,12 @@ protected:
   bool map_received_in_update_bounds_{false};
   tf2::Duration transform_tolerance_;
   grid_map::GridMap gridmap_in_;
+
+  // Logging variables
+  bool enable_log_;
+  double total_execution_time_;
+  int sample_count_;
+  std::chrono::steady_clock::time_point last_log_time_;
 };
 
 } // namespace cprt_costmap_plugins
