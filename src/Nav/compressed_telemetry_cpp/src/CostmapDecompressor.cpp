@@ -21,11 +21,11 @@
 namespace compressed_telemetry_cpp {
 
 namespace {
-std::vector<uint8_t> DecompressZlib(const uint8_t *data, size_t size) {
-  constexpr size_t kMaxDecompressed = 100 * 1024 * 1024;
+std::vector<uint8_t> DecompressZlib(const uint8_t *data, size_t size,
+                                    size_t max_decompressed) {
   size_t output_size = std::max<size_t>(size * 4, 1024);
 
-  for (int attempt = 0; attempt < 8 && output_size <= kMaxDecompressed;
+  for (int attempt = 0; attempt < 8 && output_size <= max_decompressed;
        ++attempt) {
     std::vector<uint8_t> output(output_size);
     uLongf dest_len = output_size;
@@ -36,12 +36,16 @@ std::vector<uint8_t> DecompressZlib(const uint8_t *data, size_t size) {
       return output;
     }
     if (ret != Z_BUF_ERROR) {
-      throw std::runtime_error("zlib decompression failed");
+      throw std::runtime_error("zlib decompression failed (code " +
+                               std::to_string(ret) + ")");
     }
     output_size *= 2;
   }
 
-  throw std::runtime_error("zlib decompression exceeded size limits");
+  throw std::runtime_error(
+      "zlib decompression exceeded size limits (compressed=" +
+      std::to_string(size) + ", limit=" + std::to_string(max_decompressed) +
+      ")");
 }
 } // namespace
 
@@ -49,7 +53,16 @@ class CostmapDecompressor : public rclcpp::Node {
 public:
   explicit CostmapDecompressor(
       const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
-      : rclcpp::Node("costmap_decompressor", options) {
+      : rclcpp::Node("costmap_decompressor", options),
+        max_decompressed_bytes_(
+            static_cast<size_t>(this->declare_parameter<int64_t>(
+                "max_decompressed_bytes", 100 * 1024 * 1024))) {
+    if (max_decompressed_bytes_ == 0) {
+      max_decompressed_bytes_ = 100 * 1024 * 1024;
+      RCLCPP_WARN(this->get_logger(),
+                  "max_decompressed_bytes must be > 0; using default %zu",
+                  max_decompressed_bytes_);
+    }
     auto radio_qos = rclcpp::QoS(1).best_effort().durability_volatile();
     auto rviz_qos = rclcpp::QoS(1).reliable().transient_local();
 
@@ -73,7 +86,8 @@ public:
 private:
   void fullMapCallback(const std_msgs::msg::UInt8MultiArray::SharedPtr msg) {
     try {
-      auto raw = DecompressZlib(msg->data.data(), msg->data.size());
+      auto raw = DecompressZlib(msg->data.data(), msg->data.size(),
+                                max_decompressed_bytes_);
       rclcpp::SerializedMessage serialized_msg(raw.size());
       auto &rcl_serialized = serialized_msg.get_rcl_serialized_message();
       std::memcpy(rcl_serialized.buffer, raw.data(), raw.size());
@@ -95,7 +109,8 @@ private:
 
   void updateCallback(const std_msgs::msg::UInt8MultiArray::SharedPtr msg) {
     try {
-      auto raw = DecompressZlib(msg->data.data(), msg->data.size());
+      auto raw = DecompressZlib(msg->data.data(), msg->data.size(),
+                                max_decompressed_bytes_);
       rclcpp::SerializedMessage serialized_msg(raw.size());
       auto &rcl_serialized = serialized_msg.get_rcl_serialized_message();
       std::memcpy(rcl_serialized.buffer, raw.data(), raw.size());
@@ -122,6 +137,7 @@ private:
   rclcpp::Publisher<map_msgs::msg::OccupancyGridUpdate>::SharedPtr update_pub_;
   rclcpp::Subscription<std_msgs::msg::UInt8MultiArray>::SharedPtr full_map_sub_;
   rclcpp::Subscription<std_msgs::msg::UInt8MultiArray>::SharedPtr update_sub_;
+  size_t max_decompressed_bytes_;
 };
 
 } // namespace compressed_telemetry_cpp
