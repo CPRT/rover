@@ -26,7 +26,7 @@ setup(
     entry_points={
         "console_scripts": [
             "lights = gpio_controller.lights:main",
-            "distance_sensor = gpio_controller.esp_distance_sensor:main",
+            "mast_esp = gpio_controller.mast_esp:main",
             "pdb_rails = gpio_controller.pdb_rails:main",
         ],
     },
