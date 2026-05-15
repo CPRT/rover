@@ -118,7 +118,7 @@ global_costmap:
         layer_name: "inflated_traversability"
       always_send_full_costmap: True
 
-/planner_server:
+planner_server:
   ros__parameters:
     planner_plugins: ["GridBasedTransit", "GridBasedSearch"]
     use_sim_time: True
