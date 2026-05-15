@@ -6,6 +6,7 @@
 #include <tf2_ros/transform_listener.h>
 
 #include <grid_map_ros/grid_map_ros.hpp>
+#include <chrono>
 #include <mutex>
 #include <nav2_costmap_2d/costmap_layer.hpp>
 #include <nav2_costmap_2d/footprint.hpp>
