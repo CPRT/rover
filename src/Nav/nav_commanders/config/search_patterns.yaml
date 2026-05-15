@@ -1,3 +1,4 @@
+# --- Spiral Patterns ---
 spiral_7m:
   pattern: spiral
   search_radius: 7.0
@@ -24,3 +25,25 @@ spiral_22m:
   start_theta: 0.5
   face_outward: false
   min_radius: 1.5
+
+# --- Square Patterns ---
+square_7m:
+  pattern: filleted_square
+  search_radius: 7.0
+  lane_spacing: 3.0
+  turn_radius: 0.4
+  straight_step_size: 3.0
+
+square_12m:
+  pattern: filleted_square
+  search_radius: 12.0
+  lane_spacing: 3.0
+  turn_radius: 0.4
+  straight_step_size: 3.0
+
+square_22m:
+  pattern: filleted_square
+  search_radius: 22.0
+  lane_spacing: 3.0
+  turn_radius: 0.4
+  straight_step_size: 3.0

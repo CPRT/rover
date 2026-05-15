@@ -29,44 +29,47 @@ set(dependencies
   nav2_behavior_tree
 )
 
+# --- Trim Lethal Goals Server ---
 add_library(trim_lethal_goals_server_node SHARED
   src/trim_lethal_goals_server_node.cpp
 )
-
 target_include_directories(trim_lethal_goals_server_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
-
-ament_target_dependencies(trim_lethal_goals_server_node
-  ${dependencies}
-)
-
+ament_target_dependencies(trim_lethal_goals_server_node ${dependencies})
 rclcpp_components_register_node(trim_lethal_goals_server_node
   PLUGIN "cprt_nav::TrimLethalGoalsServerNode"
   EXECUTABLE trim_lethal_goals_server_node_exe
 )
 
+# --- Remove In Collision Goals BT Node ---
 add_library(cprt_remove_in_collision_goals_bt_node SHARED
   src/remove_in_collision_goals_action.cpp
 )
-
-target_compile_definitions(cprt_remove_in_collision_goals_bt_node
-  PRIVATE BT_PLUGIN_EXPORT
-)
-
+target_compile_definitions(cprt_remove_in_collision_goals_bt_node PRIVATE BT_PLUGIN_EXPORT)
 target_include_directories(cprt_remove_in_collision_goals_bt_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
+ament_target_dependencies(cprt_remove_in_collision_goals_bt_node ${dependencies})
 
-ament_target_dependencies(cprt_remove_in_collision_goals_bt_node
-  ${dependencies}
+# --- NEW: Truncate Poses BT Node ---
+add_library(cprt_truncate_poses_bt_node SHARED
+  src/truncate_poses_action.cpp
 )
+target_compile_definitions(cprt_truncate_poses_bt_node PRIVATE BT_PLUGIN_EXPORT)
+target_include_directories(cprt_truncate_poses_bt_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+ament_target_dependencies(cprt_truncate_poses_bt_node ${dependencies})
 
+# --- Install & Export ---
 install(TARGETS 
   trim_lethal_goals_server_node
   cprt_remove_in_collision_goals_bt_node
+  cprt_truncate_poses_bt_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -87,7 +90,11 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(trim_lethal_goals_server_node cprt_remove_in_collision_goals_bt_node)
+ament_export_libraries(
+  trim_lethal_goals_server_node 
+  cprt_remove_in_collision_goals_bt_node
+  cprt_truncate_poses_bt_node
+)
 ament_export_dependencies(${dependencies})
 
 ament_package()

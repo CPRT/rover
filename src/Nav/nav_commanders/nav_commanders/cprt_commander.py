@@ -121,8 +121,10 @@ class UnifiedNavCommander(Node):
         )
 
         # Dynamically resolve BT paths
-        # nav_pkg_share = get_package_share_directory("navigation")
         nav_pkg_share = "/rover/install/navigation/share/navigation"
+        if not os.path.isdir(nav_pkg_share):
+            nav_pkg_share = get_package_share_directory("navigation")
+
         self.nav_bt_path = os.path.join(
             nav_pkg_share, "behavior_trees", self.nav_bt_file
         )
@@ -143,7 +145,7 @@ class UnifiedNavCommander(Node):
             },
             "aruco10m": {
                 "search": True,
-                "pattern": "spiral_12m",
+                "pattern": "square_12m",
                 "topics": [
                     "/computer_vision/nav_markers",
                     "/computer_vision/aruco_markers",
@@ -155,7 +157,7 @@ class UnifiedNavCommander(Node):
             },
             "aruco20m": {
                 "search": True,
-                "pattern": "spiral_22m",
+                "pattern": "square_22m",
                 "topics": [
                     "/computer_vision/nav_markers",
                     "/computer_vision/aruco_markers",
@@ -167,7 +169,7 @@ class UnifiedNavCommander(Node):
             },
             "mallet": {
                 "search": True,
-                "pattern": "spiral_7m",
+                "pattern": "square_7m",
                 "topics": ["/object_detected"],
                 "is_aruco": False,
                 "is_object_detection": True,
@@ -177,7 +179,7 @@ class UnifiedNavCommander(Node):
             },
             "pick": {
                 "search": True,
-                "pattern": "spiral_7m",
+                "pattern": "square_7m",
                 "topics": ["/object_detected"],
                 "is_aruco": False,
                 "is_object_detection": True,
@@ -187,7 +189,7 @@ class UnifiedNavCommander(Node):
             },
             "bottle": {
                 "search": True,
-                "pattern": "spiral_12m",
+                "pattern": "square_12m",
                 "topics": ["/object_detected"],
                 "is_aruco": False,
                 "is_object_detection": True,
@@ -197,7 +199,7 @@ class UnifiedNavCommander(Node):
             },
             "indoor_spiral": {
                 "search": True,
-                "pattern": "spiral_7m",
+                "pattern": "square_22m",
                 "topics": ["/object_detected"],
                 "is_aruco": False,
                 "is_object_detection": True,
