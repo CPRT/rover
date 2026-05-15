@@ -22,8 +22,8 @@
               </ReactiveSequence>
               
               <Sequence name="PlanAndSmooth">
-                <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
-                <SmoothPath unsmoothed_path="{path}" smoothed_path="{smoothed_path}"/>
+                <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBasedTransit"/>
+                <!-- <SmoothPath unsmoothed_path="{path}" smoothed_path="{smoothed_path}" smoother_id="SmootherTransit"/> -->
               </Sequence>
             </Fallback>
             
@@ -32,7 +32,8 @@
         </RateController>
 
         <RecoveryNode number_of_retries="1" name="FollowPath">
-          <FollowPath path="{smoothed_path}" controller_id="FollowPath"/>
+          <FollowPath path="{path}" controller_id="FollowPathTransit"/>
+          <!-- <FollowPath path="{smoothed_path}" controller_id="FollowPathTransit"/> -->
           <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
         </RecoveryNode>
         

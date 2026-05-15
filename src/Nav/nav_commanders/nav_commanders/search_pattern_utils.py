@@ -88,7 +88,12 @@ def _resolve_pattern_config_by_radius(pattern: str, search_radius: float) -> dic
     normalized_pattern = _normalize_pattern_name(pattern)
 
     for value in config.values():
-        if _normalize_pattern_name(str(value.get("pattern", ""))) != normalized_pattern:
+        val_pattern = _normalize_pattern_name(str(value.get("pattern", "")))
+
+        # Allow passing "square" to match "filleted_square" configs
+        if val_pattern != normalized_pattern and not (
+            normalized_pattern == "square" and val_pattern == "filleted_square"
+        ):
             continue
 
         config_search_radius = value.get("search_radius")
@@ -261,6 +266,108 @@ def generate_search_lawnmower(
     return poses
 
 
+def generate_search_filleted_square(
+    center_x: float,
+    center_y: float,
+    search_size: float = 14.0,
+    lane_spacing: float = 3.0,
+    turn_radius: float = 0.4,
+    straight_step_size: float = 3.0,
+    frame_id: str = "map",
+) -> List[PoseStamped]:
+    """
+    Generate PoseStamped waypoints for an expanding square with filleted corners.
+    Includes intermediate waypoints along straightaways to act as breadcrumbs
+    for truncated BT planners.
+    """
+
+    if lane_spacing <= 0.0:
+        raise ValueError("lane_spacing must be > 0")
+
+    safe_turn_radius = min(float(turn_radius), lane_spacing * 0.45)
+
+    directions = [(1.0, 0.0), (0.0, 1.0), (-1.0, 0.0), (0.0, -1.0)]
+    angles = [0.0, math.pi / 2.0, math.pi, 3.0 * math.pi / 2.0]
+
+    poses: List[PoseStamped] = []
+
+    def add_pose(x, y, yaw):
+        pose = PoseStamped()
+        pose.header.frame_id = frame_id
+        pose.pose.position.x = float(x)
+        pose.pose.position.y = float(y)
+        pose.pose.position.z = 0.0
+        pose.pose.orientation = quaternion_from_euler(0.0, 0.0, yaw)
+        poses.append(pose)
+
+    def add_interpolated_points(start_x, start_y, end_x, end_y, dx, dy, yaw):
+        dist = math.hypot(end_x - start_x, end_y - start_y)
+        traveled = straight_step_size
+        while (
+            traveled < dist - 0.05
+        ):  # Tolerance prevents placing a point on top of the end point
+            ix = start_x + dx * traveled
+            iy = start_y + dy * traveled
+            add_pose(ix, iy, yaw)
+            traveled += straight_step_size
+
+    # Start Point
+    add_pose(center_x, center_y, angles[0])
+    last_x, last_y = center_x, center_y
+
+    current_x, current_y = center_x, center_y
+    leg_multiplier = 1
+    leg_count = 0
+    dir_idx = 0
+
+    max_dist = search_size / 2.0
+
+    while True:
+        dx, dy = directions[dir_idx]
+        yaw = angles[dir_idx]
+
+        leg_length = leg_multiplier * lane_spacing
+        vx = current_x + dx * leg_length
+        vy = current_y + dy * leg_length
+
+        # Final breakout condition
+        if abs(vx - center_x) > max_dist or abs(vy - center_y) > max_dist:
+            final_x = min(max(vx, center_x - max_dist), center_x + max_dist)
+            final_y = min(max(vy, center_y - max_dist), center_y + max_dist)
+            add_interpolated_points(last_x, last_y, final_x, final_y, dx, dy, yaw)
+            add_pose(final_x, final_y, yaw)
+            break
+
+        # Approach waypoint (p1)
+        p1_x = vx - safe_turn_radius * dx
+        p1_y = vy - safe_turn_radius * dy
+
+        # Add breadcrumbs up to p1
+        add_interpolated_points(last_x, last_y, p1_x, p1_y, dx, dy, yaw)
+        add_pose(p1_x, p1_y, yaw)
+
+        # Exit waypoint (p2)
+        next_dir_idx = (dir_idx + 1) % 4
+        ndx, ndy = directions[next_dir_idx]
+        next_yaw = angles[next_dir_idx]
+
+        p2_x = vx + safe_turn_radius * ndx
+        p2_y = vy + safe_turn_radius * ndy
+        add_pose(p2_x, p2_y, next_yaw)
+
+        # Update for next leg
+        last_x, last_y = p2_x, p2_y
+        current_x, current_y = vx, vy
+        dir_idx = next_dir_idx
+        leg_count += 1
+
+        if leg_count == 2:
+            leg_multiplier += 1
+            leg_count = 0
+
+    return poses
+
+
 def generate_search_pattern(
     pattern: str,
     center_x: float,
@@ -278,7 +385,11 @@ def generate_search_pattern(
         pattern_config = _resolve_pattern_config(pattern)
     except KeyError:
         search_radius = kwargs.get("search_radius")
-        if _normalize_pattern_name(pattern) == "spiral" and search_radius is not None:
+        norm_pattern = _normalize_pattern_name(pattern)
+        if (
+            norm_pattern in ("spiral", "square", "filleted_square")
+            and search_radius is not None
+        ):
             pattern_config = _resolve_pattern_config_by_radius(pattern, search_radius)
         else:
             raise
@@ -325,6 +436,20 @@ def generate_search_pattern(
 
     if pattern_type in ("lawnmower", "rectilinear", "boustrophedon"):
         return generate_search_lawnmower(
+            center_x=center_x,
+            center_y=center_y,
+            frame_id=frame_id,
+            **pattern_config,
+        )
+
+    if pattern_type in ("filleted_square", "expanding_square", "square"):
+        # Convert radius to bounding box size for the square
+        if "search_radius" in pattern_config and "search_size" not in pattern_config:
+            pattern_config["search_size"] = (
+                float(pattern_config.pop("search_radius")) * 2.0
+            )
+
+        return generate_search_filleted_square(
             center_x=center_x,
             center_y=center_y,
             frame_id=frame_id,
@@ -389,7 +514,7 @@ def plot_spirals(
     if center is not None:
         ax.plot(center[0], center[1], "x", markersize=8, label="center")
 
-    ax.set_title("Archimedean Spiral Search Waypoints")
+    ax.set_title("Search Pattern Waypoints")
     ax.set_xlabel("x [m]")
     ax.set_ylabel("y [m]")
     ax.axis("equal")
@@ -414,5 +539,5 @@ if __name__ == "__main__":
     plot_spirals(
         plotted_patterns,
         center=(cx, cy),
-        show_arrows_every=6,
+        show_arrows_every=1,
     )

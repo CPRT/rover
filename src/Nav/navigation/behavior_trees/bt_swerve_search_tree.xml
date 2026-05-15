@@ -3,7 +3,7 @@
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
         
-        <RateController hz="2.0">
+        <RateController hz="1.0">
           <RecoveryNode number_of_retries="1" name="ComputeAndSmoothPathThroughPoses">
             <Fallback>
               
@@ -28,11 +28,15 @@
                                         cost_threshold="98.0" 
                                         output_goals="{safe_poses}"/>
 
-                <ComputePathThroughPoses goals="{safe_poses}" 
+                <TruncatePoses input_goals="{safe_poses}" 
+                                        num_poses="10" 
+                                        output_goals="{short_poses}"/>
+
+                <ComputePathThroughPoses goals="{short_poses}" 
                                          path="{path}" 
-                                         planner_id="GridBased"/>
+                                         planner_id="GridBasedSearch"/>
                                          
-                <SmoothPath unsmoothed_path="{path}" smoothed_path="{smoothed_path}"/>
+                <!-- <SmoothPath unsmoothed_path="{path}" smoothed_path="{smoothed_path}" smoother_id="SmootherSearch"/> -->
               </Sequence>
 
             </Fallback>
@@ -41,7 +45,8 @@
         </RateController>
 
         <RecoveryNode number_of_retries="1" name="FollowPath">
-          <FollowPath path="{smoothed_path}" controller_id="FollowPath"/>
+          <FollowPath path="{path}" controller_id="FollowPathSearch"/>
+          <!-- <FollowPath path="{smoothed_path}" controller_id="FollowPathSearch"/> -->
           <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
         </RecoveryNode>
 
