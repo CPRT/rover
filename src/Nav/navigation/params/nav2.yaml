@@ -79,7 +79,7 @@ local_costmap:
       trinary_costmap: False
       width: 5
       height: 5
-      resolution: 0.05
+      resolution: 0.1
       robot_radius: 0.1
       plugins: [obstacle_layer]
       obstacle_layer:
@@ -93,7 +93,7 @@ global_costmap:
   global_costmap:
     ros__parameters:
       update_frequency: 10.0
-      publish_frequency: 10.0
+      publish_frequency: 2.0
       global_frame: map
       robot_base_frame: base_link
       rolling_window: true
@@ -105,7 +105,7 @@ global_costmap:
       origin_y: -50.0
       use_sim_time: True
       robot_radius: 0.3
-      resolution: 0.05
+      resolution: 0.1
       track_unknown_space: true
       trinary_costmap: false
       lethal_cost_threshold: 200
@@ -124,12 +124,12 @@ planner_server:
     use_sim_time: True
 
     GridBasedTransit:
-      plugin: "cprt_planner_plugins::EventHorizonPlanner" # In Iron and older versions, "/" was used instead of "::"
+      plugin: "cprt_planner_plugins::EventHorizonPlanner"
       primary_planner: "nav2_smac_planner/SmacPlannerHybrid"
 
       # plugin: "nav2_smac_planner/SmacPlannerHybrid" # Hybrid planner plugin
 
-      interpolation_resolution: 0.05       
+      interpolation_resolution: 0.1       
       horizon_distance: 40.0              # distance from start pose for which an intermediate goal should be created by EventHorizonPlanner
       intermediate_tolerance: 10.0        # tolerance value for intermediate goal created by EventHorizonPlanner
 
@@ -140,7 +140,7 @@ planner_server:
       goal_heading_mode: "ALL_DIRECTION"  # For “ALL_DIRECTION” mode, the planner will plan the goal with the orientation of the goal pose and all the possible orientation based on the angle quantization bins
       use_final_approach_orientation: false
       max_iterations: -1                  # maximum total iterations to search for before failing (in case unreachable), set to -1 to disable
-      max_on_approach_iterations: 1000    # Maximum number of iterations after within tolerances to continue to try to find exact solution
+      max_on_approach_iterations: 2000    # Maximum number of iterations after within tolerances to continue to try to find exact solution
       max_planning_time: 10.0             # max time in s for planner to plan, smooth
       motion_model_for_search: "DUBIN"    # Hybrid-A* Dubin, Redds-Shepp
       angle_quantization_bins: 72         # Number of angle bins for search
@@ -148,14 +148,14 @@ planner_server:
       analytic_expansion_max_length: 3.0  # For Hybrid/Lattice nodes: The maximum length of the analytic expansion to be considered valid to prevent unsafe shortcutting
       analytic_expansion_max_cost: 200.0  # The maximum single cost for any part of an analytic expansion to contain and be valid, except when necessary on approach to goal
       analytic_expansion_max_cost_override: false  #  Whether or not to override the maximum cost setting if within critical distance to goal (ie probably required)
-      minimum_turning_radius: 1.4        # minimum turning radius in m of path / vehicle (Swerve can turn tighter)
+      minimum_turning_radius: 1.0        # minimum turning radius in m of path / vehicle (Swerve can turn tighter)
       reverse_penalty: 2.0                # Penalty to apply if motion is reversing, must be => 1
       change_penalty: 0.0                 # Penalty to apply if motion is changing directions (L to R), must be >= 0
       non_straight_penalty: 1.8           # Penalty to apply if motion is non-straight, must be => 1
       cost_penalty: 1.8                   # Penalty to apply to higher cost areas when adding into the obstacle map dynamic programming distance expansion heuristic. This drives the robot more towards the center of passages. A value between 1.3 - 3.5 is reasonable.
       retrospective_penalty: 0.015
-      lookup_table_size: 40.0             # Size of the dubin/reeds-sheep distance window to cache, in meters.
-      cache_obstacle_heuristic: true      # Cache the obstacle map dynamic programming distance expansion heuristic between subsequent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.
+      lookup_table_size: 25.0             # Size of the dubin/reeds-sheep distance window to cache, in meters.
+      cache_obstacle_heuristic: False     # Cache the obstacle map dynamic programming distance expansion heuristic between subsequent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.
       debug_visualizations: False         # For Hybrid nodes: Whether to publish expansions on the /expansions topic as an array of poses (the orientation has no meaning) and the path's footprints on the /planned_footprints topic. WARNING: heavy to compute and to display, for debug only as it degrades the performance.
       use_quadratic_cost_penalty: False
       downsample_obstacle_heuristic: True
@@ -164,19 +164,19 @@ planner_server:
 
       smoother:
         max_iterations: 2000
-        w_smooth: 1.0
+        w_smooth: 0.7
         w_data: 0.2
         tolerance: 1.0e-10
         do_refinement: true
         refinement_num: 4
 
     GridBasedSearch:
-      plugin: "cprt_planner_plugins::EventHorizonPlanner" # In Iron and older versions, "/" was used instead of "::"
+      plugin: "cprt_planner_plugins::EventHorizonPlanner"
       primary_planner: "nav2_smac_planner/SmacPlannerHybrid"
 
       # plugin: "nav2_smac_planner/SmacPlannerHybrid" # Hybrid planner plugin
 
-      interpolation_resolution: 0.05       
+      interpolation_resolution: 0.1       
       horizon_distance: 40.0              # distance from start pose for which an intermediate goal should be created by EventHorizonPlanner
       intermediate_tolerance: 10.0        # tolerance value for intermediate goal created by EventHorizonPlanner
 
@@ -187,22 +187,22 @@ planner_server:
       goal_heading_mode: "ALL_DIRECTION"  # For “ALL_DIRECTION” mode, the planner will plan the goal with the orientation of the goal pose and all the possible orientation based on the angle quantization bins
       use_final_approach_orientation: false
       max_iterations: -1                  # maximum total iterations to search for before failing (in case unreachable), set to -1 to disable
-      max_on_approach_iterations: 1000    # Maximum number of iterations after within tolerances to continue to try to find exact solution
+      max_on_approach_iterations: 2000    # Maximum number of iterations after within tolerances to continue to try to find exact solution
       max_planning_time: 10.0             # max time in s for planner to plan, smooth
       motion_model_for_search: "DUBIN"    # Hybrid-A* Dubin, Redds-Shepp
       angle_quantization_bins: 72         # Number of angle bins for search
-      analytic_expansion_ratio: 3.5       # The ratio to attempt analytic expansions during search for final approach.
-      analytic_expansion_max_length: 3.0  # For Hybrid/Lattice nodes: The maximum length of the analytic expansion to be considered valid to prevent unsafe shortcutting
+      analytic_expansion_ratio: 10.0       # The ratio to attempt analytic expansions during search for final approach.
+      analytic_expansion_max_length: 10.0  # For Hybrid/Lattice nodes: The maximum length of the analytic expansion to be considered valid to prevent unsafe shortcutting
       analytic_expansion_max_cost: 200.0  # The maximum single cost for any part of an analytic expansion to contain and be valid, except when necessary on approach to goal
       analytic_expansion_max_cost_override: false  #  Whether or not to override the maximum cost setting if within critical distance to goal (ie probably required)
-      minimum_turning_radius: 0.3        # minimum turning radius in m of path / vehicle (Swerve can turn tighter)
+      minimum_turning_radius: 0.4        # minimum turning radius in m of path / vehicle (Swerve can turn tighter)
       reverse_penalty: 2.0                # Penalty to apply if motion is reversing, must be => 1
       change_penalty: 0.0                 # Penalty to apply if motion is changing directions (L to R), must be >= 0
       non_straight_penalty: 1.8           # Penalty to apply if motion is non-straight, must be => 1
       cost_penalty: 1.8                   # Penalty to apply to higher cost areas when adding into the obstacle map dynamic programming distance expansion heuristic. This drives the robot more towards the center of passages. A value between 1.3 - 3.5 is reasonable.
       retrospective_penalty: 0.015
-      lookup_table_size: 40.0             # Size of the dubin/reeds-sheep distance window to cache, in meters.
-      cache_obstacle_heuristic: true      # Cache the obstacle map dynamic programming distance expansion heuristic between subsequent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.
+      lookup_table_size: 25.0             # Size of the dubin/reeds-sheep distance window to cache, in meters.
+      cache_obstacle_heuristic: False      # Cache the obstacle map dynamic programming distance expansion heuristic between subsequent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.
       debug_visualizations: False         # For Hybrid nodes: Whether to publish expansions on the /expansions topic as an array of poses (the orientation has no meaning) and the path's footprints on the /planned_footprints topic. WARNING: heavy to compute and to display, for debug only as it degrades the performance.
       use_quadratic_cost_penalty: False
       downsample_obstacle_heuristic: True
@@ -211,7 +211,7 @@ planner_server:
 
       smoother:
         max_iterations: 2000
-        w_smooth: 1.0
+        w_smooth: 0.7
         w_data: 0.2
         tolerance: 1.0e-10
         do_refinement: true
@@ -232,11 +232,11 @@ smoother_server:
     SmootherTransit:
       plugin: "nav2_constrained_smoother/ConstrainedSmoother"
       reversing_enabled: false      # whether to detect forward/reverse direction and cusps. Should be set to false for paths without orientations assigned
-      path_downsampling_factor: 1   # every n-th node of the path is taken (increased from 3 to speed up smoothing)
+      path_downsampling_factor: 3   # every n-th node of the path is taken (increased from 3 to speed up smoothing)
       path_upsampling_factor: 1     # 0 - path remains downsampled, 1 - path is upsampled back to original granularity using cubic bezier, 2... - more upsampling
       keep_start_orientation: true  # whether to prevent the start orientation from being smoothed
       keep_goal_orientation: true   # whether to prevent the goal orientation from being smoothed
-      minimum_turning_radius: 0.6  # minimum turning radius the robot can perform. Can be set to 0.0 (or w_curve can be set to 0.0 with the same effect) for diff-drive/holonomic robots
+      minimum_turning_radius: 0.8  # minimum turning radius the robot can perform. Can be set to 0.0 (or w_curve can be set to 0.0 with the same effect) for diff-drive/holonomic robots
       w_curve: 30.0                # weight to enforce minimum_turning_radius (increased to strongly prefer larger ~0.8m arcs but allow 0.1m when obstacles require)
       w_dist: 0.0                   # weight to bind path to original as optional replacement for cost weight
       w_smooth: 1300000.0                 # weight to maximize smoothness of path
@@ -262,11 +262,11 @@ smoother_server:
     SmootherSearch:
       plugin: "nav2_constrained_smoother/ConstrainedSmoother"
       reversing_enabled: false      # whether to detect forward/reverse direction and cusps. Should be set to false for paths without orientations assigned
-      path_downsampling_factor: 1   # every n-th node of the path is taken (increased from 3 to speed up smoothing)
+      path_downsampling_factor: 3   # every n-th node of the path is taken (increased from 3 to speed up smoothing)
       path_upsampling_factor: 1     # 0 - path remains downsampled, 1 - path is upsampled back to original granularity using cubic bezier, 2... - more upsampling
       keep_start_orientation: true  # whether to prevent the start orientation from being smoothed
       keep_goal_orientation: true   # whether to prevent the goal orientation from being smoothed
-      minimum_turning_radius: 0.6  # minimum turning radius the robot can perform. Can be set to 0.0 (or w_curve can be set to 0.0 with the same effect) for diff-drive/holonomic robots
+      minimum_turning_radius: 0.4  # minimum turning radius the robot can perform. Can be set to 0.0 (or w_curve can be set to 0.0 with the same effect) for diff-drive/holonomic robots
       w_curve: 30.0                # weight to enforce minimum_turning_radius (increased to strongly prefer larger ~0.8m arcs but allow 0.1m when obstacles require)
       w_dist: 0.0                   # weight to bind path to original as optional replacement for cost weight
       w_smooth: 1300000.0                 # weight to maximize smoothness of path
@@ -310,7 +310,7 @@ controller_server:
       stateful: True
       plugin: nav2_controller::SimpleGoalChecker
       xy_goal_tolerance: 0.6 
-      yaw_goal_tolerance: 0.6 # ~11 degrees
+      yaw_goal_tolerance: 0.6 
 
     FollowPathTransit:
       # plugin: nav2_rotation_shim_controller::RotationShimController
@@ -330,12 +330,12 @@ controller_server:
       # Regulated Pure Pursuit Parameters (Driving Logic)
       transform_tolerance: 0.4
 
-      desired_linear_vel: 1.5
+      desired_linear_vel: 0.9
       max_robot_pose_search_dist: 5.0
 
       lookahead_dist: 1.4
-      min_lookahead_dist: 1.1
-      max_lookahead_dist: 2.0
+      min_lookahead_dist: 0.8
+      max_lookahead_dist: 1.7
       lookahead_time: 1.0
       use_velocity_scaled_lookahead_dist: true
 
@@ -372,12 +372,12 @@ controller_server:
       # Regulated Pure Pursuit Parameters (Driving Logic)
       transform_tolerance: 0.4
 
-      desired_linear_vel: 1.2 # Increase to 1.0 for outdoor swerve agility
+      desired_linear_vel: 0.6 # Increase to 1.0 for outdoor swerve agility
       max_robot_pose_search_dist: 5.0
 
       lookahead_dist: 1.0
-      min_lookahead_dist: 1.1
-      max_lookahead_dist: 1.7
+      min_lookahead_dist: 0.8
+      max_lookahead_dist: 1.5
       lookahead_time: 1.0
       use_velocity_scaled_lookahead_dist: true
 
@@ -450,14 +450,7 @@ velocity_smoother:
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 1.0
-    # OUTDOOR SWERVE
-    max_velocity: [1.5, 0.0, 3.5]    # [x, y, theta] in m/s, m/s, rad/s
+    max_velocity: [1.5, 0.0, 3.5]    
     min_velocity: [-1.5, 0.0, -3.5]
-    max_accel: [0.8, 0.0, 4.0]       # [x, y, theta] in m/s², m/s², rad/s²
+    max_accel: [0.8, 0.0, 4.0]       
     max_decel: [-2.0, 0.0, -4.0]
-    # INDOOR TESTING 
-    # Safe limits for initial testing in confined spaces
-    # max_velocity: [0.6, 0.0, 0.6]      # [x, y, theta] in m/s, m/s, rad/s
-    # min_velocity: [-0.6, 0.0, -0.6]
-    # max_accel: [0.3, 0.0, 0.5]         # [x, y, theta] in m/s², m/s², rad/s²
-    # max_decel: [-0.3, 0.0, -0.5]

@@ -19,18 +19,18 @@
               
               <Sequence name="FilterPlanAndSmoothSequence">
                 <RemovePassedGoals input_goals="{goals}" 
-                                   radius="0.5" 
+                                   radius="1.5" 
                                    robot_base_frame="base_link" 
-                                   output_goals="{pending_poses}"/>
+                                   output_goals="{goals}"/>
 
-                <RemoveInCollisionGoals input_goals="{pending_poses}" 
+                <RemoveInCollisionGoals input_goals="{goals}" 
                                         service_name="trim_lethal_goals" 
                                         cost_threshold="98.0" 
                                         output_goals="{safe_poses}"/>
 
                 <TruncatePoses input_goals="{safe_poses}" 
-                                        num_poses="10" 
-                                        output_goals="{short_poses}"/>
+                               num_poses="10" 
+                               output_goals="{short_poses}"/>
 
                 <ComputePathThroughPoses goals="{short_poses}" 
                                          path="{path}" 
