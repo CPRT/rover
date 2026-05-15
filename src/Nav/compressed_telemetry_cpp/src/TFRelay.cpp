@@ -28,7 +28,7 @@ public:
         });
 
     RCLCPP_INFO(this->get_logger(), "TF Relay Started: Bridging /telemetry/tf "
-                                    "(Best Effort) -> /tf (Reliable)");
+                                    "(Best Effort) -> /viz/tf (Reliable)");
   }
 
 private:
