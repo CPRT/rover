@@ -13,6 +13,8 @@ find_package(nav_msgs REQUIRED)
 find_package(map_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(grid_map_msgs REQUIRED)
+find_package(tf2_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(ZLIB REQUIRED)
 
 add_library(compressed_telemetry_cpp_nodes SHARED
@@ -20,6 +22,8 @@ add_library(compressed_telemetry_cpp_nodes SHARED
   src/CostmapDecompressor.cpp
   src/GridmapCompressor.cpp
   src/GridmapDecompressor.cpp
+  src/TFTelemetry.cpp
+  src/TFRelay.cpp
 )
 
 target_include_directories(compressed_telemetry_cpp_nodes PUBLIC
@@ -35,6 +39,8 @@ ament_target_dependencies(compressed_telemetry_cpp_nodes
   map_msgs
   std_msgs
   grid_map_msgs
+  tf2_msgs
+  geometry_msgs
 )
 
 target_link_libraries(compressed_telemetry_cpp_nodes
@@ -61,12 +67,24 @@ rclcpp_components_register_node(compressed_telemetry_cpp_nodes
   EXECUTABLE gridmap_decompressor_node
 )
 
+rclcpp_components_register_node(compressed_telemetry_cpp_nodes
+  PLUGIN "compressed_telemetry_cpp::TFTelemetry"
+  EXECUTABLE tf_telemetry_node
+)
+
+rclcpp_components_register_node(compressed_telemetry_cpp_nodes
+  PLUGIN "compressed_telemetry_cpp::TFRelayNode"
+  EXECUTABLE tf_relay_node
+)
+
 install(TARGETS
   compressed_telemetry_cpp_nodes
   costmap_compressor_node
   costmap_decompressor_node
   gridmap_compressor_node
   gridmap_decompressor_node
+  tf_telemetry_node
+  tf_relay_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

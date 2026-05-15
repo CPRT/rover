@@ -41,6 +41,11 @@ def launch_setup(context):
     use_sim_time = LaunchConfiguration("use_sim_time").perform(context)
     profile = LaunchConfiguration("ekf_profile").perform(context)
 
+    # TF Telemetry configurations
+    tf_publish_rate = LaunchConfiguration("tf_publish_rate").perform(context)
+    # Note: allowed_frames is passed as a string representation of a list from the argument
+    tf_allowed_frames = LaunchConfiguration("tf_allowed_frames").perform(context)
+
     # Set default profile if 'default' is selected
     if profile in ("default", ""):
         profile = DEFAULT_PROFILE
@@ -103,7 +108,27 @@ def launch_setup(context):
         ],
     )
 
-    return [local_ekf_cmd, global_ekf_cmd]
+    # Throttled TF for Basestation Telemetry
+    tf_telemetry_cmd = Node(
+        package="compressed_telemetry_cpp",
+        executable="tf_telemetry_node",
+        name="tf_telemetry",
+        output="screen",
+        parameters=[
+            {
+                "publish_rate": float(tf_publish_rate),
+                "log_stats": True,
+                # We use eval or similar logic if needed, but ROS 2 params
+                # usually handle string-to-array conversion for yaml-like strings.
+                # Strip brackets, spaces, AND single/double quotes
+                "allowed_frames": [
+                    f.strip(" '\"") for f in tf_allowed_frames.strip("[]").split(",")
+                ],
+            }
+        ],
+    )
+
+    return [local_ekf_cmd, global_ekf_cmd, tf_telemetry_cmd]
 
 
 def generate_launch_description():
@@ -119,10 +144,26 @@ def generate_launch_description():
         description="Select the EKF profile to use",
     )
 
+    tf_rate_cmd = DeclareLaunchArgument(
+        "tf_publish_rate",
+        default_value="5.0",
+        description="Rate at which to republish TF to telemetry",
+    )
+
+    # Default frames needed to see the robot moving on a map in RViz
+    default_frames = "['map', 'odom', 'base_link', 'base_footprint']"
+    tf_frames_cmd = DeclareLaunchArgument(
+        "tf_allowed_frames",
+        default_value=default_frames,
+        description="List of frame IDs to allow through the telemetry link",
+    )
+
     return LaunchDescription(
         [
             use_sim_time_cmd,
             profile_cmd,
+            tf_rate_cmd,
+            tf_frames_cmd,
             OpaqueFunction(function=launch_setup),
         ]
     )

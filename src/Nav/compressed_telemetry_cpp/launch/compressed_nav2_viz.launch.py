@@ -29,12 +29,21 @@ def generate_launch_description():
         name="rviz2",
         output="screen",
         arguments=["-d", rviz_config],
+        remappings=[("/tf", "/viz/tf")],
+    )
+
+    tf_relay = Node(
+        package="compressed_telemetry_cpp",
+        executable="tf_relay_node",
+        name="tf_relay",
+        output="screen",
     )
 
     return LaunchDescription(
         [
             costmap_decompressor,
             gridmap_decompressor,
+            tf_relay,
             rviz,
         ]
     )
