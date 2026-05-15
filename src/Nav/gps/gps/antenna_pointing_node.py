@@ -21,6 +21,14 @@ class AntennaPointingNode(Node):
         self.zero_offset = 0
         self.calibrated = False
 
+        # manual mode
+        self.manual_value = 0
+        self.manual = False
+        self.create_subscription(Bool, "/antenna/manual", self.manual_cb, 10)
+        self.create_subscription(
+            Float32, "/antenna/manual_value", self.manual_value_cb, 10
+        )
+
         # ROS things
         self.create_subscription(NavSatFix, "/base_station/fix", self.base_cb, 10)
         self.create_subscription(NavSatFix, "/gps/fix", self.rover_cb, 10)
@@ -38,22 +46,31 @@ class AntennaPointingNode(Node):
     def rover_cb(self, msg):
         self.rover_fix = msg
 
-    def update(self):
-        if self.svin_valid == -2 or not self.base_fix or not self.rover_fix:
-            return
+    def manual_cb(self, msg):
+        self.manual = msg.data
 
-        # ----- HANDLE IMU HERE
+    def manual_value_cb(self, msg):
+        self.manual_value = msg.data
+
+    def update(self):
 
         # ----- HANDLE CALIBRATION HERE (maybe)
 
-        bearing = self.bearing(
-            self.base_fix.latitude,
-            self.base_fix.longitude,
-            self.rover_fix.latitude,
-            self.rover_fix.longitude,
-        )
+        # if not manual, proceed as usual
+        if not self.manual:
+            if self.svin_valid == -2 or not self.base_fix or not self.rover_fix:
+                return
 
-        self.publish_bearing(bearing)
+            bearing = self.bearing(
+                self.base_fix.latitude,
+                self.base_fix.longitude,
+                self.rover_fix.latitude,
+                self.rover_fix.longitude,
+            )
+
+            self.publish_bearing(bearing)
+        else:  # is manual mode
+            self.publish_bearing(self.manual_value)
 
     def publish_bearing(self, bearing):
         msg = Float32()
