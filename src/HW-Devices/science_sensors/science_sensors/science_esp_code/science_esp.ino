@@ -2,7 +2,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>
-#include "DHT.h"
+#include <DHTesp.h>
 
 #pragma pack(push, 1)
 struct PwmCommand {
@@ -31,15 +31,14 @@ static const uint8_t  PWM_MAX_ACTIVE = 8;
 static const uint32_t PWM_TICK_MS    = 10;
 
 static const uint32_t SENSOR_PERIOD_MS = 100;
+static const uint32_t DHT_PERIOD_MS = 2000;
 
 static const int METHANE_PIN     = 12;
 static const int CO2_PIN         = 33;
 static const int POLARIMETER_PIN = 4;
 static const int DHT_PIN         = 14;
 
-#define DHT_TYPE DHT22
-
-DHT dht(DHT_PIN, DHT_TYPE);
+DHTesp dht;
 
 static QueueHandle_t g_pwmCmdQueue = nullptr;
 
@@ -232,19 +231,26 @@ static void pwmTask(void* /*arg*/) {
 static uint16_t readMethane()     { return (uint16_t)analogRead(METHANE_PIN); }
 static uint16_t readCo2()         { return (uint16_t)analogRead(CO2_PIN); }
 static uint16_t readPolarimeter() { return (uint16_t)analogRead(POLARIMETER_PIN); }
-static float readTemperatureC()   { return dht.readTemperature(); }
-static float readMoisture()       { return dht.readHumidity(); }
 
 static void sensorTask(void* /*arg*/) {
+  static const int DHT_INTERVAL = DHT_PERIOD_MS / SENSOR_PERIOD_MS;
+  static int dht_counter = 0;
+  static float lastTemperature = 0;
+  static float lastMoisture = 0;
   TickType_t lastWake = xTaskGetTickCount();
   for (;;) {
     SensorReadings pkt;
     pkt.methane     = readMethane();
     pkt.co2         = readCo2();
     pkt.polarimeter = readPolarimeter();
-    pkt.temperature = readTemperatureC();
-    pkt.moisture    = readMoisture();
-
+    if (++dht_counter >= DHT_INTERVAL) {
+      dht_counter = 0;
+      TempAndHumidity data = dht.getTempAndHumidity();
+      lastTemperature = data.temperature;
+      lastMoisture    = data.humidity;
+    }
+    pkt.temperature = lastTemperature;
+    pkt.moisture = lastMoisture;
     writeFramedSensorReadings(pkt);
 
     vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(SENSOR_PERIOD_MS));
@@ -253,7 +259,7 @@ static void sensorTask(void* /*arg*/) {
 
 void setup() {
   Serial.begin(115200);
-  dht.begin();
+  dht.setup(DHT_PIN, DHTesp::DHT22);
 
   for (int i = 0; i < PWM_MAX_ACTIVE; ++i) {
     active_pins[i].active = false;
@@ -262,7 +268,7 @@ void setup() {
   g_pwmCmdQueue = xQueueCreate(8, sizeof(PwmCommand));
 
   xTaskCreatePinnedToCore(pwmTask,    "pwmTask",    4096, nullptr, 2, nullptr, 1);
-  xTaskCreatePinnedToCore(sensorTask, "sensorTask", 4096, nullptr, 1, nullptr, 1);
+  xTaskCreatePinnedToCore(sensorTask, "sensorTask", 4096, nullptr, 1, nullptr, 0);
 }
 
 void loop() {
