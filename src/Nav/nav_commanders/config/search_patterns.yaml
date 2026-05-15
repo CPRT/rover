@@ -31,19 +31,19 @@ square_7m:
   pattern: filleted_square
   search_radius: 7.0
   lane_spacing: 3.0
-  turn_radius: 0.4
+  turn_radius: 0.8
   straight_step_size: 3.0
 
 square_12m:
   pattern: filleted_square
   search_radius: 12.0
   lane_spacing: 3.0
-  turn_radius: 0.4
+  turn_radius: 0.8
   straight_step_size: 3.0
 
 square_22m:
   pattern: filleted_square
   search_radius: 22.0
   lane_spacing: 3.0
-  turn_radius: 0.4
+  turn_radius: 0.8
   straight_step_size: 3.0

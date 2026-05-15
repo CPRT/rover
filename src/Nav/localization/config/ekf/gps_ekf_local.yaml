@@ -45,7 +45,7 @@ local_ekf:
     odom0: /repub_gps_odom
     odom0_config: [
         # position
-        true, true, false,
+        true, true, true,
         # orientation
         false, false, false,
         # lineal vel
@@ -65,7 +65,7 @@ local_ekf:
     odom1: /chassis_controller/wheel_odom
     odom1_config: [
         # position
-        false, false, true,
+        false, false, false,
         # orientation
         false, false, false,
         # lineal vel
@@ -113,7 +113,7 @@ local_ekf:
         # orientation
         true, true, false,
         # lineal vel 
-        false, false, true,
+        false, false, false,
         # angular vel
         false, false, true,
         # lineal acc

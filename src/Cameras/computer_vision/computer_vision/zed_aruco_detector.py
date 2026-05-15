@@ -1,4 +1,5 @@
 import rclpy
+from rclpy.qos import QoSProfile, QoSReliabilityPolicy
 from rclpy.node import Node
 
 from sensor_msgs.msg import Image, CameraInfo
@@ -6,8 +7,9 @@ from cv_bridge import CvBridge
 from interfaces.msg import ArucoMarkers
 from geometry_msgs.msg import Point, PoseArray, Pose
 
-import cv2
 import numpy as np
+
+from . import cv2_utils
 
 
 class ZEDArucoDetector(Node):
@@ -23,23 +25,33 @@ class ZEDArucoDetector(Node):
         self.fy = 0  # Focal length in y-direction
         self.cx = 0  # Principal point x-coordinate
         self.cy = 0  # Principal point y-coordinate
-        self._aruco_detector_params = cv2.aruco.DetectorParameters_create()
-        self._aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_250)
+        self._aruco_detector_params = cv2_utils.create_detector_parameters()
+        self._aruco_dict = cv2_utils.get_aruco_dictionary("DICT_4X4_100")
 
         # Subscribe to the ZED colour depth image topic
-        self.create_subscription(
-            Image, "/zed/zed_node/rgb/image_rect_color", self.rbg_image_callback, 10
+        zed_qos = QoSProfile(depth=10, reliability=QoSReliabilityPolicy.RELIABLE)
+        self.rbg_sub = self.create_subscription(
+            Image,
+            "/zed/zed_node/rgb/image_rect_color",
+            self.rbg_image_callback,
+            zed_qos,
         )
 
-        self.create_subscription(
-            Image, "/zed/zed_node/depth/depth_registered", self.depth_image_callback, 10
+        self.depth_sub = self.create_subscription(
+            Image,
+            "/zed/zed_node/depth/depth_registered",
+            self.depth_image_callback,
+            zed_qos,
         )
 
-        self.create_subscription(
-            CameraInfo, "/zed/zed_node/rgb/camera_info", self.camera_info_callback, 10
+        self.camera_info_sub = self.create_subscription(
+            CameraInfo,
+            "/zed/zed_node/rgb/camera_info",
+            self.camera_info_callback,
+            zed_qos,
         )
 
-        self.create_timer(0.4, self.process_image)
+        self.create_timer(3.0, self.process_image)
 
         self.aruco_pub = self.create_publisher(
             ArucoMarkers, "/computer_vision/aruco_markers", 10
@@ -52,11 +64,13 @@ class ZEDArucoDetector(Node):
 
     def rbg_image_callback(self, msg: Image):
         # Use ros opencv bridge to convert the ROS image message to OpenCV format
+        self.get_logger().info("Received new colour image")
         self.colour_image = self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding="bgra8")
         self.header_msg = msg.header
         self.img_processed_flag = False
 
     def depth_image_callback(self, msg: Image):
+        self.get_logger().info("Received new depth image")
         self.depth_image = self.cv_bridge.imgmsg_to_cv2(
             msg, desired_encoding="passthrough"
         )
@@ -67,9 +81,16 @@ class ZEDArucoDetector(Node):
         self.fy = msg.k[4]  # Focal length in y-direction
         self.cx = msg.k[2]  # Principal point x-coordinate
         self.cy = msg.k[5]  # Principal point y-coordinate
+        self.get_logger().info(
+            "Received camera info with fx: {}, fy: {}, cx: {}, cy: {}".format(
+                self.fx, self.fy, self.cx, self.cy
+            )
+        )
 
     def process_image(self):
+        self.get_logger().info("Processing image for ArUco marker detection")
         if self.img_processed_flag:
+            self.get_logger().info("Image already processed, waiting for new image")
             return
         if self.colour_image is None or self.depth_image is None:
             self.get_logger().warn("Colour or depth image not received yet")
@@ -81,8 +102,8 @@ class ZEDArucoDetector(Node):
         colour_image = self.colour_image[:, :, :3]
 
         # Detect ArUco markers in the image
-        corners, ids, _ = cv2.aruco.detectMarkers(
-            colour_image, self._aruco_dict, parameters=self._aruco_detector_params
+        corners, ids, _ = cv2_utils.detect_markers(
+            colour_image, self._aruco_dict, self._aruco_detector_params
         )
 
         # Create an ArucoMarkers message
