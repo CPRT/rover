@@ -1,4 +1,4 @@
-"""Science stack: RoboClaw elevator + drill, Thrustmaster joy, drill teleop."""
+"""Science stack: Phoenix drill/elevator, Thrustmaster joy, drill teleop."""
 
 from __future__ import annotations
 
@@ -12,7 +12,8 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node
+from launch_ros.actions import ComposableNodeContainer, Node
+from launch_ros.descriptions import ComposableNode
 
 # Ordered: first match wins. Thrustmaster sticks often expose *-event-joystick in by-id.
 DEFAULT_JOY_GLOBS: Tuple[str, ...] = (
@@ -95,6 +96,10 @@ def _science_setup(context, *args, **kwargs):
     pkg = get_package_share_directory("joystick_control")
     parameters_file = os.path.join(pkg, "pxn.yaml")
 
+    can_iface = LaunchConfiguration("phoenix_can_interface").perform(context)
+    drill_id = int(LaunchConfiguration("drill_motor_id").perform(context))
+    elev_id = int(LaunchConfiguration("elevator_motor_id").perform(context))
+
     joy_arg = LaunchConfiguration("joy_dev").perform(context).strip()
     env_dev = os.environ.get("SCIENCE_JOY_DEV", "").strip()
 
@@ -126,21 +131,35 @@ def _science_setup(context, *args, **kwargs):
     print(f"[rover_science] Using joystick device: {joy_dev}", flush=True)
 
     return [
-        Node(
-            package="ros_roboclaw",
-            executable="roboclaw_node",
-            name="roboclaw_elevator_node",
-            namespace="elevator",
-            parameters=[parameters_file],
-            remappings=[("robo_duty_cycle", "/elevator/set")],
-        ),
-        Node(
-            package="ros_roboclaw",
-            executable="roboclaw_node",
-            name="roboclaw_drill_node",
-            namespace="drill",
-            parameters=[parameters_file],
-            remappings=[("robo_duty_cycle", "/drill/set")],
+        ComposableNodeContainer(
+            name="PhoenixContainerScienceTeleop",
+            namespace="",
+            package="ros_phoenix",
+            executable="phoenix_container",
+            parameters=[{"interface": can_iface}],
+            composable_node_descriptions=[
+                ComposableNode(
+                    package="ros_phoenix",
+                    plugin="ros_phoenix::TalonSRX",
+                    name="elevator",
+                    parameters=[
+                        {"id": elev_id},
+                        {"max_voltage": 24.0},
+                        {"brake_mode": True},
+                    ],
+                ),
+                ComposableNode(
+                    package="ros_phoenix",
+                    plugin="ros_phoenix::TalonSRX",
+                    name="drill",
+                    parameters=[
+                        {"id": drill_id},
+                        {"max_voltage": 24.0},
+                        {"brake_mode": True},
+                    ],
+                ),
+            ],
+            output="screen",
         ),
         Node(
             package="joy_linux",
@@ -173,6 +192,12 @@ def generate_launch_description():
                 description="Absolute path to joystick (e.g. /dev/input/js0). "
                 "If empty, auto-detect Thrustmaster via /dev/input/by-id.",
             ),
+            DeclareLaunchArgument(
+                "phoenix_can_interface",
+                default_value="can0",
+            ),
+            DeclareLaunchArgument("drill_motor_id", default_value="20"),
+            DeclareLaunchArgument("elevator_motor_id", default_value="21"),
             OpaqueFunction(function=_science_setup),
         ]
     )
