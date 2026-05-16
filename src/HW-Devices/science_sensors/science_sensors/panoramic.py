@@ -6,7 +6,8 @@ import time
 from rclpy.node import Node
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
-from interfaces.srv import VideoCapture
+from interfaces.srv import VideoCapture, VideoOut
+from interfaces.msg import VideoSource
 from threading import Event
 from std_msgs.msg import Float32
 
@@ -18,10 +19,11 @@ class PanoramicNode(Node):
         self.load_params()
         self.callback_group = MutuallyExclusiveCallbackGroup()
         self.video_callback_group = MutuallyExclusiveCallbackGroup()
-        self.servo_pan_pub = self.create_publisher(Float32, "/mast_servo", 10)
+        self.servo_pan_pub = self.create_publisher(Float32, "/mast_angle", 10)
         self.video_cli = self.create_client(
             VideoCapture, "/capture_frame", callback_group=self.video_callback_group
         )
+        self.set_cam_cli = self.create_client(VideoOut, "/start_video", callback_group=self.video_callback_group)
         self.pan_srv = self.create_service(
             VideoCapture,
             "/capture_panoramic",
@@ -101,9 +103,38 @@ class PanoramicNode(Node):
 
     def start(self, request, response):
         self.get_logger().info("Panoramic capture started")
+        if not self.set_cam_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().error("Could not set camera, exiting...")
+            response.success = False
+            return response
+        video_start_req = VideoOut.Request()
+        source = VideoSource()
+        source.name = "Mast"
+        source.width = 100
+        source.height = 100
+        video_start_req.sources = [source]
+        
+        # Use an Event to wait for the async call to complete
+        # Using ros2 executor blocking calls creates deadlock after first call
+        event = Event()
+
+        def done_callback(future):
+            nonlocal event
+            event.set()
+
+        future = self.set_cam_cli.call_async(video_start_req)
+        future.add_done_callback(done_callback)
+        event.wait(10)  # wait for max 10 seconds
+        if not future.done():
+            self.get_logger().error("Could not set camera")
+            response.success = False
+            return response
+
+        result = future.result()
         images = []
         for i in range(self.num_images):
-            pan_angle = int(i * (360 / self.num_images))
+            pan_angle = i * (6.28 / self.num_images)
+            self.get_logger().info(f"Moving servo to {pan_angle} radians")
             self.move_servo(self.servo_pan_pub, pan_angle)
             time.sleep(self.sleep_time)
             image = self.capture_image()

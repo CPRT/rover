@@ -18,9 +18,11 @@ class MastESP(Node):
             115200,
         )
         self.pub = self.create_publisher(Distance, "eef_distance", 10)
-        self.us_sub = self.create_subscription(Float32, "/mast_angle", self.mast_callback, 3)
+        self.us_sub = self.create_subscription(
+            Float32, "/mast_angle", self.mast_callback, 3
+        )
 
-        self.declare_parameter("min", 350.0)
+        self.declare_parameter("min", 500.0)
         self.declare_parameter("max", 2500.0)
         self.declare_parameter("rom", 6.2832)
 
@@ -35,6 +37,7 @@ class MastESP(Node):
         us = convert_from_radians(
             msg.data, self.servo_min, self.servo_max, self.servo_rom
         )
+        self.get_logger().debug(f"Received angle: {msg.data:.3f} rad -> PWM: {us} us")
         data = bytes("M" + str(us), "utf-8")
         self.ser.write(data)
 

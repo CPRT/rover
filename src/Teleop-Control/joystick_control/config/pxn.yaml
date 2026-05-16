@@ -29,22 +29,10 @@ arm_teleop_node:
 
 drill_teleop_node:
   ros__parameters:
-    drill_power_axis: 3
+    drill_power_axis: 2
     drill_elevation_axis: 1
     joy_first_message_timeout_s: 10.0
     max_drill_duty: 1.0
     max_elevator_duty: 1.0
     drill_cmd_topic: "/drill/set"
     elevator_cmd_topic: "/elevator/set"
-
-elevator:
-  roboclaw_elevator_node:
-    ros__parameters:
-      port: "/dev/ttyACM0"
-      baudrate: 115200
-
-drill:
-  roboclaw_drill_node:
-    ros__parameters:
-      port: "/dev/ttyACM1"
-      baudrate: 115200

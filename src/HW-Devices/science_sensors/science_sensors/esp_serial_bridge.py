@@ -19,6 +19,9 @@ class EspSerialBridge(Node):
     _PWM_STRUCT = struct.Struct("<BHHHH")
     _SENSOR_STRUCT = struct.Struct("<HHHff")
 
+    _MAGIC0 = 0xAA
+    _MAGIC1 = 0x55
+
     @staticmethod
     def _normalize_port(port_value: str) -> str:
         port = (port_value or "").strip()
@@ -48,11 +51,18 @@ class EspSerialBridge(Node):
                     return candidate
         return port_value
 
+    @staticmethod
+    def _checksum(data: bytes) -> int:
+        checksum = 0
+        for b in data:
+            checksum ^= b
+        return checksum & 0xFF
+
     def __init__(self):
         super().__init__("esp_serial_bridge")
 
         self.declare_parameter(
-            "port",
+            "esp_port",
             "/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0",
         )
         self.declare_parameter("baudrate", 115200)
@@ -61,7 +71,7 @@ class EspSerialBridge(Node):
         self.declare_parameter("read_poll_hz", 100.0)
         self.declare_parameter("reconnect_period_s", 2.0)
 
-        configured_port = self.get_parameter("port").get_parameter_value().string_value
+        configured_port = self.get_parameter("esp_port").get_parameter_value().string_value
         self._port_config = self._normalize_port(configured_port)
         self._port = self._resolve_port_path(self._port_config)
         if configured_port != self._port_config:
@@ -162,8 +172,23 @@ class EspSerialBridge(Node):
             int(msg.frequency) & 0xFFFF,
             int(msg.ramp) & 0xFFFF,
         )
+
+        checksum = self._checksum(payload)
+
+        packet = (
+            bytes(
+                [
+                    self._MAGIC0,
+                    self._MAGIC1,
+                ]
+            )
+            + payload
+            + bytes([checksum])
+        )
+
         try:
-            self._serial.write(payload)
+            self._serial.write(packet)
+
         except (SerialException, OSError) as exc:
             self.get_logger().warn(f"Serial write failed: {exc}")
             self._close_serial()
@@ -180,16 +205,34 @@ class EspSerialBridge(Node):
             self.get_logger().warn(f"Serial read failed: {exc}")
             self._close_serial()
             return
+        # header(2) + payload + checksum(1)
+        packet_size = 2 + self._SENSOR_STRUCT.size + 1
 
-        packet_size = self._SENSOR_STRUCT.size
         while len(self._rx_buffer) >= packet_size:
+            if self._rx_buffer[0] != self._MAGIC0 or self._rx_buffer[1] != self._MAGIC1:
+                del self._rx_buffer[0]
+                continue
+
+            payload_start = 2
+            payload_end = payload_start + self._SENSOR_STRUCT.size
+
+            payload = bytes(self._rx_buffer[payload_start:payload_end])
+
+            received_checksum = self._rx_buffer[payload_end]
+            expected_checksum = self._checksum(payload)
+
+            if received_checksum != expected_checksum:
+                del self._rx_buffer[0]
+                continue
+
             (
                 methane,
                 co2,
                 polarimeter,
                 temperature,
                 moisture,
-            ) = self._SENSOR_STRUCT.unpack_from(self._rx_buffer, 0)
+            ) = self._SENSOR_STRUCT.unpack(payload)
+
             del self._rx_buffer[:packet_size]
 
             msg = EspSensorReadings()
