@@ -175,10 +175,16 @@ class EspSerialBridge(Node):
 
         checksum = self._checksum(payload)
 
-        packet = bytes([
-            self._MAGIC0,
-            self._MAGIC1,
-        ]) + payload + bytes([checksum])
+        packet = (
+            bytes(
+                [
+                    self._MAGIC0,
+                    self._MAGIC1,
+                ]
+            )
+            + payload
+            + bytes([checksum])
+        )
 
         try:
             self._serial.write(packet)
@@ -203,10 +209,7 @@ class EspSerialBridge(Node):
         packet_size = 2 + self._SENSOR_STRUCT.size + 1
 
         while len(self._rx_buffer) >= packet_size:
-            if (
-                self._rx_buffer[0] != self._MAGIC0 or
-                self._rx_buffer[1] != self._MAGIC1
-            ):
+            if self._rx_buffer[0] != self._MAGIC0 or self._rx_buffer[1] != self._MAGIC1:
                 del self._rx_buffer[0]
                 continue
 

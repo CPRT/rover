@@ -65,11 +65,13 @@ def generate_launch_description():
         parameters=[{"port": "/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0"}],
     )
 
-    panoramic = Node(
-        package="science_sensors",
-        executable="panoramic",
-        name="panoramic",
-    ),
+    panoramic = (
+        Node(
+            package="science_sensors",
+            executable="panoramic",
+            name="panoramic",
+        ),
+    )
 
     ld = LaunchDescription()
     ld.add_action(science_drill_control)

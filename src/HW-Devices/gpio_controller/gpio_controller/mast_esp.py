@@ -18,7 +18,9 @@ class MastESP(Node):
             115200,
         )
         self.pub = self.create_publisher(Distance, "eef_distance", 10)
-        self.us_sub = self.create_subscription(Float32, "/mast_angle", self.mast_callback, 3)
+        self.us_sub = self.create_subscription(
+            Float32, "/mast_angle", self.mast_callback, 3
+        )
 
         self.declare_parameter("min", 350.0)
         self.declare_parameter("max", 2500.0)
