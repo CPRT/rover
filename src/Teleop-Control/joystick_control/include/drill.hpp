@@ -17,20 +17,13 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
   rclcpp::Publisher<ros_phoenix::msg::MotorControl>::SharedPtr drill_pub_;
   rclcpp::Publisher<ros_phoenix::msg::MotorControl>::SharedPtr elevator_pub_;
-  rclcpp::TimerBase::SharedPtr joy_watchdog_timer_;
-
-  void on_joy_watchdog();
-  void mark_joy_received();
 
   int k_drill_power_axis_;
   int k_drill_elevation_axis_;
   double k_max_drill_duty_;
   double k_max_elevator_duty_;
-  double k_joy_first_message_timeout_s_;
   std::string k_drill_cmd_topic_;
   std::string k_elevator_cmd_topic_;
-
-  bool joy_received_{false};
 };
 
 #endif // DRILL_HPP

@@ -29,7 +29,7 @@ arm_teleop_node:
 
 drill_teleop_node:
   ros__parameters:
-    drill_power_axis: 3
+    drill_power_axis: 2
     drill_elevation_axis: 1
     joy_first_message_timeout_s: 10.0
     max_drill_duty: 1.0

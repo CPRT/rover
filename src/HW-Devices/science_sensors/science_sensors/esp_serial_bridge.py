@@ -62,7 +62,7 @@ class EspSerialBridge(Node):
         super().__init__("esp_serial_bridge")
 
         self.declare_parameter(
-            "port",
+            "esp_port",
             "/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0",
         )
         self.declare_parameter("baudrate", 115200)
@@ -71,7 +71,7 @@ class EspSerialBridge(Node):
         self.declare_parameter("read_poll_hz", 100.0)
         self.declare_parameter("reconnect_period_s", 2.0)
 
-        configured_port = self.get_parameter("port").get_parameter_value().string_value
+        configured_port = self.get_parameter("esp_port").get_parameter_value().string_value
         self._port_config = self._normalize_port(configured_port)
         self._port = self._resolve_port_path(self._port_config)
         if configured_port != self._port_config:
@@ -175,10 +175,16 @@ class EspSerialBridge(Node):
 
         checksum = self._checksum(payload)
 
-        packet = bytes([
-            self._MAGIC0,
-            self._MAGIC1,
-        ]) + payload + bytes([checksum])
+        packet = (
+            bytes(
+                [
+                    self._MAGIC0,
+                    self._MAGIC1,
+                ]
+            )
+            + payload
+            + bytes([checksum])
+        )
 
         try:
             self._serial.write(packet)
@@ -203,10 +209,7 @@ class EspSerialBridge(Node):
         packet_size = 2 + self._SENSOR_STRUCT.size + 1
 
         while len(self._rx_buffer) >= packet_size:
-            if (
-                self._rx_buffer[0] != self._MAGIC0 or
-                self._rx_buffer[1] != self._MAGIC1
-            ):
+            if self._rx_buffer[0] != self._MAGIC0 or self._rx_buffer[1] != self._MAGIC1:
                 del self._rx_buffer[0]
                 continue
 
