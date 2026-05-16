@@ -13,8 +13,8 @@ def generate_launch_description():
             ),
             launch_ros.actions.Node(
                 package="gpio_controller",
-                executable="distance_sensor",
-                name="distance_sensor_node",
+                executable="mast_esp",
+                name="mast_esp_node",
             ),
             launch_ros.actions.Node(
                 package="gpio_controller",
