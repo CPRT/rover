@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from interfaces.msg import Distance
 import serial
+from std_msgs.msg import Float32
 
 
 def convert_from_radians(angle, servo_min, servo_max, servo_rom):
@@ -17,24 +18,25 @@ class MastESP(Node):
             115200,
         )
         self.pub = self.create_publisher(Distance, "eef_distance", 10)
-        self.us_sub = self.create_subscription(Float32, "/mast_us", self.mast_callback)
+        self.us_sub = self.create_subscription(Float32, "/mast_angle", self.mast_callback, 3)
 
-        self.declare_parameter("min", 350)
-        self.declare_parameter("max", 2500)
+        self.declare_parameter("min", 350.0)
+        self.declare_parameter("max", 2500.0)
         self.declare_parameter("rom", 6.2832)
 
-        self.servo_min = self.get_parameter("min").get_parameter_value().float_value
-        self.servo_max = self.get_parameter("max").get_parameter_value().float_value
-        self.servo_rom = self.get_parameter("rom").get_parameter_value().float_value
+        self.servo_min = self.get_parameter("min").get_parameter_value().double_value
+        self.servo_max = self.get_parameter("max").get_parameter_value().double_value
+        self.servo_rom = self.get_parameter("rom").get_parameter_value().double_value
 
         self.create_timer(0.001, self.loop)
         self.get_logger().info("Mast ESP node started")
 
     def mast_callback(self, msg: Float32):
         us = convert_from_radians(
-            self.msg.data, self.servo_min, self.servo_max, self.servo_rom
+            msg.data, self.servo_min, self.servo_max, self.servo_rom
         )
-        self.ser.write("M" + str(us))
+        data = bytes("M" + str(us), "utf-8")
+        self.ser.write(data)
 
     def loop(self):
         if self.ser.in_waiting:
