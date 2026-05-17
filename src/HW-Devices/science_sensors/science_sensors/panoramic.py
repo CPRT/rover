@@ -23,7 +23,9 @@ class PanoramicNode(Node):
         self.video_cli = self.create_client(
             VideoCapture, "/capture_frame", callback_group=self.video_callback_group
         )
-        self.set_cam_cli = self.create_client(VideoOut, "/start_video", callback_group=self.video_callback_group)
+        self.set_cam_cli = self.create_client(
+            VideoOut, "/start_video", callback_group=self.video_callback_group
+        )
         self.pan_srv = self.create_service(
             VideoCapture,
             "/capture_panoramic",
@@ -113,7 +115,7 @@ class PanoramicNode(Node):
         source.width = 100
         source.height = 100
         video_start_req.sources = [source]
-        
+
         # Use an Event to wait for the async call to complete
         # Using ros2 executor blocking calls creates deadlock after first call
         event = Event()

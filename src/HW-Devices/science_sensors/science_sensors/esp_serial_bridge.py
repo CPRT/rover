@@ -71,7 +71,9 @@ class EspSerialBridge(Node):
         self.declare_parameter("read_poll_hz", 100.0)
         self.declare_parameter("reconnect_period_s", 2.0)
 
-        configured_port = self.get_parameter("esp_port").get_parameter_value().string_value
+        configured_port = (
+            self.get_parameter("esp_port").get_parameter_value().string_value
+        )
         self._port_config = self._normalize_port(configured_port)
         self._port = self._resolve_port_path(self._port_config)
         if configured_port != self._port_config:
