@@ -22,10 +22,11 @@ def generate_launch_description():
                 package="gps",
                 executable="heading_pub_node",
                 name="gps_heading_node",
+                output="screen",
                 parameters=[
                     {"frame_id": "gps_link"},
                     {"Freq": 5.0},  # Publish rate (hz)
-                    {"Baudrate": 115200},
+                    {"Baudrate": 38400},
                     {
                         "Device": "/dev/serial/by-id/usb-FTDI_FT230X_Basic_UART_D30EFLJN-if00-port0"
                     },
@@ -33,14 +34,14 @@ def generate_launch_description():
                 remappings=[("heading", "gps/heading")],
             ),
             # Optionally run the standalone config script when requested
-            ExecuteProcess(
-                cmd=[
-                    "python3",
-                    os.path.join(
-                        get_package_share_directory("gps"), "config", "fr_heading.py"
-                    ),
-                ],
-                condition=IfCondition(load_config),
-            ),
+            # ExecuteProcess(
+            #     cmd=[
+            #         "python3",
+            #         os.path.join(
+            #             get_package_share_directory("gps"), "config", "fr_heading.py"
+            #         ),
+            #     ],
+            #     condition=IfCondition(load_config),
+            # ),
         ]
     )
