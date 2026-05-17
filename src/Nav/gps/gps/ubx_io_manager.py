@@ -30,7 +30,13 @@ class UbxIoManager:
         """
         self.lock = threading.Lock()
         try:
-            self.worker = serial.Serial(port, baud, timeout=1)
+            self.worker = serial.Serial()
+            self.worker.port = port
+            self.worker.baudrate = baud
+            self.worker.timeout = 1
+            self.worker.dtr = False
+            self.worker.rts = False
+            self.worker.open()
         except serial.SerialException as e:
             raise RuntimeError(f"Failed to open serial port {port}: {e}") from e
         self.ubr = UBXReader(

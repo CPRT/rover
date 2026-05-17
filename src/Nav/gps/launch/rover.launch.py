@@ -49,15 +49,15 @@ def generate_launch_description():
                 ],
             ),
             # Optionally run the rover config script when requested
-            ExecuteProcess(
-                cmd=[
-                    "python3",
-                    os.path.join(
-                        get_package_share_directory("gps"), "config", "fr_rover.py"
-                    ),
-                ],
-                condition=IfCondition(load_config),
-            ),
+            # ExecuteProcess(
+            #     cmd=[
+            #         "python3",
+            #         os.path.join(
+            #             get_package_share_directory("gps"), "config", "fr_rover.py"
+            #         ),
+            #     ],
+            #     condition=IfCondition(load_config),
+            # ),
             heading_cmd,
         ]
     )

@@ -157,18 +157,18 @@ planner_server:
       lookup_table_size: 25.0             # Size of the dubin/reeds-sheep distance window to cache, in meters.
       cache_obstacle_heuristic: False     # Cache the obstacle map dynamic programming distance expansion heuristic between subsequent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.
       debug_visualizations: False         # For Hybrid nodes: Whether to publish expansions on the /expansions topic as an array of poses (the orientation has no meaning) and the path's footprints on the /planned_footprints topic. WARNING: heavy to compute and to display, for debug only as it degrades the performance.
-      use_quadratic_cost_penalty: False
+      use_quadratic_cost_penalty: True
       downsample_obstacle_heuristic: True
       allow_primitive_interpolation: False
       smooth_path: True                   # If true, does a simple and quick smoothing post-processing to the path
 
       smoother:
-        max_iterations: 2000
+        max_iterations: 800
         w_smooth: 0.7
         w_data: 0.2
-        tolerance: 1.0e-10
+        tolerance: 1.0e-4
         do_refinement: true
-        refinement_num: 4
+        refinement_num: 2
 
     GridBasedSearch:
       plugin: "cprt_planner_plugins::EventHorizonPlanner"
@@ -204,18 +204,18 @@ planner_server:
       lookup_table_size: 25.0             # Size of the dubin/reeds-sheep distance window to cache, in meters.
       cache_obstacle_heuristic: False      # Cache the obstacle map dynamic programming distance expansion heuristic between subsequent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.
       debug_visualizations: False         # For Hybrid nodes: Whether to publish expansions on the /expansions topic as an array of poses (the orientation has no meaning) and the path's footprints on the /planned_footprints topic. WARNING: heavy to compute and to display, for debug only as it degrades the performance.
-      use_quadratic_cost_penalty: False
+      use_quadratic_cost_penalty: True
       downsample_obstacle_heuristic: True
       allow_primitive_interpolation: False
       smooth_path: True                   # If true, does a simple and quick smoothing post-processing to the path
 
       smoother:
-        max_iterations: 2000
+        max_iterations: 800
         w_smooth: 0.7
         w_data: 0.2
-        tolerance: 1.0e-10
+        tolerance: 1.0e-4
         do_refinement: true
-        refinement_num: 4
+        refinement_num: 2
 
 smoother_server:
   ros__parameters:

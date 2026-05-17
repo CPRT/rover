@@ -29,22 +29,22 @@ def generate_launch_description():
                     },
                     {"Baudrate": 115200},
                     {"Freq": 5.0},  # Publish rate (hz)
-                    {"SvinMindur": 300},  # Survey in time (s)
-                    {"SvinMinAccDur": 10_000},  # Survey in accuracy (mm)
+                    {"SvinMinDur": 600},  # Survey in time (s)
+                    {"SvinAccLimit": 10_000},  # Survey in accuracy (mm)
                     {"QueueDepth": 10},
                 ],
             ),
             # Optionally run the standalone basestation config script when requested
-            ExecuteProcess(
-                cmd=[
-                    "python3",
-                    os.path.join(
-                        get_package_share_directory("gps"),
-                        "config",
-                        "fr_basestation.py",
-                    ),
-                ],
-                condition=IfCondition(load_config),
-            ),
+            # ExecuteProcess(
+            #     cmd=[
+            #         "python3",
+            #         os.path.join(
+            #             get_package_share_directory("gps"),
+            #             "config",
+            #             "fr_basestation.py",
+            #         ),
+            #     ],
+            #     condition=IfCondition(load_config),
+            # ),
         ]
     )
