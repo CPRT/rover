@@ -31,11 +31,15 @@ class HeadingNode(Node):
             self.get_parameter("QueueDepth").get_parameter_value().integer_value
         )
         self.heading_pub = self.create_publisher(Imu, "heading", queue_depth)
-        self.get_logger().info(f"Initializing HeadingNode with device: {self.dev}, baudrate: {self.baudrate}, frequency: {self.freq} Hz, persistent: {self.persistent}")
+        self.get_logger().info(
+            f"Initializing HeadingNode with device: {self.dev}, baudrate: {self.baudrate}, frequency: {self.freq} Hz, persistent: {self.persistent}"
+        )
         self.serial_conn = UbxIoManager(
             port=self.dev, baud=self.baudrate, msg_filter=UBX_PROTOCOL
         )
-        self.get_logger().info(f"Successfully opened serial port: {self.dev} and baud rate: {self.baudrate}")
+        self.get_logger().info(
+            f"Successfully opened serial port: {self.dev} and baud rate: {self.baudrate}"
+        )
         self.layers = SET_LAYER_RAM | SET_LAYER_BBR
         if self.persistent:
             self.layers |= SET_LAYER_FLASH

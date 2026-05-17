@@ -346,7 +346,7 @@ void ODriveHardwareInterface::pub_status() {
     status_msg.output_current = axis.bus_current_;
     status_msg.position = axis.pos_estimate_;
     status_msg.velocity = axis.vel_estimate_;
-    status_msg.active_errors = axis.active_errors_;
+    status_msg.active_errors = axis.active_errors_ | axis.disarm_reason_;
     axis.debug_pub_->publish(status_msg);
   }
 }
