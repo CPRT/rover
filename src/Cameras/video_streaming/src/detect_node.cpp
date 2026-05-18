@@ -149,6 +149,8 @@ GstPadProbeReturn metadata_probe_callback(GstPad *pad, GstPadProbeInfo *info,
     for (l_obj = frame_meta->obj_meta_list; l_obj != NULL;
          l_obj = l_obj->next) {
       NvDsObjectMeta *obj_meta = (NvDsObjectMeta *)(l_obj->data);
+      obj_meta->rect_params.border_width = 6;
+
       guint class_id = obj_meta->class_id;
       gfloat confidence = obj_meta->confidence;
       NvOSD_RectParams bbox = obj_meta->rect_params;

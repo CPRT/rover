@@ -76,21 +76,21 @@ class UnifiedNavCommander(Node):
             self.get_parameter("frequency").get_parameter_value().double_value
         )
 
-        self.declare_parameter("aruco_detection_window_sec", 5.0)
+        self.declare_parameter("aruco_detection_window_sec", 15.0)
         self.aruco_detection_window_sec = (
             self.get_parameter("aruco_detection_window_sec")
             .get_parameter_value()
             .double_value
         )
 
-        self.declare_parameter("aruco_min_detections", 5)
+        self.declare_parameter("aruco_min_detections", 3)
         self.aruco_min_detections = (
             self.get_parameter("aruco_min_detections")
             .get_parameter_value()
             .integer_value
         )
 
-        self.declare_parameter("object_detection_window_sec", 5.0)
+        self.declare_parameter("object_detection_window_sec", 10.0)
         self.object_detection_window_sec = (
             self.get_parameter("object_detection_window_sec")
             .get_parameter_value()
@@ -102,6 +102,13 @@ class UnifiedNavCommander(Node):
             self.get_parameter("object_min_detections")
             .get_parameter_value()
             .integer_value
+        )
+
+        self.declare_parameter("object_min_confidence", 0.5)
+        self.object_min_confidence = (
+            self.get_parameter("object_min_confidence")
+            .get_parameter_value()
+            .double_value
         )
 
         self.declare_parameter("aruco_approach_distance", 0.7)
@@ -673,6 +680,12 @@ class UnifiedNavCommander(Node):
             MissionState.NAV_TO_GPS,
             MissionState.EXECUTE_SEARCH,
         ):
+            return
+
+        if msg.confidence < self.object_min_confidence:
+            self.get_logger().info(
+                f"Ignoring detection with low confidence: {msg.confidence:.2f} < {self.object_min_confidence:.2f}"
+            )
             return
 
         target_model_type = self.config.get("target_model_type")
