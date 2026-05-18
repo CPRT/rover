@@ -13,9 +13,11 @@
 # limitations under the License.
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
@@ -27,6 +29,17 @@ def generate_launch_description():
                 "type",
                 default_value="gps",
                 description="Mission type (gps, aruco10m, aruco20m, mallet, pick, bottle, indoor_spiral)",
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("computer_vision"),
+                            "launch",
+                            "aruco_detector_zed.launch.py",
+                        ]
+                    )
+                )
             ),
             Node(
                 package="nav_commanders",
