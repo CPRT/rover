@@ -74,9 +74,9 @@ void arm::endeffector_control(
   // set the value - close is negative
   double value = 0.0;
   if (buttons[kClawClose]) {
-    value = -0.6;
+    value = 0.6;
   } else if (buttons[kClawOpen]) {
-    value = 0.5;
+    value = -0.5;
   }
   eef_control_msg.value = value;
   eef_pub_->publish(eef_control_msg);
