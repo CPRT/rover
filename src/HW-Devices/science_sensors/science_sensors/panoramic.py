@@ -3,6 +3,7 @@ import numpy as np
 import numpy.typing as npt
 import cv2
 import time
+from datetime import datetime
 from rclpy.node import Node
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
@@ -34,8 +35,8 @@ class PanoramicNode(Node):
         )
 
     def load_params(self):
-        self.declare_parameter("images", 10)
-        self.declare_parameter("sleep", 2.0)
+        self.declare_parameter("images", 7)
+        self.declare_parameter("sleep", 5.0)
         self.num_images = (
             self.get_parameter("images").get_parameter_value().integer_value
         )
@@ -72,15 +73,28 @@ class PanoramicNode(Node):
         if result is None or not result.success or len(result.image.data) == 0:
             self.get_logger().error("Failed to capture image")
             return None
+        self.get_logger().info(
+            f"Image data size: {len(result.image.data)} bytes, format: {result.image.format}, type: {type(result.image.data)}"
+        )
 
-        image = np.frombuffer(result.image.data, dtype=np.uint8)
+        image = np.frombuffer(bytes(result.image.data), dtype=np.uint8)
         if result.image.format == "png":
             image = cv2.imdecode(image, cv2.IMREAD_UNCHANGED)
         elif result.image.format == "jpeg":
-            image = cv2.imdecode(image, cv2.IMREAD_COLOR)
+            # Hack: it works but I would prefer to decode directly from memory instead of writing to disk
+            tmp_path = "/tmp/panoramic_capture.jpg"
+            with open(tmp_path, "wb") as f:
+                f.write(bytes(result.image.data))
+            image = cv2.imread(tmp_path, cv2.IMREAD_COLOR)
+            self.get_logger().info(
+                f"JPEG image decoded, shape: {image.shape if image is not None else 'None'}"
+            )
         else:
             self.get_logger().warn("Format not set. Assuming jpeg")
             image = cv2.imdecode(image, cv2.IMREAD_COLOR)
+        self.get_logger().info(
+            f"Image decoded successfully, shape: {image.shape if image is not None else 'None'}"
+        )
 
         if image is None or image.size == 0:
             self.get_logger().error("Failed to decode image")
@@ -135,15 +149,21 @@ class PanoramicNode(Node):
         result = future.result()
         images = []
         for i in range(self.num_images):
-            pan_angle = i * (6.28 / self.num_images)
+            pan_angle = i * (5.0 / self.num_images)
             self.get_logger().info(f"Moving servo to {pan_angle} radians")
             self.move_servo(self.servo_pan_pub, pan_angle)
+            self.get_logger().info(
+                f"Sleeping for {self.sleep_time} seconds to allow servo to move"
+            )
             time.sleep(self.sleep_time)
             image = self.capture_image()
             if image is None:
                 self.get_logger().error("Failed to capture image")
                 response.success = False
                 return response
+            self.get_logger().info(
+                f"Image {i + 1} captured successfully, shape: {image.shape}"
+            )
             images.append(image)
             self.get_logger().info(f"Captured image {i + 1}/{self.num_images}")
         image = self.construct_panoramic(images)
@@ -156,15 +176,16 @@ class PanoramicNode(Node):
         response.image.data = buffer.tobytes()
         response.image.format = "jpeg"
         response.success = True
-        if request.filename != "":
-            try:
-                with open(request.filename, "wb") as f:
-                    f.write(buffer)
-                self.get_logger().info(f"Panoramic image saved to {request.filename}")
-            except Exception as e:
-                self.get_logger().error(
-                    f"Failed to save image to {request.filename}: {str(e)}"
-                )
+        if request.filename == "":
+            request.filename = f"/tmp/panoramic_capture_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.jpg"
+        try:
+            with open(request.filename, "wb") as f:
+                f.write(buffer)
+            self.get_logger().info(f"Panoramic image saved to {request.filename}")
+        except Exception as e:
+            self.get_logger().error(
+                f"Failed to save image to {request.filename}: {str(e)}"
+            )
         self.get_logger().info("Panoramic capture completed")
         return response
 
