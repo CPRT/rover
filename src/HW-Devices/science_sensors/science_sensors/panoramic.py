@@ -149,7 +149,7 @@ class PanoramicNode(Node):
         result = future.result()
         images = []
         for i in range(self.num_images):
-            pan_angle = i * (3.0 / self.num_images)
+            pan_angle = i * (6.28 / self.num_images)
             self.get_logger().info(f"Moving servo to {pan_angle} radians")
             self.move_servo(self.servo_pan_pub, pan_angle)
             self.get_logger().info(
