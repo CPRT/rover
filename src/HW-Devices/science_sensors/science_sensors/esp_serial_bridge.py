@@ -16,7 +16,7 @@ except ImportError:  # pragma: no cover - runtime dependency check
 
 
 class EspSerialBridge(Node):
-    _PWM_STRUCT = struct.Struct("<BHHHH")
+    _PWM_STRUCT = struct.Struct("<BBHHHH")
     _SENSOR_STRUCT = struct.Struct("<HHHff")
 
     _MAGIC0 = 0xAA
@@ -169,6 +169,7 @@ class EspSerialBridge(Node):
 
         payload = self._PWM_STRUCT.pack(
             int(msg.pin) & 0xFF,
+            int(msg.type) & 0xFF,
             int(msg.duty_cycle) & 0xFFFF,
             int(msg.duration) & 0xFFFF,
             int(msg.frequency) & 0xFFFF,

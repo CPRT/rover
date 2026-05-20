@@ -4,9 +4,13 @@
 #include <freertos/queue.h>
 #include <DHTesp.h>
 
+#define TYPE_DC 0x00
+#define TYPE_SERVO 0x01
+
 #pragma pack(push, 1)
 struct PwmCommand {
   uint8_t  pin;
+  uint8_t  type;
   uint16_t duty_cycle;
   uint16_t duration;
   uint16_t frequency;
@@ -45,6 +49,7 @@ static QueueHandle_t g_pwmCmdQueue = nullptr;
 struct ActivePwm {
   bool     active;
   uint8_t  pin;
+  uint8_t  type;
   uint16_t duty_cycle;
   uint16_t frequency;
   uint32_t start_ms;
@@ -173,21 +178,31 @@ static void runCommand(const PwmCommand& cmd) {
     }
   }
 
-  uint32_t now    = millis();
-  uint32_t rampMs = (uint32_t)cmd.ramp     * 100u;
-  uint32_t holdMs = (uint32_t)cmd.duration * 100u;
-
-  active_pins[i].active      = true;
-  active_pins[i].start_duty  = active_pins[i].duty_cycle;
-  active_pins[i].pin         = cmd.pin;
-  active_pins[i].duty_cycle  = duty;
-  active_pins[i].start_ms    = now;
-  active_pins[i].ramp_end_ms = now + rampMs;
-  active_pins[i].run_end_ms  = active_pins[i].ramp_end_ms + holdMs;
-  active_pins[i].frequency   = cmd.frequency;
-
-  if (rampMs == 0) {
+  if (cmd.type == TYPE_SERVO) {
+    active_pins[i].active     = true;
+    active_pins[i].type       = TYPE_SERVO;
+    active_pins[i].pin        = cmd.pin;
+    active_pins[i].duty_cycle = duty;
+    active_pins[i].frequency  = cmd.frequency;
     ledcWrite(cmd.pin, duty);
+  } else if (cmd.type == TYPE_DC) {
+    uint32_t now    = millis();
+    uint32_t rampMs = (uint32_t)cmd.ramp     * 100u;
+    uint32_t holdMs = (uint32_t)cmd.duration * 100u;
+
+    active_pins[i].active      = true;
+    active_pins[i].type        = TYPE_DC;
+    active_pins[i].start_duty  = active_pins[i].duty_cycle;
+    active_pins[i].pin         = cmd.pin;
+    active_pins[i].duty_cycle  = duty;
+    active_pins[i].start_ms    = now;
+    active_pins[i].ramp_end_ms = now + rampMs;
+    active_pins[i].run_end_ms  = active_pins[i].ramp_end_ms + holdMs;
+    active_pins[i].frequency   = cmd.frequency;
+
+    if (rampMs == 0) {
+      ledcWrite(cmd.pin, duty);
+    }
   }
 }
 
@@ -195,6 +210,7 @@ static void updateActivePwm() {
   uint32_t now = millis();
   for (int i = 0; i < PWM_MAX_ACTIVE; ++i) {
     if (!active_pins[i].active) continue;
+    if (active_pins[i].type == TYPE_SERVO) continue;
     ActivePwm& a = active_pins[i];
 
     if ((int32_t)(now - a.run_end_ms) >= 0) {
