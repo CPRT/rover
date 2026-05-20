@@ -149,7 +149,7 @@ class PanoramicNode(Node):
         result = future.result()
         images = []
         for i in range(self.num_images):
-            pan_angle = i * (6.28 / self.num_images)
+            pan_angle = i * (3.0 / self.num_images)
             self.get_logger().info(f"Moving servo to {pan_angle} radians")
             self.move_servo(self.servo_pan_pub, pan_angle)
             self.get_logger().info(
@@ -179,6 +179,7 @@ class PanoramicNode(Node):
         if request.filename == "":
             # Hack: output to a known volume mount that we can retieve from
             request.filename = f"/usr/local/zed/pan/panoramic_capture_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.jpg"
+
         try:
             with open(request.filename, "wb") as f:
                 f.write(buffer)
