@@ -275,7 +275,7 @@ static void sensorTask(void* /*arg*/) {
     }
     pkt.temperature = lastTemperature;
     pkt.moisture = lastMoisture;
-    writeFramedSensorReadings(reinterpret_cast<const uint8_t*>(&pkt), 1 + sizeof(SensorReadings), TYPE_SENSORS);
+    writeFramedSensorReadings(reinterpret_cast<const uint8_t*>(&pkt), sizeof(SensorReadings), TYPE_SENSORS);
 
     vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(SENSOR_PERIOD_MS));
   }
@@ -289,16 +289,18 @@ const int POLAR_SENSOR_PIN1 = 4;
 const int POLAR_SENSOR_PIN2 = 5;
 
 static void runPolarimeter(uint8_t pin) {
+  int sensor_readings[POLAR_MAX_ANGLE + 1] = {0};
   while (pwmAngle <= POLAR_MAX_ANGLE) {
     int ms = map(pwmAngle, 0, POLAR_MAX_ANGLE, POLAR_MIN_MS, POLAR_MAX_MS);
     ledcWrite(pin, map(ms, 0, 20000, 0, PWM_MAX_DUTY));
-    delay(20);
+    delay(200);
     pwmAngle++;
     int sensor1 = analogRead(POLAR_SENSOR_PIN1);
     int sensor2 = analogRead(POLAR_SENSOR_PIN2);
     int diff = abs(sensor1 - sensor2);
-    writeFramedSensorReadings(reinterpret_cast<const uint8_t*>(&diff), 1 + sizeof(int), TYPE_POLAR);
+    sensor_readings[pwmAngle] = diff;
   }
+  writeFramedSensorReadings(reinterpret_cast<const uint8_t*>(sensor_readings), (POLAR_MAX_ANGLE + 1) * sizeof(int), TYPE_POLAR);
 }
 
 void setup() {
