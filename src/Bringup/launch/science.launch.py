@@ -74,9 +74,24 @@ def generate_launch_description():
         name="panoramic",
     )
 
+    polarimeter = Node(
+        package="science_sensors",
+        executable="polarimeter",
+        name="polarimeter",
+        parameters=[
+            {
+                "polar_pin": 13,
+                "polar_frequency": 50,
+                "output_dir": "/tmp",
+                "sweep_timeout_s": 90.0,
+            }
+        ],
+    )
+
     ld = LaunchDescription()
     ld.add_action(science_drill_control)
     ld.add_action(talon_container)
     ld.add_action(esp_serial_bridge)
+    ld.add_action(polarimeter)
     ld.add_action(panoramic)
     return ld

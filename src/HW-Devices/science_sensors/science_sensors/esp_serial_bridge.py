@@ -5,7 +5,7 @@ import struct
 import rclpy
 from rclpy.node import Node
 
-from interfaces.msg import EspSensorReadings, PwmCommand
+from interfaces.msg import EspSensorReadings, PolarimeterSweep, PwmCommand
 
 try:
     import serial
@@ -18,14 +18,14 @@ except ImportError:  # pragma: no cover - runtime dependency check
 class EspSerialBridge(Node):
     _PWM_STRUCT = struct.Struct("<BBHHHH")
     _SENSOR_STRUCT = struct.Struct("<HHff")
-    _POLAR_STRUCT = struct.Struct("<i")
+    _POLAR_SAMPLE_COUNT = 181  # POLAR_MAX_ANGLE + 1 in science_esp.ino
+    _POLAR_SWEEP_STRUCT = struct.Struct(f"<{_POLAR_SAMPLE_COUNT}i")
 
     _TYPE_SENSORS = 0x01
     _TYPE_POLAR = 0x02
 
-    # Payload lengths match science_esp.ino (1 + sizeof(...)).
-    _SENSOR_PAYLOAD_LEN = 1 + _SENSOR_STRUCT.size
-    _POLAR_PAYLOAD_LEN = 1 + _POLAR_STRUCT.size
+    _SENSOR_PAYLOAD_LEN = _SENSOR_STRUCT.size
+    _POLAR_PAYLOAD_LEN = _POLAR_SWEEP_STRUCT.size
 
     _MAGIC0 = 0xAA
     _MAGIC1 = 0x55
@@ -118,7 +118,9 @@ class EspSerialBridge(Node):
         self._last_connect_attempt_ns = 0
 
         self._sensor_pub = self.create_publisher(EspSensorReadings, sensor_topic, 10)
-        self._polarimeter_pub = self.create_publisher(EspSensorReadings, polarimeter_topic, 10)
+        self._polarimeter_pub = self.create_publisher(
+            PolarimeterSweep, polarimeter_topic, 10
+        )
         self.create_subscription(
             PwmCommand, pwm_command_topic, self._on_pwm_command, qos_profile=10
         )
@@ -269,9 +271,13 @@ class EspSerialBridge(Node):
                 msg.moisture = moisture
                 self._sensor_pub.publish(msg)
             elif frame_type == self._TYPE_POLAR:
-                (diff,) = self._POLAR_STRUCT.unpack(payload[: self._POLAR_STRUCT.size])
-                msg = EspSensorReadings()
-                msg.polarimeter = max(0, min(0xFFFF, int(diff)))
+                readings = list(
+                    self._POLAR_SWEEP_STRUCT.unpack(
+                        payload[: self._POLAR_SWEEP_STRUCT.size]
+                    )
+                )
+                msg = PolarimeterSweep()
+                msg.readings = readings
                 self._polarimeter_pub.publish(msg)
 
     def destroy_node(self):
