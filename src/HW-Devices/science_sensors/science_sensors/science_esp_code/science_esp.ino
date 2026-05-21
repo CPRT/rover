@@ -6,6 +6,7 @@
 
 #define TYPE_DC 0x00
 #define TYPE_SERVO 0x01
+#define TYPE_POLAR 0x02
 
 #pragma pack(push, 1)
 struct PwmCommand {
@@ -20,7 +21,6 @@ struct PwmCommand {
 struct SensorReadings {
   uint16_t methane;
   uint16_t co2;
-  uint16_t polarimeter;
   float    temperature;
   float    moisture;
 };
@@ -39,7 +39,6 @@ static const uint32_t DHT_PERIOD_MS = 2000;
 
 static const int METHANE_PIN     = 12;
 static const int CO2_PIN         = 33;
-static const int POLARIMETER_PIN = 4;
 static const int DHT_PIN         = 14;
 
 DHTesp dht;
@@ -126,13 +125,16 @@ static bool readFramedCommand(PwmCommand& cmd) {
   return false;
 }
 
-static void writeFramedSensorReadings(const SensorReadings& pkt) {
-  const uint8_t* payload = reinterpret_cast<const uint8_t*>(&pkt);
-  uint8_t checksum = calcChecksum(payload, sizeof(SensorReadings));
+#define TYPE_SENSORS 0x01
+#define TYPE_POLAR 0x02
+
+static void writeFramedSensorReadings(const uint8_t* payload, size_t len, uint8_t type) {
+  uint8_t checksum = calcChecksum(payload, len);
 
   Serial.write(MAGIC0);
   Serial.write(MAGIC1);
-  Serial.write(payload, sizeof(SensorReadings));
+  Serial.write(type);
+  Serial.write(payload, len);
   Serial.write(checksum);
 }
 
@@ -203,6 +205,13 @@ static void runCommand(const PwmCommand& cmd) {
     if (rampMs == 0) {
       ledcWrite(cmd.pin, duty);
     }
+  } else if (cmd.type == TYPE_POLAR) {
+    active_pins[i].active      = true;
+    active_pins[i].type        = TYPE_POLAR;
+    active_pins[i].pin         = cmd.pin;
+    active_pins[i].duty_cycle  = duty;
+    active_pins[i].frequency   = cmd.frequency;
+    runPolarimeter(cmd.pin);
   }
 }
 
@@ -211,6 +220,7 @@ static void updateActivePwm() {
   for (int i = 0; i < PWM_MAX_ACTIVE; ++i) {
     if (!active_pins[i].active) continue;
     if (active_pins[i].type == TYPE_SERVO) continue;
+    if (active_pins[i].type == TYPE_POLAR) continue;
     ActivePwm& a = active_pins[i];
 
     if ((int32_t)(now - a.run_end_ms) >= 0) {
@@ -246,7 +256,6 @@ static void pwmTask(void* /*arg*/) {
 
 static uint16_t readMethane()     { return (uint16_t)analogRead(METHANE_PIN); }
 static uint16_t readCo2()         { return (uint16_t)analogRead(CO2_PIN); }
-static uint16_t readPolarimeter() { return (uint16_t)analogRead(POLARIMETER_PIN); }
 
 static void sensorTask(void* /*arg*/) {
   static const int DHT_INTERVAL = DHT_PERIOD_MS / SENSOR_PERIOD_MS;
@@ -258,7 +267,6 @@ static void sensorTask(void* /*arg*/) {
     SensorReadings pkt;
     pkt.methane     = readMethane();
     pkt.co2         = readCo2();
-    pkt.polarimeter = readPolarimeter();
     if (++dht_counter >= DHT_INTERVAL) {
       dht_counter = 0;
       TempAndHumidity data = dht.getTempAndHumidity();
@@ -267,9 +275,29 @@ static void sensorTask(void* /*arg*/) {
     }
     pkt.temperature = lastTemperature;
     pkt.moisture = lastMoisture;
-    writeFramedSensorReadings(pkt);
+    writeFramedSensorReadings(reinterpret_cast<const uint8_t*>(&pkt), 1 + sizeof(SensorReadings), TYPE_SENSORS);
 
     vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(SENSOR_PERIOD_MS));
+  }
+}
+
+int pwmAngle = 0;
+const int POLAR_MIN_MS = 615;
+const int POLAR_MAX_MS = 2495;
+const int POLAR_MAX_ANGLE = 180;
+const int POLAR_SENSOR_PIN1 = 4;
+const int POLAR_SENSOR_PIN2 = 5;
+
+static void runPolarimeter(uint8_t pin) {
+  while (pwmAngle <= POLAR_MAX_ANGLE) {
+    int ms = map(pwmAngle, 0, POLAR_MAX_ANGLE, POLAR_MIN_MS, POLAR_MAX_MS);
+    ledcWrite(pin, map(ms, 0, 20000, 0, PWM_MAX_DUTY));
+    delay(20);
+    pwmAngle++;
+    int sensor1 = analogRead(POLAR_SENSOR_PIN1);
+    int sensor2 = analogRead(POLAR_SENSOR_PIN2);
+    int diff = abs(sensor1 - sensor2);
+    writeFramedSensorReadings(reinterpret_cast<const uint8_t*>(&diff), 1 + sizeof(int), TYPE_POLAR);
   }
 }
 
