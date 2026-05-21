@@ -18,19 +18,11 @@ TYPE_POLAR = 0x02
 class PolarimeterNode(Node):
     def __init__(self):
         super().__init__("polarimeter")
-        self.declare_parameter("pwm_command_topic", "esp_pwm_command")
-        self.declare_parameter("polarimeter_topic", "esp_polarimeter_readings")
         self.declare_parameter("polar_pin", 13)
         self.declare_parameter("polar_frequency", 50)
         self.declare_parameter("output_dir", "/tmp")
         self.declare_parameter("sweep_timeout_s", 90.0)
 
-        pwm_topic = (
-            self.get_parameter("pwm_command_topic").get_parameter_value().string_value
-        )
-        polar_topic = (
-            self.get_parameter("polarimeter_topic").get_parameter_value().string_value
-        )
         self._pin = int(
             self.get_parameter("polar_pin").get_parameter_value().integer_value
         )
@@ -48,9 +40,9 @@ class PolarimeterNode(Node):
         self._latest_sweep: PolarimeterSweep | None = None
         self._service_cb_group = MutuallyExclusiveCallbackGroup()
 
-        self._pwm_pub = self.create_publisher(PwmCommand, pwm_topic, 10)
+        self._pwm_pub = self.create_publisher(PwmCommand, "/esp_pwm_command", 10)
         self.create_subscription(
-            PolarimeterSweep, polar_topic, self._on_sweep, qos_profile=10
+            PolarimeterSweep, "/esp_polarimeter_readings", self._on_sweep, qos_profile=10
         )
         self.create_service(
             RunPolarimeter,

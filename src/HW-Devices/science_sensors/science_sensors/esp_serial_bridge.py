@@ -74,9 +74,6 @@ class EspSerialBridge(Node):
             "/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0",
         )
         self.declare_parameter("baudrate", 115200)
-        self.declare_parameter("sensor_topic", "esp_sensor_readings")
-        self.declare_parameter("pwm_command_topic", "esp_pwm_command")
-        self.declare_parameter("polarimeter_topic", "esp_polarimeter_readings")
         self.declare_parameter("read_poll_hz", 100.0)
         self.declare_parameter("reconnect_period_s", 2.0)
 
@@ -96,15 +93,6 @@ class EspSerialBridge(Node):
         self._baudrate = (
             self.get_parameter("baudrate").get_parameter_value().integer_value
         )
-        sensor_topic = (
-            self.get_parameter("sensor_topic").get_parameter_value().string_value
-        )
-        pwm_command_topic = (
-            self.get_parameter("pwm_command_topic").get_parameter_value().string_value
-        )
-        polarimeter_topic = (
-            self.get_parameter("polarimeter_topic").get_parameter_value().string_value
-        )
         read_poll_hz = (
             self.get_parameter("read_poll_hz").get_parameter_value().double_value
         )
@@ -117,12 +105,12 @@ class EspSerialBridge(Node):
         self._reconnect_period = max(0.1, reconnect_period)
         self._last_connect_attempt_ns = 0
 
-        self._sensor_pub = self.create_publisher(EspSensorReadings, sensor_topic, 10)
+        self._sensor_pub = self.create_publisher(EspSensorReadings, "/esp_sensor_readings", 10)
         self._polarimeter_pub = self.create_publisher(
-            PolarimeterSweep, polarimeter_topic, 10
+            PolarimeterSweep, "/esp_polarimeter_readings", 10
         )
         self.create_subscription(
-            PwmCommand, pwm_command_topic, self._on_pwm_command, qos_profile=10
+            PwmCommand, "/esp_pwm_command", self._on_pwm_command, qos_profile=10
         )
 
         poll_period = 1.0 / max(1.0, read_poll_hz)
@@ -136,8 +124,7 @@ class EspSerialBridge(Node):
 
         self._ensure_serial_connected(force=True)
         self.get_logger().info(
-            f"ESP serial bridge ready. cmd_topic='{pwm_command_topic}' "
-            f"sensor_topic='{sensor_topic}' polar_topic='{polarimeter_topic}' "
+            f"ESP serial bridge ready."
             f"port='{self._port}' baud={self._baudrate}"
         )
 
