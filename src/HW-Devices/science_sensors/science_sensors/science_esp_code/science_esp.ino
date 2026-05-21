@@ -285,8 +285,7 @@ int pwmAngle = 0;
 const int POLAR_MIN_MS = 615;
 const int POLAR_MAX_MS = 2495;
 const int POLAR_MAX_ANGLE = 180;
-const int POLAR_SENSOR_PIN1 = 4;
-const int POLAR_SENSOR_PIN2 = 5;
+const int POLAR_SENSOR_PIN = 4;
 
 static void runPolarimeter(uint8_t pin) {
   int sensor_readings[POLAR_MAX_ANGLE + 1] = {0};
@@ -295,10 +294,7 @@ static void runPolarimeter(uint8_t pin) {
     ledcWrite(pin, map(ms, 0, 20000, 0, PWM_MAX_DUTY));
     delay(200);
     pwmAngle++;
-    int sensor1 = analogRead(POLAR_SENSOR_PIN1);
-    int sensor2 = analogRead(POLAR_SENSOR_PIN2);
-    int diff = abs(sensor1 - sensor2);
-    sensor_readings[pwmAngle] = diff;
+    sensor_readings[pwmAngle] = analogRead(POLAR_SENSOR_PIN);
   }
   writeFramedSensorReadings(reinterpret_cast<const uint8_t*>(sensor_readings), (POLAR_MAX_ANGLE + 1) * sizeof(int), TYPE_POLAR);
 }
