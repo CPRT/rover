@@ -212,6 +212,7 @@ static void runCommand(const PwmCommand& cmd) {
     active_pins[i].duty_cycle  = duty;
     active_pins[i].frequency   = cmd.frequency;
     runPolarimeter(cmd.pin);
+    active_pins[i].active = false;
   }
 }
 
@@ -282,13 +283,15 @@ static void sensorTask(void* /*arg*/) {
 }
 
 int pwmAngle = 0;
-const int POLAR_MIN_MS = 615;
-const int POLAR_MAX_MS = 2495;
+const int POLAR_MIN_MS = 700;
+const int POLAR_MAX_MS = 2400;
 const int POLAR_MAX_ANGLE = 180;
-const int POLAR_SENSOR_PIN = 4;
+const int POLAR_SENSOR_PIN = 25;
 
 static void runPolarimeter(uint8_t pin) {
   int sensor_readings[POLAR_MAX_ANGLE + 1] = {0};
+  ledcWrite(pin, map(POLAR_MIN_MS, 0, 20000, 0, PWM_MAX_DUTY));
+  delay(3000);
   while (pwmAngle <= POLAR_MAX_ANGLE) {
     int ms = map(pwmAngle, 0, POLAR_MAX_ANGLE, POLAR_MIN_MS, POLAR_MAX_MS);
     ledcWrite(pin, map(ms, 0, 20000, 0, PWM_MAX_DUTY));
