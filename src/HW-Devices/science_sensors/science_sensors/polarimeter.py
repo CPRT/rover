@@ -18,7 +18,7 @@ TYPE_POLAR = 0x02
 class PolarimeterNode(Node):
     def __init__(self):
         super().__init__("polarimeter")
-        self.declare_parameter("polar_pin", 13)
+        self.declare_parameter("polar_pin", 27)
         self.declare_parameter("polar_frequency", 50)
         self.declare_parameter("output_dir", "/tmp")
         self.declare_parameter("sweep_timeout_s", 90.0)
