@@ -8,7 +8,9 @@ drive_teleop_node:
     servo_y_axis: 7
     servo_x_axis: 6
     servo_home_button: 1
-    servo_increment: 0.01
+    servo_increment: 0.02
+    mast_left_button: 0
+    mast_right_button: 2
     servo_min: 0.0
     servo_max: 6.28
     default_servo_x: 3.10
