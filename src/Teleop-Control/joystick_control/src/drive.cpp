@@ -3,9 +3,13 @@
 drive::drive() : Node("drive_node"), initialized_(false) {
   declare_parameters();
   load_parameters();
+  setCarousell();
   twist_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
   servo_y_pub_ = this->create_publisher<std_msgs::msg::Float32>("/tilt", 10);
   servo_x_pub_ = this->create_publisher<std_msgs::msg::Float32>("/pan", 10);
+  servo_m_pub_ =
+      this->create_publisher<std_msgs::msg::Float32>("/mast_angle", 10);
+
   camera_client_ =
       this->create_client<interfaces::srv::VideoOut>("/start_video");
   joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
@@ -59,7 +63,7 @@ void drive::setCarousell() {
 
   mast.num_sources = 1;
   mast.sources.resize(mast.num_sources);
-  mast.sources[0].name = "Drive";
+  mast.sources[0].name = "Mast";
   mast.sources[0].height = 100;
   mast.sources[0].width = 100;
   mast.sources[0].origin_x = 0;
@@ -74,12 +78,18 @@ void drive::setCarousell() {
 }
 
 void drive::camera_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
-  const auto &left_but = joystickMsg->buttons[6];
-  const auto &right_but = joystickMsg->buttons[7];
+  const auto &left_but = joystickMsg->buttons[kCamLeftBut];
+  const auto &right_but = joystickMsg->buttons[kCamRightBut];
+
   if (!left_but && !right_but) {
     cam_debounce_ = false;
     return;
   }
+  // If button has not been released
+  if (cam_debounce_) {
+    return;
+  }
+  cam_debounce_ = true;
   if (left_but) {
     if (video_carousell_idx_ == 0) {
       video_carousell_idx_ = video_carousell_.size();
@@ -93,7 +103,8 @@ void drive::camera_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   }
   auto request = std::make_shared<interfaces::srv::VideoOut::Request>(
       video_carousell_[video_carousell_idx_]);
-
+  RCLCPP_INFO(this->get_logger(), "Sending Video preset index %ld",
+              video_carousell_idx_);
   camera_client_->async_send_request(request);
 }
 
@@ -112,6 +123,7 @@ void drive::drive_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   twist.angular.z = joystickMsg->axes[kYawAxis] * kMaxAngular;
 
   twist_pub_->publish(twist);
+  camera_control(joystickMsg);
 
   if (joystickMsg->buttons[kServoHomeButton]) {
     servo_y_ = kDefaultServoY;
@@ -141,6 +153,10 @@ void drive::drive_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   servo_x_ = std::clamp(servo_x_, kServoMin, kServoMax);
   servo_msg.data = servo_x_;
   servo_x_pub_->publish(servo_msg);
+
+  servo_mast_ = std::clamp(servo_mast_, kServoMin, kServoMax);
+  servo_msg.data = servo_mast_;
+  servo_m_pub_->publish(servo_msg);
 };
 
 void drive::declare_parameters() {
@@ -154,6 +170,8 @@ void drive::declare_parameters() {
   this->declare_parameter("servo_home_button", 8);
   this->declare_parameter("mast_left_button", 3);
   this->declare_parameter("mast_right_button", 1);
+  this->declare_parameter("cam_left_button", 4);
+  this->declare_parameter("cam_right_button", 5);
   this->declare_parameter("servo_increment", 0.01);
   this->declare_parameter("servo_min", -3.14);
   this->declare_parameter("servo_max", 3.14);
@@ -172,6 +190,8 @@ void drive::load_parameters() {
   this->get_parameter("servo_home_button", kServoHomeButton);
   this->get_parameter("mast_left_button", kMastLeftButton);
   this->get_parameter("mast_right_button", kMastRightButton);
+  this->get_parameter("cam_left_button", kCamLeftBut);
+  this->get_parameter("cam_right_button", kCamRightBut);
   this->get_parameter("servo_increment", kServoIncrement);
   this->get_parameter("servo_min", kServoMin);
   this->get_parameter("servo_max", kServoMax);
