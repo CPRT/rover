@@ -105,7 +105,9 @@ class EspSerialBridge(Node):
         self._reconnect_period = max(0.1, reconnect_period)
         self._last_connect_attempt_ns = 0
 
-        self._sensor_pub = self.create_publisher(EspSensorReadings, "/esp_sensor_readings", 10)
+        self._sensor_pub = self.create_publisher(
+            EspSensorReadings, "/esp_sensor_readings", 10
+        )
         self._polarimeter_pub = self.create_publisher(
             PolarimeterSweep, "/esp_polarimeter_readings", 10
         )
@@ -124,8 +126,7 @@ class EspSerialBridge(Node):
 
         self._ensure_serial_connected(force=True)
         self.get_logger().info(
-            f"ESP serial bridge ready."
-            f"port='{self._port}' baud={self._baudrate}"
+            f"ESP serial bridge ready." f"port='{self._port}' baud={self._baudrate}"
         )
 
     def _ensure_serial_connected(self, force: bool = False) -> bool:

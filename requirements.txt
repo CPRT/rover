@@ -21,3 +21,4 @@ onnxslim
 odrive
 smbus2
 PyYAML
+scipy=1.12.0

@@ -1,5 +1,4 @@
-# Empty: auto-generate path under the node's output_dir parameter.
-string output_path
+string title
 ---
 bool success
 string message

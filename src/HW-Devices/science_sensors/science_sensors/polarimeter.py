@@ -3,6 +3,9 @@ import csv
 import os
 from datetime import datetime
 from threading import Event
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.optimize import curve_fit
 
 import rclpy
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
@@ -42,7 +45,10 @@ class PolarimeterNode(Node):
 
         self._pwm_pub = self.create_publisher(PwmCommand, "/esp_pwm_command", 10)
         self.create_subscription(
-            PolarimeterSweep, "/esp_polarimeter_readings", self._on_sweep, qos_profile=10
+            PolarimeterSweep,
+            "/esp_polarimeter_readings",
+            self._on_sweep,
+            qos_profile=10,
         )
         self.create_service(
             RunPolarimeter,
@@ -63,17 +69,56 @@ class PolarimeterNode(Node):
 
     @staticmethod
     def _write_csv(file_path: str, readings: list[int]) -> None:
-        with open(file_path, "w", newline="") as csv_file:
+        with open(f"{file_path}.csv", "w", newline="") as csv_file:
             writer = csv.writer(csv_file)
             writer.writerow(["angle", "diff"])
             for angle, diff in enumerate(readings):
                 writer.writerow([angle, diff])
 
+    @staticmethod
+    def _write_graph(title: str, file_path: str, readings: list[int]) -> None:
+        x_deg = list(range(len(readings)))
+        x_rad = np.deg2rad(x_deg)
+
+        # --- Model: A cos^2(x - phi) + C ---
+        def cos2_model(x, A, phi, C):
+            return A * np.cos(x - phi) ** 2 + C
+
+        # --- Initial parameter guesses ---
+        A_guess = np.max(readings) - np.min(readings)
+        phi_guess = np.deg2rad(50)
+        C_guess = np.min(readings)
+
+        popt, _ = curve_fit(
+            cos2_model, x_rad, readings, p0=[A_guess, phi_guess, C_guess]
+        )
+
+        A_fit, phi_fit, C_fit = popt
+
+        # Convert phase to degrees
+        phase_deg = np.rad2deg(phi_fit)
+
+        # --- Generate smooth fit curve ---
+        x_fit_deg = np.linspace(np.min(x_deg), np.max(x_deg), 1000)
+        x_fit_rad = np.deg2rad(x_fit_deg)
+        y_fit = cos2_model(x_fit_rad, A_fit, phi_fit, C_fit)
+
+        # --- Plot ---
+        plt.figure()
+        plt.scatter(x_deg, readings, label="Data")
+        plt.plot(x_fit_deg, y_fit, label="Cos² Fit")
+        plt.axvline(phase_deg, linestyle="--", label=f"Phase Offset = {phase_deg:.2f}°")
+
+        plt.xlabel("Angle (degrees)")
+        plt.ylabel("Signal")
+        plt.title(f"{title} - Cosine Squared Fit")
+        plt.legend()
+        plt.savefig(f"{file_path}.png")
+
     def _run_polarimeter(self, request, response):
-        output_path = (request.output_path or "").strip()
-        if not output_path:
-            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            output_path = os.path.join(self._output_dir, f"polarimeter_{timestamp}.csv")
+        title = (request.title or "").strip()
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        output_path = os.path.join(self._output_dir, f"polarimeter_{title}_{timestamp}")
 
         self._sweep_event.clear()
         self._latest_sweep = None
@@ -107,6 +152,7 @@ class PolarimeterNode(Node):
             if output_dir:
                 os.makedirs(output_dir, exist_ok=True)
             self._write_csv(output_path, list(sweep.readings))
+            self._write_graph(title, output_path, list(sweep.readings))
         except OSError as exc:
             response.success = False
             response.message = f"Failed to write CSV: {exc}"
