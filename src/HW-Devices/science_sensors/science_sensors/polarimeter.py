@@ -23,7 +23,7 @@ class PolarimeterNode(Node):
         super().__init__("polarimeter")
         self.declare_parameter("polar_pin", 27)
         self.declare_parameter("polar_frequency", 50)
-        self.declare_parameter("output_dir", "/tmp")
+        self.declare_parameter("output_dir", "/usr/local/zed/polar/")
         self.declare_parameter("sweep_timeout_s", 90.0)
 
         self._pin = int(
