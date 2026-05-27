@@ -1,0 +1,190 @@
+Arm:
+  controls:
+    backlight_compensation:
+      default: 0
+      max: 255
+      min: 0
+      step: 1
+      type: int
+      value: 0
+    brightness:
+      default: 0
+      max: 127
+      min: -128
+      step: 1
+      type: int
+      value: 0
+    contrast:
+      default: 128
+      max: 255
+      min: 0
+      step: 1
+      type: int
+      value: 128
+    hue:
+      default: 0
+      max: 127
+      min: -128
+      step: 1
+      type: int
+      value: 0
+    saturation:
+      default: 128
+      max: 255
+      min: 0
+      step: 1
+      type: int
+      value: 128
+  path: /dev/v4l/by-id/usb-MACROSILICON_USB_Video_20200909-video-index0
+Drive:
+  controls:
+    auto_exposure:
+      default: 0
+      max: 3
+      min: 0
+      type: menu
+      value: 0
+    brightness:
+      default: 0
+      max: 64
+      min: -64
+      step: 1
+      type: int
+      value: 0
+    contrast:
+      default: 10
+      max: 100
+      min: 0
+      step: 1
+      type: int
+      value: 10
+    exposure_time_absolute:
+      default: 5
+      flags: inactive
+      max: 330
+      min: 5
+      step: 1
+      type: int
+      value: 5
+    gain:
+      default: 100
+      max: 1066
+      min: 100
+      step: 1
+      type: int
+      value: 100
+    saturation:
+      default: 10
+      max: 100
+      min: 0
+      step: 1
+      type: int
+      value: 10
+    white_balance_automatic:
+      default: 1
+      type: bool
+      value: 1
+    white_balance_temperature:
+      default: 2498
+      flags: inactive
+      max: 8575
+      min: 2498
+      step: 1
+      type: int
+      value: 2498
+  path: /dev/v4l/by-id/drive_camera
+Mast:
+  controls:
+    auto_exposure:
+      default: 3
+      max: 3
+      min: 0
+      type: menu
+      value: 3
+    backlight_compensation:
+      default: 1
+      max: 2
+      min: 0
+      step: 1
+      type: int
+      value: 1
+    brightness:
+      default: 0
+      max: 64
+      min: -64
+      step: 1
+      type: int
+      value: 0
+    contrast:
+      default: 32
+      max: 64
+      min: 0
+      step: 1
+      type: int
+      value: 32
+    exposure_dynamic_framerate:
+      default: 0
+      type: bool
+      value: 1
+    exposure_time_absolute:
+      default: 625
+      flags: inactive
+      max: 5000
+      min: 1
+      step: 1
+      type: int
+      value: 625
+    gain:
+      default: 0
+      max: 100
+      min: 0
+      step: 1
+      type: int
+      value: 0
+    gamma:
+      default: 100
+      max: 500
+      min: 72
+      step: 1
+      type: int
+      value: 100
+    hue:
+      default: 0
+      max: 40
+      min: -40
+      step: 1
+      type: int
+      value: 0
+    power_line_frequency:
+      default: 1
+      max: 2
+      min: 0
+      type: menu
+      value: 1
+    saturation:
+      default: 64
+      max: 128
+      min: 1
+      step: 1
+      type: int
+      value: 64
+    sharpness:
+      default: 5
+      max: 6
+      min: 0
+      step: 1
+      type: int
+      value: 5
+    white_balance_automatic:
+      default: 1
+      type: bool
+      value: 1
+    white_balance_temperature:
+      default: 4600
+      flags: inactive
+      max: 6500
+      min: 2800
+      step: 1
+      type: int
+      value: 4600
+  path: /dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._Webcam_Webcam-video-index0

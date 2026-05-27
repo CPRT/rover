@@ -1,0 +1,4 @@
+Drive: /dev/v4l/by-id/drive_camera
+Arm: /dev/v4l/by-id/usb-MACROSILICON_USB_Video_20200909-video-index0
+Mast: /dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._Webcam_Webcam-video-index0
+Bottom: /dev/v4l/by-id/usb-HD_Camera_Manufacturer_USB_2.0_Camera-video-index0

@@ -1,0 +1,14 @@
+auto_exposure: 3
+backlight_compensation: 1
+brightness: 0
+contrast: 32
+exposure_dynamic_framerate: 1
+exposure_time_absolute: 625
+gain: 0
+gamma: 100
+hue: 0
+power_line_frequency: 1
+saturation: 64
+sharpness: 5
+white_balance_automatic: 1
+white_balance_temperature: 4600
