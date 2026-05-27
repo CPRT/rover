@@ -50,7 +50,8 @@ class AntennaPointingNode(Node):
         self.manual = msg.data
 
     def manual_value_cb(self, msg):
-        self.manual_value = msg.data
+        self.manual_value += msg.data
+        self.manual_value = (self.manual_value + math.pi * 2) % (math.pi * 2)
 
     def update(self):
 
@@ -69,6 +70,7 @@ class AntennaPointingNode(Node):
             )
 
             self.publish_bearing(bearing)
+            self.manual_value = bearing
         else:  # is manual mode
             self.publish_bearing(self.manual_value)
 
