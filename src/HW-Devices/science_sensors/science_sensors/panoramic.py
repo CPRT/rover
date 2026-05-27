@@ -179,6 +179,7 @@ class PanoramicNode(Node):
         if request.filename == "":
             # Hack: output to a known volume mount that we can retieve from
             request.filename = f"/usr/local/zed/pan/panoramic_capture_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.jpg"
+
         try:
             with open(request.filename, "wb") as f:
                 f.write(buffer)

@@ -26,6 +26,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/GasSensorReading.msg"
   "msg/PwmCommand.msg"
   "msg/EspSensorReadings.msg"
+  "msg/PolarimeterSweep.msg"
   "msg/SrtStats.msg"
   "msg/RtpStats.msg"
   "msg/SvinStatus.msg"
@@ -38,6 +39,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GetPoses.srv"
   "srv/GoToPose.srv"
   "srv/GraphDot.srv"
+  "srv/RunPolarimeter.srv"
   DEPENDENCIES 
   builtin_interfaces
   geometry_msgs 

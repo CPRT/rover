@@ -65,7 +65,6 @@ def generate_launch_description():
         package="science_sensors",
         executable="esp_serial_bridge",
         name="esp_serial_bridge",
-        parameters=[{"port": "/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0"}],
     )
 
     panoramic = Node(
@@ -74,9 +73,16 @@ def generate_launch_description():
         name="panoramic",
     )
 
+    polarimeter = Node(
+        package="science_sensors",
+        executable="polarimeter",
+        name="polarimeter",
+    )
+
     ld = LaunchDescription()
     ld.add_action(science_drill_control)
     ld.add_action(talon_container)
     ld.add_action(esp_serial_bridge)
+    ld.add_action(polarimeter)
     ld.add_action(panoramic)
     return ld
