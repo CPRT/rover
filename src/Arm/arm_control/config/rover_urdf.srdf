@@ -57,7 +57,7 @@
 
     <group_state name="Pick up side" group="arm">
         <joint name="Joint_1" value="1.4956312681885002"/>
-        <joint name="Joint_2" value="-1.3037585843553454"/>
+        <joint name="Joint_2" value="-1.0037585843553454"/>
         <joint name="Joint_3" value="1.552388557340269"/>
         <joint name="Joint_4" value="-0.02761165418194154"/>
         <joint name="Joint_5" value="-0.26346616253748373"/>
