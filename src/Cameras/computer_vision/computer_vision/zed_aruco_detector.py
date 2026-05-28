@@ -51,7 +51,7 @@ class ZEDArucoDetector(Node):
             zed_qos,
         )
 
-        self.create_timer(3.0, self.process_image)
+        self.create_timer(1.0, self.process_image)
 
         self.aruco_pub = self.create_publisher(
             ArucoMarkers, "/computer_vision/aruco_markers", 10
@@ -84,7 +84,8 @@ class ZEDArucoDetector(Node):
         self.get_logger().info(
             "Received camera info with fx: {}, fy: {}, cx: {}, cy: {}".format(
                 self.fx, self.fy, self.cx, self.cy
-            )
+            ),
+            throttle_duration_sec=20.0
         )
 
     def process_image(self):
