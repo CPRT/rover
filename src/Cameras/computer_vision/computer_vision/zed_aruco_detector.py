@@ -85,7 +85,7 @@ class ZEDArucoDetector(Node):
             "Received camera info with fx: {}, fy: {}, cx: {}, cy: {}".format(
                 self.fx, self.fy, self.cx, self.cy
             ),
-            throttle_duration_sec=40.0
+            throttle_duration_sec=40.0,
         )
 
     def process_image(self):
