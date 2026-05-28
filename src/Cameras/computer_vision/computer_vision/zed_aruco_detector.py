@@ -64,13 +64,13 @@ class ZEDArucoDetector(Node):
 
     def rbg_image_callback(self, msg: Image):
         # Use ros opencv bridge to convert the ROS image message to OpenCV format
-        self.get_logger().info("Received new colour image")
+        self.get_logger().info("Received new colour image", throttle_duration_sec=40.0)
         self.colour_image = self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding="bgra8")
         self.header_msg = msg.header
         self.img_processed_flag = False
 
     def depth_image_callback(self, msg: Image):
-        self.get_logger().info("Received new depth image")
+        self.get_logger().info("Received new depth image", throttle_duration_sec=40.0)
         self.depth_image = self.cv_bridge.imgmsg_to_cv2(
             msg, desired_encoding="passthrough"
         )
@@ -85,11 +85,11 @@ class ZEDArucoDetector(Node):
             "Received camera info with fx: {}, fy: {}, cx: {}, cy: {}".format(
                 self.fx, self.fy, self.cx, self.cy
             ),
-            throttle_duration_sec=20.0
+            throttle_duration_sec=40.0
         )
 
     def process_image(self):
-        self.get_logger().info("Processing image for ArUco marker detection")
+        # self.get_logger().info("Processing image for ArUco marker detection")
         if self.img_processed_flag:
             self.get_logger().info("Image already processed, waiting for new image")
             return
@@ -113,7 +113,7 @@ class ZEDArucoDetector(Node):
 
         # Loop through detected markers
         if ids is not None:
-            self.get_logger().info(f"Detected {len(ids)} markers")
+            # self.get_logger().info(f"Detected {len(ids)} markers")
             for i in range(len(corners)):
                 single_tag_corners = corners[i][0]
                 single_tag_id = ids[i][0]
@@ -163,7 +163,7 @@ class ZEDArucoDetector(Node):
             self.get_logger().warn("No valid depth values found in the bounding box")
             return 0, 0, None
 
-        self.get_logger().info(f"Depth values: {valid_depth_values}")
+        # self.get_logger().info(f"Depth values: {valid_depth_values}")
 
         # Calculate the average depth value
         avg_depth = np.mean(valid_depth_values)
