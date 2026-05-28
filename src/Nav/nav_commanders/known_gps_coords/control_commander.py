@@ -73,11 +73,13 @@ def main():
     parser = argparse.ArgumentParser(
         description="Control commander for setting mission types and sending GPS coordinates."
     )
-    
+
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # Subparser for 'mission'
-    mission_parser = subparsers.add_parser("mission", help="Set the mission type for cprt_commander")
+    mission_parser = subparsers.add_parser(
+        "mission", help="Set the mission type for cprt_commander"
+    )
     mission_group = mission_parser.add_mutually_exclusive_group(required=True)
     missions = [
         "gps",
@@ -99,7 +101,9 @@ def main():
     mission_parser.set_defaults(func=handle_mission)
 
     # Subparser for 'gps'
-    gps_parser = subparsers.add_parser("gps", help="Send GPS coordinates to ROS2 service")
+    gps_parser = subparsers.add_parser(
+        "gps", help="Send GPS coordinates to ROS2 service"
+    )
     gps_group = gps_parser.add_mutually_exclusive_group(required=True)
     gps_group.add_argument(
         "--file", type=str, help="YAML file containing GPS coordinates (lat, lon)."
@@ -123,7 +127,7 @@ def main():
     cancel_parser.set_defaults(func=handle_cancel)
 
     args = parser.parse_args()
-    
+
     # Execute the associated function for the chosen subparser
     args.func(args)
 
