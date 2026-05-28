@@ -8,6 +8,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "ros_phoenix/msg/motor_status.hpp"
 #include "socket_can.hpp"
+#include "std_srvs/srv/trigger.hpp"
 #include <tf2/convert.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2_ros/buffer.h>
@@ -46,6 +47,10 @@ private:
   void on_can_msg(const can_frame &frame);
   void set_axis_command_mode(const Axis &axis);
   void pub_status();
+  void clear_axis_errors(
+      size_t axis_index,
+      const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+      std::shared_ptr<std_srvs::srv::Trigger::Response> response);
 
   bool active_;
   EpollEventLoop event_loop_;
@@ -55,6 +60,8 @@ private:
   rclcpp::Time timestamp_;
   rclcpp::Node::SharedPtr debug_node_;
   rclcpp::TimerBase::SharedPtr debug_timer_;
+  std::vector<rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr>
+      clear_error_srvs_;
   int debug_frequency_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   std::thread spin_thread_;
@@ -288,6 +295,21 @@ ODriveHardwareInterface::on_init(const hardware_interface::HardwareInfo &info) {
                        multiplier, input_mode, gravity_ff_manager);
   }
 
+  clear_error_srvs_.reserve(axes_.size());
+  for (size_t i = 0; i < axes_.size(); ++i) {
+    const std::string service_name = info_.joints[i].name + "/clear_errors";
+    clear_error_srvs_.push_back(
+        debug_node_->create_service<std_srvs::srv::Trigger>(
+            service_name,
+            [this,
+             i](const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+                std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+              this->clear_axis_errors(i, request, response);
+            }));
+    RCLCPP_DEBUG(debug_node_->get_logger(), "Created clear errors service: %s",
+                 service_name.c_str());
+  }
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -348,6 +370,29 @@ void ODriveHardwareInterface::pub_status() {
     status_msg.velocity = axis.vel_estimate_;
     status_msg.active_errors = axis.active_errors_ | axis.disarm_reason_;
     axis.debug_pub_->publish(status_msg);
+  }
+}
+
+void ODriveHardwareInterface::clear_axis_errors(
+    size_t axis_index, const std::shared_ptr<std_srvs::srv::Trigger::Request>,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+  if (axis_index >= axes_.size()) {
+    response->success = false;
+    response->message = "Invalid axis index";
+    return;
+  }
+
+  Clear_Errors_msg_t msg;
+  msg.Identify = 0;
+
+  Axis &axis = axes_[axis_index];
+  response->success = axis.send(msg);
+  if (response->success) {
+    axis.active_errors_ = 0;
+    axis.disarm_reason_ = 0;
+    response->message = "Clear errors command sent";
+  } else {
+    response->message = "Failed to send clear errors command";
   }
 }
 

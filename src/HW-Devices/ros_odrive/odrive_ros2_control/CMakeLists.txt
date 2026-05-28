@@ -13,6 +13,7 @@ find_package(ros_phoenix REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 ament_auto_find_build_dependencies()
 
 ament_export_dependencies(rosidl_default_runtime)
@@ -33,6 +34,7 @@ ament_target_dependencies(odrive_ros2_control_plugin
   tf2_geometry_msgs
   ros_phoenix
   rclcpp
+  std_srvs
 )
 
 pluginlib_export_plugin_description_file(hardware_interface odrive_hardware_interface.xml)
