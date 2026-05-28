@@ -30,17 +30,17 @@ def generate_launch_description():
                 default_value="gps",
                 description="Mission type (gps, aruco10m, aruco20m, mallet, pick, bottle, indoor_spiral)",
             ),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    PathJoinSubstitution(
-                        [
-                            FindPackageShare("computer_vision"),
-                            "launch",
-                            "aruco_detector_zed.launch.py",
-                        ]
-                    )
-                )
-            ),
+            # IncludeLaunchDescription(
+            #     PythonLaunchDescriptionSource(
+            #         PathJoinSubstitution(
+            #             [
+            #                 FindPackageShare("computer_vision"),
+            #                 "launch",
+            #                 "aruco_detector_zed.launch.py",
+            #             ]
+            #         )
+            #     )
+            # ),
             Node(
                 package="nav_commanders",
                 name="unified_nav_commander",
