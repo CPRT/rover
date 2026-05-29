@@ -5,7 +5,7 @@ from datetime import datetime
 from threading import Event
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.optimize import curve_fit
+#from scipy.optimize import curve_fit
 
 import rclpy
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
@@ -152,7 +152,7 @@ class PolarimeterNode(Node):
             if output_dir:
                 os.makedirs(output_dir, exist_ok=True)
             self._write_csv(output_path, list(sweep.readings))
-            self._write_graph(title, output_path, list(sweep.readings))
+#            self._write_graph(title, output_path, list(sweep.readings))
         except OSError as exc:
             response.success = False
             response.message = f"Failed to write CSV: {exc}"

@@ -3,6 +3,7 @@
 #include <freertos/task.h>
 #include <freertos/queue.h>
 #include <DHTesp.h>
+//#include <Adafruit_NeoPixel.h>
 
 #define TYPE_DC 0x00
 #define TYPE_SERVO 0x01
@@ -42,6 +43,8 @@ static const int CO2_PIN         = 33;
 static const int DHT_PIN         = 14;
 
 DHTesp dht;
+
+//Adafruit_NeoPixel led(1, 4, NEO_GRB + NEO_KHZ800);
 
 static QueueHandle_t g_pwmCmdQueue = nullptr;
 
@@ -295,12 +298,8 @@ static void runPolarimeter(uint8_t pin) {
   while (pwmAngle <= POLAR_MAX_ANGLE) {
     int ms = map(pwmAngle, 0, POLAR_MAX_ANGLE, POLAR_MIN_MS, POLAR_MAX_MS);
     ledcWrite(pin, map(ms, 0, 20000, 0, PWM_MAX_DUTY));
-    sensor_readings[pwmAngle] = analogRead(POLAR_SENSOR_PIN); // Dummy read #1
-    delay(100);
-    sensor_readings[pwmAngle] = analogRead(POLAR_SENSOR_PIN); // Dummy read #2
-    delay(100);
     sensor_readings[pwmAngle] = analogRead(POLAR_SENSOR_PIN);
-    delay(50);
+    delay(200);
     pwmAngle++;
   }
   writeFramedSensorReadings(reinterpret_cast<const uint8_t*>(sensor_readings), (POLAR_MAX_ANGLE + 1) * sizeof(int), TYPE_POLAR);
@@ -309,6 +308,9 @@ static void runPolarimeter(uint8_t pin) {
 void setup() {
   Serial.begin(115200);
   dht.setup(DHT_PIN, DHTesp::DHT22);
+  //led.begin();
+  //led.setPixelColor(0, led.Color(255, 0, 255));
+  //led.show();
 
   for (int i = 0; i < PWM_MAX_ACTIVE; ++i) {
     active_pins[i].active = false;
