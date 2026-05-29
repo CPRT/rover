@@ -36,7 +36,7 @@ class gpioManager(Node):
         self.flash_state_on = False
 
     def load_parameters(self):
-        self.declare_parameter("num_pixels", 20)
+        self.declare_parameter("num_pixels", 7)
         self.NUM_PIXELS = self.get_parameter("num_pixels").value
         self.declare_parameter("frequency", 1)
         self.period = 1 / self.get_parameter("frequency").value

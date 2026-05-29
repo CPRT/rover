@@ -26,7 +26,7 @@ def generate_launch_description():
                 parameters=[
                     {"frame_id": "gps_link"},
                     {"Freq": 5.0},  # Publish rate (hz)
-                    {"Baudrate": 115200},
+                    {"Baudrate": 38400},
                     {
                         "Device": "/dev/serial/by-id/usb-FTDI_FT230X_Basic_UART_D30EFLJN-if00-port0"
                     },
