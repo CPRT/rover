@@ -381,19 +381,7 @@ void ODriveHardwareInterface::clear_axis_errors(
     response->message = "Invalid axis index";
     return;
   }
-
-  Clear_Errors_msg_t msg;
-  msg.Identify = 0;
-
-  Axis &axis = axes_[axis_index];
-  response->success = axis.send(msg);
-  if (response->success) {
-    axis.active_errors_ = 0;
-    axis.disarm_reason_ = 0;
-    response->message = "Clear errors command sent";
-  } else {
-    response->message = "Failed to send clear errors command";
-  }
+  set_axis_command_mode(axes_[axis_index]);
 }
 
 CallbackReturn ODriveHardwareInterface::on_deactivate(const State &) {
