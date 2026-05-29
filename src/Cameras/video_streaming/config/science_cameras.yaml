@@ -3,11 +3,31 @@
 input_node:
   ros__parameters:
     camera_name:
+    - "Drive"
+    - "EndEffector"
+    - "Mast"
     - "Strip"
     - "Benedict"
     - "HCL"
     - "Microscope"
     - "Test"
+    Drive:
+      path: "/dev/v4l/by-id/drive_camera"
+      type: 0
+      encoded: false
+      height: 600
+      width: 960
+      framerate: 10
+    EndEffector:
+      path: "/dev/v4l/by-id/usb-MACROSILICON_USB_Video_20200909-video-index0"
+      type: 0
+      encoded: true
+    Mast:
+      path: "/dev/v4l/by-path/platform-3610000.usb-usb-0:4.1.1.1:1.0-video-index0"
+      type: 0
+      encoded: true
+      height: 480
+      width: 640
     Strip:
       path: "/dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._USB_2.0_Camera_SN5100-video-index0"
       type: 0
@@ -23,7 +43,7 @@ input_node:
       width: 640
       framerate: 30
     HCL:
-      path: "/dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._Webcam_Webcam-video-index0"
+      path: "/dev/v4l/by-path/platform-3610000.usb-usb-0:2.1.4:1.0-video-index0"
       type: 0
       encoded: true
       height: 480

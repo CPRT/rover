@@ -344,9 +344,6 @@ CallbackReturn ODriveHardwareInterface::on_activate(const State &) {
     set_axis_command_mode(axis);
   }
   if (debug_frequency_ > 0) {
-    debug_timer_ = debug_node_->create_wall_timer(
-        std::chrono::milliseconds(1000 / debug_frequency_),
-        std::bind(&ODriveHardwareInterface::pub_status, this));
     for (auto &axis : axes_) {
       axis.debug_pub_ =
           debug_node_->template create_publisher<ros_phoenix::msg::MotorStatus>(
@@ -356,6 +353,9 @@ CallbackReturn ODriveHardwareInterface::on_activate(const State &) {
         axis.gravity_ff_manager_->start();
       }
     }
+    debug_timer_ = debug_node_->create_wall_timer(
+        std::chrono::milliseconds(1000 / debug_frequency_),
+        std::bind(&ODriveHardwareInterface::pub_status, this));
   }
 
   return CallbackReturn::SUCCESS;
