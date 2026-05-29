@@ -16,10 +16,10 @@ def generate_launch_description():
                 executable="mast_esp",
                 name="mast_esp_node",
             ),
-            launch_ros.actions.Node(
-                package="gpio_controller",
-                executable="pdb_rails",
-                name="pdb_rails_node",
-            ),
+            # launch_ros.actions.Node(
+            #     package="gpio_controller",
+            #     executable="pdb_rails",
+            #     name="pdb_rails_node",
+            # ),
         ]
     )

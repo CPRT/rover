@@ -68,7 +68,7 @@ bt_navigator_navigate_to_pose_rclcpp_node:
 local_costmap:
   local_costmap:
     ros__parameters:
-      update_frequency: 10.0
+      update_frequency: 7.0
       publish_frequency: 2.0
       global_frame: odom
       robot_base_frame: base_link
@@ -77,10 +77,10 @@ local_costmap:
       use_maximum: True
       lethal_cost_threshold: 200
       trinary_costmap: False
-      width: 5
-      height: 5
-      resolution: 0.1
-      robot_radius: 0.1
+      width: 10
+      height: 10
+      resolution: 0.15
+      robot_radius: 0.3
       plugins: [obstacle_layer]
       obstacle_layer:
         plugin: "cprt_costmap_plugins::GridmapLayer"
@@ -92,20 +92,20 @@ local_costmap:
 global_costmap:
   global_costmap:
     ros__parameters:
-      update_frequency: 10.0
+      update_frequency: 7.0
       publish_frequency: 2.0
       global_frame: map
       robot_base_frame: base_link
       rolling_window: true
       use_maximum: True
-      transform_tolerance: 0.3
+      transform_tolerance: 0.6
       height: 100
       width: 100
       origin_x: -50.0
       origin_y: -50.0
       use_sim_time: True
       robot_radius: 0.3
-      resolution: 0.1
+      resolution: 0.15
       track_unknown_space: true
       trinary_costmap: false
       lethal_cost_threshold: 200
@@ -129,7 +129,7 @@ planner_server:
 
       # plugin: "nav2_smac_planner/SmacPlannerHybrid" # Hybrid planner plugin
 
-      interpolation_resolution: 0.1       
+      interpolation_resolution: 0.15       
       horizon_distance: 40.0              # distance from start pose for which an intermediate goal should be created by EventHorizonPlanner
       intermediate_tolerance: 10.0        # tolerance value for intermediate goal created by EventHorizonPlanner
 
@@ -176,7 +176,7 @@ planner_server:
 
       # plugin: "nav2_smac_planner/SmacPlannerHybrid" # Hybrid planner plugin
 
-      interpolation_resolution: 0.1       
+      interpolation_resolution: 0.15       
       horizon_distance: 40.0              # distance from start pose for which an intermediate goal should be created by EventHorizonPlanner
       intermediate_tolerance: 10.0        # tolerance value for intermediate goal created by EventHorizonPlanner
 
@@ -293,7 +293,7 @@ controller_server:
   ros__parameters:
     use_sim_time: True
     odom_topic: odometry/filtered/local
-    controller_frequency: 20.0
+    controller_frequency: 15.0
     min_x_velocity_threshold: 0.1
     min_y_velocity_threshold: 0.0
     min_theta_velocity_threshold: 0.1
@@ -418,7 +418,7 @@ behavior_server:
       plugin: nav2_behaviors/Wait
     global_frame: odom
     robot_base_frame: base_link
-    transform_tolerance: 0.1
+    transform_tolerance: 0.6
     use_sim_time: true
     simulate_ahead_time: 2.0
     max_rotational_vel: 1.0
@@ -432,7 +432,7 @@ robot_state_publisher:
 waypoint_follower:
   ros__parameters:
     use_sim_time: True
-    loop_rate: 20
+    loop_rate: 5
     stop_on_failure: false
     waypoint_task_executor_plugin: wait_at_waypoint
     wait_at_waypoint:
@@ -443,7 +443,7 @@ waypoint_follower:
 velocity_smoother:
   ros__parameters:
     use_sim_time: True
-    smoothing_frequency: 20.0
+    smoothing_frequency: 15.0
     scale_velocities: False
     feedback: OPEN_LOOP
     odom_topic: odometry/filtered/local
