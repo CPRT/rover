@@ -281,7 +281,7 @@ def generate_launch_description():
                 package="compressed_telemetry_cpp",
                 plugin="compressed_telemetry_cpp::CostmapCompressor",
                 name="costmap_compressor",
-                extra_arguments=[{'use_intra_process_comms': use_intra_process_comms}],
+                extra_arguments=[{"use_intra_process_comms": use_intra_process_comms}],
             ),
             ComposableNode(
                 package="nav2_controller",
@@ -289,7 +289,7 @@ def generate_launch_description():
                 name="controller_server",
                 parameters=[configured_params],
                 remappings=[("cmd_vel", "cmd_vel_nav")],
-                extra_arguments=[{'use_intra_process_comms': use_intra_process_comms}],
+                extra_arguments=[{"use_intra_process_comms": use_intra_process_comms}],
             ),
             ComposableNode(
                 package="nav2_smoother",
@@ -297,7 +297,9 @@ def generate_launch_description():
                 name="smoother_server",
                 parameters=[configured_params],
                 remappings=remappings,
-                extra_arguments=[{'use_intra_process_comms': False}], # subscribes to TRANSIENT_LOCAL costmap topics which makes intra process fail
+                extra_arguments=[
+                    {"use_intra_process_comms": False}
+                ],  # subscribes to TRANSIENT_LOCAL costmap topics which makes intra process fail
             ),
             ComposableNode(
                 package="nav2_planner",
@@ -305,7 +307,7 @@ def generate_launch_description():
                 name="planner_server",
                 parameters=[configured_params],
                 remappings=remappings,
-                extra_arguments=[{'use_intra_process_comms': use_intra_process_comms}],
+                extra_arguments=[{"use_intra_process_comms": use_intra_process_comms}],
             ),
             ComposableNode(
                 package="nav2_behaviors",
@@ -313,7 +315,9 @@ def generate_launch_description():
                 name="behavior_server",
                 parameters=[configured_params],
                 remappings=remappings,
-                extra_arguments=[{'use_intra_process_comms': False}], # subscribes to TRANSIENT_LOCAL costmap topics which makes intra process fail
+                extra_arguments=[
+                    {"use_intra_process_comms": False}
+                ],  # subscribes to TRANSIENT_LOCAL costmap topics which makes intra process fail
             ),
             ComposableNode(
                 package="nav2_bt_navigator",
@@ -321,7 +325,9 @@ def generate_launch_description():
                 name="bt_navigator",
                 parameters=[configured_params],
                 remappings=remappings,
-                extra_arguments=[{'use_intra_process_comms': False}], # subscribes to TRANSIENT_LOCAL costmap topics which makes intra process fail
+                extra_arguments=[
+                    {"use_intra_process_comms": False}
+                ],  # subscribes to TRANSIENT_LOCAL costmap topics which makes intra process fail
             ),
             ComposableNode(
                 package="nav2_waypoint_follower",
@@ -329,7 +335,7 @@ def generate_launch_description():
                 name="waypoint_follower",
                 parameters=[configured_params],
                 remappings=remappings,
-                extra_arguments=[{'use_intra_process_comms': use_intra_process_comms}],
+                extra_arguments=[{"use_intra_process_comms": use_intra_process_comms}],
             ),
             # lifecycle_manager handles IPC internally via standard parameters, so extra_arguments isn't strictly needed here, but keeping it standard is fine
             ComposableNode(
@@ -354,16 +360,14 @@ def generate_launch_description():
                     ("cmd_vel", "cmd_vel_nav"),
                     ("cmd_vel_smoothed", "cmd_vel"),
                 ],
-                extra_arguments=[{'use_intra_process_comms': use_intra_process_comms}],
+                extra_arguments=[{"use_intra_process_comms": use_intra_process_comms}],
             ),
             ComposableNode(
                 package="cprt_behavior_tree_plugins",
                 plugin="cprt_nav::TrimLethalGoalsServerNode",
                 name="trim_lethal_goals_server",
                 parameters=[configured_params],
-                extra_arguments=[
-                    {"use_intra_process_comms": False}
-                ],  
+                extra_arguments=[{"use_intra_process_comms": False}],
             ),
         ],
     )

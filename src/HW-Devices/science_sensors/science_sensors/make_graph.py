@@ -6,6 +6,7 @@ import csv
 import sys
 import math
 
+
 def plot_set(ax: plt.Axes, x_deg: list[int], readings: list[int], title: str):
     x_deg = list(range(len(readings)))
     x_rad = np.deg2rad(x_deg)
@@ -19,9 +20,7 @@ def plot_set(ax: plt.Axes, x_deg: list[int], readings: list[int], title: str):
     phi_guess = np.deg2rad(50)
     C_guess = np.min(readings)
 
-    popt, _ = curve_fit(
-        cos2_model, x_rad, readings, p0=[A_guess, phi_guess, C_guess]
-    )
+    popt, _ = curve_fit(cos2_model, x_rad, readings, p0=[A_guess, phi_guess, C_guess])
 
     A_fit, phi_fit, C_fit = popt
 
@@ -44,10 +43,11 @@ def plot_set(ax: plt.Axes, x_deg: list[int], readings: list[int], title: str):
     ax.legend()
     return phase_deg
 
+
 def plot_file(ax: plt.Axes, filename: str, title: str):
     x_deg = []
     readings = []
-    with open(filename, newline='') as file:
+    with open(filename, newline="") as file:
         reader = csv.reader(file)
         next(reader, None)
         for row in reader:
@@ -55,15 +55,23 @@ def plot_file(ax: plt.Axes, filename: str, title: str):
             readings.append(int(row[1]))
     return plot_set(ax, x_deg, readings, title)
 
-fig, ax = plt.subplots(1, 2, figsize = (12,5))
+
+fig, ax = plt.subplots(1, 2, figsize=(12, 5))
 
 conc = float(input("Enter concentration (g/mL): "))
 
-phase1 = plot_file(ax[0], sys.argv[1], sys.argv[1].split('_')[1])
-phase2 = plot_file(ax[1], sys.argv[2], sys.argv[2].split('_')[1])
+phase1 = plot_file(ax[0], sys.argv[1], sys.argv[1].split("_")[1])
+phase2 = plot_file(ax[1], sys.argv[2], sys.argv[2].split("_")[1])
 
-props = dict(boxstyle='round', facecolor='grey', alpha=0.15)
-ax[0].text(0, -0.2, f"Phase difference: {math.fabs(phase1 - phase2):.2f} deg\nConcentration: {conc:.2f} g/mL\nSpecific rotation: {math.fabs(phase1 - phase2) * 100 / (40 * conc):.4f} deg*cm^2/g", transform=ax[0].transAxes, verticalalignment='top', bbox=props)
+props = dict(boxstyle="round", facecolor="grey", alpha=0.15)
+ax[0].text(
+    0,
+    -0.2,
+    f"Phase difference: {math.fabs(phase1 - phase2):.2f} deg\nConcentration: {conc:.2f} g/mL\nSpecific rotation: {math.fabs(phase1 - phase2) * 100 / (40 * conc):.4f} deg*cm^2/g",
+    transform=ax[0].transAxes,
+    verticalalignment="top",
+    bbox=props,
+)
 plt.tight_layout()
 plt.savefig(f"{sys.argv[3]}.png")
 
