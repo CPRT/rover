@@ -242,7 +242,7 @@ class UnifiedNavCommander(Node):
         )
 
         self.nav_activate_light_code = 1
-        self.nav_cancelled_light_code = 2
+        self.nav_cancelled_light_code = 0
         self.nav_completed_light_code = 3
 
         self.qos_profile = QoSProfile(reliability=ReliabilityPolicy.RELIABLE, depth=10)
