@@ -826,11 +826,11 @@ class UnifiedNavCommander(Node):
     # --- Main State Machine ---
 
     def timer_callback(self) -> None:
-        
+
         # 1. Early Return for Idle
         if self.mission_state == MissionState.DO_NOTHING:
             return
-            
+
         # 2. Wait for background cancellation to finish, then trigger LEDs
         if self.mission_state == MissionState.FOUND_TARGET:
             if self.navigator.isTaskComplete():
@@ -940,7 +940,7 @@ class UnifiedNavCommander(Node):
                         "Search complete with no detection. Retrying..."
                     )
                     self.search_retry_count += 1
-                    self.search_handle = None  
+                    self.search_handle = None
                 else:
                     self._fail_mission(
                         f"Search pattern fully traversed {self.search_retry_count + 1} times without finding object."
