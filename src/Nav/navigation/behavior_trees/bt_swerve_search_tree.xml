@@ -5,48 +5,53 @@
         
         <RateController hz="1.0">
           <RecoveryNode number_of_retries="1" name="ComputeAndSmoothPathThroughPoses">
-            <Fallback>
+            
+            <!-- Use a Sequence to force Pruning to happen every tick -->
+            <Sequence name="PruneAndPlanSequence">
               
-              <ReactiveSequence>
-                <Inverter>
-                  <PathExpiringTimer seconds="15" path="{path}"/>
-                </Inverter>
-                <Inverter>
-                  <GlobalUpdatedGoal/>
-                </Inverter>
-                <IsPathValid path="{path}"/>
-              </ReactiveSequence>
-              
-              <Sequence name="FilterPlanAndSmoothSequence">
-                <RemovePassedGoals input_goals="{goals}" 
-                                   radius="1.5" 
-                                   robot_base_frame="base_link" 
-                                   output_goals="{goals}"/>
+              <!-- 1. Always attempt to prune passed goals -->
+              <RemovePassedGoals input_goals="{goals}" 
+                                 radius="1.5" 
+                                 global_frame="map" 
+                                 robot_base_frame="base_link" 
+                                 output_goals="{goals}"/>
 
-                <RemoveInCollisionGoals input_goals="{goals}" 
-                                        service_name="trim_lethal_goals" 
-                                        cost_threshold="98.0" 
-                                        output_goals="{safe_poses}"/>
+              <Fallback>
+                <!-- 2. If path is valid, this returns SUCCESS and the rest of the Fallback is skipped -->
+                <ReactiveSequence>
+                  <Inverter>
+                    <PathExpiringTimer seconds="15" path="{path}"/>
+                  </Inverter>
+                  <Inverter>
+                    <GlobalUpdatedGoal/>
+                  </Inverter>
+                  <IsPathValid path="{path}"/>
+                </ReactiveSequence>
+                
+                <!-- 3. If path is NOT valid, execute the full planning sequence -->
+                <Sequence name="FilterPlanAndSmoothSequence">
+                  <RemoveInCollisionGoals input_goals="{goals}" 
+                                          service_name="trim_lethal_goals" 
+                                          cost_threshold="98.0" 
+                                          output_goals="{safe_poses}"/>
 
-                <TruncatePoses input_goals="{safe_poses}" 
-                               num_poses="10" 
-                               output_goals="{short_poses}"/>
+                  <TruncatePoses input_goals="{safe_poses}" 
+                                 num_poses="10" 
+                                 output_goals="{short_poses}"/>
 
-                <ComputePathThroughPoses goals="{short_poses}" 
-                                         path="{path}" 
-                                         planner_id="GridBasedSearch"/>
-                                         
-                <!-- <SmoothPath unsmoothed_path="{path}" smoothed_path="{smoothed_path}" smoother_id="SmootherSearch"/> -->
-              </Sequence>
+                  <ComputePathThroughPoses goals="{short_poses}" 
+                                           path="{path}" 
+                                           planner_id="GridBasedSearch"/>
+                </Sequence>
+              </Fallback>
+            </Sequence>
 
-            </Fallback>
             <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
           </RecoveryNode>
         </RateController>
 
         <RecoveryNode number_of_retries="1" name="FollowPath">
           <FollowPath path="{path}" controller_id="FollowPathSearch"/>
-          <!-- <FollowPath path="{smoothed_path}" controller_id="FollowPathSearch"/> -->
           <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
         </RecoveryNode>
 
@@ -55,26 +60,20 @@
       <ReactiveFallback name="RecoveryFallback">
         <GoalUpdated/>
         <RoundRobin name="RecoveryActions">
-          
           <Sequence name="ClearLocalSeq">
             <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
             <Wait wait_duration="1.0"/>
           </Sequence>
-
           <Sequence name="BackupSeq">
             <BackUp backup_dist="0.40" backup_speed="0.3"/>
             <Wait wait_duration="0.2"/>
           </Sequence>
-
           <Sequence name="SpinSeq">
             <Wait wait_duration="0.1"/>
           </Sequence>
-
           <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
-
         </RoundRobin>
       </ReactiveFallback>
-
     </RecoveryNode>
   </BehaviorTree>
 </root>
