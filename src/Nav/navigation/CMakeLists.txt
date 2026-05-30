@@ -14,7 +14,7 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 
 install(
-  DIRECTORY launch params behavior_trees config rviz lidar_masks
+  DIRECTORY launch params behavior_trees config rviz lidar_masks scripts
   DESTINATION share/${PROJECT_NAME}
 )
 
