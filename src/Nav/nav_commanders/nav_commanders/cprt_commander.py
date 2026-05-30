@@ -111,7 +111,7 @@ class UnifiedNavCommander(Node):
             .double_value
         )
 
-        self.declare_parameter("aruco_approach_distance", 0.7)
+        self.declare_parameter("aruco_approach_distance", 1.1)
         self.aruco_approach_distance = (
             self.get_parameter("aruco_approach_distance")
             .get_parameter_value()
@@ -826,7 +826,17 @@ class UnifiedNavCommander(Node):
     # --- Main State Machine ---
 
     def timer_callback(self) -> None:
-        if self.mission_state in [MissionState.DO_NOTHING, MissionState.FOUND_TARGET]:
+        
+        # 1. Early Return for Idle
+        if self.mission_state == MissionState.DO_NOTHING:
+            return
+            
+        # 2. Wait for background cancellation to finish, then trigger LEDs
+        if self.mission_state == MissionState.FOUND_TARGET:
+            if self.navigator.isTaskComplete():
+                self._finish_mission(
+                    f"Search successful! Stopped at {self.stop_triggered_id}."
+                )
             return
 
         if self.current_goal_pose is None and self.current_goal_request is not None:
@@ -837,7 +847,7 @@ class UnifiedNavCommander(Node):
                 self._fail_mission("Failed to convert GPS coordinate to Map frame.")
                 return
 
-        # 1. GPS Phase
+        # 3. GPS Phase
         if self.mission_state == MissionState.NAV_TO_GPS:
             if self.goal_handle is None:
                 self.get_logger().info(
@@ -873,11 +883,7 @@ class UnifiedNavCommander(Node):
                 return
 
             if result == TaskResult.CANCELED:
-                if self.mission_state == MissionState.FOUND_TARGET:
-                    self._finish_mission(
-                        f"Target found early! Stopped at {self.stop_triggered_id}."
-                    )
-                elif self.mission_state == MissionState.CALCULATE_APPROACH:
+                if self.mission_state == MissionState.CALCULATE_APPROACH:
                     pass
                 else:
                     self._fail_mission("GPS navigation canceled unexpectedly.")
@@ -885,7 +891,7 @@ class UnifiedNavCommander(Node):
 
             self._fail_mission("GPS navigation failed.")
 
-        # 2. Search Phase
+        # 4. Search Phase
         elif self.mission_state == MissionState.EXECUTE_SEARCH:
             if self.search_handle is None:
                 self.get_logger().info(
@@ -926,7 +932,6 @@ class UnifiedNavCommander(Node):
 
             result = self.navigator.getResult()
             if result == TaskResult.SUCCEEDED:
-                # Pattern complete but target not triggered via callback
                 if self.search_retry_count < 1:
                     self.get_logger().warn(
                         "Search pattern complete. No target found. Retrying (Attempt 2)..."
@@ -935,7 +940,7 @@ class UnifiedNavCommander(Node):
                         "Search complete with no detection. Retrying..."
                     )
                     self.search_retry_count += 1
-                    self.search_handle = None  # Triggers re-dispatch in next tick
+                    self.search_handle = None  
                 else:
                     self._fail_mission(
                         f"Search pattern fully traversed {self.search_retry_count + 1} times without finding object."
@@ -943,11 +948,7 @@ class UnifiedNavCommander(Node):
                 return
 
             if result == TaskResult.CANCELED:
-                if self.mission_state == MissionState.FOUND_TARGET:
-                    self._finish_mission(
-                        f"Search successful! Stopped at {self.stop_triggered_id}."
-                    )
-                elif self.mission_state == MissionState.CALCULATE_APPROACH:
+                if self.mission_state == MissionState.CALCULATE_APPROACH:
                     pass
                 else:
                     self._fail_mission("Search pattern canceled unexpectedly.")
@@ -955,7 +956,7 @@ class UnifiedNavCommander(Node):
 
             self._fail_mission("Search pattern failed.")
 
-        # 3. Calculate Approach Phase (ArUco only)
+        # 5. Calculate Approach Phase (ArUco only)
         elif self.mission_state == MissionState.CALCULATE_APPROACH:
             if not self.navigator.isTaskComplete():
                 return
@@ -970,7 +971,7 @@ class UnifiedNavCommander(Node):
             self.goal_handle = None
             return
 
-        # 4. Approach Navigation Phase
+        # 6. Approach Navigation Phase
         elif self.mission_state == MissionState.NAV_TO_APPROACH:
             if self.goal_handle is None:
                 self.get_logger().info(

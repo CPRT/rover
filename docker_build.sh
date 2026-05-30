@@ -103,19 +103,19 @@ if [ "$MODE" = "--test" ]; then
   exit 0
 fi
 
-# --- DEV image ---
-echo "Starting dev image (base: $BASE_IMAGE)"
-docker buildx build \
-  --build-arg BASE_IMAGE=$BASE_IMAGE \
-  -f Dockerfile \
-  --platform linux/$TARGETARCH \
-  --target dev \
-  -t $DEV_TAG \
-  -t $DEV_SHA_TAG \
-  --cache-from type=registry,ref=cprtsoftware/rover:cache-$TARGETARCH \
-  --cache-to type=registry,ref=cprtsoftware/rover:cache-$TARGETARCH,mode=max \
-  $MODE \
-  .
+# # --- DEV image ---
+# echo "Starting dev image (base: $BASE_IMAGE)"
+# docker buildx build \
+#   --build-arg BASE_IMAGE=$BASE_IMAGE \
+#   -f Dockerfile \
+#   --platform linux/$TARGETARCH \
+#   --target dev \
+#   -t $DEV_TAG \
+#   -t $DEV_SHA_TAG \
+#   --cache-from type=registry,ref=cprtsoftware/rover:cache-$TARGETARCH \
+#   --cache-to type=registry,ref=cprtsoftware/rover:cache-$TARGETARCH,mode=max \
+#   $MODE \
+#   .
 
 # --- APP (rover) image ---
 echo "Starting rover image (base: $BASE_IMAGE)"
