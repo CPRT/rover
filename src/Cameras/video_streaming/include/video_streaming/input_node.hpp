@@ -2,6 +2,7 @@
 #include "base_video_node.hpp"
 #include <interfaces/srv/get_cameras.hpp>
 #include <interfaces/srv/video_out.hpp>
+#include <std_msgs/msg/string.hpp> // Added to fix the compiler error
 
 class InputNode : public BaseVideoNode {
 public:
@@ -30,6 +31,7 @@ protected:
 
 private:
   std::map<std::string, size_t> source_map_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr active_camera_pub_;
   rclcpp::Service<interfaces::srv::VideoOut>::SharedPtr video_service_;
   rclcpp::Service<interfaces::srv::GetCameras>::SharedPtr get_cam_service_;
   std::shared_ptr<interfaces::srv::VideoOut::Request> current_video_request_;
