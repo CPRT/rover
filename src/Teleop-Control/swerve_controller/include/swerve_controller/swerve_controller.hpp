@@ -2,6 +2,8 @@
 
 #include <array>
 #include <cmath>
+#include <string>
+#include <vector>
 
 #include "controller_interface/controller_interface.hpp"
 #include "geometry_msgs/msg/twist.hpp"
@@ -105,6 +107,17 @@ private:
   void
   on_stamped_message(const geometry_msgs::msg::TwistStamped::SharedPtr msg);
 
+  /**
+   * @brief TODO
+   * @param value: TODO
+   * @param max_abs: TODO
+   */
+  static double limit_abs(double value, double max_abs);
+
+  static double rate_limit_velocity(double current, double target,
+                                    double accel_limit, double decel_limit,
+                                    double dt);
+
   // ---------------------------------------------------------------------------
   // Odometry helpers
   // ---------------------------------------------------------------------------
@@ -164,7 +177,7 @@ private:
    * @param angle Steering angle [rad]
    * @return true if angle is valid
    */
-  double isValidAngle(double angle);
+  bool isValidAngle(double angle);
 
   /**
    * @brief Optimize steering angle and wheel speed to minimize rotation.
@@ -242,6 +255,21 @@ private:
   double max_linear_velocity_;  ///< Velocity command limit [m/s]
   double max_angular_velocity_; ///< Angular velocity limit [rad/s]
 
+  // Drive wheel output shaping.
+  // Units are wheel rad/s and wheel rad/s^2.
+  double drive_acceleration_limit_;
+  double drive_deceleration_limit_;
+  double drive_max_speed_;
+
+  // Steering output shaping. [rad/s^2]
+  double swerve_acceleration_limit_;
+  double swerve_deceleration_limit_;
+  // Max swerve speed [rad/s]
+  double swerve_max_speed_;
+
+  // Steering angle target when command is stopped or timed out.
+  double swerve_stopped_angle_;
+
   /// Diagonal covariance values for odometry (size must be 6)
   std::vector<double> covariance_;
 
@@ -250,6 +278,11 @@ private:
 
   /// Module y-positions relative to base_link
   std::array<double, kNumModules> py_;
+
+  // Profiled output state
+  std::array<double, kNumModules> drive_cmd_{};
+  std::array<double, kNumModules> swerve_angle_cmd_{};
+  std::array<double, kNumModules> swerve_rate_cmd_{};
 
   // ---------------------------------------------------------------------------
   // Publishing timing

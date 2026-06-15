@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <functional>
+#include <limits>
 
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
@@ -9,6 +11,10 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
 namespace swerve_controller {
+
+namespace {
+constexpr double kZeroCommandEps = 1e-6;
+constexpr double kAngleEps = 1e-4;
 
 static inline double wrap_pi(double a) {
   // (-pi, pi]
@@ -18,9 +24,40 @@ static inline double wrap_pi(double a) {
 static inline double shortest_angular_distance(double from, double to) {
   return wrap_pi(to - from);
 }
+} // namespace
 
-double SwerveController::isValidAngle(double angle) {
+bool SwerveController::isValidAngle(double angle) {
   return angle > min_angle_ && angle < max_angle_;
+}
+
+double SwerveController::limit_abs(double value, double max_abs) {
+  if (max_abs <= 0.0) {
+    return value;
+  }
+  return std::clamp(value, -max_abs, max_abs);
+}
+
+double SwerveController::rate_limit_velocity(double current, double target,
+                                             double accel_limit,
+                                             double decel_limit, double dt) {
+  if (dt <= 0.0) {
+    return current;
+  }
+
+  const double delta = target - current;
+
+  const bool same_direction = current * target >= 0.0;
+  const bool speeding_up = std::abs(target) > std::abs(current);
+
+  const double limit =
+      same_direction && speeding_up ? accel_limit : decel_limit;
+
+  if (limit <= 0.0) {
+    return target;
+  }
+
+  const double max_delta = limit * dt;
+  return current + std::clamp(delta, -max_delta, max_delta);
 }
 
 // If turning more than 90deg, flip wheel direction and add pi to steering.
@@ -96,6 +133,16 @@ controller_interface::CallbackReturn SwerveController::on_init() {
   auto_declare<double>("min_angle", -1.57);
   auto_declare<double>("max_angle", 1.57);
 
+  // ---- Output shaping ----
+  auto_declare<double>("drive.acceleration_limit", 20.0);   // wheel rad/s^2
+  auto_declare<double>("drive.deceleration_limit", 40.0);   // wheel rad/s^2
+  auto_declare<double>("drive.max_speed", 50.0);             // wheel rad/s
+
+  auto_declare<double>("swerve.acceleration_limit", 10.0);  // steer rad/s^2
+  auto_declare<double>("swerve.deceleration_limit", 20.0);  // steer rad/s^2
+  auto_declare<double>("swerve.max_speed", 5.0);             // steer rad/s
+  auto_declare<double>("swerve.stopped_angle", 0.0);         // steer rad
+
   // ---- Frames ----
   auto_declare<std::string>("odom_frame_id", "odom");
   auto_declare<std::string>("base_frame_id", "base_link");
@@ -104,7 +151,7 @@ controller_interface::CallbackReturn SwerveController::on_init() {
   auto_declare<double>("odom_publish_rate", 50.0);
   auto_declare<std::vector<double>>("covariance", std::vector<double>(6, 0.1));
 
-  // ---- Axle joint names----
+  // ---- Axle joint names ----
   auto_declare<std::string>("axles.front_left.steering_angle_name",
                             "front_left_steering_joint");
   auto_declare<std::string>("axles.front_left.wheel_velocity_name",
@@ -133,6 +180,15 @@ controller_interface::CallbackReturn SwerveController::on_init() {
   node->get_parameter("max_angle", max_angle_);
   node->get_parameter("cmd_timeout", cmd_timeout_);
 
+  node->get_parameter("drive.acceleration_limit", drive_acceleration_limit_);
+  node->get_parameter("drive.deceleration_limit", drive_deceleration_limit_);
+  node->get_parameter("drive.max_speed", drive_max_speed_);
+
+  node->get_parameter("swerve.acceleration_limit", swerve_acceleration_limit_);
+  node->get_parameter("swerve.deceleration_limit", swerve_deceleration_limit_);
+  node->get_parameter("swerve.max_speed", swerve_max_speed_);
+  node->get_parameter("swerve.stopped_angle", swerve_stopped_angle_);
+
   node->get_parameter("odom_frame_id", odom_frame_id_);
   node->get_parameter("base_frame_id", base_frame_id_);
   node->get_parameter("odom_publish_rate", odom_publish_rate_);
@@ -158,6 +214,14 @@ controller_interface::CallbackReturn SwerveController::on_init() {
   RCLCPP_INFO(node->get_logger(),
               "SwerveController initialized (L=%.3f, W=%.3f, r=%.3f)",
               wheel_base_, track_width_, wheel_radius_);
+
+  RCLCPP_INFO(
+      node->get_logger(),
+      "Output shaping: drive accel=%.3f decel=%.3f max=%.3f, "
+      "swerve accel=%.3f decel=%.3f max=%.3f stopped_angle=%.3f",
+      drive_acceleration_limit_, drive_deceleration_limit_, drive_max_speed_,
+      swerve_acceleration_limit_, swerve_deceleration_limit_,
+      swerve_max_speed_, swerve_stopped_angle_);
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -203,6 +267,11 @@ SwerveController::on_configure(const rclcpp_lifecycle::State &) {
   px_ = {x_f, x_f, x_r, x_r};
   py_ = {y_l, y_r, y_l, y_r};
 
+  geometry_msgs::msg::TwistStamped initial_cmd;
+  initial_cmd.header.stamp = node->now();
+  initial_cmd.header.frame_id = base_frame_id_;
+  received_velocity_msg_.set(initial_cmd);
+
   RCLCPP_INFO(node->get_logger(), "SwerveController configured.");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -226,8 +295,12 @@ SwerveController::on_activate(const rclcpp_lifecycle::State &) {
     }
   }
 
-  for (auto &axle : axles_) {
-    axle.update(0.0, 0.0);
+  for (size_t i = 0; i < axles_.size() && i < kNumModules; ++i) {
+    const auto current_angle = axles_[i].currentAngle();
+    swerve_angle_cmd_[i] = current_angle.value_or(swerve_stopped_angle_);
+    swerve_rate_cmd_[i] = 0.0;
+    drive_cmd_[i] = 0.0;
+    axles_[i].update(swerve_angle_cmd_[i], drive_cmd_[i]);
   }
 
   RCLCPP_INFO(node->get_logger(), "SwerveController activated.");
@@ -236,9 +309,11 @@ SwerveController::on_activate(const rclcpp_lifecycle::State &) {
 
 controller_interface::CallbackReturn
 SwerveController::on_deactivate(const rclcpp_lifecycle::State &) {
-  // Stop the robot
-  for (auto &axle : axles_) {
-    axle.update(0.0, 0.0);
+  // Stop the drive. Probably can't zero the swerves safely here
+  for (size_t i = 0; i < axles_.size() && i < kNumModules; ++i) {
+    drive_cmd_[i] = 0.0;
+    swerve_rate_cmd_[i] = 0.0;
+    axles_[i].update(swerve_angle_cmd_[i], 0.0);
   }
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -248,6 +323,7 @@ SwerveController::on_cleanup(const rclcpp_lifecycle::State &) {
   subscription_.reset();
   stamped_subscription_.reset();
   realtime_odometry_publisher_.reset();
+  odometry_publisher_.reset();
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -263,32 +339,45 @@ SwerveController::update(const rclcpp::Time &time,
                          const rclcpp::Duration &period) {
   geometry_msgs::msg::TwistStamped cmd;
   received_velocity_msg_.get(cmd);
+  bool command_timed_out = false;
 
   if (cmd_timeout_ > 0.0) {
     const double age = (time - cmd.header.stamp).seconds();
     if (age > cmd_timeout_) {
-      for (auto &axle : axles_) {
-        axle.stop();
-      }
-      RCLCPP_WARN_THROTTLE(get_node()->get_logger(), *get_node()->get_clock(),
-                           1000,
-                           "SwerveController: Command timeout (age=%.3f > "
-                           "%.3f), stopping robot.",
-                           age, cmd_timeout_);
+      command_timed_out = true;
+
+      RCLCPP_WARN_THROTTLE(
+          get_node()->get_logger(), *get_node()->get_clock(), 1000,
+          "SwerveController: Command timeout (age=%.3f > %.3f), "
+          "profiling to stop.",
+          age, cmd_timeout_);
     }
   }
 
-  const double vx = cmd.twist.linear.x;
-  const double vy = cmd.twist.linear.y;
-  const double wz = cmd.twist.angular.z;
+  const double vx = command_timed_out ? 0.0 : cmd.twist.linear.x;
+  const double vy = command_timed_out ? 0.0 : cmd.twist.linear.y;
+  const double wz = command_timed_out ? 0.0 : cmd.twist.angular.z;
 
-  for (size_t i = 0; i < axles_.size() && i < 4; ++i) {
+  const bool stopped_command = std::abs(vx) < kZeroCommandEps &&
+                               std::abs(vy) < kZeroCommandEps &&
+                               std::abs(wz) < kZeroCommandEps;
+
+  const double dt = period.seconds();
+
+  for (size_t i = 0; i < axles_.size() && i < kNumModules; ++i) {
     const double vix = vx - wz * py_[i];
     const double viy = vy + wz * px_[i];
 
     double target_angle = std::atan2(viy, vix);
     const double speed_m_s = std::hypot(vix, viy);
     double target_wheel = speed_m_s / wheel_radius_;
+
+    if (stopped_command) {
+      // When stopped, all modules return to the configured stopped position.
+      // Do not run optimize_steering here, because we want this exact angle.
+      target_angle = wrap_pi(swerve_stopped_angle_);
+      target_wheel = 0.0;
+    }
 
     const auto current_angle = axles_[i].currentAngle();
     if (!current_angle.has_value()) {
@@ -297,13 +386,82 @@ SwerveController::update(const rclcpp::Time &time,
           "SwerveController: Unable to read current angle of axle %zu", i);
       continue;
     }
-    optimize_steering(current_angle.value(), target_angle, target_wheel);
-    // cosine scaling
-    double angle_diff = std::abs(
-        shortest_angular_distance(current_angle.value(), target_angle));
-    double speed_scaling = std::cos(angle_diff);
-    target_wheel *= speed_scaling;
-    axles_[i].update(target_angle, target_wheel);
+
+    if (!stopped_command) {
+      optimize_steering(current_angle.value(), target_angle, target_wheel);
+      // Cosine scaling
+      const double angle_diff = std::abs(
+          shortest_angular_distance(current_angle.value(), target_angle));
+      const double speed_scaling = std::cos(angle_diff);
+      target_wheel *= speed_scaling;
+    }
+
+    if (dt <= 0.0) {
+      axles_[i].update(swerve_angle_cmd_[i], drive_cmd_[i]);
+      continue;
+    }
+
+    // -----------------------------------------------------------------------
+    // Drive wheel trapezoid/rate shaping
+    // -----------------------------------------------------------------------
+
+    target_wheel = limit_abs(target_wheel, drive_max_speed_);
+
+    drive_cmd_[i] = rate_limit_velocity(
+        drive_cmd_[i], target_wheel, drive_acceleration_limit_,
+        drive_deceleration_limit_, dt);
+
+    // -----------------------------------------------------------------------
+    // Swerve steering trapezoid shaping
+    // -----------------------------------------------------------------------
+
+    const double steer_error =
+        shortest_angular_distance(swerve_angle_cmd_[i], target_angle);
+
+    const double error_abs = std::abs(steer_error);
+
+    if (error_abs < kAngleEps) {
+      swerve_angle_cmd_[i] = target_angle;
+      swerve_rate_cmd_[i] = 0.0;
+    } else {
+      const double direction = steer_error >= 0.0 ? 1.0 : -1.0;
+
+      const double max_steer_rate =
+          swerve_max_speed_ > 0.0
+              ? swerve_max_speed_
+              : std::numeric_limits<double>::infinity();
+
+      double stop_limited_speed = max_steer_rate;
+
+      if (swerve_deceleration_limit_ > 0.0) {
+        stop_limited_speed =
+            std::sqrt(2.0 * swerve_deceleration_limit_ * error_abs);
+      }
+
+      double desired_steer_rate =
+          direction * std::min(max_steer_rate, stop_limited_speed);
+
+      if (!std::isfinite(desired_steer_rate)) {
+        desired_steer_rate = steer_error / dt;
+      }
+
+      swerve_rate_cmd_[i] = rate_limit_velocity(
+          swerve_rate_cmd_[i], desired_steer_rate,
+          swerve_acceleration_limit_, swerve_deceleration_limit_, dt);
+
+      const double step = swerve_rate_cmd_[i] * dt;
+
+      // Do not cross past the target. Snap exactly to the target if this
+      // control period would overshoot.
+      if (std::abs(step) >= error_abs) {
+        swerve_angle_cmd_[i] = target_angle;
+        swerve_rate_cmd_[i] = 0.0;
+      } else {
+        swerve_angle_cmd_[i] = wrap_pi(swerve_angle_cmd_[i] + step);
+      }
+    }
+
+    axles_[i].update(swerve_angle_cmd_[i], drive_cmd_[i]);
   }
 
   update_odometry_and_publish_(time);
@@ -495,7 +653,7 @@ void SwerveController::on_message(
     const geometry_msgs::msg::Twist::SharedPtr msg) {
   geometry_msgs::msg::TwistStamped stamped;
   stamped.header.stamp = get_node()->now();
-  stamped.header.frame_id = "base_link";
+  stamped.header.frame_id = base_frame_id_;
   stamped.twist = *msg;
   received_velocity_msg_.set(stamped);
 }
