@@ -35,6 +35,6 @@ sudo udevadm trigger
 # Needed on host because of https://gist.github.com/adujardin/2d5ce8f000fc6a7bd40bee2709749ff8
 # As good practice use the version that matches the docker one
 cd /tmp
-curl -L https://stereolabs.sfo2.cdn.digitaloceanspaces.com/zedsdk/4.2/ZED_SDK_Tegra_L4T36.4_v4.2.2.zstd.run -o zed_sdk_installer.run
+curl -L https://stereolabs.sfo2.cdn.digitaloceanspaces.com/zedsdk/5.4/ZED_SDK_Tegra_L4T36.4_v5.4.0.zstd.run -o zed_sdk_installer.run
 chmod +x zed_sdk_installer.run
 ./zed_sdk_installer.run -- silent
