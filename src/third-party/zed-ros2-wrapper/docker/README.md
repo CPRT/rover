@@ -2,8 +2,8 @@
 
 This folder contains a list of Dockerfile files to build Docker images ready to start the nodes of the *ZED ROS2 Wrapper*:
 
-* `Dockerfile.desktop-humble`: development desktop image for ROS2 Humble, running on the specified Ubuntu and CUDA versions. The ZED Wrapper is copied from the source file of the current branch and compiled.
-* `Dockerfile.l4t-humble`: Jetson image for ROS2 Humble, running on the given L4T version (L4T35.4 by default).
+* `Dockerfile.desktop-humble`: development desktop image for ROS 2 Humble, running on the specified Ubuntu and CUDA versions. The ZED Wrapper is copied from the source file of the current branch and compiled.
+* `Dockerfile.l4t-humble`: Jetson image for ROS 2 Humble, running on the given L4T version (L4T35.4 by default).
 
 > :pushpin: **NOTE:** in the entrypoint files we set the value of the `ROS_DOMAIN_ID` environment
 > variable to `0` that is the default value in ROS 2.
@@ -54,13 +54,18 @@ We provide a script to build your image with the right L4T / ZED SDK version.
 Examples:
 
 ```bash
-# Jetson with JP6.0 and ZED SDK v4.2.3
-./jetson_build_dockerfile_from_sdk_and_l4T_version.sh l4t-r36.3.0 zedsdk-4.2.3
+# Jetson with JP6.0 and ZED SDK v4.2.5
+./jetson_build_dockerfile_from_sdk_and_l4T_version.sh l4t-r36.3.0 zedsdk-4.2.5
 ```
 
 ```bash
-# Desktop on Ubuntu 22.04m CUDA 12.6.3 and ZED SDK v4.2.3
-./desktop_build_dockerfile_from_sdk_ubuntu_and_cuda_version.sh ubuntu-22.04 cuda-12.6.3 zedsdk-4.2.3
+# Jetson with JP6.2 and ZED SDK v5.0.0
+./jetson_build_dockerfile_from_sdk_and_l4T_version.sh l4t-r36.4.0 zedsdk-5.0.0
+```
+
+```bash
+# Desktop on Ubuntu 22.04m CUDA 12.6.3 and ZED SDK v4.2.5
+./desktop_build_dockerfile_from_sdk_ubuntu_and_cuda_version.sh ubuntu-22.04 cuda-12.6.3 zedsdk-4.2.5
 ```
 
 > :warning: Some configurations will not work. For example, if a specific ZED SDK does not exist for a given Ubuntu/CUDA/L4T version, or if the given ROS 2 wrapper is not compatible with the selected Ubuntu version.
