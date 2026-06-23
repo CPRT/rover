@@ -1,6 +1,6 @@
 {
   "name": "CPRT Dev Container (Windows Host)",
-  "image": "cprtsoftware/rover:dev-amd64",
+  "image": "cprtsoftware/rover:dev-lite",
 
   "runArgs": [],
   "mounts": [
@@ -11,10 +11,10 @@
     "NVIDIA_DRIVER_CAPABILITIES": "all"
   },
 
-  "remoteUser": "vscode",
-  "containerUser": "vscode",
+  "remoteUser": "ubuntu",
+  "containerUser": "ubuntu",
   "remoteEnv": {
-    "USER": "vscode"
+    "USER": "ubuntu"
   },
 
   "customizations": {
@@ -25,5 +25,5 @@
       "extensions": [ "ms-vscode.cpptools", "ms-azuretools.vscode-docker" ]
     }
   },
-"postCreateCommand": "echo 'source /opt/ros/humble/setup.bash' >> ~/.bashrc"
+"postCreateCommand": "echo 'source /opt/ros/jazzy/setup.bash' >> ~/.bashrc"
 }
