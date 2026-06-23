@@ -79,7 +79,8 @@ void EventHorizonPlanner::deactivate() {
 
 nav_msgs::msg::Path
 EventHorizonPlanner::createPlan(const geometry_msgs::msg::PoseStamped &start,
-                                const geometry_msgs::msg::PoseStamped &goal) {
+                                const geometry_msgs::msg::PoseStamped &goal,
+                                std::function<bool()> cancel_checker) {
   RCLCPP_INFO(logger_, "Creating plan");
   nav_msgs::msg::Path global_path;
 
@@ -109,7 +110,8 @@ EventHorizonPlanner::createPlan(const geometry_msgs::msg::PoseStamped &start,
     float original_tolerance = getTolerance();
     setTolerance(intermediate_tolerance_);
 
-    global_path = SmacPlannerHybrid::createPlan(start, new_goal);
+    global_path =
+        SmacPlannerHybrid::createPlan(start, new_goal, cancel_checker);
 
     setTolerance(original_tolerance);
 
@@ -148,7 +150,7 @@ EventHorizonPlanner::createPlan(const geometry_msgs::msg::PoseStamped &start,
     goal_pose.header.frame_id = global_frame_;
     global_path.poses.push_back(goal_pose);
   } else {
-    global_path = SmacPlannerHybrid::createPlan(start, goal);
+    global_path = SmacPlannerHybrid::createPlan(start, goal, cancel_checker);
   }
 
   return global_path;
