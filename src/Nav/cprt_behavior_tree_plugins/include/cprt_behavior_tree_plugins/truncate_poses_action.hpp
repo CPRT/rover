@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-#include "behaviortree_cpp_v3/action_node.h"
+#include "behaviortree_cpp/action_node.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
 namespace nav2_behavior_tree {

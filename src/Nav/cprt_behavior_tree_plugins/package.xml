@@ -11,7 +11,7 @@
   
   <depend>interfaces</depend>
 
-  <depend>behaviortree_cpp_v3</depend>
+  <depend>behaviortree_cpp</depend>
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>map_msgs</depend>

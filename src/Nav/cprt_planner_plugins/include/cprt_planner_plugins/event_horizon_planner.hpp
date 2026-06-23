@@ -5,6 +5,7 @@
 
 #include <limits.h>
 
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -68,11 +69,12 @@ public:
    * then a straight line to the final goal if needed.
    * @param start Start pose
    * @param goal Goal pose
+   * @param cancel_checker TODO: new in jazzy, should we utilize this?
    * @return Path to goal pose from start pose
    */
-  nav_msgs::msg::Path
-  createPlan(const geometry_msgs::msg::PoseStamped &start,
-             const geometry_msgs::msg::PoseStamped &goal) override;
+  nav_msgs::msg::Path createPlan(const geometry_msgs::msg::PoseStamped &start,
+                                 const geometry_msgs::msg::PoseStamped &goal,
+                                 std::function<bool()> cancel_checker) override;
 
   /**
    * @brief Setter for the tolerance parameter.
