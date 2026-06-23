@@ -13,7 +13,7 @@ drive::drive() : Node("drive_node"), initialized_(false) {
   camera_client_ =
       this->create_client<interfaces::srv::VideoOut>("/start_video");
   joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
-      "/joy", 10,
+      "/joy", rclcpp::QoS(2).best_effort(),
       std::bind(&drive::drive_control, this, std::placeholders::_1));
   RCLCPP_INFO(this->get_logger(), "Drive controller started");
   servo_y_ = kDefaultServoY;

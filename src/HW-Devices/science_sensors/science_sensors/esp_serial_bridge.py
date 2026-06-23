@@ -112,7 +112,7 @@ class EspSerialBridge(Node):
             PolarimeterSweep, "/esp_polarimeter_readings", 10
         )
         self.create_subscription(
-            PwmCommand, "/esp_pwm_command", self._on_pwm_command, qos_profile=10
+            PwmCommand, "/esp_pwm_command", self._on_pwm_command, qos_profile=3
         )
 
         poll_period = 1.0 / max(1.0, read_poll_hz)

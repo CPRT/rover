@@ -20,7 +20,7 @@ class RoboClaw(Node):
             raise RuntimeError("Could not open serial connection to RoboClaw.")
         self.get_logger().info(f"Connected to RoboClaw on {port} at {baud_rate} baud.")
         self.cmd_sub = self.create_subscription(
-            Float32, "robo_duty_cycle", self.cmd_callback, 10
+            Float32, "robo_duty_cycle", self.cmd_callback, 5
         )
         (rc, version) = self.controller.ReadVersion(self.address)
         if rc:

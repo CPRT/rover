@@ -12,7 +12,7 @@ drill::drill() : Node("drill_teleop_node") {
   elevator_pub_ = create_publisher<ros_phoenix::msg::MotorControl>(
       k_elevator_cmd_topic_, 10);
   joy_sub_ = create_subscription<sensor_msgs::msg::Joy>(
-      "/joy", 10,
+      "/joy", rclcpp::QoS(2).best_effort(),
       std::bind(&drill::drill_control, this, std::placeholders::_1));
 
   RCLCPP_INFO(
