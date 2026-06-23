@@ -2,13 +2,14 @@
 
 # Check for help flag
 if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
-    echo "Usage: ./build.sh [colcon build options]"
+    echo "Usage: ./build.sh [--clean] [colcon build options]"
     echo ""
     echo "This script formats code, installs dependencies, and builds the ROS2 workspace."
     echo ""
     echo "Examples:"
     echo "  ./build.sh"
     echo "  ./build.sh --parallel-workers 3"
+    echo "  ./build.sh --clean"
     echo "  ./build.sh --packages-select navigation localization gps bringup"
     echo "  ./build.sh --packages-select navigation --parallel-workers 1"
     echo ""
@@ -21,6 +22,13 @@ if [ ! -d "src" ]; then
     exit 1
 fi
 
+# Check for --clean flag
+if [[ "$1" == "--clean" ]]; then
+    echo "Cleaning build, install, and log directories..."
+    rm -rf build install log
+    shift # Remove --clean from arguments
+fi
+
 # Python format
 black . --exclude "src/third-party/|build|install|\.tox|dist"
 
@@ -28,8 +36,6 @@ black . --exclude "src/third-party/|build|install|\.tox|dist"
 find ./src -path ./src/third-party -prune -o \
     \( -name "*.h" -o -name "*.hpp" -o -name "*.cpp" \) -print \
   | xargs clang-format -i --Werror
-
-rosdep install --from-paths src -i -r -y
 
 # Pass all arguments directly to colcon build with sensible defaults
 colcon build --symlink-install --continue-on-error --cmake-args=-DCMAKE_BUILD_TYPE=Release --parallel-workers "$(nproc)" "$@"
