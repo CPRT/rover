@@ -3,8 +3,7 @@ GST_DEBUG_CATEGORY_STATIC(aruco_debug);
 
 struct _GstArucoMarker {
   GstVideoFilter parent;
-  cv::aruco::Dictionary dictionary;
-  cv::aruco::ArucoDetector detector;
+  cv::Ptr<cv::aruco::Dictionary> dictionary;
   std::vector<int> ids;
   std::vector<std::vector<cv::Point2f>> corners;
   guint frame_count;
@@ -14,7 +13,6 @@ struct _GstArucoMarker {
 
 static void gst_arucomarker_init(GstArucoMarker *self) {
   self->dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
-  self->detector = cv::aruco::ArucoDetector(self->dictionary);
   self->frame_count = 0;
   self->detect_every = 1;
   self->ids.clear();
@@ -51,7 +49,7 @@ static GstFlowReturn gst_arucomarker_transform_frame_ip(GstVideoFilter *filter,
     corners.clear();
     cv::Mat gray;
     cv::cvtColor(mat, gray, cv::COLOR_RGB2GRAY);
-    self->detector.detectMarkers(gray, corners, ids);
+    cv::aruco::detectMarkers(gray, self->dictionary, corners, ids);
     for (const int &id : ids) {
       g_signal_emit_by_name(self, "marker-detected", id);
       GST_INFO_OBJECT(self, "Marker detected: id=%d", id);
