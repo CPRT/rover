@@ -28,7 +28,6 @@ setup(
     maintainer_email="Connor@todo.todo",
     description="TODO: Package description",
     license="TODO: License declaration",
-    tests_require=["pytest"],
     entry_points={
         "console_scripts": [
             "imu_filter = localization.imu_filter:main",
