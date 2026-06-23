@@ -16,7 +16,7 @@ sudo chmod 644 /etc/systemd/system/start_rover.service
 sudo ln -s $PWD/start_rover.sh /usr/local/bin/start_rover.sh
 
 cd ..
-sudo tee /opt/ros/humble/cprt_setup.bash > /dev/null << EOF
+sudo tee /opt/ros/jazzy/cprt_setup.bash > /dev/null << EOF
 #!/bin/bash
 source $PWD/install/setup.bash
 EOF

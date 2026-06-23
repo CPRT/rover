@@ -13,5 +13,5 @@ then
 fi
 
 echo "Generating rosdeps inside the docker container..."
-docker build --target rosdep-exporter --output $DOCKERFILE_DIR $DOCKERFILE_DIR
+docker build -f docker/Dockerfile.app --target rosdep-exporter --output $DOCKERFILE_DIR $DOCKERFILE_DIR
 echo "Rosdeps generated successfully."
