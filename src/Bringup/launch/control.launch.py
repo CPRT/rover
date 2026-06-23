@@ -130,29 +130,12 @@ def generate_launch_description():
             os.path.join(
                 get_package_share_directory("arm_control"),
                 "launch",
-                "servo.launch.py",
+                "arm.launch.py",
             )
         ),
         condition=IfCondition(use_arm),
     )
-    eef_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(
-                get_package_share_directory("arm_control"),
-                "launch",
-                "end_effector.launch.py",
-            )
-        ),
-        condition=IfCondition(use_arm),
-    )
-    arm_control_node = Node(
-        package="joystick_control",
-        executable="arm",
-        name="arm_teleop_node",
-        parameters=[joy_parameters_file],
-        remappings=[("/joy", "/arm/joy")],
-        condition=IfCondition(use_arm),
-    )
+
     drive_control_node = Node(
         package="joystick_control",
         executable="drive",
@@ -169,7 +152,5 @@ def generate_launch_description():
     ld.add_action(controller_manager)
     ld.add_action(delayed_spawners)
     ld.add_action(arm_launch)
-    ld.add_action(eef_launch)
-    ld.add_action(arm_control_node)
     ld.add_action(drive_control_node)
     return ld

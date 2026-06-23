@@ -3,9 +3,10 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 namespace arm_control {
-MoveGroupClient::MoveGroupClient(rclcpp::Node::SharedPtr node)
+MoveGroupClient::MoveGroupClient()
     : planning_time_(5.0), planning_attempts_(10), vel_scaling_(0.2),
-      acc_scaling_(0.2), node_(node) {
+      acc_scaling_(0.2) {
+  node_ = std::make_shared<rclcpp::Node>("move_group_client");
   declareParams();
   loadParams();
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
@@ -15,8 +16,8 @@ MoveGroupClient::MoveGroupClient(rclcpp::Node::SharedPtr node)
       std::make_unique<moveit::planning_interface::MoveGroupInterface>(
           node_, planning_group_);
 
-  depth_sub_ = node->create_subscription<interfaces::msg::Distance>(
-      "/eef_distance", 10,
+  depth_sub_ = node_->create_subscription<interfaces::msg::Distance>(
+      "/eef_distance", rclcpp::QoS(1).best_effort(),
       [this](const interfaces::msg::Distance::SharedPtr msg) {
         latest_distance_ = msg;
       });
