@@ -1,0 +1,76 @@
+name: Rover CI Pipeline
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: rover-ci-pipeline
+  cancel-in-progress: ${{ github.event_name == 'push' }}
+  queue: max
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      base-dev: ${{ steps.filter.outputs.base-dev }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            base-dev:
+              - 'docker_build.sh'
+              - 'docker/Dockerfile*'
+              - '.github/workflows/base&dev-build.yml'
+              - '.dockerignore'
+              - 'requirements.txt'
+              - 'rosdep-keys.txt'
+
+  base-dev-build:
+    name: Base and Dev Build
+    needs:
+      - changes
+    if: ${{ needs.changes.outputs.base-dev == 'true' }}
+    uses: "./.github/workflows/base&dev-build.yml"
+    secrets: inherit
+
+  base-dev-build-lite:
+    name: Base and Dev Build Lite
+    needs:
+      - changes
+    with:
+      lite: true
+    if: ${{ needs.changes.outputs.base-dev == 'true' && github.event_name == 'push' }}
+    uses: "./.github/workflows/base&dev-build.yml"
+    secrets: inherit
+
+  build-lint:
+    name: Build and Lint
+    if: ${{ github.event_name == 'pull_request' }}
+    needs:
+      - base-dev-build
+    uses: "./.github/workflows/build&lint.yml"
+    secrets: inherit
+
+  build-rover:
+    name: Build Rover
+    if: ${{ github.event_name == 'push' }}
+    needs:
+      - base-dev-build
+    uses: "./.github/workflows/build-rover.yml"
+    secrets: inherit
+
+  build-rover-lite:
+    name: Build Rover Lite
+    if: ${{ github.event_name == 'push' }}
+    needs:
+      - base-dev-build-lite
+    with:
+      lite: true
+    uses: "./.github/workflows/build-rover.yml"
+    secrets: inherit
