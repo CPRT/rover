@@ -8,7 +8,7 @@
 #include "std_msgs/msg/float32.hpp"
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
-#include <moveit/move_group_interface/move_group_interface.h>
+#include <moveit/move_group_interface/move_group_interface.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
@@ -17,7 +17,7 @@ namespace arm_control {
 
 class MoveGroupClient {
 public:
-  explicit MoveGroupClient(rclcpp::Node::SharedPtr node);
+  explicit MoveGroupClient();
   ~MoveGroupClient();
 
   void stop();

@@ -20,6 +20,9 @@
   <depend>interfaces</depend>
   <depend>joy</depend>
   <depend>joy_linux</depend>
+  <depend>controller_manager_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>rclcpp_components</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

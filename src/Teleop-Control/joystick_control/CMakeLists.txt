@@ -21,6 +21,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(rclcpp_components REQUIRED)
 
 set(CMAKE_CXX_STANDARD 14)
 
@@ -31,15 +32,15 @@ add_executable(drive
   src/drive.cpp
 )
 
-add_executable(arm
-  src/arm.cpp
+add_library(arm_teleop SHARED
+  src/arm_teleop.cpp
 )
 
 add_executable(drill
   src/drill.cpp
 )
 
-target_link_libraries(arm
+target_link_libraries(arm_teleop
   arm_control::move_group_client
 )
 
@@ -53,9 +54,11 @@ ament_target_dependencies(drive
   std_srvs
 )
 
-ament_target_dependencies(arm
+ament_target_dependencies(arm_teleop
   rclcpp
+  rclcpp_components
   geometry_msgs
+  sensor_msgs
   joy
   ros_phoenix
   interfaces
@@ -70,11 +73,19 @@ ament_target_dependencies(drill
   ros_phoenix
 )
 
+rclcpp_components_register_nodes(arm_teleop "joystick_control::ArmTeleop")
+
 install(TARGETS
   drive
-  arm
   drill
   DESTINATION lib/${PROJECT_NAME})
+
+install(TARGETS
+  arm_teleop
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
 
 # Install header files
 install(DIRECTORY include/

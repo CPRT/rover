@@ -1,3 +1,7 @@
+"""
+Launch file for the arm control package. Starts everything outside of ros2_control needed to control the arm, including move_group, moveit_rviz, and the servo node.
+"""
+
 import os
 import yaml
 from ament_index_python.packages import get_package_share_directory
@@ -7,11 +11,12 @@ from launch.actions import GroupAction
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 
-from launch_ros.actions import Node
+from launch_ros.actions import Node, ComposableNodeContainer
 
 from moveit_configs_utils import MoveItConfigsBuilder
 from moveit_configs_utils.launch_utils import DeclareBooleanLaunchArg
 from moveit_configs_utils.launches import generate_moveit_rviz_launch
+from launch_ros.descriptions import ComposableNode
 
 
 def load_yaml(package_name: str, file_path: str):
@@ -86,16 +91,49 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
         moveit_config.robot_description_kinematics,
     ]
 
-    servo_node = Node(
+    servo_component = ComposableNode(
         package="moveit_servo",
-        executable="servo_node_main",
+        plugin="moveit_servo::ServoNode",
+        name="servo_node",
         parameters=servo_parameters,
-        output="screen",
         remappings=[
             ("~/robot_description", "/robot_description"),
         ],
     )
-    ld.add_action(servo_node)
+
+    eef_component = ComposableNode(
+        package="ros_phoenix",
+        plugin="ros_phoenix::TalonSRX",
+        name="end_effector",
+        parameters=[
+            {"id": 15},
+            {"max_voltage": 24.0},
+            {"max_current": 6.0},
+            {"brake_mode": True},
+        ],
+    )
+
+    arm_control_component = ComposableNode(
+        package="joystick_control",
+        plugin="joystick_control::ArmTeleop",
+        name="arm_teleop_node",
+        parameters=[{"use_sim_time": False}],
+    )
+
+    container = ComposableNodeContainer(
+        name="arm_control_container",
+        namespace="",
+        package="ros_phoenix",
+        executable="phoenix_container",
+        parameters=[{"interface": "can0"}],
+        composable_node_descriptions=[
+            # eef_component,
+            servo_component,
+            arm_control_component,
+        ],
+    )
+
+    ld.add_action(container)
 
     return ld
 
