@@ -22,7 +22,6 @@ setup(
     maintainer_email="softwarelead@curover.ca",
     description="TODO: Package description",
     license="TODO: License declaration",
-    tests_require=["pytest"],
     entry_points={
         "console_scripts": [
             "rtcm_pub_node = gps.rtcm_pub_node:main",

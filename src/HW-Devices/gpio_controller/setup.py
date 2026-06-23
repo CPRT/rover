@@ -22,7 +22,6 @@ setup(
     maintainer_email="christopherrusu1@gmail.com",
     description="TODO: Package description",
     license="Apache-2.0",
-    tests_require=["pytest"],
     entry_points={
         "console_scripts": [
             "lights = gpio_controller.lights:main",

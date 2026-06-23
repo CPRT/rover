@@ -22,7 +22,6 @@ setup(
     maintainer_email="erikcaell@gmail.com",
     description="Various computer vision nodes for URC and CIRC.",
     license="TODO: License declaration",
-    tests_require=["pytest"],
     entry_points={
         "console_scripts": [
             "zed_aruco_detector_node = computer_vision.zed_aruco_detector:main"

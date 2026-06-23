@@ -28,7 +28,6 @@ setup(
     maintainer_email="aj01cars@outlook.com",
     description="Nodes for science sensors",
     license="TODO: License declaration",
-    # tests_require=["pytest"],
     entry_points={
         "console_scripts": [
             "gas_sensor = science_sensors.gas_sensor:main",

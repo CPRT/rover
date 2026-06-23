@@ -24,7 +24,6 @@ setup(
     maintainer_email="erikcaell@gmail.com",
     description="Python Simple Commanders to control high level nav2 logic",
     license="TODO: License declaration",
-    tests_require=["pytest"],
     entry_points={
         "console_scripts": [
             "gps_commander_node = nav_commanders.nav_to_gps_coords:main",
