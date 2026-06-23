@@ -10,7 +10,7 @@ BaseVideoNode::BaseVideoNode(const std::string name,
   // Ensure GStreamer initialized once globally (thread-safe)
   std::call_once(gst_init_once_flag_, []() { gst_init(nullptr, nullptr); });
   restart_sub_ = create_subscription<std_msgs::msg::Empty>(
-      "/all_video/restart_pipeline", 10,
+      "/all_video/restart_pipeline", rclcpp::QoS(1).reliable(),
       [this](const std::shared_ptr<std_msgs::msg::Empty> msg) {
         try {
           if (!stop_pipeline()) {

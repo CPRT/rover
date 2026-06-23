@@ -50,7 +50,7 @@ class RoboClawAntennaNode(Node):
         self.zero_offset = 0
 
         # ROS Interfaces
-        self.create_subscription(Float32, "/roboclaw_position", self.pos_callback, 10)
+        self.create_subscription(Float32, "/roboclaw_position", self.pos_callback, 5)
         self.create_timer(1.0 / self.enc_read_freq, self.encoder_timer)
 
     # Angle to Encoder Command

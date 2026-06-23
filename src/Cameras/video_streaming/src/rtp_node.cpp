@@ -36,12 +36,13 @@ RtpNode::RtpNode(const rclcpp::NodeOptions &options)
       std::bind(&RtpNode::on_parameter_change, this, std::placeholders::_1));
 
   bitrate_sub_ = this->create_subscription<std_msgs::msg::Int32>(
-      "~/set_bitrate", 10, [this](const std_msgs::msg::Int32::SharedPtr msg) {
+      "~/set_bitrate", rclcpp::QoS(1).reliable(),
+      [this](const std_msgs::msg::Int32::SharedPtr msg) {
         set_bitrate(msg->data);
       });
 
   iframe_sub_ = this->create_subscription<std_msgs::msg::Empty>(
-      "~/trigger_iframe", 10,
+      "~/trigger_iframe", rclcpp::QoS(1).reliable(),
       std::bind(&RtpNode::on_iframe_trigger, this, std::placeholders::_1));
   restart_pub_ = this->create_publisher<std_msgs::msg::Empty>(
       "/all_video/restart_pipeline", 10);

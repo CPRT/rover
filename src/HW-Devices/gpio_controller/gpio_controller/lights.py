@@ -26,7 +26,7 @@ class gpioManager(Node):
         self.pixels = neopixel.NeoPixel_SPI(
             spi, self.NUM_PIXELS, pixel_order=PIXEL_ORDER, auto_write=False
         )
-        qos_profile = QoSProfile(depth=10)
+        qos_profile = QoSProfile(depth=2)
         qos_profile.reliability = ReliabilityPolicy.RELIABLE
         self.light_subscriber = self.create_subscription(
             Int8, "/light", self.neoCallback, qos_profile

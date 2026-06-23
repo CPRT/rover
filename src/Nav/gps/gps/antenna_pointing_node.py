@@ -24,14 +24,14 @@ class AntennaPointingNode(Node):
         # manual mode
         self.manual_value = 0
         self.manual = False
-        self.create_subscription(Bool, "/antenna/manual", self.manual_cb, 10)
+        self.create_subscription(Bool, "/antenna/manual", self.manual_cb, 2)
         self.create_subscription(
             Float32, "/antenna/manual_value", self.manual_value_cb, 10
         )
 
         # ROS things
-        self.create_subscription(NavSatFix, "/base_station/fix", self.base_cb, 10)
-        self.create_subscription(NavSatFix, "/gps/fix", self.rover_cb, 10)
+        self.create_subscription(NavSatFix, "/base_station/fix", self.base_cb, 2)
+        self.create_subscription(NavSatFix, "/gps/fix", self.rover_cb, 2)
 
         self.bearing_pub = self.create_publisher(
             Float32, "/antenna/tracker_bearing", 10
