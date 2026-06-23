@@ -1,0 +1,215 @@
+ARG BASE_IMAGE=nvidia/cuda:13.2.1-cudnn-runtime-ubuntu24.04
+FROM ${BASE_IMAGE} AS base
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV ROS_DISTRO=jazzy
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+ENV TZ=UTC
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        locales apt-utils curl lsb-release gnupg2 libssl-dev \
+        software-properties-common build-essential \
+        tzdata git pkg-config libgtk-3-0 libavcodec60 libavformat60 libswscale7 \
+        libtbbmalloc2 libjpeg8 libpng16-16 libtiff6 libdc1394-25 wget zstd udev \ 
+        python3-pip libpng-dev libgomp1 \
+    && locale-gen en_US.UTF-8 \
+    && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN ln -snf /usr/share/zoneinfo/UTC /etc/localtime \
+    && echo "UTC" > /etc/timezone
+
+
+############################
+# Stage 1: ZED SDK
+############################
+FROM base AS zed-sdk-build
+ARG USE_ZED_SDK=true
+ARG ZED_SDK_MAJOR=5
+ARG ZED_SDK_MINOR=4
+ARG ZED_SDK_PATCH=0
+ARG L4T_MAJOR_VERSION=39
+ARG L4T_MINOR_VERSION=2
+ARG L4T_PATCH_VERSION=0
+ARG CUDA_MAJOR=13
+ARG UBUNTU_RELEASE_YEAR=24
+
+RUN if [ "$USE_ZED_SDK" = "false" ]; then \
+        echo "Skipping ZED SDK installation"; \
+        mkdir -p /usr/local/zed; \
+        exit 0; \
+    fi; \
+    if uname -m | grep -q 'aarch64'; then \
+        echo "Installing ZED SDK for Jetson"; \
+        echo "# R${L4T_MAJOR_VERSION} (release), REVISION: ${L4T_MINOR_VERSION}.${L4T_PATCH_VERSION}" > /etc/nv_tegra_release ; \
+        wget -q --no-check-certificate -O ZED_SDK_Linux.run https://download.stereolabs.com/zedsdk/${ZED_SDK_MAJOR}.${ZED_SDK_MINOR}.${ZED_SDK_PATCH}/l4t${L4T_MAJOR_VERSION}.${L4T_MINOR_VERSION}/jetsons && \
+        chmod +x ZED_SDK_Linux.run && \
+        ./ZED_SDK_Linux.run -- silent runtime_only skip_drivers && \
+        rm -rf /usr/local/zed/resources/* && \
+        rm -rf ZED_SDK_Linux.run && \
+        rm -rf /var/lib/apt/lists/* && \
+        ln -sf /usr/lib/aarch64-linux-gnu/tegra/libv4l2.so.0 /usr/lib/aarch64-linux-gnu/libv4l2.so; \
+    else \
+        echo "Installing ZED SDK for x86_64"; \
+        wget -q -O ZED_SDK_Linux_Ubuntu${UBUNTU_RELEASE_YEAR}.run https://download.stereolabs.com/zedsdk/${ZED_SDK_MAJOR}.${ZED_SDK_MINOR}.${ZED_SDK_PATCH}/cu${CUDA_MAJOR}/ubuntu${UBUNTU_RELEASE_YEAR} && \
+        chmod +x ZED_SDK_Linux_Ubuntu${UBUNTU_RELEASE_YEAR}.run && \
+        ./ZED_SDK_Linux_Ubuntu${UBUNTU_RELEASE_YEAR}.run -- silent runtime_only skip_cuda && \
+        rm ZED_SDK_Linux_Ubuntu${UBUNTU_RELEASE_YEAR}.run && \
+        rm -rf /var/lib/apt/lists/*; \
+    fi
+
+############################
+# Stage 2: Minimal ROS2 Base
+############################
+FROM zed-sdk-build AS ros2-base
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3-dev python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# ROS 2 repository
+RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
+    -o /usr/share/keyrings/ros-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] \
+    http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" \
+    > /etc/apt/sources.list.d/ros2.list
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ros-$ROS_DISTRO-ros-base fastdds-tools libeigen3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python dependencies
+COPY requirements.txt .
+RUN pip3 install --ignore-installed --break-system-packages --no-cache-dir -r requirements.txt
+
+############################
+# Stage 3: GStreamer Build
+############################
+FROM base AS gstreamer-build
+ARG gst_plugins_rs_version=0.14
+ENV PATH="/root/.cargo/bin:${PATH}"
+ENV CARGO_HOME=/root/.cargo
+ENV RUSTUP_HOME=/root/.rustup
+ENV GST_PLUGIN_PATH=/opt/gstreamer/lib/gstreamer-1.0
+SHELL ["/bin/bash", "-c"]
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl \
+    git pkg-config libssl-dev \
+    libglib2.0-dev \
+    libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev \
+    libgstreamer-plugins-bad1.0-dev \
+    gstreamer1.0-tools \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
+    gstreamer1.0-nice \
+    build-essential meson ninja-build rustup \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN rustup set profile minimal \
+    && rustup default stable \
+    && cargo install cargo-c
+
+
+WORKDIR /gst-plugins-rs
+RUN git clone --branch ${gst_plugins_rs_version} --single-branch --depth 1 https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs.git .
+RUN cargo cbuild -p gst-plugin-webrtc --prefix=/opt/gstreamer --release
+RUN cargo cbuild -p gst-plugin-rtp    --prefix=/opt/gstreamer --release
+RUN cargo cinstall -p gst-plugin-webrtc --prefix=/opt/gstreamer --libdir=lib --release
+RUN cargo cinstall -p gst-plugin-rtp    --prefix=/opt/gstreamer --libdir=lib --release
+
+# Remove static libs to save space
+RUN rm -f /opt/gstreamer/lib/gstreamer-1.0/*.a
+
+# Build Interpipe from source
+WORKDIR /interpipe
+RUN git clone --branch master --depth 1 https://github.com/RidgeRun/gst-interpipe.git . \
+    && meson setup builddir --prefix=/opt/gstreamer --libdir=lib --buildtype=release -Denable-gtk-doc=false \
+    && meson compile -C builddir \
+    && meson install -C builddir \
+    && rm -rf builddir
+ENV PATH=/opt/gstreamer/bin:$PATH
+ENV LD_LIBRARY_PATH=/opt/gstreamer/lib:$LD_LIBRARY_PATH
+ENV PKG_CONFIG_PATH=/opt/gstreamer/lib/pkgconfig:$PKG_CONFIG_PATH
+
+############################
+# Stage 4: DeepStream Base
+############################
+FROM nvcr.io/nvidia/deepstream:9.0-triton-multiarch AS deepstream-base
+ARG CUDA_MAJOR=13
+ARG CUDA_MINOR=2
+ARG USE_NVIDIA=true
+RUN if [ "$USE_NVIDIA" = "true" ]; then \
+        apt-get update && apt-get install -y --no-install-recommends \
+            cuda-cudart-dev-${CUDA_MAJOR}-${CUDA_MINOR} \
+            cuda-crt-${CUDA_MAJOR}-${CUDA_MINOR} \
+            cuda-nvcc-${CUDA_MAJOR}-${CUDA_MINOR} \
+        && rm -rf /var/lib/apt/lists/*; \
+    else \
+        echo "Skipping NVIDIA dependencies installation"; \
+        mkdir -p /target; \
+    fi
+RUN if [ "$USE_NVIDIA" = "true" ]; then \
+        git clone https://github.com/marcoslucianops/DeepStream-Yolo.git && \
+        cd DeepStream-Yolo && \
+        CUDA_VER=${CUDA_MAJOR}.${CUDA_MINOR} make -C nvdsinfer_custom_impl_Yolo && \
+        mkdir -p /target/opt/nvidia/deepstream && \
+        cp nvdsinfer_custom_impl_Yolo/libnvdsinfer_custom_impl_Yolo.so /opt/nvidia/deepstream/deepstream/lib/  && \
+        cp -rH /opt/nvidia/deepstream/deepstream /target/opt/nvidia/deepstream; \
+    fi
+
+
+############################
+# Stage 5: Minimal Runtime Base
+############################
+FROM ros2-base AS runtime
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+WORKDIR /
+# Build kindr
+RUN git clone https://github.com/ANYbotics/kindr.git \
+    && cd kindr && mkdir build && cd build \
+    && cmake .. -DUSE_CMAKE=true \
+    && make install \
+    && rm -rf /kindr
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libsrt1.5-openssl \
+    lsb-release \
+    gnupg2 libpng16-16 \
+    zlib1g-dev libffi-dev \
+    libmount-dev \
+    python3-mrcal libsnmp-dev snmp \
+    tmux \
+    gstreamer1.0-tools \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
+    gstreamer1.0-nice \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN source /opt/ros/$ROS_DISTRO/setup.bash \
+    && rosdep init \
+    && rosdep update
+
+COPY --from=gstreamer-build /opt/gstreamer /opt/gstreamer
+COPY --from=deepstream-base /target/ /
+
+WORKDIR /
+COPY rosdep-keys.txt .
+RUN apt-get update && \
+    apt-get install -y \
+        $(xargs rosdep resolve < rosdep-keys.txt 2> /dev/null | sed '/^#/d')
+RUN geographiclib-get-geoids egm96-5
+
+ENV GST_PLUGIN_PATH=/opt/gstreamer/lib/gstreamer-1.0:/usr/lib/aarch64-linux-gnu/gstreamer-1.0:/opt/nvidia/deepstream/deepstream/lib/gst-plugins
+ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib:$LD_LIBRARY_PATH
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,video,utility,graphics
