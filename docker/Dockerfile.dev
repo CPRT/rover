@@ -1,0 +1,47 @@
+############################
+# Dev Environment
+############################
+ARG BASE_IMAGE=cprtsoftware/rover:base
+FROM ${BASE_IMAGE} AS dev-common
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git x11-apps ros-$ROS_DISTRO-desktop ros-dev-tools black pylint \
+        ros-$ROS_DISTRO-ament-cmake python3-colcon-common-extensions \
+        python3-colcon-ros clang-format libc6-dev libssl-dev libpng-dev \
+        libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev \
+        libglib2.0-dev libgstreamer1.0-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN [ "$(uname -m)" = "aarch64" ] && ln -sf /usr/lib/aarch64-linux-gnu/libdl.so.2 /usr/lib/aarch64-linux-gnu/libdl.so && ldconfig || true
+ENV CMAKE_PREFIX_PATH=/opt/ros/$ROS_DISTRO:/usr/share/eigen3/cmake
+ENV CMAKE_INCLUDE_PATH=/opt/ros/$ROS_DISTRO/include:/usr/include/eigen3
+ENV CMAKE_LIBRARY_PATH=/opt/ros/$ROS_DISTRO/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/aarch64-linux-gnu
+ENV LD_LIBRARY_PATH=/opt/ros/$ROS_DISTRO/lib:$LD_LIBRARY_PATH
+ENV PKG_CONFIG_PATH=/opt/ros/$ROS_DISTRO/lib/pkgconfig:$PKG_CONFIG_PATH
+
+RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash" >> /etc/profile.d/ros.sh
+RUN echo "ubuntu ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+
+# Lite dev environment without CUDA and TensorRT
+FROM dev-common AS dev-lite
+RUN chmod -R a+r /usr/local/lib/python3.12/dist-packages/
+USER ubuntu
+WORKDIR /
+CMD ["/bin/bash"]
+
+# Full dev environment
+FROM dev-common AS dev
+ARG CUDA_MAJOR=13
+ARG CUDA_MINOR=2
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        cuda-compiler-${CUDA_MAJOR}-${CUDA_MINOR} \
+        cuda-cudart-dev-${CUDA_MAJOR}-${CUDA_MINOR} cuda-driver-dev-${CUDA_MAJOR}-${CUDA_MINOR} \
+        cuda-toolkit-${CUDA_MAJOR}-${CUDA_MINOR} libnvinfer10 \
+        libnvinfer-plugin10 libnvonnxparsers10 \
+    && rm -rf /var/lib/apt/lists/*
+RUN groupadd -f zed && usermod -aG zed ubuntu
+RUN chmod -R a+r /usr/local/lib/python3.12/dist-packages/
+USER ubuntu
+WORKDIR /
+CMD ["/bin/bash"]

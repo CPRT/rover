@@ -1,0 +1,16 @@
+# Directories
+install*/
+log/
+build*/
+*.vscode
+raman/
+
+#Files
+*metadata.json
+
+*.pyc
+__pycache__
+
+# macOS Directory Information
+.DS_Store
+
