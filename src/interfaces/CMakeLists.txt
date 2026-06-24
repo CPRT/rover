@@ -20,6 +20,7 @@ find_package(std_msgs REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ArucoBoard.msg"
   "msg/ArucoMarkers.msg"
+  "msg/CANStatus.msg"
   "msg/Distance.msg"
   "msg/EspSensorReadings.msg"
   "msg/GasSensorReading.msg"

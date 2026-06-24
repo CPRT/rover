@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>interface_manager</name>
+  <version>0.0.0</version>
+  <description>Provides monitoring and control of USB and CAN interfaces</description>
+
+  <maintainer email="va7nfh@gmail.com">Nathaniel Hargrave</maintainer>
+  <author email="va7nfh@gmail.com">Nathaniel Hargrave</author>
+
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>pluginlib</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>interfaces</depend>
+
+  <build_depend>rclcpp_components</build_depend>
+  <build_depend>rcutils</build_depend>
+
+  <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>launch_testing_ament_cmake</test_depend>
+  <test_depend>launch_testing_ros</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
