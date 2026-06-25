@@ -55,7 +55,6 @@ def main():
 
     aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
     parameters = cv2.aruco.DetectorParameters()
-    detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
 
     captured_frames = []
     last_capture_time = time.time()
@@ -74,7 +73,11 @@ def main():
             break
 
         # Detect just for visualization and validity check
-        corners, ids, rejected = detector.detectMarkers(frame)
+        corners, ids, rejected = cv2.aruco.detectMarkers(
+            frame,
+            aruco_dict,
+            parameters=parameters,
+        )
         display_frame = frame.copy()
 
         valid_frame = False
@@ -120,7 +123,11 @@ def main():
     relative_rotations = []  # Quaternions
 
     for i, frame in enumerate(captured_frames):
-        corners, ids, _ = detector.detectMarkers(frame)
+        corners, ids, _ = cv2.aruco.detectMarkers(
+            frame,
+            aruco_dict,
+            parameters=parameters,
+        )
 
         # We know both IDs exist because we filtered in Phase 1, but check again to be safe
         idx_anchor = np.where(ids == ID_ANCHOR)[0][0]

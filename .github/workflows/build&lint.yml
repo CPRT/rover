@@ -19,4 +19,4 @@ jobs:
       - name: Build & lint (amd64)
         id: build_lint_amd64
         run: |
-          ./docker_build.sh --test
+          ./docker_build.sh --test --local
