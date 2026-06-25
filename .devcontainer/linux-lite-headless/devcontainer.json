@@ -1,22 +1,21 @@
 {
-  "name": "CPRT Dev Container",
+  "name": "CPRT Dev Container - Linux (Headless Lite)",  
 
-  "image": "cprtsoftware/rover:dev",
+  "image": "cprtsoftware/rover:dev-lite",
 
   "runArgs": [
     "--network=host",
     "--privileged",
     "--volume=/dev/v4l/by-id:/dev/v4l/by-id",
     "--volume=/dev/serial/by-id:/dev/serial/by-id",
-    "--volume=/dev/input:/dev/input",
+    "--volume=/dev/input/by-id:/dev/input/by-id",
     "--volume=/sys:/sys",
     "--volume=/etc/timezone:/etc/timezone",
     "--ipc=host",
     "--group-add=video",
     "--group-add=render",
     "--group-add=dialout",
-    "--group-add=input",
-    "--volume=/dev/ttyUSB0:/dev/ttyUSB0"
+    "--group-add=input"
   ],
   "mounts": [
     "source=${env:SSH_AUTH_SOCK},target=/ssh-agent,type=bind",

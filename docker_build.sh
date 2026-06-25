@@ -21,7 +21,7 @@ BUILD_APP_IMAGE=TRUE
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --push)
-      MODE="--load --push"
+      MODE="--push"
       shift
       ;;
     --load)

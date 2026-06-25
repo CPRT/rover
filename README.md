@@ -20,11 +20,21 @@ git clone --recurse-submodules git@github.com:CPRT/rover.git
 1) Download the VS Code Remote Extension
 2) Click the remote explorer button in bottom left corner
 3) Select re-open in container
-4) Select config file consistent with your setup (amd64 for linux x86, jetson for arm64, or windows for windows x86)
+4) Select config file consistent with your setup (see below)
 5) Source ros.sh to source the ros2 virtual environment
 ```bash
 . ros.sh
 ```
+
+#### Choosing a Dev Container profile
+- **base-station:** Specifically tuned to our base station setup (Not recommended on other machines)
+- **jetson:** Specifically tuned to our rover setup (Not recommended on other machines)
+- **linux-gui:** Only on x11 linux distros. Allows you to launch GUIs from inside the container. Optionally supports most nvidia GPUs. Recommended 50GB of disk space
+- **linux-lite-gui:** Only on x11 linux distros. Allows you to launch GUIs from inside the container. Very limited GPU support. Recommended 30GB of disk space
+- **linux-lite-headless:** Should work on most linux distros. No GPU support. Recommended 30GB of disk space
+- **windows:** Works on windows 11 and some Macbooks. Requires Docker desktop. No GPU support. No GUI support. Recommended 30GB of disk space
+
+If the current selection of profiles don't meet your needs it is pretty easy to make your own - ask us how!
 
 ## When using alongside webUI launching
   - Make sure to set `ROS_DISCOVERY_SERVER=<ip of rover>`
