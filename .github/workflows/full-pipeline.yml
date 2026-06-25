@@ -26,7 +26,7 @@ jobs:
             base-dev:
               - 'docker_build.sh'
               - 'docker/Dockerfile*'
-              - '.github/workflows/base&dev-build.yml'
+              - '.github/workflows/*'
               - '.dockerignore'
               - 'requirements.txt'
               - 'rosdep-keys.txt'
@@ -51,7 +51,12 @@ jobs:
 
   build-lint:
     name: Build and Lint
-    if: ${{ github.event_name == 'pull_request' }}
+    if: >-
+      ${{
+        always() &&
+        github.event_name == 'pull_request' &&
+        contains(fromJSON('["success", "skipped"]'), needs.base-dev-build.result)
+      }}
     needs:
       - base-dev-build
     uses: "./.github/workflows/build&lint.yml"
@@ -59,7 +64,12 @@ jobs:
 
   build-rover:
     name: Build Rover
-    if: ${{ github.event_name == 'push' }}
+    if: >-
+      ${{
+        always() &&
+        github.event_name == 'push' &&
+        contains(fromJSON('["success", "skipped"]'), needs.base-dev-build.result)
+      }}
     needs:
       - base-dev-build
     uses: "./.github/workflows/build-rover.yml"
@@ -67,7 +77,12 @@ jobs:
 
   build-rover-lite:
     name: Build Rover Lite
-    if: ${{ github.event_name == 'push' }}
+    if: >-
+      ${{
+        always() &&
+        github.event_name == 'push' &&
+        contains(fromJSON('["success", "skipped"]'), needs.base-dev-build-lite.result)
+      }}
     needs:
       - base-dev-build-lite
     with:
