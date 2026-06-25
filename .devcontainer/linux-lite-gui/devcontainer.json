@@ -1,5 +1,5 @@
 {
-  "name": "CPRT Dev Container",
+  "name": "CPRT Dev Container - Linux (Lite with GUI)",
 
   "image": "cprtsoftware/rover:dev-lite",
 

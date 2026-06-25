@@ -1,5 +1,5 @@
 {
-  "name": "CPRT Dev Container (On Base Station)",
+  "name": "CPRT Dev Container - Linux (Full with GUI)",
 
   "image": "cprtsoftware/rover:dev",
 
@@ -11,10 +11,6 @@
     "--volume=/dev/input/by-id:/dev/input/by-id",
     "--volume=/sys:/sys",
     "--volume=/etc/timezone:/etc/timezone",
-    "--volume=/tmp/argus_socket:/tmp/argus_socket",
-    "--volume=/usr/local/zed:/usr/local/zed",
-    "--runtime=nvidia",
-    "--gpus=all",
     "--ipc=host",
     "--group-add=video",
     "--group-add=render",

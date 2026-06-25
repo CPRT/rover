@@ -112,12 +112,15 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
             {"brake_mode": True},
         ],
     )
+    joystick_control_dir = get_package_share_directory("joystick_control")
+    joy_parameters_file = os.path.join(joystick_control_dir, "pxn.yaml")
 
     arm_control_component = ComposableNode(
         package="joystick_control",
         plugin="joystick_control::ArmTeleop",
         name="arm_teleop_node",
-        parameters=[{"use_sim_time": False}],
+        parameters=[joy_parameters_file],
+        remappings=[("/joy", "/arm/joy")],
     )
 
     container = ComposableNodeContainer(
@@ -127,7 +130,7 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
         executable="phoenix_container",
         parameters=[{"interface": "can0"}],
         composable_node_descriptions=[
-            # eef_component,
+            eef_component,
             servo_component,
             arm_control_component,
         ],
