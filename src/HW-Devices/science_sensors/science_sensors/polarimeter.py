@@ -6,7 +6,7 @@ from threading import Event
 import matplotlib.pyplot as plt
 import numpy as np
 
-# from scipy.optimize import curve_fit
+from scipy.optimize import curve_fit
 
 import rclpy
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup

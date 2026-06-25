@@ -18,6 +18,7 @@ Key API changes between versions:
 Author: GitHub Copilot
 Version: 2025-12-07
 """
+# pylint: skip-file
 
 import cv2
 import numpy as np

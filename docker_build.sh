@@ -30,6 +30,9 @@ while [[ $# -gt 0 ]]; do
       ;;
     --test)
       MODE="--test"
+      BUILD_BASE_IMAGE=FALSE
+      BUILD_DEV_IMAGE=FALSE
+      BUILD_APP_IMAGE=FALSE
       shift
       ;;
     --arch)
@@ -200,11 +203,6 @@ elif [ "$LOCAL" = "FALSE" ]; then
   docker pull $DEV_TAG || true
 fi
 
-if [ "$BUILD_APP_IMAGE" = "FALSE" ]; then
-  echo "Skipping app image build"
-  exit 0
-fi
-
 if [ "$MODE" = "--test" ]; then
   echo "Testing dev image..."
   docker buildx build \
@@ -214,6 +212,11 @@ if [ "$MODE" = "--test" ]; then
     --target linter \
     --build-arg BUILD_FLAGS="$BUILD_FLAGS" \
     .
+fi
+
+if [ "$BUILD_APP_IMAGE" = "FALSE" ]; then
+  echo "Skipping app image build"
+  exit 0
 fi
 
 # --- APP (rover) image ---

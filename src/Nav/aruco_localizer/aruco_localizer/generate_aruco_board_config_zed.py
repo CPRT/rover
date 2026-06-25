@@ -153,7 +153,6 @@ class GenerateArucoBoardConfigZed(Node):
         # Setup ArUco detector
         self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
         self.parameters = cv2.aruco.DetectorParameters()
-        self.detector = cv2.aruco.ArucoDetector(self.aruco_dict, self.parameters)
 
         # State variables
         self.captured_frames = []
@@ -208,7 +207,11 @@ class GenerateArucoBoardConfigZed(Node):
             self.current_frame = cv_image
 
             # Detect markers
-            corners, ids, rejected = self.detector.detectMarkers(cv_image)
+            corners, ids, rejected = cv2.aruco.detectMarkers(
+                cv_image,
+                self.aruco_dict,
+                parameters=self.parameters,
+            )
             display_frame = cv_image.copy()
 
             valid_frame = False
@@ -266,7 +269,11 @@ class GenerateArucoBoardConfigZed(Node):
         relative_rotations = []  # Quaternions
 
         for i, frame in enumerate(self.captured_frames):
-            corners, ids, _ = self.detector.detectMarkers(frame)
+            corners, ids, _ = cv2.aruco.detectMarkers(
+                frame,
+                self.aruco_dict,
+                parameters=self.parameters,
+            )
 
             # We know both IDs exist because we filtered in Phase 1, but check again to be safe
             idx_anchor = np.where(ids == self.id_anchor)[0][0]
