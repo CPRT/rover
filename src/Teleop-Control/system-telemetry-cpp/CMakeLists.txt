@@ -36,9 +36,18 @@ add_executable(system_telemetry_publisher
   src/gpu_collector.cpp
 )
 
+add_executable(node_status_publisher
+  src/node_status_publisher.cpp
+)
+
 ament_target_dependencies(system_telemetry_publisher
   rclcpp
   interfaces
+)
+
+ament_target_dependencies(node_status_publisher
+  rclcpp
+  std_msgs
 )
 
 add_executable(snmp_network_stats
@@ -62,6 +71,7 @@ target_link_libraries(snmp_network_stats
 install(TARGETS
   system_telemetry_publisher
   snmp_network_stats
+  node_status_publisher
   DESTINATION lib/${PROJECT_NAME}
 )
 
