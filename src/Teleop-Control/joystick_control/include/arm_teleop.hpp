@@ -1,19 +1,26 @@
 #ifndef ARM_HPP
 #define ARM_HPP
 
-#include "arm_control/MoveGroupClient.hpp"
 #include "control_msgs/msg/joint_jog.hpp"
 #include "controller_manager_msgs/srv/switch_controller.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "geometry_msgs/msg/vector3.hpp"
-#include "interfaces/srv/get_poses.hpp"
-#include "interfaces/srv/go_to_pose.hpp"
+#include "interfaces/srv/go_to_cam_coord.hpp"
+#include "interfaces/srv/go_to_named_pose.hpp"
+#include "interfaces/srv/save_current_pose.hpp"
+#include "moveit_msgs/srv/servo_command_type.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "ros_phoenix/msg/motor_control.hpp"
 #include "sensor_msgs/msg/joy.hpp"
-#include "std_msgs/msg/float32.hpp"
 #include "std_srvs/srv/trigger.hpp"
+
+#include <atomic>
+#include <condition_variable>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <vector>
 
 namespace joystick_control {
 
@@ -24,7 +31,7 @@ public:
 
 private:
   enum ArmState { NONE = 0, MANUAL, IK, POS };
-  void arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
+
   void manual_arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
   void ik_arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
   void ik_pose_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
@@ -32,27 +39,38 @@ private:
   void clipboards_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
   void clear_dot();
   bool check_initialized(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
-  ArmState requested_state(const std::vector<int> &buttons) const;
+  bool moveit_servo_configure(const ArmState requested_state);
+  bool configure_ros2_controller(const ArmState requested_state);
+  ArmState requested_state(const std::vector<int32_t> &buttons) const;
   bool switch_states(const ArmState new_state);
-  bool start_moveit_servo();
+  bool stop_move_group_motion();
+  bool go_to_named_pose(const std::string &name);
+  bool save_current_pose(const std::string &name);
+  bool go_to_cam_coord(double u, double v);
   void run();
+  void declareParameters();
+  void loadParameters();
+
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
   rclcpp::Publisher<control_msgs::msg::JointJog>::SharedPtr joint_pub_;
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr ik_pub_;
   rclcpp::Publisher<ros_phoenix::msg::MotorControl>::SharedPtr eef_pub_;
   rclcpp::Publisher<geometry_msgs::msg::Vector3>::SharedPtr dot_pub_;
-  rclcpp::Service<interfaces::srv::GetPoses>::SharedPtr name_service_;
-  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr stop_service_;
-  rclcpp::Service<interfaces::srv::GoToPose>::SharedPtr go_to_pose_service_;
+
+  rclcpp::Client<interfaces::srv::GoToNamedPose>::SharedPtr
+      go_to_named_pose_client_;
+  rclcpp::Client<interfaces::srv::SaveCurrentPose>::SharedPtr
+      save_current_pose_client_;
+  rclcpp::Client<interfaces::srv::GoToCamCoord>::SharedPtr
+      go_to_cam_coord_client_;
+  rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr stop_move_group_client_;
   rclcpp::Client<controller_manager_msgs::srv::SwitchController>::SharedPtr
       switch_client_;
-  arm_control::MoveGroupClient moveit_client_;
+  rclcpp::Client<moveit_msgs::srv::ServoCommandType>::SharedPtr
+      servo_input_client_;
 
   ArmState current_state_;
 
-  void declareParameters();
-  void loadParameters();
-  geometry_msgs::msg::PoseStamped getPoseOfPtr();
   bool initialized_ = false;
 
   int kThrottleAxis;
@@ -79,8 +97,7 @@ private:
 
   double targetPositionX;
   double targetPositionY;
-  int clipboard1_pose_index_ = -1;
-  int clipboard2_pose_index_ = -1;
+
   std::shared_ptr<sensor_msgs::msg::Joy> curr_msg_;
   std::shared_ptr<sensor_msgs::msg::Joy> last_msg_;
   std::shared_ptr<std::thread> run_thread_;

@@ -1,5 +1,4 @@
 #include "arm_teleop.hpp"
-#include "std_srvs/srv/trigger.hpp"
 #include <algorithm>
 #include <condition_variable>
 #include <memory>
@@ -29,45 +28,27 @@ ArmTeleop::ArmTeleop(const rclcpp::NodeOptions &options)
       "/end_effector/set", 10);
   dot_pub_ = this->create_publisher<geometry_msgs::msg::Vector3>(
       "/rtp_client_node/dot", 10);
-  name_service_ = this->create_service<interfaces::srv::GetPoses>(
-      "get_names_poses",
-      [this](const std::shared_ptr<interfaces::srv::GetPoses::Request>,
-             std::shared_ptr<interfaces::srv::GetPoses::Response> response) {
-        response->pose_names = moveit_client_.getNamedTargets();
-      });
-  stop_service_ = this->create_service<std_srvs::srv::Trigger>(
-      "stop_motion",
-      [this](const std::shared_ptr<std_srvs::srv::Trigger::Request>,
-             std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
-        moveit_client_.stop();
-        response->success = true;
-        response->message = "Motion stopped";
-      });
-  go_to_pose_service_ = this->create_service<interfaces::srv::GoToPose>(
-      "go_to_pose",
-      [this](const std::shared_ptr<interfaces::srv::GoToPose::Request> request,
-             std::shared_ptr<interfaces::srv::GoToPose::Response> response) {
-        if (current_state_ != NONE) {
-          response->success = false;
-          response->message = "Joystick is active";
-          RCLCPP_WARN(this->get_logger(),
-                      "Could not move to pose %s: Joystick is active",
-                      request->name.c_str());
-          return;
-        }
-        response->success = moveit_client_.goToPose(request->name);
-        response->message = response->success
-                                ? "Planning succeeded..."
-                                : "Failed to plan to pose: " + request->name;
-      });
+  go_to_named_pose_client_ =
+      this->create_client<interfaces::srv::GoToNamedPose>(
+          "/move_group_client/go_to_named_pose");
+  save_current_pose_client_ =
+      this->create_client<interfaces::srv::SaveCurrentPose>(
+          "/move_group_client/save_current_pose");
+  go_to_cam_coord_client_ = this->create_client<interfaces::srv::GoToCamCoord>(
+      "/move_group_client/go_to_cam_coord");
+  stop_move_group_client_ =
+      this->create_client<std_srvs::srv::Trigger>("/move_group_client/stop");
   switch_client_ =
       this->create_client<controller_manager_msgs::srv::SwitchController>(
           "/controller_manager/switch_controller");
+  servo_input_client_ = this->create_client<moveit_msgs::srv::ServoCommandType>(
+      "/servo_node/switch_command_type");
   clear_dot();
   running_ = true;
   run_thread_ = std::make_shared<std::thread>(std::bind(&ArmTeleop::run, this));
   RCLCPP_INFO(this->get_logger(), "Arm controller started");
 }
+
 ArmTeleop::~ArmTeleop() {
   {
     std::lock_guard<std::mutex> lock(mtx_);
@@ -77,6 +58,119 @@ ArmTeleop::~ArmTeleop() {
   if (run_thread_ && run_thread_->joinable()) {
     run_thread_->join();
   }
+}
+
+bool ArmTeleop::stop_move_group_motion() {
+  if (!stop_move_group_client_->wait_for_service(std::chrono::seconds(2))) {
+    RCLCPP_ERROR(this->get_logger(),
+                 "MoveGroup stop service is unavailable!!!!");
+    return false;
+  }
+
+  auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
+  auto result = stop_move_group_client_->async_send_request(request);
+
+  if (result.wait_for(std::chrono::seconds(5)) != std::future_status::ready) {
+    RCLCPP_ERROR(this->get_logger(), "Timed out stopping MoveGroup motion!!!!");
+    return false;
+  }
+
+  const auto response = result.get();
+  if (!response->success) {
+    RCLCPP_ERROR(this->get_logger(), "Could not stop MoveGroup motion: %s",
+                 response->message.c_str());
+    return false;
+  }
+
+  return true;
+}
+
+bool ArmTeleop::go_to_named_pose(const std::string &name) {
+  if (!go_to_named_pose_client_->wait_for_service(std::chrono::seconds(2))) {
+    RCLCPP_ERROR(this->get_logger(),
+                 "MoveGroup named pose service is unavailable!!!!");
+    return false;
+  }
+
+  auto request = std::make_shared<interfaces::srv::GoToNamedPose::Request>();
+  request->name = name;
+
+  auto result = go_to_named_pose_client_->async_send_request(request);
+
+  if (result.wait_for(std::chrono::seconds(30)) != std::future_status::ready) {
+    RCLCPP_ERROR(this->get_logger(), "Timed out moving to named pose %s!!!!",
+                 name.c_str());
+    return false;
+  }
+
+  const auto response = result.get();
+  if (!response->success) {
+    RCLCPP_ERROR(this->get_logger(), "Could not move to named pose %s: %s",
+                 name.c_str(), response->message.c_str());
+    return false;
+  }
+
+  RCLCPP_INFO(this->get_logger(), "Moved to named pose %s", name.c_str());
+  return true;
+}
+
+bool ArmTeleop::save_current_pose(const std::string &name) {
+  if (!save_current_pose_client_->wait_for_service(std::chrono::seconds(2))) {
+    RCLCPP_ERROR(this->get_logger(),
+                 "MoveGroup save pose service is unavailable!!!!");
+    return false;
+  }
+
+  auto request = std::make_shared<interfaces::srv::SaveCurrentPose::Request>();
+  request->name = name;
+
+  auto result = save_current_pose_client_->async_send_request(request);
+
+  if (result.wait_for(std::chrono::seconds(5)) != std::future_status::ready) {
+    RCLCPP_ERROR(this->get_logger(), "Timed out saving pose %s!!!!",
+                 name.c_str());
+    return false;
+  }
+
+  const auto response = result.get();
+  if (!response->success) {
+    RCLCPP_ERROR(this->get_logger(), "Could not save pose %s: %s", name.c_str(),
+                 response->message.c_str());
+    return false;
+  }
+
+  RCLCPP_INFO(this->get_logger(), "Saved current pose as %s", name.c_str());
+  return true;
+}
+
+bool ArmTeleop::go_to_cam_coord(double u, double v) {
+  if (!go_to_cam_coord_client_->wait_for_service(std::chrono::seconds(2))) {
+    RCLCPP_ERROR(this->get_logger(),
+                 "MoveGroup camera coordinate service is unavailable!!!!");
+    return false;
+  }
+
+  auto request = std::make_shared<interfaces::srv::GoToCamCoord::Request>();
+  request->u = u;
+  request->v = v;
+
+  auto result = go_to_cam_coord_client_->async_send_request(request);
+
+  if (result.wait_for(std::chrono::seconds(30)) != std::future_status::ready) {
+    RCLCPP_ERROR(this->get_logger(),
+                 "Timed out moving to camera coordinate (%f, %f)!!!!", u, v);
+    return false;
+  }
+
+  const auto response = result.get();
+  if (!response->success) {
+    RCLCPP_ERROR(this->get_logger(),
+                 "Could not move to camera coordinate (%f, %f): %s", u, v,
+                 response->message.c_str());
+    return false;
+  }
+
+  return true;
 }
 
 void ArmTeleop::endeffector_control(
@@ -95,13 +189,52 @@ void ArmTeleop::endeffector_control(
   eef_pub_->publish(eef_control_msg);
 }
 
-bool ArmTeleop::switch_states(const ArmState requested_state) {
+bool ArmTeleop::moveit_servo_configure(const ArmState requested_state) {
+  if (requested_state == NONE) {
+    return true;
+  }
+  if (!servo_input_client_->wait_for_service(std::chrono::seconds(2))) {
+    RCLCPP_ERROR(this->get_logger(), "Moveit servo service is unavailable!!!!");
+    return false;
+  }
+
+  auto request =
+      std::make_shared<moveit_msgs::srv::ServoCommandType::Request>();
+  std::string type_name = "Unknown";
+  if (requested_state == IK) {
+    request->command_type = moveit_msgs::srv::ServoCommandType::Request::TWIST;
+    type_name = "Twist";
+  } else if (requested_state == MANUAL) {
+    request->command_type =
+        moveit_msgs::srv::ServoCommandType::Request::JOINT_JOG;
+    type_name = "Joint Jog";
+  }
+  auto result = servo_input_client_->async_send_request(request);
+  if (result.wait_for(std::chrono::seconds(5)) != std::future_status::ready) {
+    RCLCPP_ERROR(this->get_logger(),
+                 "Timed out switching moveit servo type!!!!");
+    return false;
+  }
+
+  const auto response = result.get();
+  if (!response->success) {
+    RCLCPP_ERROR(this->get_logger(), "Could not switch moveit servo type!!!!");
+    return false;
+  }
+
+  RCLCPP_INFO(this->get_logger(), "Switched to moveit servo type %s",
+              type_name.c_str());
+  return true;
+}
+
+bool ArmTeleop::configure_ros2_controller(const ArmState requested_state) {
   constexpr char const *servo_contoller = "arm_controller_servo";
   constexpr char const *move_group_contoller = "arm_controller_move_group";
 
   if (current_state_ == requested_state) {
     return true;
   }
+
   bool servo_needed = requested_state == IK || requested_state == MANUAL;
   bool servo_on = current_state_ == IK || current_state_ == MANUAL;
 
@@ -109,6 +242,7 @@ bool ArmTeleop::switch_states(const ArmState requested_state) {
     current_state_ = requested_state;
     return true;
   }
+
   std::string wanted_controller =
       servo_needed ? servo_contoller : move_group_contoller;
   std::string current_controller =
@@ -121,6 +255,7 @@ bool ArmTeleop::switch_states(const ArmState requested_state) {
                 __FILE__, __LINE__);
     return false;
   }
+
   // Switch controller
   if (!switch_client_->wait_for_service(std::chrono::seconds(2))) {
     RCLCPP_ERROR(this->get_logger(),
@@ -143,80 +278,33 @@ bool ArmTeleop::switch_states(const ArmState requested_state) {
                  "Timed out switching ros2_control controller!!!!");
     return false;
   }
+
   const auto switch_response = switch_result.get();
   if (!switch_response->ok) {
     RCLCPP_ERROR(this->get_logger(),
                  "Could not switch ros2_control controller!!!!");
     return false;
   }
+
   RCLCPP_INFO(this->get_logger(), "Switched to ros2_control controller %s",
               wanted_controller.c_str());
-
-  // Enable/disable moveit servo
-  // TODO: Determind if this is actually necessary or if the controllers can
-  // listen on different topics avoiding the conflict
-  std::string moveit_service_name =
-      servo_needed ? "/servo_node/start_servo" : "/servo_node/stop_servo";
-  auto moveit_client =
-      this->create_client<std_srvs::srv::Trigger>(moveit_service_name.c_str());
-
-  if (!moveit_client->wait_for_service(std::chrono::seconds(2))) {
-    RCLCPP_ERROR(this->get_logger(),
-                 "Could not find service to %s Moveit Servo!!!!",
-                 servo_needed ? "enable" : "disable");
-    return false;
-  }
-
-  auto servo_result = moveit_client->async_send_request(
-      std::make_shared<std_srvs::srv::Trigger::Request>());
-  if (servo_result.wait_for(std::chrono::seconds(5)) !=
-      std::future_status::ready) {
-    RCLCPP_ERROR(this->get_logger(), "Timed out trying to %s Moveit Servo!!!!",
-                 servo_needed ? "enable" : "disable");
-    return false;
-  }
-  const auto servo_response = servo_result.get();
-  if (!servo_response->success) {
-    RCLCPP_ERROR(this->get_logger(), "Could not %s Moveit Servo: %s",
-                 servo_needed ? "enable" : "disable",
-                 servo_response->message.c_str());
-    return false;
-  }
-  RCLCPP_INFO(this->get_logger(), " %s Moveit Servo",
-              servo_needed ? "enabled" : "disabled");
-  if (current_state_ == NONE) {
-    moveit_client_.stop();
-  }
-
-  current_state_ = requested_state;
   return true;
 }
 
-bool ArmTeleop::start_moveit_servo() {
-  auto moveit_client =
-      this->create_client<std_srvs::srv::Trigger>("/servo_node/start_servo");
-
-  if (!moveit_client->wait_for_service(std::chrono::seconds(2))) {
-    RCLCPP_ERROR(this->get_logger(),
-                 "Could not find service to enable Moveit Servo!!!!");
+bool ArmTeleop::switch_states(const ArmState requested_state) {
+  if (!configure_ros2_controller(requested_state)) {
     return false;
   }
 
-  auto servo_result = moveit_client->async_send_request(
-      std::make_shared<std_srvs::srv::Trigger::Request>());
-  if (servo_result.wait_for(std::chrono::seconds(5)) !=
-      std::future_status::ready) {
-    RCLCPP_ERROR(this->get_logger(),
-                 "Timed out trying to enable Moveit Servo!!!!");
+  if (!moveit_servo_configure(requested_state)) {
     return false;
   }
-  const auto servo_response = servo_result.get();
-  if (!servo_response->success) {
-    RCLCPP_ERROR(this->get_logger(), "Could not enable Moveit Servo: %s",
-                 servo_response->message.c_str());
-    return false;
+
+  if (current_state_ == NONE) {
+    stop_move_group_motion();
   }
-  RCLCPP_INFO(this->get_logger(), "Moveit Servo enabled");
+
+  current_state_ = requested_state;
   return true;
 }
 
@@ -236,10 +324,11 @@ bool ArmTeleop::check_initialized(
       std::abs(joystickMsg->axes[kJoint3Axis]) < 0.01 &&
       std::abs(joystickMsg->axes[kJoint4Axis]) < 0.01 &&
       std::abs(joystickMsg->axes[kJoint6Axis]) < 0.01) {
-    return start_moveit_servo();
+    return true;
   }
+
   RCLCPP_WARN_THROTTLE(
-      this->get_logger(), *(this->get_clock()), 1,
+      this->get_logger(), *(this->get_clock()), 1000,
       "Arm Controller not reading zeros on joystick axes. "
       "Please center joysticks to initialize. (Throttled to 1s)");
   return false;
@@ -250,15 +339,19 @@ ArmTeleop::requested_state(const std::vector<int32_t> &buttons) const {
   if (buttons[kDisableButton]) {
     return NONE;
   }
+
   if (buttons[kIkButton]) {
     return IK;
   }
+
   if (buttons[kManualButton]) {
     return MANUAL;
   }
+
   if (buttons[kPositionButton]) {
     return POS;
   }
+
   return current_state_;
 }
 
@@ -357,13 +450,14 @@ void ArmTeleop::ik_arm_control(
 void ArmTeleop::ik_pose_control(
     std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   if (joystickMsg->buttons[kClawOpen]) {
-    moveit_client_.stop();
+    stop_move_group_motion();
     return;
   }
 
   if (!last_msg_) {
     return;
   }
+
   targetPositionX -= joystickMsg->axes[kJoint6Axis] * kDotInc;
   targetPositionY -= joystickMsg->axes[kJoint3Axis] * kDotInc;
   targetPositionX =
@@ -378,10 +472,11 @@ void ArmTeleop::ik_pose_control(
     msg.x = -1;
     msg.y = -1;
     dot_pub_->publish(msg);
-    moveit_client_.goToCamCoord(targetPositionX, targetPositionY);
+    go_to_cam_coord(targetPositionX, targetPositionY);
     targetPositionX = kCamWidth / 2;
     targetPositionY = kCamHeight / 2;
   }
+
   clipboards_control(joystickMsg);
   geometry_msgs::msg::Vector3 msg;
   msg.x = targetPositionX;
@@ -394,34 +489,33 @@ void ArmTeleop::clipboards_control(
   bool isPressed = joystickMsg->buttons[kClipboard1SaveButton];
   bool wasPressed = last_msg_->buttons[kClipboard1SaveButton];
   if (wasPressed && !isPressed) {
-    clipboard1_pose_index_ = moveit_client_.saveCurrentPose();
-    RCLCPP_INFO(this->get_logger(),
-                "Saved current pose to clipboard 1 at index %d",
-                clipboard1_pose_index_);
+    if (save_current_pose("clipboard_1")) {
+      RCLCPP_INFO(this->get_logger(), "Saved current pose to clipboard 1");
+    }
   }
+
   isPressed = joystickMsg->buttons[kClipboard1ExecuteButton];
   wasPressed = last_msg_->buttons[kClipboard1ExecuteButton];
-  if (wasPressed && !isPressed && clipboard1_pose_index_ != -1) {
-    moveit_client_.goToSavedPose(clipboard1_pose_index_);
-    RCLCPP_INFO(this->get_logger(),
-                "Executed pose from clipboard 1 at index %d",
-                clipboard1_pose_index_);
+  if (wasPressed && !isPressed) {
+    if (go_to_named_pose("clipboard_1")) {
+      RCLCPP_INFO(this->get_logger(), "Executed pose from clipboard 1");
+    }
   }
+
   isPressed = joystickMsg->buttons[kClipboard2SaveButton];
   wasPressed = last_msg_->buttons[kClipboard2SaveButton];
   if (wasPressed && !isPressed) {
-    clipboard2_pose_index_ = moveit_client_.saveCurrentPose();
-    RCLCPP_INFO(this->get_logger(),
-                "Saved current pose to clipboard 2 at index %d",
-                clipboard2_pose_index_);
+    if (save_current_pose("clipboard_2")) {
+      RCLCPP_INFO(this->get_logger(), "Saved current pose to clipboard 2");
+    }
   }
+
   isPressed = joystickMsg->buttons[kClipboard2ExecuteButton];
   wasPressed = last_msg_->buttons[kClipboard2ExecuteButton];
-  if (wasPressed && !isPressed && clipboard2_pose_index_ != -1) {
-    moveit_client_.goToSavedPose(clipboard2_pose_index_);
-    RCLCPP_INFO(this->get_logger(),
-                "Executed pose from clipboard 2 at index %d",
-                clipboard2_pose_index_);
+  if (wasPressed && !isPressed) {
+    if (go_to_named_pose("clipboard_2")) {
+      RCLCPP_INFO(this->get_logger(), "Executed pose from clipboard 2");
+    }
   }
 }
 
@@ -448,6 +542,7 @@ void ArmTeleop::declareParameters() {
   this->declare_parameter("clipboard2.save_button", 3);
   this->declare_parameter("clipboard2.execute_button", 5);
 }
+
 void ArmTeleop::loadParameters() {
   this->get_parameter("throttle.axis", kThrottleAxis);
   this->get_parameter("joint_1_axis", kJoint1Axis);
