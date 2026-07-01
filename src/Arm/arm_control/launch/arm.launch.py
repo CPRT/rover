@@ -123,6 +123,13 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
         remappings=[("/joy", "/arm/joy")],
     )
 
+    move_group_interface_component = ComposableNode(
+        package="arm_control",
+        plugin="arm_control::MoveGroupNode",
+        name="move_group_interface",
+        parameters=[{"vel_scaling": 0.5, "acc_scaling": 0.5}],
+    )
+
     container = ComposableNodeContainer(
         name="arm_control_container",
         namespace="",
@@ -133,6 +140,7 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
             eef_component,
             servo_component,
             arm_control_component,
+            move_group_interface_component,
         ],
     )
 

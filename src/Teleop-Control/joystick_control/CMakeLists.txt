@@ -8,25 +8,22 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(joy REQUIRED)
 find_package(ros_phoenix REQUIRED)
 find_package(interfaces REQUIRED)
 find_package(control_msgs REQUIRED)
+find_package(moveit_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(controller_manager_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(arm_control REQUIRED)
-find_package(tf2 REQUIRED)
-find_package(tf2_ros REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(rclcpp_components REQUIRED)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(include)
-
 
 add_executable(drive
   src/drive.cpp
@@ -38,10 +35,6 @@ add_library(arm_teleop SHARED
 
 add_executable(drill
   src/drill.cpp
-)
-
-target_link_libraries(arm_teleop
-  arm_control::move_group_client
 )
 
 ament_target_dependencies(drive
@@ -59,10 +52,10 @@ ament_target_dependencies(arm_teleop
   rclcpp_components
   geometry_msgs
   sensor_msgs
-  joy
   ros_phoenix
   interfaces
   control_msgs
+  moveit_msgs
   std_srvs
   controller_manager_msgs
 )
@@ -73,12 +66,16 @@ ament_target_dependencies(drill
   ros_phoenix
 )
 
-rclcpp_components_register_nodes(arm_teleop "joystick_control::ArmTeleop")
+rclcpp_components_register_nodes(
+  arm_teleop
+  "joystick_control::ArmTeleop"
+)
 
 install(TARGETS
   drive
   drill
-  DESTINATION lib/${PROJECT_NAME})
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 install(TARGETS
   arm_teleop
@@ -91,7 +88,8 @@ install(TARGETS
 install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
 )
-#install config files
+
+# Install config files
 install(DIRECTORY config/
   DESTINATION share/${PROJECT_NAME}
 )
