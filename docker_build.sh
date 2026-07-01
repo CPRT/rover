@@ -143,10 +143,7 @@ else
 fi
 
 
-TOOLCHAIN=""
-if { [ "$ARCH" != "$(uname -m)" ] && { [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; }; }; then
-  TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=/rover/aarch64_toolchain.cmake"
-fi
+TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=/rover/toolchain.cmake"
 BUILD_FLAGS="--cmake-args $TOOLCHAIN -DCMAKE_BUILD_TYPE=$BUILD_TYPE"
 
 ADDITIONAL_BUILD_ARGS=""

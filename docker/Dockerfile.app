@@ -6,7 +6,7 @@ ARG BASE_IMAGE=cprtsoftware/rover:base
 FROM ${DEV_IMAGE} AS builder
 WORKDIR /rover
 COPY src/ ./src
-COPY aarch64_toolchain.cmake ./aarch64_toolchain.cmake
+COPY toolchain.cmake ./toolchain.cmake
 ARG BUILD_FLAGS=""
 
 RUN source /opt/ros/$ROS_DISTRO/setup.bash \
