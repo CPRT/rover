@@ -6,6 +6,11 @@ from ament_index_python.packages import get_package_share_directory
 
 def find_ps5():
     try:
+        # check for wired first
+        wired_path = "/dev/input/by-id/usb-Sony_Interactive_Entertainment_DualSense_Wireless_Controller-if03-joystick"
+        if os.path.exists(wired_path):
+            return wired_path
+        # Check wireless after
         with open("/proc/bus/input/devices", "r") as f:
             device_block = ""
             for line in f:
@@ -40,7 +45,7 @@ def generate_launch_description():
         Node(
             package="joy_linux",
             executable="joy_linux_node",
-            name="joy_node_a",
+            name="joy_node_drive",
             parameters=[
                 {
                     "dev": drive_dev,
