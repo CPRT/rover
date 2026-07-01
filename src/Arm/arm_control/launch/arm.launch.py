@@ -55,6 +55,7 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
     move_group_params = [
         moveit_config.robot_description_semantic,
         moveit_config.robot_description_kinematics,
+        moveit_config.pilz_cartesian_limits,
         moveit_config.planning_pipelines,
         moveit_config.joint_limits,
         moveit_config.trajectory_execution,
