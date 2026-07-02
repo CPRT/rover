@@ -1,14 +1,11 @@
 #include "gstros2src.hpp"
+#include "gstros2common.hpp"
 
 #include <gst/gst.h>
 #include <gst/video/video.h>
 
 GST_DEBUG_CATEGORY_STATIC(gst_ros2_image_src_debug);
 #define GST_CAT_DEFAULT gst_ros2_image_src_debug
-
-// Global ROS instance counter
-static std::atomic<int> g_ros2_instance_count{0};
-static std::mutex g_ros2_init_mutex;
 
 enum {
   PROP_0,
@@ -17,6 +14,7 @@ enum {
   PROP_QOS_PROFILE,
   PROP_QUEUE_SIZE,
   PROP_USE_COMPRESSED,
+  PROP_OWNS_ROS,
 };
 
 #define DEFAULT_TOPIC "/camera/image_raw"
@@ -98,6 +96,7 @@ static void gst_ros2_image_src_class_init(GstRos2ImageSrcClass *klass) {
           DEFAULT_USE_COMPRESSED,
           (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
                         G_PARAM_CONSTRUCT_ONLY)));
+  gst_ros2_common::install_owns_ros_property(gobject_class, PROP_OWNS_ROS);
 
   gst_element_class_set_static_metadata(
       gstelement_class, "ROS 2 Image Source", "Source/Video",
@@ -135,6 +134,7 @@ static void gst_ros2_image_src_init(GstRos2ImageSrc *self) {
   self->qos_profile = g_strdup(DEFAULT_QOS_PROFILE);
   self->queue_size = DEFAULT_QUEUE_SIZE;
   self->use_compressed = DEFAULT_USE_COMPRESSED;
+  self->owns_ros = DEFAULT_OWNS_ROS;
 
   self->have_caps = FALSE;
   self->priv = std::make_unique<cpp_ros2_image_src>();
@@ -169,6 +169,9 @@ static void gst_ros2_image_src_set_property(GObject *object, guint prop_id,
   case PROP_USE_COMPRESSED:
     self->use_compressed = g_value_get_boolean(value);
     break;
+  case PROP_OWNS_ROS:
+    self->owns_ros = g_value_get_boolean(value);
+    break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
     break;
@@ -194,6 +197,9 @@ static void gst_ros2_image_src_get_property(GObject *object, guint prop_id,
     break;
   case PROP_USE_COMPRESSED:
     g_value_set_boolean(value, self->use_compressed);
+    break;
+  case PROP_OWNS_ROS:
+    g_value_set_boolean(value, self->owns_ros);
     break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -353,18 +359,8 @@ static void ros_compressed_image_callback(
 
 static void ros_spin_thread_fn(GstRos2ImageSrc *self) {
   GST_INFO_OBJECT(self, "ROS spin thread started");
-  rclcpp::executors::SingleThreadedExecutor exec;
-  auto &node = self->priv->node;
-  auto &is_running = self->priv->running;
-  exec.add_node(node);
-
-  while (is_running.load()) {
-    exec.spin_some();
-    std::this_thread::sleep_for(std::chrono::milliseconds(5));
-  }
-
+  gst_ros2_common::spin_node(self->priv->node, self->priv->running);
   GST_INFO_OBJECT(self, "ROS spin thread exiting");
-  exec.remove_node(node);
 }
 
 static gboolean gst_ros2_image_src_start(GstBaseSrc *basesrc) {
@@ -374,13 +370,11 @@ static gboolean gst_ros2_image_src_start(GstBaseSrc *basesrc) {
                   self->use_compressed);
 
   // Init ROS2 global
-  {
-    std::lock_guard<std::mutex> lock(g_ros2_init_mutex);
-    if (g_ros2_instance_count.fetch_add(1) == 0) {
-      int argc = 0;
-      char **argv = nullptr;
-      rclcpp::init(argc, argv);
-    }
+  if (!gst_ros2_common::acquire_ros(self->owns_ros)) {
+    GST_ERROR_OBJECT(
+        self,
+        "ROS not initialized. Set owns-ros=true or initialize ROS externally.");
+    return FALSE;
   }
 
   auto &node = self->priv->node;
@@ -394,7 +388,8 @@ static gboolean gst_ros2_image_src_start(GstBaseSrc *basesrc) {
   node = std::make_shared<rclcpp::Node>(
       self->node_name ? self->node_name : DEFAULT_NODE_NAME, opts);
 
-  auto qos = parse_qos_profile(self->qos_profile);
+  auto qos = gst_ros2_common::parse_qos_profile(
+      self->qos_profile, DEFAULT_QOS_PROFILE);
 
   if (self->use_compressed) {
     auto cb = [self](const sensor_msgs::msg::CompressedImage::SharedPtr msg) {
@@ -442,12 +437,7 @@ static gboolean gst_ros2_image_src_stop(GstBaseSrc *basesrc) {
   self->priv->compressed_sub.reset();
   self->priv->node.reset();
 
-  {
-    std::lock_guard<std::mutex> lock(g_ros2_init_mutex);
-    if (g_ros2_instance_count.fetch_sub(1) == 1) {
-      rclcpp::shutdown();
-    }
-  }
+  gst_ros2_common::release_ros(self->owns_ros);
 
   {
     std::lock_guard<std::mutex> lock(self->priv->queue_mutex);

@@ -1,4 +1,5 @@
 #include "gstros2overlay.hpp"
+#include "gstros2common.hpp"
 
 #include <gst/video/video-frame.h>
 
@@ -9,9 +10,6 @@
 
 GST_DEBUG_CATEGORY_STATIC(gst_ros2_overlay_debug);
 #define GST_CAT_DEFAULT gst_ros2_overlay_debug
-
-static std::atomic<int> g_ros2_overlay_instance_count{0};
-static std::mutex g_ros2_overlay_init_mutex;
 
 enum {
   PROP_0,
@@ -26,7 +24,6 @@ enum {
 #define DEFAULT_TEXT_TOPIC "/overlay/text"
 #define DEFAULT_DOT_TOPIC "/overlay/dot"
 #define DEFAULT_QOS_PROFILE "default"
-#define DEFAULT_OWNS_ROS TRUE
 
 G_DEFINE_TYPE(GstRos2Overlay, gst_ros2_overlay, GST_TYPE_VIDEO_FILTER);
 
@@ -48,18 +45,6 @@ static GstFlowReturn gst_ros2_overlay_transform_frame_ip(GstVideoFilter *filter,
 
 static void ros_spin_thread_fn(GstRos2Overlay *self);
 
-static rclcpp::QoS parse_qos_profile(const gchar *qos_profile) {
-  if (!qos_profile) {
-    return rclcpp::QoS(rclcpp::KeepLast(10));
-  }
-
-  std::string q{qos_profile};
-  if (q == "sensor_data") {
-    return rclcpp::SensorDataQoS();
-  }
-  return rclcpp::QoS(rclcpp::KeepLast(10));
-}
-
 static void text_callback(GstRos2Overlay *self,
                           const std_msgs::msg::String::SharedPtr msg) {
   std::lock_guard<std::mutex> lock(self->priv->data_mutex);
@@ -80,15 +65,7 @@ static void dot_callback(GstRos2Overlay *self,
 }
 
 static void ros_spin_thread_fn(GstRos2Overlay *self) {
-  rclcpp::executors::SingleThreadedExecutor exec;
-  exec.add_node(self->priv->node);
-
-  while (self->priv->running.load()) {
-    exec.spin_some();
-    std::this_thread::sleep_for(std::chrono::milliseconds(5));
-  }
-
-  exec.remove_node(self->priv->node);
+    gst_ros2_common::spin_node(self->priv->node, self->priv->running);
 }
 
 static void put_pixel_bgr(guint8 *data, int stride, int width, int height,
@@ -388,15 +365,8 @@ static void gst_ros2_overlay_class_init(GstRos2OverlayClass *klass) {
           "QoS profile: 'default' or 'sensor_data'", DEFAULT_QOS_PROFILE,
           (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
                         G_PARAM_CONSTRUCT_ONLY)));
-  g_object_class_install_property(
-      gobject_class, PROP_OWNS_ROS,
-      g_param_spec_boolean(
-          "owns-ros", "Owns ROS",
-          "If true, element will call rclcpp::init/shutdown. "
-          "Set false when running inside an existing ROS2 process.",
-          DEFAULT_OWNS_ROS,
-          (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
-                        G_PARAM_CONSTRUCT_ONLY)));
+  
+  gst_ros2_common::install_owns_ros_property(gobject_class, PROP_OWNS_ROS);
 
   gst_element_class_set_static_metadata(
       gstelement_class, "ROS 2 Overlay", "Filter/Effect/Video",
@@ -510,26 +480,19 @@ static void gst_ros2_overlay_get_property(GObject *object, guint prop_id,
 static gboolean gst_ros2_overlay_start(GstBaseTransform *trans) {
   GstRos2Overlay *self = GST_ROS2_OVERLAY(trans);
 
-  if (self->owns_ros) {
-    std::lock_guard<std::mutex> lock(g_ros2_overlay_init_mutex);
-    if (g_ros2_overlay_instance_count.fetch_add(1) == 0) {
-      int argc = 0;
-      char **argv = nullptr;
-      rclcpp::init(argc, argv);
-    }
-  } else {
-    // Do NOT init ROS, assume already initialized
-    if (!rclcpp::ok()) {
-      GST_ERROR_OBJECT(self, "ROS not initialized but owns-ros=false");
-      return FALSE;
-    }
+  if (!gst_ros2_common::acquire_ros(self->owns_ros)) {
+    GST_ERROR_OBJECT(
+        self,
+        "ROS not initialized. Set owns-ros=true or initialize ROS externally.");
+    return FALSE;
   }
 
   rclcpp::NodeOptions opts;
   self->priv->node = std::make_shared<rclcpp::Node>(
       self->node_name ? self->node_name : DEFAULT_NODE_NAME, opts);
 
-  auto qos = parse_qos_profile(self->qos_profile);
+  auto qos = gst_ros2_common::parse_qos_profile(
+      self->qos_profile, DEFAULT_QOS_PROFILE);
 
   self->priv->text_sub =
       self->priv->node->create_subscription<std_msgs::msg::String>(
@@ -564,12 +527,7 @@ static gboolean gst_ros2_overlay_stop(GstBaseTransform *trans) {
   self->priv->dot_sub.reset();
   self->priv->node.reset();
 
-  if (self->owns_ros) {
-    std::lock_guard<std::mutex> lock(g_ros2_overlay_init_mutex);
-    if (g_ros2_overlay_instance_count.fetch_sub(1) == 1) {
-      rclcpp::shutdown();
-    }
-  }
+  gst_ros2_common::release_ros(self->owns_ros);
 
   return TRUE;
 }

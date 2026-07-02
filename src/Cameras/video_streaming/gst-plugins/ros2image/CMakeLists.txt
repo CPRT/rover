@@ -24,10 +24,11 @@ add_library(gstros2 SHARED
   plugin.cpp
   gstros2src.cpp
   gstros2overlay.cpp
+  gstros2common.cpp
 )
 target_compile_definitions(gstros2 PRIVATE
   PACKAGE="\\\"gstros2\\\""
-  VERSION="\\\"1.0\\\""
+  VERSION="\\\"1.1\\\""
   PACKAGE_NAME="\\\"gstros2\\\""
   PACKAGE_ORIGIN="\\\"https://github.com/CPRT/rover/tree/main/src/Cameras/video_streaming\\\""
 )

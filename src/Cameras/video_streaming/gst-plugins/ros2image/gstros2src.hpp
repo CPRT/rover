@@ -62,6 +62,7 @@ struct _GstRos2ImageSrc {
   gchar *qos_profile;
   guint queue_size;
   gboolean use_compressed;
+  gboolean owns_ros;
 
   GstVideoInfo vinfo;
   gboolean have_caps;
