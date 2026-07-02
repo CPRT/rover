@@ -63,27 +63,35 @@ bool InputNode::create_pipeline() {
     int type_int;
     this->get_parameter(name + ".type", type_int);
     CameraType type = static_cast<CameraType>(type_int);
+    bool encoded;
+    this->get_parameter(name + ".encoded", encoded);
 
-    if (type == CameraType::TestSrc) {
-      desc << "videotestsrc is-live=true name=" << name << " ! ";
-    } else if (type == CameraType::V4l2Src) {
+    switch (type) {
+    case CameraType::TestSrc:
+      desc_stream << "videotestsrc is-live=true name=" << name << " ! ";
+      break;
+    case CameraType::V4l2Src:
       if (!std::filesystem::exists(path)) {
         RCLCPP_ERROR(this->get_logger(), "Camera path does not exist: %s",
                      path.c_str());
         continue;
       }
-      desc << "v4l2src device=" << path << " name=" << name << " ! ";
-      bool encoded;
-      this->get_parameter(name + ".encoded", encoded);
+      desc_stream << "v4l2src device=" << path << " name=" << name << " ! ";
+      break;
+    case CameraType::RosTopic:
+      desc_stream << "ros2src owns-ros=false topic=" << path << " name=" << name;
       if (encoded) {
-        desc << "jpegdec ! ";
+        desc_stream << "use-compressed=true";
       }
-    } else {
+      desc_stream << " ! "
+    default:
       RCLCPP_WARN(this->get_logger(), "Unimplemented Type for camera: %s",
                   name.c_str());
       continue;
     }
-
+    if (encoded) {
+      desc_stream << "jpegdec ! ";
+    }
     int cam_width = this->get_parameter(name + ".width").as_int();
     int cam_height = this->get_parameter(name + ".height").as_int();
     int cam_framerate = this->get_parameter(name + ".framerate").as_int();

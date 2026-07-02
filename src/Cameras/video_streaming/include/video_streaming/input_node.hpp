@@ -14,6 +14,7 @@ protected:
     V4l2Src = 0, /**< V4L2 source */
     TestSrc,     /**< Test source */
     NetworkSrc,  /**< Network source */
+    RosTopic,
   };
   bool create_pipeline() override;
   void declare_parameters();
