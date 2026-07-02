@@ -8,6 +8,39 @@ from launch_ros.descriptions import ComposableNode
 def generate_launch_description():
     config_dir = os.path.join(get_package_share_directory("video_streaming"), "config")
 
+    launch_zed = LaunchConfiguration('launch_zed')
+    declare_launch_zed = DeclareLaunchArgument(
+        "launch_zed",
+        default_value="false",
+        description="Launch zed with the rest of the video streaming package",
+    )
+    default_zed_xacro_path = os.path.join(
+        get_package_share_directory('zed_description'),
+        'urdf',
+        'zed_descr.urdf.xacro'
+    )
+    rsp_name = camera_name_val + '_state_publisher'
+    rsp_node = Node(
+        condition=IfCondition(launch_zed),
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        name='zed_state_publisher',
+        output=screen,
+        parameters=[{
+            'robot_description': Command(xacro_command)
+        }],
+        remappings=[('robot_description', 'zed_description')]
+    )
+    zed_params_file = os.path.join(config_dir, "zed-for-arm.yaml")
+    zed_wrapper_component = ComposableNode(
+        condition=IfCondition(launch_zed),
+        package='zed_components',
+        plugin='stereolabs::ZedCamera',
+        name="zed",
+        parameters=[zed_params_file],
+        extra_arguments=[{'use_intra_process_comms': true}]
+    )
+
     camera_params_file = os.path.join(config_dir, "cameras.yaml")
     # Define each composable node
     input_node = ComposableNode(
@@ -16,6 +49,7 @@ def generate_launch_description():
         name="input_node",
         namespace="",
         parameters=[camera_params_file],
+        extra_arguments=[{'use_intra_process_comms': true}]
     )
 
     detect_node = ComposableNode(
@@ -63,7 +97,8 @@ def generate_launch_description():
         name="video_streaming_container",
         namespace="",
         package="rclcpp_components",
-        executable="component_container_mt",
+        executable="component_container_isolated",
+        arguments=['--use_multi_threaded_executor', '--ros-args', '--log-level', 'info']
         composable_node_descriptions=[
             input_node,
             detect_node,
@@ -74,4 +109,7 @@ def generate_launch_description():
         output="screen",
     )
 
-    return LaunchDescription([container])
+    return LaunchDescription([
+        container,
+        declare_launch_zed,
+    ])
