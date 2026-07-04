@@ -1,4 +1,5 @@
 #include "input_node.hpp"
+#include <cmath>
 #include <filesystem>
 #include <rclcpp_components/register_node_macro.hpp>
 
@@ -39,14 +40,20 @@ void InputNode::declare_parameters() {
 }
 
 bool InputNode::create_pipeline() {
-  std::stringstream desc_stream;
-  // Hack: Use a constant videotestsrc for the sink_0 to ensure the compositor
-  // always has a source pad of the correct size
-  desc_stream << "videotestsrc is-live=true pattern=black ! video/x-raw,width="
-              << this->get_parameter("out_width").as_int()
-              << ",height=" << this->get_parameter("out_height").as_int()
-              << ",framerate=" << this->get_parameter("out_framerate").as_int()
-              << "/1 ! nvvidconv ! compositor.sink_0 ";
+  std::stringstream desc;
+  const int W = this->get_parameter("out_width").as_int();
+  const int H = this->get_parameter("out_height").as_int();
+  const int FPS = this->get_parameter("out_framerate").as_int();
+
+  // Dummy black source → tee → feeds both compositors (keeps them alive with
+  // no cameras and provides a fixed-size reference pad at sink_0)
+  desc << "videotestsrc is-live=true pattern=black "
+       << "! video/x-raw,width=" << W << ",height=" << H
+       << ",framerate=" << FPS << "/1 "
+       << "! nvvidconv ! tee name=t0 "
+       << "t0. ! queue leaky=downstream max-size-buffers=1 ! compositor.sink_0 "
+       << "t0. ! queue leaky=downstream max-size-buffers=1 ! mosaic_compositor.sink_0 ";
+
   size_t index = 1;
   std::vector<std::string> camera_name;
   this->get_parameter("camera_name", camera_name);
@@ -58,62 +65,72 @@ bool InputNode::create_pipeline() {
     CameraType type = static_cast<CameraType>(type_int);
 
     if (type == CameraType::TestSrc) {
-      desc_stream << "videotestsrc is-live=true name=" << name << " ! ";
+      desc << "videotestsrc is-live=true name=" << name << " ! ";
     } else if (type == CameraType::V4l2Src) {
       if (!std::filesystem::exists(path)) {
         RCLCPP_ERROR(this->get_logger(), "Camera path does not exist: %s",
                      path.c_str());
         continue;
       }
-      desc_stream << "v4l2src device=" << path << " name=" << name << " ! ";
+      desc << "v4l2src device=" << path << " name=" << name << " ! ";
       bool encoded;
       this->get_parameter(name + ".encoded", encoded);
       if (encoded) {
-        desc_stream << "jpegdec ! ";
+        desc << "jpegdec ! ";
       }
     } else {
       RCLCPP_WARN(this->get_logger(), "Unimplemented Type for camera: %s",
                   name.c_str());
       continue;
     }
+
     int cam_width = this->get_parameter(name + ".width").as_int();
     int cam_height = this->get_parameter(name + ".height").as_int();
     int cam_framerate = this->get_parameter(name + ".framerate").as_int();
     if (cam_width > 0 || cam_height > 0 || cam_framerate > 0) {
-      desc_stream << "video/x-raw,";
-      if (cam_width > 0) {
-        desc_stream << "width=" << cam_width << ",";
-      }
-      if (cam_height > 0) {
-        desc_stream << "height=" << cam_height << ",";
-      }
-      if (cam_framerate > 0) {
-        desc_stream << "framerate=" << cam_framerate << "/1,";
-      }
+      desc << "video/x-raw,";
+      if (cam_width > 0)
+        desc << "width=" << cam_width << ",";
+      if (cam_height > 0)
+        desc << "height=" << cam_height << ",";
+      if (cam_framerate > 0)
+        desc << "framerate=" << cam_framerate << "/1,";
       // Remove trailing comma
-      std::string current_desc = desc_stream.str();
-      if (current_desc.back() == ',') {
-        current_desc.pop_back();
-        desc_stream.str("");
-        desc_stream << current_desc << " ! ";
+      std::string s = desc.str();
+      if (s.back() == ',') {
+        s.pop_back();
+        desc.str("");
+        desc << s << " ! ";
       }
     }
 
-    desc_stream << "nvvidconv ! compositor.sink_" << index << " ";
+    // Split each camera via tee into both compositors
+    desc << "nvvidconv ! tee name=t" << index << " "
+         << "t" << index << ". ! queue leaky=downstream max-size-buffers=1 "
+         << "! compositor.sink_" << index << " "
+         << "t" << index << ". ! queue leaky=downstream max-size-buffers=1 "
+         << "! mosaic_compositor.sink_" << index << " ";
     source_map_.emplace(name, index);
     ++index;
   }
-  desc_stream << "nvcompositor name=compositor sink_0::alpha=0.0 ! ";
-  desc_stream << "nvvidconv ! videorate ! video/x-raw,width="
-              << this->get_parameter("out_width").as_int()
-              << ",height=" << this->get_parameter("out_height").as_int()
-              << ",framerate=" << this->get_parameter("out_framerate").as_int()
-              << "/1 ! interpipesink name=input";
 
-  RCLCPP_INFO(this->get_logger(), "Pipeline description: %s",
-              desc_stream.str().c_str());
+  // Stream 1 – operator compositor: layout is set dynamically via video_cb
+  desc << "nvcompositor name=compositor sink_0::alpha=0.0 ! "
+       << "nvvidconv ! videorate ! "
+       << "video/x-raw,width=" << W << ",height=" << H
+       << ",framerate=" << FPS << "/1 "
+       << "! interpipesink name=input ";
+
+  // Stream 2 – mosaic compositor: fixed grid layout set by set_mosaic_layout()
+  desc << "nvcompositor name=mosaic_compositor sink_0::alpha=0.0 ! "
+       << "nvvidconv ! videorate ! "
+       << "video/x-raw,width=" << W << ",height=" << H
+       << ",framerate=" << FPS << "/1 "
+       << "! interpipesink name=mosaic";
+
+  RCLCPP_INFO(this->get_logger(), "Pipeline description: %s", desc.str().c_str());
   GError *err = nullptr;
-  GstElement *p = gst_parse_launch(desc_stream.str().c_str(), &err);
+  GstElement *p = gst_parse_launch(desc.str().c_str(), &err);
   if (err || !p) {
     RCLCPP_ERROR(this->get_logger(), "gst_parse_launch failed: %s",
                  err ? err->message : "unknown");
@@ -128,10 +145,61 @@ bool InputNode::create_pipeline() {
   }
 
   pipeline_ = p;
+  set_mosaic_layout();
+
   if (current_video_request_) {
     video_cb(current_video_request_,
              std::make_shared<interfaces::srv::VideoOut::Response>());
   }
+  return true;
+}
+
+bool InputNode::set_mosaic_layout() {
+  const int n = static_cast<int>(source_map_.size());
+  if (n == 0)
+    return true;
+
+  GstElement *mosaic = get_element("mosaic_compositor");
+  if (!mosaic) {
+    RCLCPP_ERROR(this->get_logger(), "set_mosaic_layout: mosaic_compositor not found");
+    return false;
+  }
+
+  const int W = this->get_parameter("out_width").as_int();
+  const int H = this->get_parameter("out_height").as_int();
+  const int cols = static_cast<int>(std::ceil(std::sqrt(static_cast<double>(n))));
+  const int rows = (n + cols - 1) / cols;
+  const int cell_w = W / cols;
+  const int cell_h = H / rows;
+
+  int grid_i = 0;
+  for (const auto &[cam_name, sink_idx] : source_map_) {
+    const int col = grid_i % cols;
+    const int row = grid_i / cols;
+    const std::string pad_name = "sink_" + std::to_string(sink_idx);
+    GstPad *pad = gst_element_get_static_pad(mosaic, pad_name.c_str());
+    if (!pad) {
+      RCLCPP_WARN(this->get_logger(), "set_mosaic_layout: pad %s not found",
+                  pad_name.c_str());
+      ++grid_i;
+      continue;
+    }
+    g_object_set(G_OBJECT(pad),
+                 "xpos", col * cell_w,
+                 "ypos", row * cell_h,
+                 "width", cell_w,
+                 "height", cell_h,
+                 "alpha", 1.0,
+                 "zorder", grid_i,
+                 NULL);
+    gst_object_unref(pad);
+    ++grid_i;
+  }
+
+  gst_object_unref(mosaic);
+  RCLCPP_INFO(this->get_logger(),
+              "Mosaic layout: %d cameras, %d cols x %d rows, cell %dx%d px",
+              n, cols, rows, cell_w, cell_h);
   return true;
 }
 
