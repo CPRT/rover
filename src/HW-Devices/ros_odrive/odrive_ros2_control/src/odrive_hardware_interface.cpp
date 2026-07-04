@@ -90,7 +90,7 @@ struct Axis {
 
   // State (ODrives => ros2_control)
   // rclcpp::Time encoder_estimates_timestamp_;
-  // uint32_t axis_error_ = 0;
+  uint32_t axis_error_ = 0;
   // uint8_t axis_state_ = 0;
   // uint8_t procedure_result_ = 0;
   // uint8_t trajectory_done_flag_ = 0;
@@ -614,12 +614,12 @@ void Axis::on_can_msg(const rclcpp::Time &, const can_frame &frame) {
   } break;
   case Get_Error_msg_t::cmd_id: {
     if (Get_Error_msg_t msg; try_decode(msg)) {
-      axis_error = msg.Active_Errors || msg.Disarm_Reason;
+      axis_error_ = msg.Active_Errors || msg.Disarm_Reason;
     }
   } break;
   case Heartbeat_msg_t::cmd_id: {
     if (Heartbeat_msg_t msg; try_decode(msg)) {
-      axis_error = msg.Axis_Error;
+      axis_error_ = msg.Axis_Error;
     }
   } break;
     // silently ignore unimplemented command IDs
