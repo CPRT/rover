@@ -76,9 +76,7 @@ class AntennaPointingNode(Node):
 
     def publish_bearing(self, bearing):
         msg = Float32()
-        msg.data = float(bearing) / (
-            math.pi * 2
-        )  # normalize the output for the roboclaw
+        msg.data = float(bearing)  # radians follow the ros standard, don't normalize
         self.bearing_pub.publish(msg)
 
     def bearing(self, lat1, lon1, lat2, lon2):

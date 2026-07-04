@@ -61,7 +61,10 @@ def generate_launch_description():
                         "CountsPerRev": 8192  # based on 4096 encoder resolution and 2:1 gear ratio
                     },
                 ],
-                remappings=[("/roboclaw_position", "/antenna/tracker_bearing")],
+                remappings=[
+                    ("/roboclaw_desired_position", "/antenna/tracker_bearing"),
+                    ("/roboclaw_actual_position", "/antenna/roboclaw_encoder"),
+                ],
             ),
             # Optionally run the standalone basestation config script when requested
             ExecuteProcess(
