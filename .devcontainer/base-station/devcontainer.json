@@ -20,6 +20,7 @@
     "--group-add=render",
     "--group-add=systemd-journal",
     "--env", "DISPLAY=${localEnv:DISPLAY}",
+    "--env", "NVIDIA_DISABLE_REQUIRE=true",
     "--volume", "/tmp/.X11-unix:/tmp/.X11-unix:rw",
     "--group-add=dialout"
   ],
