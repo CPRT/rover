@@ -143,7 +143,7 @@ ENV PKG_CONFIG_PATH=/opt/gstreamer/lib/pkgconfig:$PKG_CONFIG_PATH
 ############################
 FROM nvcr.io/nvidia/deepstream:9.0-triton-multiarch AS deepstream-base
 ARG CUDA_MAJOR=13
-ARG CUDA_MINOR=2
+ARG CUDA_MINOR=3
 ARG USE_NVIDIA=true
 RUN if [ "$USE_NVIDIA" = "true" ]; then \
         apt-get update && apt-get install -y --no-install-recommends \
