@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=nvidia/cuda:13.2.1-cudnn-runtime-ubuntu24.04
+ARG BASE_IMAGE=nvidia/cuda:13.3.0-cudnn-runtime-ubuntu24.04
 FROM ${BASE_IMAGE} AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
