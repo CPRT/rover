@@ -50,7 +50,9 @@ class RoboClawAntennaNode(Node):
         self.zero_offset = 0
 
         # ROS Interfaces
-        self.create_subscription(Float32, "/roboclaw_desired_position", self.pos_callback, 5)
+        self.create_subscription(
+            Float32, "/roboclaw_desired_position", self.pos_callback, 5
+        )
         self.create_timer(1.0 / self.enc_read_freq, self.encoder_timer)
         self.antenna_encoder_pub = self.create_publisher(
             Float32, "/roboclaw_actual_position", 10
@@ -58,7 +60,7 @@ class RoboClawAntennaNode(Node):
 
     # Angle to Encoder Command
     def pos_callback(self, msg: Float32):
-        norm = (msg.data / math.pi * 2)
+        norm = msg.data / math.pi * 2
 
         self.target_encoder = self.zero_offset + int(norm * self.counts_per_rev)
 

@@ -62,8 +62,8 @@ def generate_launch_description():
                     },
                 ],
                 remappings=[
-                    ("/roboclaw_desired_position", "/antenna/tracker_bearing"),
-                    ("/roboclaw_actual_position", "/antenna/roboclaw_encoder"),
+                    ("/roboclaw_desired_position", "/antenna/target_bearing"),
+                    ("/roboclaw_actual_position", "/antenna/bearing"),
                 ],
             ),
             # Optionally run the standalone basestation config script when requested
