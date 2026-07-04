@@ -33,9 +33,7 @@ class AntennaPointingNode(Node):
         self.create_subscription(NavSatFix, "/base_station/fix", self.base_cb, 2)
         self.create_subscription(NavSatFix, "/gps/fix", self.rover_cb, 2)
 
-        self.bearing_pub = self.create_publisher(
-            Float32, "/antenna/tracker_bearing", 10
-        )
+        self.bearing_pub = self.create_publisher(Float32, "/antenna/target_bearing", 10)
 
         self.timer = self.create_timer(1.0 / self.freq, self.update)
 
