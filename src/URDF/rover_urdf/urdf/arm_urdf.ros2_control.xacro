@@ -6,7 +6,7 @@
         <!-- By default, set up controllers for simulation. This won't work on real hardware -->
         <!-- <plugin>mock_components/GenericSystem</plugin> -->
         <plugin>ros2_control_rover_arm/RoverArmHardwareInterface</plugin>
-        <param name="rw_rate">200</param>
+        <param name="rw_rate">100</param>
       </hardware>
       <joint name="Joint_1">
         <param name="type">TalonSRX</param>
@@ -18,10 +18,11 @@
         <param name="sensor_type">quadrature</param> <!-- or "quadrature" -->
         <param name="load_sensor">absolute</param>
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset"> 0.997</param>
+        <param name="sensor_offset"> 2.6767</param>
         <param name="crossover">false</param> <!-- or "continuous" -->
         <param name="invert">false</param>
         <param name="invert_sensor">false</param>
+        <param name="can_interface">can1</param>
         <command_interface name="position"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>
@@ -43,6 +44,7 @@
         <param name="invert_sensor">false</param>
         <param name="gravity_ff_freq">10</param>
         <param name="current_frame">Link_4</param>
+        <param name="can_interface">can1</param>
         <param name="gravity_const">-0.023</param>
         <command_interface name="position"/>
         <state_interface name="position"/>
@@ -61,6 +63,7 @@
         <param name="sensor_offset">3.5</param>
         <param name="crossover">false</param> <!-- or "continuous" -->
         <param name="invert">true</param>
+        <param name="can_interface">can1</param>
         <param name="invert_sensor">true</param>
         <command_interface name="position"/>
         <state_interface name="position"/>
@@ -69,15 +72,16 @@
       <joint name="Joint_6">
         <param name="type">TalonSRX</param>
         <param name="can_id">14</param>
-        <param name="kP">0.015</param>
+        <param name="kP">0.02</param>
         <param name="kI">0.000001</param>
-        <param name="kD">0.0</param>
+        <param name="kD">0.001</param>
         <param name="kF">0.0</param>
         <param name="sensor_type">quadrature</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">2039808</param>
         <param name="sensor_offset">0.0</param>
         <param name="continuous">true</param> <!-- or "crossover" -->
         <param name="invert">true</param>
+        <param name="can_interface">can1</param>
         <param name="invert_sensor">true</param>
         <command_interface name="position"/>
         <state_interface name="position"/>
@@ -89,7 +93,7 @@
         <!-- By default, set up controllers for simulation. This won't work on real hardware -->
         <!-- <plugin>mock_components/GenericSystem</plugin> -->
         <plugin>odrive_ros2_control_plugin/ODriveHardwareInterface</plugin>
-        <param name="can">can0</param>
+        <param name="can">can1</param>
       </hardware>
       <joint name="Joint_2">
         <param name="node_id">10</param>

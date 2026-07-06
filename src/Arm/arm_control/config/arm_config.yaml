@@ -9,7 +9,7 @@ use_gazebo: false
 
 ## Properties of outgoing commands
 publish_period: 0.08  # 1/Nominal publish rate [seconds]
-low_latency_mode: false
+low_latency_mode: true
 max_expected_latency: 0.25
 
 command_in_type: "unitless"  # "unitless"> in the range [-1:1], as if from joystick. "speed_units"> cmds are in m/s and rad/s
