@@ -136,7 +136,7 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
         namespace="",
         package="ros_phoenix",
         executable="phoenix_container",
-        parameters=[{"interface": "can0"}],
+        parameters=[{"interface": "can1"}],
         composable_node_descriptions=[
             eef_component,
             servo_component,
