@@ -6,7 +6,7 @@
         <!-- By default, set up controllers for simulation. This won't work on real hardware -->
         <!-- <plugin>mock_components/GenericSystem</plugin> -->
         <plugin>ros2_control_rover_arm/RoverArmHardwareInterface</plugin>
-        <param name="rw_rate">200</param>
+        <param name="rw_rate">100</param>
       </hardware>
       <joint name="Joint_1">
         <param name="type">TalonSRX</param>
@@ -18,7 +18,7 @@
         <param name="sensor_type">quadrature</param> <!-- or "quadrature" -->
         <param name="load_sensor">absolute</param>
         <param name="sensor_ticks">4096</param>
-        <param name="sensor_offset"> 0.997</param>
+        <param name="sensor_offset"> 2.6767</param>
         <param name="crossover">false</param> <!-- or "continuous" -->
         <param name="invert">false</param>
         <param name="invert_sensor">false</param>
@@ -72,9 +72,9 @@
       <joint name="Joint_6">
         <param name="type">TalonSRX</param>
         <param name="can_id">14</param>
-        <param name="kP">0.015</param>
+        <param name="kP">0.02</param>
         <param name="kI">0.000001</param>
-        <param name="kD">0.0</param>
+        <param name="kD">0.001</param>
         <param name="kF">0.0</param>
         <param name="sensor_type">quadrature</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">2039808</param>
