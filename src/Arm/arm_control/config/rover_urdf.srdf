@@ -138,6 +138,8 @@
     <disable_collisions link1="Frame" link2="Wheel_Arm_Back_Right" reason="Never"/>
     <disable_collisions link1="Frame" link2="Wheel_Arm_Front_Right" reason="Never"/>
     <disable_collisions link1="Frame" link2="Zed" reason="Adjacent"/>
+    <disable_collisions link1="Frame" link2="Wheel_Front_Left" reason="Default"/>
+    <disable_collisions link1="Frame" link2="Wheel_Front_Right" reason="Default"/>
     <disable_collisions link1="GPS_Left" link2="GPS_Right" reason="Never"/>
     <disable_collisions link1="GPS_Left" link2="Link_1" reason="Never"/>
     <disable_collisions link1="GPS_Left" link2="Link_2" reason="Never"/>

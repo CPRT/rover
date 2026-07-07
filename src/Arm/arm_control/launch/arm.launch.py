@@ -110,6 +110,7 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
             {"max_voltage": 24.0},
             {"max_current": 6.0},
             {"brake_mode": True},
+            {"interface": "can1"},
         ],
     )
     joystick_control_dir = get_package_share_directory("joystick_control")
@@ -135,7 +136,6 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
         namespace="",
         package="ros_phoenix",
         executable="phoenix_container",
-        parameters=[{"interface": "can1"}],
         composable_node_descriptions=[
             eef_component,
             servo_component,
