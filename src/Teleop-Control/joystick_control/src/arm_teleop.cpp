@@ -28,6 +28,8 @@ ArmTeleop::ArmTeleop(const rclcpp::NodeOptions &options)
       "/end_effector/set", 10);
   dot_pub_ = this->create_publisher<geometry_msgs::msg::Vector3>(
       "/rtp_client_node/dot", 10);
+  state_pub_ = this->create_publisher<std_msgs::msg::String>(
+      "~/state", rclcpp::QoS(1).reliable().transient_local());
   go_to_named_pose_client_ =
       this->create_client<interfaces::srv::GoToNamedPose>(
           "/move_group_client/go_to_named_pose");
@@ -290,6 +292,20 @@ bool ArmTeleop::configure_ros2_controller(const ArmState requested_state) {
               wanted_controller.c_str());
   return true;
 }
+std::string ArmTeleop::state_to_string(const ArmState state) {
+  switch (state) {
+  case ArmState::MANUAL:
+    return "Manual";
+  case ArmState::IK:
+    return "Cartesian IK";
+  case ArmState::POS:
+    return "Visual Position";
+  case ArmState::NONE:
+    return "Disabled";
+  default:
+    return "Unknown";
+  }
+}
 
 bool ArmTeleop::switch_states(const ArmState requested_state) {
   if (!configure_ros2_controller(requested_state)) {
@@ -305,6 +321,9 @@ bool ArmTeleop::switch_states(const ArmState requested_state) {
   }
 
   current_state_ = requested_state;
+  auto msg = std_msgs::msg::String();
+  msg.data = state_to_string(current_state_);
+  state_pub_->publish(msg);
   return true;
 }
 
