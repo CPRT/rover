@@ -1,0 +1,42 @@
+diff --git a/gst-nvcompositor/Makefile b/gst-nvcompositor/Makefile
+index b44e205..02ba696 100644
+--- a/gst-nvcompositor/Makefile
++++ b/gst-nvcompositor/Makefile
+@@ -35,11 +35,10 @@ CFLAGS:=
+ 
+ SRCS := $(wildcard *.c)
+ 
+-INCLUDES += -I./
++INCLUDES += -I/usr/src/jetson_multimedia_api/include -I/usr/local/cuda/include
+ 
+ PKGS := gstreamer-1.0 \
+ 	gstreamer-base-1.0 \
+-	gstreamer-bad-video-1.0 \
+ 	gstreamer-video-1.0 \
+ 	gstreamer-allocators-1.0 \
+ 	glib-2.0
+@@ -52,6 +51,7 @@ CFLAGS += -fPIC \
+ CFLAGS += `pkg-config --cflags $(PKGS)`
+ 
+ LDFLAGS = -Wl,--no-undefined -L$(LIB_INSTALL_DIR) -Wl,-rpath,$(LIB_INSTALL_DIR)
++LDFLAGS += -lnvbufsurface -lnvbufsurftransform -L/usr/local/cuda/lib64 -lcudart
+ 
+ LIBS += `pkg-config --libs $(PKGS)`
+ 
+diff --git a/gst-nvcompositor/gstnvcompositor.c b/gst-nvcompositor/gstnvcompositor.c
+index 1b1625e..72209ab 100644
+--- a/gst-nvcompositor/gstnvcompositor.c
++++ b/gst-nvcompositor/gstnvcompositor.c
+@@ -1329,6 +1329,11 @@ do_nvcomposite (GstVideoAggregator * vagg, gint out_dmabuf_fd)
+     input_dmabuf_count += 1;
+     i++;
+   }
++  if (input_dmabuf_count == 0)
++  {
++    GST_WARNING_OBJECT (vagg, "No valid frames");
++    return TRUE;
++  }
+ 
+   nvcomp->comp_params.params.input_buf_count = input_dmabuf_count;
+ 
+
