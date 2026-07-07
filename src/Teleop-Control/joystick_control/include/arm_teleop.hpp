@@ -12,6 +12,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "ros_phoenix/msg/motor_control.hpp"
 #include "sensor_msgs/msg/joy.hpp"
+#include "std_msgs/msg/string.hpp"
 #include "std_srvs/srv/trigger.hpp"
 
 #include <atomic>
@@ -50,12 +51,14 @@ private:
   void run();
   void declareParameters();
   void loadParameters();
+  static std::string state_to_string(const ArmState state);
 
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
   rclcpp::Publisher<control_msgs::msg::JointJog>::SharedPtr joint_pub_;
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr ik_pub_;
   rclcpp::Publisher<ros_phoenix::msg::MotorControl>::SharedPtr eef_pub_;
   rclcpp::Publisher<geometry_msgs::msg::Vector3>::SharedPtr dot_pub_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr state_pub_;
 
   rclcpp::Client<interfaces::srv::GoToNamedPose>::SharedPtr
       go_to_named_pose_client_;
