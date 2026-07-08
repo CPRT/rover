@@ -139,7 +139,7 @@ RUN git clone --branch master --depth 1 https://github.com/RidgeRun/gst-interpip
 COPY patches/libs/libgstnvcompositor.so /libgstnvcompositor.so
 RUN if uname -m | grep -q 'aarch64'; then \
         echo "arm64 detected - performing nvcompositor overwrite"; \
-        cp /libgstnvcompositor.so /opt/gstreamer/lib/gstreamer-1.0/libgstnvcompositor.so \
+        cp /libgstnvcompositor.so /opt/gstreamer/lib/gstreamer-1.0/libgstnvcompositor.so; \
     else \
         echo "x86 detected - skipping nvcompositor overwrite"; \
     fi
