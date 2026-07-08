@@ -14,7 +14,7 @@ static gboolean plugin_init(GstPlugin *plugin) {
   return TRUE;
 }
 
-GST_PLUGIN_DEFINE(GST_VERSION_MAJOR, GST_VERSION_MINOR, morseLED,
-                  "Morse LED decoder and test source", plugin_init, "1.0",
-                  "LGPL", "morseLED",
-                  "https://github.com/CPRT/rover/tree/main/src/Cameras/video_streaming")
+GST_PLUGIN_DEFINE(
+    GST_VERSION_MAJOR, GST_VERSION_MINOR, morseLED,
+    "Morse LED decoder and test source", plugin_init, "1.0", "LGPL", "morseLED",
+    "https://github.com/CPRT/rover/tree/main/src/Cameras/video_streaming")

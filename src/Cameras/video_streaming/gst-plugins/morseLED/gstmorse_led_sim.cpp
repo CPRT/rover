@@ -1,4 +1,5 @@
 #include "gstmorse_led_sim.hpp"
+#include "morse_timing.hpp"
 
 #include <cmath>
 #include <cstring>
@@ -20,17 +21,19 @@ enum {
   PROP_DOT_RADIUS,
   PROP_LEAD_IN,
   PROP_LOOP,
+  PROP_ALWAYS_ON,
 };
 
-#define DEFAULT_MESSAGE "SOS"
-#define DEFAULT_WPM 20
+#define DEFAULT_MESSAGE "CPRT"
+#define DEFAULT_WPM MORSE_DEFAULT_WPM
 #define DEFAULT_WIDTH 640
 #define DEFAULT_HEIGHT 480
 #define DEFAULT_FRAMERATE_NUM 30
 #define DEFAULT_FRAMERATE_DEN 1
-#define DEFAULT_DOT_RADIUS 12
-#define DEFAULT_LEAD_IN 1.0
+#define DEFAULT_DOT_RADIUS 24
+#define DEFAULT_LEAD_IN 0.0
 #define DEFAULT_LOOP TRUE
+#define DEFAULT_ALWAYS_ON FALSE
 
 struct TimelineSegment {
   gdouble duration;
@@ -51,6 +54,7 @@ struct _GstMorseLEDSim {
   guint dot_radius;
   gdouble lead_in;
   gboolean loop;
+  gboolean always_on;
 
   GstVideoInfo vinfo;
   gdouble frame_duration;
@@ -138,7 +142,8 @@ static const char *morse_symbol_for_char(char c) {
   }
 }
 
-static void append_off(std::vector<TimelineSegment> &timeline, gdouble duration) {
+static void append_off(std::vector<TimelineSegment> &timeline,
+                       gdouble duration) {
   if (duration <= 0.0) {
     return;
   }
@@ -149,21 +154,22 @@ static void append_off(std::vector<TimelineSegment> &timeline, gdouble duration)
   timeline.push_back({duration, FALSE});
 }
 
-static void append_on(std::vector<TimelineSegment> &timeline, gdouble duration) {
+static void append_on(std::vector<TimelineSegment> &timeline,
+                      gdouble duration) {
   if (duration <= 0.0) {
     return;
   }
   timeline.push_back({duration, TRUE});
 }
 
-static std::vector<TimelineSegment>
-build_timeline(const gchar *message, guint wpm) {
+static std::vector<TimelineSegment> build_timeline(const gchar *message,
+                                                   guint wpm) {
   std::vector<TimelineSegment> timeline;
   if (message == nullptr || message[0] == '\0' || wpm == 0) {
     return timeline;
   }
 
-  const gdouble unit = 1.2 / static_cast<gdouble>(wpm);
+  const gdouble unit = morse_paris_dit_seconds(wpm);
   std::string normalized;
   for (const char *p = message; *p != '\0'; ++p) {
     normalized.push_back(static_cast<char>(g_ascii_toupper(*p)));
@@ -195,7 +201,7 @@ build_timeline(const gchar *message, guint wpm) {
 
       for (size_t sym_idx = 0; symbols[sym_idx] != '\0'; ++sym_idx) {
         const gdouble on_duration =
-            symbols[sym_idx] == '.' ? unit : 3.0 * unit;
+            symbols[sym_idx] == '.' ? unit : MORSE_DASH_UNITS * unit;
         append_on(timeline, on_duration);
 
         const bool has_next_symbol = symbols[sym_idx + 1] != '\0';
@@ -204,15 +210,21 @@ build_timeline(const gchar *message, guint wpm) {
 
         gdouble gap = 0.0;
         if (has_next_symbol) {
-          gap = unit;
+          gap = MORSE_ELEMENT_GAP_UNITS * unit;
         } else if (has_next_letter) {
-          gap = 3.0 * unit;
+          gap = MORSE_LETTER_GAP_UNITS * unit;
         } else if (has_next_word) {
-          gap = 7.0 * unit;
+          gap = MORSE_WORD_GAP_UNITS * unit;
         }
         append_off(timeline, gap);
       }
     }
+  }
+
+  /* Trailing word gap (separates loop cycles and matches inter-word spacing).
+   */
+  if (!words.empty()) {
+    append_off(timeline, MORSE_WORD_GAP_UNITS * unit);
   }
 
   return timeline;
@@ -229,7 +241,7 @@ static gdouble timeline_duration(const std::vector<TimelineSegment> &timeline) {
 static gboolean timeline_led_on_at(const std::vector<TimelineSegment> &timeline,
                                    gdouble time, gdouble total_duration,
                                    gboolean loop) {
-  if (timeline.empty() || time < 0.0) {
+  if (timeline.empty() || time < 0.0 || total_duration <= 0.0) {
     return FALSE;
   }
 
@@ -254,22 +266,16 @@ static void gst_morse_led_sim_rebuild_timeline(GstMorseLEDSim *self) {
   self->total_duration = timeline_duration(self->timeline);
 }
 
-static void gst_morse_led_sim_fill_black(GstVideoFrame *frame) {
-  auto *data = static_cast<guint8 *>(GST_VIDEO_FRAME_PLANE_DATA(frame, 0));
-  const gsize stride = GST_VIDEO_FRAME_PLANE_STRIDE(frame, 0);
-  const guint height = GST_VIDEO_FRAME_HEIGHT(frame);
-
+static void gst_morse_led_sim_fill_black(guint8 *data, gsize stride,
+                                         guint height) {
   for (guint y = 0; y < height; ++y) {
     std::memset(data + y * stride, 0, stride);
   }
 }
 
-static void gst_morse_led_sim_draw_dot(GstVideoFrame *frame, gint cx, gint cy,
+static void gst_morse_led_sim_draw_dot(guint8 *data, gsize stride, guint width,
+                                       guint height, gint cx, gint cy,
                                        guint radius) {
-  auto *data = static_cast<guint8 *>(GST_VIDEO_FRAME_PLANE_DATA(frame, 0));
-  const gsize stride = GST_VIDEO_FRAME_PLANE_STRIDE(frame, 0);
-  const guint width = GST_VIDEO_FRAME_WIDTH(frame);
-  const guint height = GST_VIDEO_FRAME_HEIGHT(frame);
   const gint radius_sq = static_cast<gint>(radius * radius);
 
   const gint y_min = std::max(0, cy - static_cast<gint>(radius));
@@ -328,27 +334,25 @@ static void gst_morse_led_sim_class_init(GstMorseLEDSimClass *klass) {
 
   g_object_class_install_property(
       gobject_class, PROP_MESSAGE,
-      g_param_spec_string("message", "Message",
-                          "Morse message to transmit (A-Z, 0-9, spaces)",
-                          DEFAULT_MESSAGE,
-                          (GParamFlags)(G_PARAM_READWRITE |
-                                        G_PARAM_STATIC_STRINGS)));
+      g_param_spec_string(
+          "message", "Message", "Morse message to transmit (A-Z, 0-9, spaces)",
+          DEFAULT_MESSAGE,
+          (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
   g_object_class_install_property(
       gobject_class, PROP_WPM,
-      g_param_spec_uint("wpm", "Words Per Minute",
-                        "Morse speed using PARIS timing (1 unit = 1.2/wpm s)",
-                        1, 200, DEFAULT_WPM,
-                        (GParamFlags)(G_PARAM_READWRITE |
-                                      G_PARAM_STATIC_STRINGS)));
+      g_param_spec_uint(
+          "wpm", "Words Per Minute",
+          "Morse speed using PARIS timing (dit = 1.2/wpm s, 18 WPM = 66.7 ms)",
+          1, 200, DEFAULT_WPM,
+          (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
   g_object_class_install_property(
       gobject_class, PROP_WIDTH,
-      g_param_spec_uint("width", "Width", "Frame width in pixels", 16, 4096,
-                        DEFAULT_WIDTH,
-                        (GParamFlags)(G_PARAM_READWRITE |
-                                      G_PARAM_STATIC_STRINGS |
-                                      G_PARAM_CONSTRUCT_ONLY)));
+      g_param_spec_uint(
+          "width", "Width", "Frame width in pixels", 16, 4096, DEFAULT_WIDTH,
+          (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
+                        G_PARAM_CONSTRUCT_ONLY)));
 
   g_object_class_install_property(
       gobject_class, PROP_HEIGHT,
@@ -368,44 +372,50 @@ static void gst_morse_led_sim_class_init(GstMorseLEDSimClass *klass) {
 
   g_object_class_install_property(
       gobject_class, PROP_DOT_X,
-      g_param_spec_int("dot-x", "Dot X", "LED center X in pixels (-1 = center)",
-                       -1, 4096, -1,
-                       (GParamFlags)(G_PARAM_READWRITE |
-                                     G_PARAM_STATIC_STRINGS)));
+      g_param_spec_int(
+          "dot-x", "Dot X", "LED center X in pixels (-1 = center)", -1, 4096,
+          -1, (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
   g_object_class_install_property(
       gobject_class, PROP_DOT_Y,
-      g_param_spec_int("dot-y", "Dot Y", "LED center Y in pixels (-1 = center)",
-                       -1, 4096, -1,
-                       (GParamFlags)(G_PARAM_READWRITE |
-                                     G_PARAM_STATIC_STRINGS)));
+      g_param_spec_int(
+          "dot-y", "Dot Y", "LED center Y in pixels (-1 = center)", -1, 4096,
+          -1, (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
   g_object_class_install_property(
       gobject_class, PROP_DOT_RADIUS,
-      g_param_spec_uint("dot-radius", "Dot Radius",
-                        "LED radius in pixels", 1, 256, DEFAULT_DOT_RADIUS,
-                        (GParamFlags)(G_PARAM_READWRITE |
-                                      G_PARAM_STATIC_STRINGS)));
+      g_param_spec_uint(
+          "dot-radius", "Dot Radius", "LED radius in pixels", 1, 256,
+          DEFAULT_DOT_RADIUS,
+          (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
   g_object_class_install_property(
       gobject_class, PROP_LEAD_IN,
-      g_param_spec_double("lead-in", "Lead In",
-                          "Seconds of black frames before the message starts",
-                          0.0, 60.0, DEFAULT_LEAD_IN,
-                          (GParamFlags)(G_PARAM_READWRITE |
-                                        G_PARAM_STATIC_STRINGS)));
+      g_param_spec_double(
+          "lead-in", "Lead In",
+          "Seconds of black frames before the message starts", 0.0, 60.0,
+          DEFAULT_LEAD_IN,
+          (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
   g_object_class_install_property(
       gobject_class, PROP_LOOP,
-      g_param_spec_boolean("loop", "Loop",
-                           "Repeat the message after it finishes", DEFAULT_LOOP,
-                           (GParamFlags)(G_PARAM_READWRITE |
-                                         G_PARAM_STATIC_STRINGS)));
+      g_param_spec_boolean(
+          "loop", "Loop", "Repeat the message after it finishes", DEFAULT_LOOP,
+          (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+
+  g_object_class_install_property(
+      gobject_class, PROP_ALWAYS_ON,
+      g_param_spec_boolean(
+          "always-on", "Always On",
+          "Keep the LED on every frame (black background, red dot always "
+          "visible)",
+          DEFAULT_ALWAYS_ON,
+          (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
   gst_element_class_set_static_metadata(
       element_class, "Morse LED Simulator", "Source/Video",
       "Generates a black video with a blinking red dot sending Morse code",
-      "Tomas Williston <tomaswilliston@gmail.com>");
+      "Tomas Williston (with help from Cursor) <tomaswilliston@gmail.com>");
 
   gst_element_class_add_pad_template(
       element_class, gst_static_pad_template_get(&src_template));
@@ -427,6 +437,7 @@ static void gst_morse_led_sim_init(GstMorseLEDSim *self) {
   self->dot_radius = DEFAULT_DOT_RADIUS;
   self->lead_in = DEFAULT_LEAD_IN;
   self->loop = DEFAULT_LOOP;
+  self->always_on = DEFAULT_ALWAYS_ON;
   self->frame_index = 0;
   self->frame_duration = 0.0;
   self->total_duration = 0.0;
@@ -436,6 +447,7 @@ static void gst_morse_led_sim_init(GstMorseLEDSim *self) {
 
   gst_base_src_set_format(GST_BASE_SRC(self), GST_FORMAT_TIME);
   gst_base_src_set_live(GST_BASE_SRC(self), FALSE);
+  gst_base_src_set_do_timestamp(GST_BASE_SRC(self), FALSE);
 }
 
 static void gst_morse_led_sim_finalize(GObject *object) {
@@ -485,6 +497,9 @@ static void gst_morse_led_sim_set_property(GObject *object, guint prop_id,
   case PROP_LOOP:
     self->loop = g_value_get_boolean(value);
     break;
+  case PROP_ALWAYS_ON:
+    self->always_on = g_value_get_boolean(value);
+    break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
     break;
@@ -526,10 +541,30 @@ static void gst_morse_led_sim_get_property(GObject *object, guint prop_id,
   case PROP_LOOP:
     g_value_set_boolean(value, self->loop);
     break;
+  case PROP_ALWAYS_ON:
+    g_value_set_boolean(value, self->always_on);
+    break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
     break;
   }
+}
+
+static gboolean gst_morse_led_sim_configure_vinfo(GstMorseLEDSim *self) {
+  gst_video_info_init(&self->vinfo);
+  if (!gst_video_info_set_format(&self->vinfo, GST_VIDEO_FORMAT_RGB,
+                                 self->width, self->height)) {
+    return FALSE;
+  }
+  self->vinfo.fps_n = self->framerate_num;
+  self->vinfo.fps_d = self->framerate_den;
+
+  GstVideoAlignment align;
+  gst_video_alignment_reset(&align);
+  if (!gst_video_info_align(&self->vinfo, &align)) {
+    return FALSE;
+  }
+  return TRUE;
 }
 
 static gboolean gst_morse_led_sim_start(GstBaseSrc *src) {
@@ -546,17 +581,28 @@ static gboolean gst_morse_led_sim_start(GstBaseSrc *src) {
   self->frame_duration = static_cast<gdouble>(self->framerate_den) /
                          static_cast<gdouble>(self->framerate_num);
 
-  gst_video_info_set_format(&self->vinfo, GST_VIDEO_FORMAT_RGB, self->width,
-                            self->height);
-  self->vinfo.fps_n = self->framerate_num;
-  self->vinfo.fps_d = self->framerate_den;
+  if (!gst_morse_led_sim_configure_vinfo(self)) {
+    GST_ERROR_OBJECT(self, "Failed to configure RGB video info");
+    return FALSE;
+  }
+
+  const gsize frame_size = GST_VIDEO_INFO_SIZE(&self->vinfo);
+  if (frame_size == 0) {
+    GST_ERROR_OBJECT(self, "Video frame size is zero");
+    return FALSE;
+  }
+  gst_base_src_set_blocksize(src, frame_size);
 
   GstCaps *caps = gst_video_info_to_caps(&self->vinfo);
   gst_base_src_set_caps(src, caps);
+  gst_pad_use_fixed_caps(GST_BASE_SRC_PAD(src));
   gst_caps_unref(caps);
 
-  GST_INFO_OBJECT(self, "Starting Morse sim message=\"%s\" wpm=%u duration=%.3fs",
-                  self->message, self->wpm, self->total_duration);
+  GST_INFO_OBJECT(
+      self,
+      "Starting Morse sim message=\"%s\" wpm=%u duration=%.3fs size=%ux%u",
+      self->message, self->wpm, self->total_duration, self->width,
+      self->height);
   return TRUE;
 }
 
@@ -566,54 +612,93 @@ static gboolean gst_morse_led_sim_stop(GstBaseSrc *src) {
   return TRUE;
 }
 
+static void gst_morse_led_sim_wait_for_pts(GstPushSrc *src, GstClockTime pts) {
+  GstElement *element = GST_ELEMENT(src);
+  GstClock *clock = gst_element_get_clock(element);
+  if (clock == nullptr) {
+    return;
+  }
+
+  const GstClockTime base_time = gst_element_get_base_time(element);
+  const GstClockTime target = base_time + pts;
+  const GstClockTime now = gst_clock_get_time(clock);
+
+  if (now < target) {
+    GstClockID id = gst_clock_new_single_shot_id(clock, target);
+    gst_clock_id_wait(id, nullptr);
+    gst_clock_id_unref(id);
+  }
+
+  gst_object_unref(clock);
+}
+
 static GstFlowReturn gst_morse_led_sim_create(GstPushSrc *src,
                                               GstBuffer **buffer) {
   GstMorseLEDSim *self = GST_MORSE_LED_SIM(src);
   const gsize frame_size = GST_VIDEO_INFO_SIZE(&self->vinfo);
+
+  if (frame_size == 0 || self->width == 0 || self->height == 0) {
+    GST_ERROR_OBJECT(self, "Video info not initialized (size=%zu %ux%u)",
+                     frame_size, self->width, self->height);
+    return GST_FLOW_ERROR;
+  }
+
+  const GstClockTime pts = gst_util_uint64_scale(
+      self->frame_index, GST_SECOND * self->framerate_den, self->framerate_num);
+  const GstClockTime duration = gst_util_uint64_scale(
+      1, GST_SECOND * self->framerate_den, self->framerate_num);
+
+  /* Pace frame generation to real time (independent of sink sync setting). */
+  gst_morse_led_sim_wait_for_pts(src, pts);
 
   GstBuffer *buf = gst_buffer_new_allocate(nullptr, frame_size, nullptr);
   if (buf == nullptr) {
     return GST_FLOW_ERROR;
   }
 
-  gst_buffer_memset(buf, 0, 0, frame_size);
+  gst_buffer_add_video_meta_full(
+      buf, GST_VIDEO_FRAME_FLAG_NONE, GST_VIDEO_INFO_FORMAT(&self->vinfo),
+      self->width, self->height, GST_VIDEO_INFO_N_PLANES(&self->vinfo),
+      self->vinfo.offset, self->vinfo.stride);
 
-  const gdouble elapsed =
-      static_cast<gdouble>(self->frame_index) * self->frame_duration;
+  const gdouble signal_time =
+      (static_cast<gdouble>(pts + duration / 2) / GST_SECOND) - self->lead_in;
   const gboolean led_on =
-      elapsed >= self->lead_in &&
-      timeline_led_on_at(self->timeline, elapsed - self->lead_in,
-                         self->total_duration, self->loop);
+      self->always_on || (signal_time >= 0.0 &&
+                          timeline_led_on_at(self->timeline, signal_time,
+                                             self->total_duration, self->loop));
 
-  GstVideoFrame frame;
-  if (!gst_video_frame_map(&frame, &self->vinfo, buf, GST_MAP_WRITE)) {
+  GstMapInfo map;
+  if (!gst_buffer_map(buf, &map, GST_MAP_WRITE)) {
     gst_buffer_unref(buf);
     return GST_FLOW_ERROR;
   }
 
-  gst_morse_led_sim_fill_black(&frame);
+  /* Explicit black background (RGB 0,0,0). */
+  gst_morse_led_sim_fill_black(map.data, self->vinfo.stride[0], self->height);
   if (led_on) {
     const gint cx =
         self->dot_x >= 0 ? self->dot_x : static_cast<gint>(self->width / 2);
     const gint cy =
         self->dot_y >= 0 ? self->dot_y : static_cast<gint>(self->height / 2);
-    gst_morse_led_sim_draw_dot(&frame, cx, cy, self->dot_radius);
+    gst_morse_led_sim_draw_dot(map.data, self->vinfo.stride[0], self->width,
+                               self->height, cx, cy, self->dot_radius);
   }
-  gst_video_frame_unmap(&frame);
+  gst_buffer_unmap(buf, &map);
 
-  GST_BUFFER_PTS(buf) =
-      static_cast<GstClockTime>(self->frame_index * self->frame_duration *
-                                GST_SECOND);
-  GST_BUFFER_DURATION(buf) =
-      static_cast<GstClockTime>(self->frame_duration * GST_SECOND);
+  GST_BUFFER_PTS(buf) = pts;
+  GST_BUFFER_DTS(buf) = pts;
+  GST_BUFFER_DURATION(buf) = duration;
+  GST_BUFFER_OFFSET(buf) = self->frame_index;
+  GST_BUFFER_OFFSET_END(buf) = self->frame_index + 1;
 
   *buffer = buf;
   self->frame_index++;
 
   if (!self->loop) {
-    const gdouble next_elapsed =
-        static_cast<gdouble>(self->frame_index) * self->frame_duration;
-    if (next_elapsed > self->lead_in + self->total_duration) {
+    const gdouble next_time =
+        (static_cast<gdouble>(pts + duration) / GST_SECOND) - self->lead_in;
+    if (next_time > self->total_duration) {
       return GST_FLOW_EOS;
     }
   }
