@@ -48,11 +48,11 @@ bool InputNode::create_pipeline() {
   // Dummy black source → tee → feeds both compositors (keeps them alive with
   // no cameras and provides a fixed-size reference pad at sink_0)
   desc << "videotestsrc is-live=true pattern=black "
-       << "! video/x-raw,width=" << W << ",height=" << H
-       << ",framerate=" << FPS << "/1 "
-       << "! nvvidconv ! tee name=t0 "
+       << "! video/x-raw,width=" << W << ",height=" << H << ",framerate=" << FPS
+       << "/1 " << "! nvvidconv ! tee name=t0 "
        << "t0. ! queue leaky=downstream max-size-buffers=1 ! compositor.sink_0 "
-       << "t0. ! queue leaky=downstream max-size-buffers=1 ! mosaic_compositor.sink_0 ";
+       << "t0. ! queue leaky=downstream max-size-buffers=1 ! "
+          "mosaic_compositor.sink_0 ";
 
   size_t index = 1;
   std::vector<std::string> camera_name;
@@ -105,10 +105,10 @@ bool InputNode::create_pipeline() {
     }
 
     // Split each camera via tee into both compositors
-    desc << "nvvidconv ! tee name=t" << index << " "
-         << "t" << index << ". ! queue leaky=downstream max-size-buffers=1 "
-         << "! compositor.sink_" << index << " "
-         << "t" << index << ". ! queue leaky=downstream max-size-buffers=1 "
+    desc << "nvvidconv ! tee name=t" << index << " " << "t" << index
+         << ". ! queue leaky=downstream max-size-buffers=1 "
+         << "! compositor.sink_" << index << " " << "t" << index
+         << ". ! queue leaky=downstream max-size-buffers=1 "
          << "! mosaic_compositor.sink_" << index << " ";
     source_map_.emplace(name, index);
     ++index;
@@ -116,19 +116,18 @@ bool InputNode::create_pipeline() {
 
   // Stream 1 – operator compositor: layout is set dynamically via video_cb
   desc << "nvcompositor name=compositor sink_0::alpha=0.0 ! "
-       << "nvvidconv ! videorate ! "
-       << "video/x-raw,width=" << W << ",height=" << H
-       << ",framerate=" << FPS << "/1 "
+       << "nvvidconv ! videorate ! " << "video/x-raw,width=" << W
+       << ",height=" << H << ",framerate=" << FPS << "/1 "
        << "! interpipesink name=input ";
 
   // Stream 2 – mosaic compositor: fixed grid layout set by set_mosaic_layout()
   desc << "nvcompositor name=mosaic_compositor sink_0::alpha=0.0 ! "
-       << "nvvidconv ! videorate ! "
-       << "video/x-raw,width=" << W << ",height=" << H
-       << ",framerate=" << FPS << "/1 "
+       << "nvvidconv ! videorate ! " << "video/x-raw,width=" << W
+       << ",height=" << H << ",framerate=" << FPS << "/1 "
        << "! interpipesink name=mosaic";
 
-  RCLCPP_INFO(this->get_logger(), "Pipeline description: %s", desc.str().c_str());
+  RCLCPP_INFO(this->get_logger(), "Pipeline description: %s",
+              desc.str().c_str());
   GError *err = nullptr;
   GstElement *p = gst_parse_launch(desc.str().c_str(), &err);
   if (err || !p) {
@@ -161,13 +160,15 @@ bool InputNode::set_mosaic_layout() {
 
   GstElement *mosaic = get_element("mosaic_compositor");
   if (!mosaic) {
-    RCLCPP_ERROR(this->get_logger(), "set_mosaic_layout: mosaic_compositor not found");
+    RCLCPP_ERROR(this->get_logger(),
+                 "set_mosaic_layout: mosaic_compositor not found");
     return false;
   }
 
   const int W = this->get_parameter("out_width").as_int();
   const int H = this->get_parameter("out_height").as_int();
-  const int cols = static_cast<int>(std::ceil(std::sqrt(static_cast<double>(n))));
+  const int cols =
+      static_cast<int>(std::ceil(std::sqrt(static_cast<double>(n))));
   const int rows = (n + cols - 1) / cols;
   const int cell_w = W / cols;
   const int cell_h = H / rows;
@@ -184,22 +185,17 @@ bool InputNode::set_mosaic_layout() {
       ++grid_i;
       continue;
     }
-    g_object_set(G_OBJECT(pad),
-                 "xpos", col * cell_w,
-                 "ypos", row * cell_h,
-                 "width", cell_w,
-                 "height", cell_h,
-                 "alpha", 1.0,
-                 "zorder", grid_i,
-                 NULL);
+    g_object_set(G_OBJECT(pad), "xpos", col * cell_w, "ypos", row * cell_h,
+                 "width", cell_w, "height", cell_h, "alpha", 1.0, "zorder",
+                 grid_i, NULL);
     gst_object_unref(pad);
     ++grid_i;
   }
 
   gst_object_unref(mosaic);
   RCLCPP_INFO(this->get_logger(),
-              "Mosaic layout: %d cameras, %d cols x %d rows, cell %dx%d px",
-              n, cols, rows, cell_w, cell_h);
+              "Mosaic layout: %d cameras, %d cols x %d rows, cell %dx%d px", n,
+              cols, rows, cell_w, cell_h);
   return true;
 }
 

@@ -15,7 +15,8 @@ MosaicWebRtcNode::MosaicWebRtcNode(const rclcpp::NodeOptions &options)
     RCLCPP_FATAL(get_logger(), "MosaicWebRtcNode: failed to start pipeline.");
     throw std::runtime_error("MosaicWebRtcNode: pipeline start failed");
   }
-  RCLCPP_INFO(get_logger(), "MosaicWebRtcNode: pipeline started (signalling port %ld).",
+  RCLCPP_INFO(get_logger(),
+              "MosaicWebRtcNode: pipeline started (signalling port %ld).",
               this->get_parameter("signalling_port").as_int());
 }
 
@@ -32,13 +33,13 @@ bool MosaicWebRtcNode::create_pipeline() {
        << "videorate drop-only=true ! video/x-raw,framerate=" << framerate
        << "/1 ! nvvidconv ! "
        << "nvv4l2h264enc iframeinterval=1 insert-sps-pps=true control-rate=1 "
-       << "bitrate=" << bitrate << " ! "
-       << "h264parse config-interval=-1 ! "
+       << "bitrate=" << bitrate << " ! " << "h264parse config-interval=-1 ! "
        << "webrtcsink run-signalling-server=true "
        << "signalling-server-port=" << port << " "
        << "video-caps=\"video/x-h264\"";
 
-  RCLCPP_INFO(get_logger(), "MosaicWebRtcNode pipeline: %s", desc.str().c_str());
+  RCLCPP_INFO(get_logger(), "MosaicWebRtcNode pipeline: %s",
+              desc.str().c_str());
   GError *err = nullptr;
   GstElement *p = gst_parse_launch(desc.str().c_str(), &err);
   if (err || !p) {
