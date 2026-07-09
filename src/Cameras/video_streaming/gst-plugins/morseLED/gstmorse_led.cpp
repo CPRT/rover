@@ -42,10 +42,10 @@ static GstStaticPadTemplate src_template = GST_STATIC_PAD_TEMPLATE(
     GST_STATIC_CAPS("video/x-raw, format=(string)RGB, "
                     "framerate=(fraction)[0/1, 2147483647/1]"));
 
-//Could add a text_src pad for text output if we want for the decoded text.
-//static GstStaticPadTemplate text_src_template = GST_STATIC_PAD_TEMPLATE(
-//    "text_src", GST_PAD_SRC, GST_PAD_ALWAYS,
-//    GST_STATIC_CAPS("text/x-raw, format=(string)utf8"));
+// Could add a text_src pad for text output if we want for the decoded text.
+// static GstStaticPadTemplate text_src_template = GST_STATIC_PAD_TEMPLATE(
+//     "text_src", GST_PAD_SRC, GST_PAD_ALWAYS,
+//     GST_STATIC_CAPS("text/x-raw, format=(string)utf8"));
 
 struct _GstMorseLED {
   GstVideoFilter parent;
@@ -237,8 +237,8 @@ static void gst_morse_led_class_init(GstMorseLEDClass *klass) {
       element_class, gst_static_pad_template_get(&sink_template));
   gst_element_class_add_pad_template(
       element_class, gst_static_pad_template_get(&src_template));
-  //gst_element_class_add_pad_template(
-  //    element_class, gst_static_pad_template_get(&text_src_template));
+  // gst_element_class_add_pad_template(
+  //     element_class, gst_static_pad_template_get(&text_src_template));
 
   vfilter_class->transform_frame_ip = gst_morse_led_transform_frame_ip;
 
@@ -290,7 +290,8 @@ static void gst_morse_led_class_init(GstMorseLEDClass *klass) {
   g_object_class_install_property(
       gobject_class, PROP_DECODED_TEXT,
       g_param_spec_string(
-          "decoded-text", "Decoded Text", "Most recent decoded Morse text", "",
+          "decoded-text", "Decoded Text",
+          "Decoded Morse text (up to last 256 characters)", "",
           (GParamFlags)(G_PARAM_READABLE | G_PARAM_STATIC_STRINGS)));
   g_object_class_install_property(
       gobject_class, PROP_LED_ON,
@@ -308,7 +309,8 @@ static void gst_morse_led_class_init(GstMorseLEDClass *klass) {
       g_signal_new("character-decoded", G_TYPE_FROM_CLASS(klass),
                    static_cast<GSignalFlags>(G_SIGNAL_RUN_LAST), 0, nullptr,
                    nullptr, nullptr, G_TYPE_NONE, 1, G_TYPE_UINT);
-  //Only used in test_morse_led.py right now, can be removed if not needed later.
+  // Only used in test_morse_led.py right now, can be removed if not needed
+  // later.
   morse_led_signals[SIGNAL_ROI_LOCKED] =
       g_signal_new("roi-locked", G_TYPE_FROM_CLASS(klass),
                    static_cast<GSignalFlags>(G_SIGNAL_RUN_LAST), 0, nullptr,
@@ -369,6 +371,8 @@ static gfloat gst_morse_led_compute_roi_metric(const GstVideoFrame *frame,
   return static_cast<gfloat>(sum / static_cast<gdouble>(count));
 }
 
+// calibrates the ROI by accumulating the sum of the red-dominance of the
+// pixels, ignores pixels with red-dominance <= 0.
 static void gst_morse_led_accumulate_calibration(GstMorseLED *self,
                                                  const GstVideoFrame *frame) {
   const gint frame_w = GST_VIDEO_FRAME_WIDTH(frame);

@@ -60,7 +60,7 @@ void append_space(MorseDecoder *decoder) {
   if (decoder->decoded_text == nullptr || decoder->decoded_text->len == 0) {
     return;
   }
-  //keep a single separator even during long word gaps.
+  // keep a single separator even during long word gaps.
   if (decoder->decoded_text->str[decoder->decoded_text->len - 1] != ' ') {
     append_char(decoder, ' ');
   }
@@ -102,8 +102,7 @@ void classify_off_duration(MorseDecoder *decoder, gdouble off_duration) {
       MORSE_LETTER_GAP_UNITS * kGapDetectRatio * decoder->unit_sec;
   const gdouble word_gap_threshold =
       MORSE_WORD_GAP_UNITS * kGapDetectRatio * decoder->unit_sec;
-  if (decoder->symbol_pending_gap &&
-      off_duration >= letter_gap_threshold) {
+  if (decoder->symbol_pending_gap && off_duration >= letter_gap_threshold) {
     finalize_symbol(decoder);
     decoder->symbol_pending_gap = FALSE;
   }
@@ -188,7 +187,7 @@ void morse_decoder_process_sample(MorseDecoder *decoder, gfloat red_dominance,
   const gfloat dt =
       static_cast<gfloat>(timestamp_sec - decoder->last_timestamp_sec);
 
-  //update the baseline for the signal.
+  // update the baseline for the signal.
   if (!decoder->led_on) {
     const gfloat alpha = std::min(0.25f, 0.1f + 2.0f * dt);
     decoder->baseline += alpha * (red_dominance - decoder->baseline);
@@ -204,7 +203,7 @@ void morse_decoder_process_sample(MorseDecoder *decoder, gfloat red_dominance,
     next_led_on = FALSE;
   }
 
-  //classify if there's a transition in the signal.
+  // classify if there's a transition in the signal.
   if (next_led_on != decoder->led_on) {
     const gdouble segment_duration =
         timestamp_sec - decoder->last_transition_sec;
@@ -225,7 +224,7 @@ void morse_decoder_process_sample(MorseDecoder *decoder, gfloat red_dominance,
     decoder->last_transition_sec = timestamp_sec;
   }
 
-  //check if the off duration is long enough to be a gap.
+  // check if the off duration is long enough to be a gap.
   if (!decoder->led_on) {
     const gdouble off_duration = timestamp_sec - decoder->last_transition_sec;
     classify_off_duration(decoder, off_duration);
