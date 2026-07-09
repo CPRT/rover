@@ -107,16 +107,16 @@ This is used to generate the rosdep-keys.txt file
 * [x] Replace all references to ROS 2 Humble
 * [x] Update Jetson setup scripts
 * [x] Clean up git history
-* [ ] Get build pipeline working
-* [ ] Reflash Jetson AGX with JP7 
-* [ ] Reflash Jetson NANO with JP7 
+* [x] Get build pipeline working
+* [x] Reflash Jetson AGX with JP7 
+* [x] Reflash Jetson NANO with JP7 
 * [x] Update Readme and other documentation
 
 ## High risk verification
 * [ ] Zed Camera node
-* [ ] Video Streaming
+* [x] Video Streaming
 * [ ] Aruco detection
-* [ ] Moveit Servo
+* [x] Moveit Servo
 * [ ] Nav2 stack
-* [ ] WebUI
+* [x] WebUI
 * [ ] Windows dev container
