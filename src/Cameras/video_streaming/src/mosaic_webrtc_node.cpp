@@ -29,11 +29,11 @@ bool MosaicWebRtcNode::create_pipeline() {
   // stream behaves like MJPEG (frame drops never corrupt the picture) while
   // compressing better than JPEG. Encoding explicitly here instead of letting
   // webrtcsink pick an encoder keeps the encoder settings under our control.
-  desc << "interpipesrc listen-to=mosaic is-live=true ! "
+  desc << "interpipesrc listen-to=mosaic is-live=true format=3 ! "
        << "videorate drop-only=true ! video/x-raw,framerate=" << framerate
-       << "/1 ! nvvidconv ! "
-       << "nvv4l2h264enc iframeinterval=1 insert-sps-pps=true control-rate=1 "
-       << "bitrate=" << bitrate << " ! " << "h264parse config-interval=-1 ! "
+       << "/1 ! nvvidconv ! nvv4l2h264enc iframeinterval=1 "
+       << "idrinterval=" << framerate << " insert-sps-pps=true control-rate=1 "
+       << "bitrate=" << bitrate << " ! "
        << "webrtcsink run-signalling-server=true "
        << "signalling-server-port=" << port << " "
        << "video-caps=\"video/x-h264\"";
