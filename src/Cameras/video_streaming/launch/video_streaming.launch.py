@@ -49,7 +49,16 @@ def generate_launch_description():
         parameters=[camera_params_file],
     )
 
-    # Create a container for all 3 components
+    # Streams the mosaic compositor output via WebRTC on a separate signalling
+    # server (default port 8444) so the WebUI mosaic tile can connect to it.
+    mosaic_webrtc_node = ComposableNode(
+        package="video_streaming",
+        plugin="video_streaming::MosaicWebRtcNode",
+        name="mosaic_webrtc_node",
+        namespace="",
+        parameters=[{"signalling_port": 8444, "bitrate": 1000000, "framerate": 5}],
+    )
+
     container = ComposableNodeContainer(
         name="video_streaming_container",
         namespace="",
@@ -60,6 +69,7 @@ def generate_launch_description():
             detect_node,
             capture_node,
             rtp_node,
+            mosaic_webrtc_node,
         ],
         output="screen",
     )
