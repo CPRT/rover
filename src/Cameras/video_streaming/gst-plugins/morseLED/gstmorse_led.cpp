@@ -144,16 +144,28 @@ static void gst_morse_led_set_property(GObject *object, guint prop_id,
     self->last_led_on = FALSE;
     g_mutex_unlock(&self->lock);
     break;
-  case PROP_ROI_X:
+  case PROP_ROI_X: {
+    const gint roi_x = g_value_get_int(value);
+    if (roi_x < 0) {
+      GST_WARNING_OBJECT(self, "Invalid ROI X (%d), skipping", roi_x);
+      break;
+    }
     g_mutex_lock(&self->lock);
-    self->roi_x = g_value_get_int(value);
+    self->roi_x = roi_x;
     g_mutex_unlock(&self->lock);
     break;
-  case PROP_ROI_Y:
+  }
+  case PROP_ROI_Y: {
+    const gint roi_y = g_value_get_int(value);
+    if (roi_y < 0) {
+      GST_WARNING_OBJECT(self, "Invalid ROI Y (%d), skipping", roi_y);
+      break;
+    }
     g_mutex_lock(&self->lock);
-    self->roi_y = g_value_get_int(value);
+    self->roi_y = roi_y;
     g_mutex_unlock(&self->lock);
     break;
+  }
   case PROP_ROI_WIDTH:
     g_mutex_lock(&self->lock);
     self->roi_width = g_value_get_uint(value);
@@ -454,6 +466,7 @@ static void gst_morse_led_finish_calibration(GstMorseLED *self,
   g_mutex_lock(&self->lock);
   if (self->calibration_sum_weight <= 0.0) {
     g_mutex_unlock(&self->lock);
+    GST_WARNING("Calibration sum weight is 0, skipping calibration");
     return;
   }
 
@@ -511,7 +524,7 @@ static void gst_morse_led_update_calibration(GstMorseLED *self,
   g_mutex_unlock(&self->lock);
 }
 
-static void gst_morse_led_set_pixel(guint8 *data, gint stride, gint x, gint y,
+static inline void gst_morse_led_set_pixel(guint8 *data, gint stride, gint x, gint y,
                                     guint8 r, guint8 g, guint8 b) {
   guint8 *px = data + y * stride + x * 3;
   px[0] = r;
@@ -524,11 +537,16 @@ static void gst_morse_led_draw_roi_box(GstVideoFrame *frame, gint roi_x,
                                        gboolean led_on) {
   const gint frame_w = GST_VIDEO_FRAME_WIDTH(frame);
   const gint frame_h = GST_VIDEO_FRAME_HEIGHT(frame);
-  const gint x0 = std::max(0, std::min(roi_x, frame_w - 1));
-  const gint y0 = std::max(0, std::min(roi_y, frame_h - 1));
-  const gint x1 = std::min(frame_w - 1, x0 + static_cast<gint>(roi_w) - 1);
-  const gint y1 = std::min(frame_h - 1, y0 + static_cast<gint>(roi_h) - 1);
+  if (frame_w <= 0 || frame_h <= 0) {
+    GST_WARNING("Invalid frame size, skipping ROI box drawing");
+    return;
+  }
+  const gint x0 = std::min(roi_x, frame_w - 1);
+  const gint y0 = std::min(roi_y, frame_h - 1);
+  const gint x1 = std::min(x0 + static_cast<gint>(roi_w) - 1, frame_w - 1);
+  const gint y1 = std::min(y0 + static_cast<gint>(roi_h) - 1, frame_h - 1);
   if (x1 <= x0 || y1 <= y0) {
+    GST_WARNING("Invalid ROI box coordinates, skipping ROI box drawing");
     return;
   }
 
@@ -545,11 +563,11 @@ static void gst_morse_led_draw_roi_box(GstVideoFrame *frame, gint roi_x,
     const gint left = std::min(x1, x0 + static_cast<gint>(t));
     const gint right = std::max(x0, x1 - static_cast<gint>(t));
 
-    for (gint x = x0; x <= x1; ++x) {
+    for (gint x = left; x <= right; ++x) {
       gst_morse_led_set_pixel(data, stride, x, top, r, g, b);
       gst_morse_led_set_pixel(data, stride, x, bottom, r, g, b);
     }
-    for (gint y = y0; y <= y1; ++y) {
+    for (gint y = top; y <= bottom; ++y) {
       gst_morse_led_set_pixel(data, stride, left, y, r, g, b);
       gst_morse_led_set_pixel(data, stride, right, y, r, g, b);
     }
@@ -565,6 +583,9 @@ static GstFlowReturn gst_morse_led_transform_frame_ip(GstVideoFilter *filter,
   if (GST_CLOCK_TIME_IS_VALID(pts)) {
     timestamp_sec =
         static_cast<gdouble>(pts) / static_cast<gdouble>(GST_SECOND);
+  } else {
+    GST_ERROR("Invalid PTS, skipping frame");
+    return GST_FLOW_ERROR;
   }
 
   gint roi_x;
