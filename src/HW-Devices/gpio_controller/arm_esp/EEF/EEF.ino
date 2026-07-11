@@ -46,7 +46,7 @@ void setup() {
   Serial.begin(115200);
   pinMode(sensorPin, INPUT);
 
-  morseOut.begin(21, 18);
+  morseOut.begin(5, 18);
 
   // Set ESP32 as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
