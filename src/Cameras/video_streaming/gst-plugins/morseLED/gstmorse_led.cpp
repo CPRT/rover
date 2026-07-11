@@ -49,6 +49,7 @@ static GstStaticPadTemplate src_template = GST_STATIC_PAD_TEMPLATE(
 
 struct _GstMorseLED {
   GstVideoFilter parent;
+  GMutex lock;
   gboolean start_detection;
   gint roi_x;
   gint roi_y;
@@ -92,6 +93,7 @@ static void gst_morse_led_reset_calibration(GstMorseLED *self) {
 }
 
 static void gst_morse_led_init(GstMorseLED *self) {
+  g_mutex_init(&self->lock);
   self->start_detection = TRUE;
   self->roi_x = 0;
   self->roi_y = 0;
@@ -122,6 +124,7 @@ static void gst_morse_led_finalize(GObject *object) {
     morse_decoder_free(self->decoder);
     self->decoder = nullptr;
   }
+  g_mutex_clear(&self->lock);
   G_OBJECT_CLASS(gst_morse_led_parent_class)->finalize(object);
 }
 
@@ -131,6 +134,7 @@ static void gst_morse_led_set_property(GObject *object, guint prop_id,
 
   switch (prop_id) {
   case PROP_START_DETECTION:
+    g_mutex_lock(&self->lock);
     self->start_detection = g_value_get_boolean(value);
     if (self->start_detection) {
       morse_decoder_start(self->decoder);
@@ -138,34 +142,51 @@ static void gst_morse_led_set_property(GObject *object, guint prop_id,
       morse_decoder_reset(self->decoder);
     }
     self->last_led_on = FALSE;
+    g_mutex_unlock(&self->lock);
     break;
   case PROP_ROI_X:
+    g_mutex_lock(&self->lock);
     self->roi_x = g_value_get_int(value);
+    g_mutex_unlock(&self->lock);
     break;
   case PROP_ROI_Y:
+    g_mutex_lock(&self->lock);
     self->roi_y = g_value_get_int(value);
+    g_mutex_unlock(&self->lock);
     break;
   case PROP_ROI_WIDTH:
+    g_mutex_lock(&self->lock);
     self->roi_width = g_value_get_uint(value);
+    g_mutex_unlock(&self->lock);
     break;
   case PROP_ROI_HEIGHT:
+    g_mutex_lock(&self->lock);
     self->roi_height = g_value_get_uint(value);
+    g_mutex_unlock(&self->lock);
     break;
   case PROP_WPM:
+    g_mutex_lock(&self->lock);
     self->wpm = g_value_get_uint(value);
     morse_decoder_set_wpm(self->decoder, self->wpm);
+    g_mutex_unlock(&self->lock);
     break;
   case PROP_CALIBRATE:
+    g_mutex_lock(&self->lock);
     self->calibrate = g_value_get_boolean(value);
     if (self->calibrate) {
       gst_morse_led_reset_calibration(self);
     }
+    g_mutex_unlock(&self->lock);
     break;
   case PROP_CALIBRATION_SECONDS:
+    g_mutex_lock(&self->lock);
     self->calibration_seconds = g_value_get_double(value);
+    g_mutex_unlock(&self->lock);
     break;
   case PROP_DRAW_ROI:
+    g_mutex_lock(&self->lock);
     self->draw_roi = g_value_get_boolean(value);
+    g_mutex_unlock(&self->lock);
     break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -179,37 +200,59 @@ static void gst_morse_led_get_property(GObject *object, guint prop_id,
 
   switch (prop_id) {
   case PROP_START_DETECTION:
+    g_mutex_lock(&self->lock);
     g_value_set_boolean(value, self->start_detection);
+    g_mutex_unlock(&self->lock);
     break;
   case PROP_ROI_X:
+    g_mutex_lock(&self->lock);
     g_value_set_int(value, self->roi_x);
+    g_mutex_unlock(&self->lock);
     break;
   case PROP_ROI_Y:
+    g_mutex_lock(&self->lock);
     g_value_set_int(value, self->roi_y);
+    g_mutex_unlock(&self->lock);
     break;
   case PROP_ROI_WIDTH:
+    g_mutex_lock(&self->lock);
     g_value_set_uint(value, self->roi_width);
+    g_mutex_unlock(&self->lock);
     break;
   case PROP_ROI_HEIGHT:
+    g_mutex_lock(&self->lock);
     g_value_set_uint(value, self->roi_height);
+    g_mutex_unlock(&self->lock);
     break;
   case PROP_WPM:
+    g_mutex_lock(&self->lock);
     g_value_set_uint(value, self->wpm);
+    g_mutex_unlock(&self->lock);
     break;
   case PROP_CALIBRATE:
+    g_mutex_lock(&self->lock);
     g_value_set_boolean(value, self->calibrate);
+    g_mutex_unlock(&self->lock);
     break;
   case PROP_CALIBRATION_SECONDS:
+    g_mutex_lock(&self->lock);
     g_value_set_double(value, self->calibration_seconds);
+    g_mutex_unlock(&self->lock);
     break;
   case PROP_DECODED_TEXT:
+    g_mutex_lock(&self->lock);
     g_value_set_string(value, morse_decoder_get_text(self->decoder));
+    g_mutex_unlock(&self->lock);
     break;
   case PROP_LED_ON:
+    g_mutex_lock(&self->lock);
     g_value_set_boolean(value, morse_decoder_get_led_on(self->decoder));
+    g_mutex_unlock(&self->lock);
     break;
   case PROP_DRAW_ROI:
+    g_mutex_lock(&self->lock);
     g_value_set_boolean(value, self->draw_roi);
+    g_mutex_unlock(&self->lock);
     break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -381,6 +424,11 @@ static void gst_morse_led_accumulate_calibration(GstMorseLED *self,
       static_cast<const guint8 *>(GST_VIDEO_FRAME_PLANE_DATA(frame, 0));
   const gint stride = GST_VIDEO_FRAME_PLANE_STRIDE(frame, 0);
 
+
+  gdouble sum_x = 0.0;
+  gdouble sum_y = 0.0;
+  gdouble sum_weight = 0.0;
+
   for (gint y = 0; y < frame_h; ++y) {
     const guint8 *row = data + y * stride;
     for (gint x = 0; x < frame_w; ++x) {
@@ -388,16 +436,24 @@ static void gst_morse_led_accumulate_calibration(GstMorseLED *self,
       if (dominance <= 0.0f) {
         continue;
       }
-      self->calibration_sum_x += static_cast<gdouble>(x) * dominance;
-      self->calibration_sum_y += static_cast<gdouble>(y) * dominance;
-      self->calibration_sum_weight += dominance;
+      sum_x += static_cast<gdouble>(x) * dominance;
+      sum_y += static_cast<gdouble>(y) * dominance;
+      sum_weight += dominance;
     }
   }
+
+  g_mutex_lock(&self->lock);
+  self->calibration_sum_x += sum_x;
+  self->calibration_sum_y += sum_y;
+  self->calibration_sum_weight += sum_weight;
+  g_mutex_unlock(&self->lock);
 }
 
 static void gst_morse_led_finish_calibration(GstMorseLED *self,
                                              const GstVideoFrame *frame) {
+  g_mutex_lock(&self->lock);
   if (self->calibration_sum_weight <= 0.0) {
+    g_mutex_unlock(&self->lock);
     return;
   }
 
@@ -409,33 +465,50 @@ static void gst_morse_led_finish_calibration(GstMorseLED *self,
       self->calibration_sum_y / self->calibration_sum_weight;
   gst_morse_led_center_roi(self, frame_w, frame_h, center_x, center_y);
 
+  gint roi_x;
+  gint roi_y;
+  guint roi_width;
+  guint roi_height;
+  roi_x = self->roi_x;
+  roi_y = self->roi_y;
+  roi_width = self->roi_width;
+  roi_height = self->roi_height;
+  g_mutex_unlock(&self->lock);
+
   g_object_notify(G_OBJECT(self), "roi-x");
   g_object_notify(G_OBJECT(self), "roi-y");
-  g_signal_emit(self, morse_led_signals[SIGNAL_ROI_LOCKED], 0, self->roi_x,
-                self->roi_y, self->roi_width, self->roi_height);
+  g_signal_emit(self, morse_led_signals[SIGNAL_ROI_LOCKED], 0, roi_x, roi_y,
+                roi_width, roi_height);
 }
 
 static void gst_morse_led_update_calibration(GstMorseLED *self,
                                              const GstVideoFrame *frame,
                                              gdouble timestamp_sec) {
+  g_mutex_lock(&self->lock);
   if (!self->calibrate) {
+    g_mutex_unlock(&self->lock);
     return;
   }
   if (!self->calibration_started) {
     self->calibration_started = TRUE;
     self->calibration_start_sec = timestamp_sec;
   }
-
+  g_mutex_unlock(&self->lock);
   gst_morse_led_accumulate_calibration(self, frame);
-
+  g_mutex_lock(&self->lock);
   if (timestamp_sec - self->calibration_start_sec < self->calibration_seconds) {
+    g_mutex_unlock(&self->lock);
     return;
   }
-
+  g_mutex_unlock(&self->lock);
   gst_morse_led_finish_calibration(self, frame);
+  g_mutex_lock(&self->lock);
   self->calibrate = FALSE;
+  g_mutex_unlock(&self->lock);
   g_object_notify(G_OBJECT(self), "calibrate");
+  g_mutex_lock(&self->lock);
   gst_morse_led_reset_calibration(self);
+  g_mutex_unlock(&self->lock);
 }
 
 static void gst_morse_led_set_pixel(guint8 *data, gint stride, gint x, gint y,
@@ -494,37 +567,72 @@ static GstFlowReturn gst_morse_led_transform_frame_ip(GstVideoFilter *filter,
         static_cast<gdouble>(pts) / static_cast<gdouble>(GST_SECOND);
   }
 
-  if (self->start_detection) {
+  gint roi_x;
+  gint roi_y;
+  guint roi_width;
+  guint roi_height;
+  gboolean start_detection;
+  g_mutex_lock(&self->lock);
+  start_detection = self->start_detection;
+  roi_x = self->roi_x;
+  roi_y = self->roi_y;
+  roi_width = self->roi_width;
+  roi_height = self->roi_height;
+  g_mutex_unlock(&self->lock);
+
+  if (start_detection) {
     gst_morse_led_update_calibration(self, frame, timestamp_sec);
 
-    const gfloat metric = gst_morse_led_compute_roi_metric(
-        frame, self->roi_x, self->roi_y, self->roi_width, self->roi_height);
+    // Re-read after calibration, which may update roi_x / roi_y.
+    g_mutex_lock(&self->lock);
+    roi_x = self->roi_x;
+    roi_y = self->roi_y;
+    g_mutex_unlock(&self->lock);
 
+    const gfloat metric = gst_morse_led_compute_roi_metric(
+        frame, roi_x, roi_y, roi_width, roi_height);
+
+    gchar new_chars[16];
+    gsize new_char_count = 0;
+    g_mutex_lock(&self->lock);
     const gchar *old_text = morse_decoder_get_text(self->decoder);
     const gsize old_len = std::strlen(old_text);
     morse_decoder_process_sample(self->decoder, metric, timestamp_sec);
     const gchar *new_text = morse_decoder_get_text(self->decoder);
     const gsize new_len = std::strlen(new_text);
     if (new_len > old_len) {
-      for (gsize i = old_len; i < new_len; ++i) {
+      new_char_count = std::min(new_len - old_len, sizeof(new_chars));
+      std::memcpy(new_chars, new_text + old_len, new_char_count);
+    }
+    g_mutex_unlock(&self->lock);
+    if (new_char_count > 0) {
+      for (gsize i = 0; i < new_char_count; ++i) {
         g_signal_emit(self, morse_led_signals[SIGNAL_CHARACTER_DECODED], 0,
-                      static_cast<guint>(static_cast<guchar>(new_text[i])));
+                      static_cast<guint>(static_cast<guchar>(new_chars[i])));
       }
       g_object_notify(G_OBJECT(self), "decoded-text");
     }
 
+    g_mutex_lock(&self->lock);
     const gboolean led_on = morse_decoder_get_led_on(self->decoder);
-    if (led_on != self->last_led_on) {
+    const gboolean last_led_on = self->last_led_on;
+    g_mutex_unlock(&self->lock);
+    if (led_on != last_led_on) {
+      g_mutex_lock(&self->lock);
       self->last_led_on = led_on;
+      g_mutex_unlock(&self->lock);
       g_object_notify(G_OBJECT(self), "led-on");
     }
   }
 
-  if (self->draw_roi) {
-    const gboolean led_on =
-        self->start_detection ? morse_decoder_get_led_on(self->decoder) : FALSE;
-    gst_morse_led_draw_roi_box(frame, self->roi_x, self->roi_y, self->roi_width,
-                               self->roi_height, led_on);
+  g_mutex_lock(&self->lock);
+  const gboolean draw_roi = self->draw_roi;
+  g_mutex_unlock(&self->lock);
+  if (draw_roi) {
+    g_mutex_lock(&self->lock);
+    const gboolean led_on = self->start_detection ? morse_decoder_get_led_on(self->decoder) : FALSE;
+    g_mutex_unlock(&self->lock);
+    gst_morse_led_draw_roi_box(frame, roi_x, roi_y, roi_width, roi_height, led_on);
   }
 
   return GST_FLOW_OK;
