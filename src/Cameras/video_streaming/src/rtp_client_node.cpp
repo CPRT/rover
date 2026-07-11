@@ -52,7 +52,9 @@ std::string RtpClientNode::get_pipeline_description() {
        << "capsfilter caps=\"video/x-raw(memory:NVMM),width=1920,height=1080\" "
        << " ! queue ! mux.sink_0 "
        << "nvstreammux batch-size=1 width=1920 height=1080 name=mux ! "
-       << "nvdsosd name=render ! nvvidconv ! nveglglessink sync=false";
+       << "nvdsosd name=render ! nvvidconv ! "
+       << "capsfilter caps=\"video/x-raw(memory:NVMM),format=NV12\" ! "
+       << "nveglglessink sync=false";
 
   return desc.str();
 }
