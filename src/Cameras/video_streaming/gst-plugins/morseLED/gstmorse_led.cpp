@@ -22,6 +22,11 @@ enum {
   PROP_DECODED_TEXT,
   PROP_LED_ON,
   PROP_DRAW_ROI,
+  PROP_ON_MARGIN,
+  PROP_MIN_TRANSITION_UNITS,
+  PROP_GAP_DETECT_RATIO,
+  PROP_DOT_MAX_UNITS,
+  PROP_DASH_MIN_UNITS,
 };
 
 enum {
@@ -200,6 +205,33 @@ static void gst_morse_led_set_property(GObject *object, guint prop_id,
     self->draw_roi = g_value_get_boolean(value);
     g_mutex_unlock(&self->lock);
     break;
+  case PROP_ON_MARGIN:
+    g_mutex_lock(&self->lock);
+    morse_decoder_set_on_margin(self->decoder, g_value_get_float(value));
+    g_mutex_unlock(&self->lock);
+    break;
+  case PROP_MIN_TRANSITION_UNITS:
+    g_mutex_lock(&self->lock);
+    morse_decoder_set_min_transition_units(self->decoder,
+                                           g_value_get_double(value));
+    g_mutex_unlock(&self->lock);
+    break;
+  case PROP_GAP_DETECT_RATIO:
+    g_mutex_lock(&self->lock);
+    morse_decoder_set_gap_detect_ratio(self->decoder,
+                                       g_value_get_double(value));
+    g_mutex_unlock(&self->lock);
+    break;
+  case PROP_DOT_MAX_UNITS:
+    g_mutex_lock(&self->lock);
+    morse_decoder_set_dot_max_units(self->decoder, g_value_get_double(value));
+    g_mutex_unlock(&self->lock);
+    break;
+  case PROP_DASH_MIN_UNITS:
+    g_mutex_lock(&self->lock);
+    morse_decoder_set_dash_min_units(self->decoder, g_value_get_double(value));
+    g_mutex_unlock(&self->lock);
+    break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
     break;
@@ -264,6 +296,33 @@ static void gst_morse_led_get_property(GObject *object, guint prop_id,
   case PROP_DRAW_ROI:
     g_mutex_lock(&self->lock);
     g_value_set_boolean(value, self->draw_roi);
+    g_mutex_unlock(&self->lock);
+    break;
+  case PROP_ON_MARGIN:
+    g_mutex_lock(&self->lock);
+    g_value_set_float(value, morse_decoder_get_on_margin(self->decoder));
+    g_mutex_unlock(&self->lock);
+    break;
+  case PROP_MIN_TRANSITION_UNITS:
+    g_mutex_lock(&self->lock);
+    g_value_set_double(value,
+                       morse_decoder_get_min_transition_units(self->decoder));
+    g_mutex_unlock(&self->lock);
+    break;
+  case PROP_GAP_DETECT_RATIO:
+    g_mutex_lock(&self->lock);
+    g_value_set_double(value,
+                       morse_decoder_get_gap_detect_ratio(self->decoder));
+    g_mutex_unlock(&self->lock);
+    break;
+  case PROP_DOT_MAX_UNITS:
+    g_mutex_lock(&self->lock);
+    g_value_set_double(value, morse_decoder_get_dot_max_units(self->decoder));
+    g_mutex_unlock(&self->lock);
+    break;
+  case PROP_DASH_MIN_UNITS:
+    g_mutex_lock(&self->lock);
+    g_value_set_double(value, morse_decoder_get_dash_min_units(self->decoder));
     g_mutex_unlock(&self->lock);
     break;
   default:
@@ -359,6 +418,43 @@ static void gst_morse_led_class_init(GstMorseLEDClass *klass) {
           "draw-roi", "Draw ROI",
           "Draw a bounding box around the detection ROI on output frames",
           FALSE, (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property(
+      gobject_class, PROP_ON_MARGIN,
+      g_param_spec_float(
+          "on-margin", "On Margin",
+          "Red-dominance margin above baseline to treat the LED as on ",
+          0.0f, 1.0f, MORSE_DEFAULT_ON_MARGIN,
+          (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property(
+      gobject_class, PROP_MIN_TRANSITION_UNITS,
+      g_param_spec_double(
+          "min-transition-units", "Min Transition Units",
+          "How long a candidate LED on/off state must persist (in dit units) "
+          "before it is committed",
+          0.0, 5.0, MORSE_DEFAULT_MIN_TRANSITION_UNITS,
+          (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property(
+      gobject_class, PROP_GAP_DETECT_RATIO,
+      g_param_spec_double(
+          "gap-detect-ratio", "Gap Detect Ratio",
+          "Fraction of nominal letter/word gap used as the detection "
+          "threshold",
+          0.01, 1.0, MORSE_DEFAULT_GAP_DETECT_RATIO,
+          (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property(
+      gobject_class, PROP_DOT_MAX_UNITS,
+      g_param_spec_double(
+          "dot-max-units", "Dot Max Units",
+          "Maximum ON duration in dit units classified as a dot", 0.0, 10.0,
+          MORSE_DEFAULT_DOT_MAX_UNITS,
+          (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property(
+      gobject_class, PROP_DASH_MIN_UNITS,
+      g_param_spec_double(
+          "dash-min-units", "Dash Min Units",
+          "Minimum ON duration in dit units classified as a dash", 0.0, 10.0,
+          MORSE_DEFAULT_DASH_MIN_UNITS,
+          (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
   morse_led_signals[SIGNAL_CHARACTER_DECODED] =
       g_signal_new("character-decoded", G_TYPE_FROM_CLASS(klass),
@@ -604,7 +700,6 @@ static GstFlowReturn gst_morse_led_transform_frame_ip(GstVideoFilter *filter,
   if (start_detection) {
     gst_morse_led_update_calibration(self, frame, timestamp_sec);
 
-    // Re-read after calibration, which may update roi_x / roi_y.
     g_mutex_lock(&self->lock);
     roi_x = self->roi_x;
     roi_y = self->roi_y;

@@ -8,11 +8,6 @@
 namespace {
 constexpr gdouble kMinUnitSeconds = 0.015;
 constexpr gdouble kMaxUnitSeconds = 1.2;
-constexpr gdouble kMinTransitionUnits = 0.08;
-constexpr gdouble kGapDetectRatio = 0.8;
-constexpr gdouble kDotMaxUnits = 1.8;
-constexpr gdouble kDashMinUnits = 2.2;
-constexpr gfloat kOnMargin = 0.015f;
 
 struct MorseMapEntry {
   const char *symbol;
@@ -84,9 +79,9 @@ void classify_on_duration(MorseDecoder *decoder, gdouble duration) {
 
   const gdouble units = duration / unit;
   char sym = '.';
-  if (units >= kDashMinUnits) {
+  if (units >= decoder->dash_min_units) {
     sym = '-';
-  } else if (units <= kDotMaxUnits) {
+  } else if (units <= decoder->dot_max_units) {
     sym = '.';
   } else {
     sym = (std::fabs(units - 1.0) <= std::fabs(units - 3.0)) ? '.' : '-';
@@ -99,17 +94,35 @@ void classify_on_duration(MorseDecoder *decoder, gdouble duration) {
 
 void classify_off_duration(MorseDecoder *decoder, gdouble off_duration) {
   const gdouble letter_gap_threshold =
-      MORSE_LETTER_GAP_UNITS * kGapDetectRatio * decoder->unit_sec;
+      MORSE_LETTER_GAP_UNITS * decoder->gap_detect_ratio * decoder->unit_sec;
   const gdouble word_gap_threshold =
-      MORSE_WORD_GAP_UNITS * kGapDetectRatio * decoder->unit_sec;
+      MORSE_WORD_GAP_UNITS * decoder->gap_detect_ratio * decoder->unit_sec;
   if (decoder->symbol_pending_gap && off_duration >= letter_gap_threshold) {
     finalize_symbol(decoder);
     decoder->symbol_pending_gap = FALSE;
   }
-  if (!decoder->word_gap_emitted && off_duration >= word_gap_threshold) {
+  if (off_duration >= word_gap_threshold) {
     append_space(decoder);
     decoder->word_gap_emitted = TRUE;
   }
+}
+
+void commit_led_transition(MorseDecoder *decoder, gboolean next_led_on,
+                           gdouble timestamp_sec) {
+  const gdouble segment_duration =
+      timestamp_sec - decoder->last_transition_sec;
+  if (decoder->led_on) {
+    classify_on_duration(decoder, segment_duration);
+    decoder->symbol_pending_gap = decoder->symbol_len > 0;
+    decoder->word_gap_emitted = FALSE;
+  } else {
+    classify_off_duration(decoder, segment_duration);
+  }
+
+  decoder->led_on = next_led_on;
+  decoder->last_transition_sec = timestamp_sec;
+  decoder->pending_led_on = next_led_on;
+  decoder->pending_since_sec = timestamp_sec;
 }
 } // namespace
 
@@ -121,6 +134,8 @@ MorseDecoder *morse_decoder_new(void) {
   decoder->baseline = 0.0f;
   decoder->sample_initialized = FALSE;
   decoder->led_on = FALSE;
+  decoder->pending_led_on = FALSE;
+  decoder->pending_since_sec = 0.0;
   decoder->last_timestamp_sec = 0.0;
   decoder->last_transition_sec = 0.0;
   decoder->symbol_len = 0;
@@ -128,6 +143,11 @@ MorseDecoder *morse_decoder_new(void) {
   decoder->word_gap_emitted = FALSE;
   decoder->decoded_text = g_string_new("");
   decoder->max_text_chars = 256;
+  decoder->on_margin = MORSE_DEFAULT_ON_MARGIN;
+  decoder->min_transition_units = MORSE_DEFAULT_MIN_TRANSITION_UNITS;
+  decoder->gap_detect_ratio = MORSE_DEFAULT_GAP_DETECT_RATIO;
+  decoder->dot_max_units = MORSE_DEFAULT_DOT_MAX_UNITS;
+  decoder->dash_min_units = MORSE_DEFAULT_DASH_MIN_UNITS;
   return decoder;
 }
 
@@ -148,6 +168,8 @@ void morse_decoder_reset(MorseDecoder *decoder) {
   }
   decoder->sample_initialized = FALSE;
   decoder->led_on = FALSE;
+  decoder->pending_led_on = FALSE;
+  decoder->pending_since_sec = 0.0;
   decoder->last_timestamp_sec = 0.0;
   decoder->last_transition_sec = 0.0;
   decoder->symbol_len = 0;
@@ -178,6 +200,8 @@ void morse_decoder_process_sample(MorseDecoder *decoder, gfloat red_dominance,
     decoder->baseline = red_dominance;
     decoder->last_timestamp_sec = timestamp_sec;
     decoder->last_transition_sec = timestamp_sec;
+    decoder->pending_led_on = decoder->led_on;
+    decoder->pending_since_sec = timestamp_sec;
     return;
   }
   if (timestamp_sec <= decoder->last_timestamp_sec) {
@@ -193,8 +217,8 @@ void morse_decoder_process_sample(MorseDecoder *decoder, gfloat red_dominance,
     decoder->baseline += alpha * (red_dominance - decoder->baseline);
   }
 
-  const gfloat threshold_on = decoder->baseline + kOnMargin;
-  const gfloat threshold_off = decoder->baseline + kOnMargin * 0.5;
+  const gfloat threshold_on = decoder->baseline + decoder->on_margin;
+  const gfloat threshold_off = decoder->baseline + decoder->on_margin * 0.5f;
 
   gboolean next_led_on = decoder->led_on;
   if (!decoder->led_on && red_dominance >= threshold_on) {
@@ -203,25 +227,22 @@ void morse_decoder_process_sample(MorseDecoder *decoder, gfloat red_dominance,
     next_led_on = FALSE;
   }
 
-  // classify if there's a transition in the signal.
-  if (next_led_on != decoder->led_on) {
-    const gdouble segment_duration =
-        timestamp_sec - decoder->last_transition_sec;
-    if (segment_duration < kMinTransitionUnits * decoder->unit_sec) {
-      decoder->last_timestamp_sec = timestamp_sec;
-      return;
-    }
+  const gdouble min_hold =
+      decoder->min_transition_units * decoder->unit_sec;
 
-    if (decoder->led_on) {
-      classify_on_duration(decoder, segment_duration);
-      decoder->symbol_pending_gap = decoder->symbol_len > 0;
-      decoder->word_gap_emitted = FALSE;
-    } else {
-      classify_off_duration(decoder, segment_duration);
+  if (next_led_on == decoder->led_on) {
+    decoder->pending_led_on = decoder->led_on;
+    decoder->pending_since_sec = timestamp_sec;
+  } else if (decoder->pending_led_on == decoder->led_on) {
+    decoder->pending_led_on = next_led_on;
+    decoder->pending_since_sec = timestamp_sec;
+  } else if (decoder->pending_led_on == next_led_on) {
+    if (timestamp_sec - decoder->pending_since_sec >= min_hold) {
+      commit_led_transition(decoder, next_led_on, timestamp_sec);
     }
-
-    decoder->led_on = next_led_on;
-    decoder->last_transition_sec = timestamp_sec;
+  } else {
+    decoder->pending_led_on = next_led_on;
+    decoder->pending_since_sec = timestamp_sec;
   }
 
   // check if the off duration is long enough to be a gap.
@@ -239,6 +260,81 @@ void morse_decoder_set_wpm(MorseDecoder *decoder, guint wpm) {
   }
   decoder->wpm = std::max(1u, wpm);
   decoder->unit_sec = clamp_unit(morse_paris_dit_seconds(decoder->wpm));
+}
+
+void morse_decoder_set_on_margin(MorseDecoder *decoder, gfloat on_margin) {
+  if (decoder == nullptr) {
+    return;
+  }
+  decoder->on_margin = std::max(0.0f, on_margin);
+}
+
+void morse_decoder_set_min_transition_units(MorseDecoder *decoder,
+                                            gdouble min_transition_units) {
+  if (decoder == nullptr) {
+    return;
+  }
+  decoder->min_transition_units = std::max(0.0, min_transition_units);
+}
+
+void morse_decoder_set_gap_detect_ratio(MorseDecoder *decoder,
+                                        gdouble gap_detect_ratio) {
+  if (decoder == nullptr) {
+    return;
+  }
+  decoder->gap_detect_ratio =
+      std::max(0.01, std::min(1.0, gap_detect_ratio));
+}
+
+void morse_decoder_set_dot_max_units(MorseDecoder *decoder,
+                                     gdouble dot_max_units) {
+  if (decoder == nullptr) {
+    return;
+  }
+  decoder->dot_max_units = std::max(0.0, dot_max_units);
+}
+
+void morse_decoder_set_dash_min_units(MorseDecoder *decoder,
+                                      gdouble dash_min_units) {
+  if (decoder == nullptr) {
+    return;
+  }
+  decoder->dash_min_units = std::max(0.0, dash_min_units);
+}
+
+gfloat morse_decoder_get_on_margin(MorseDecoder *decoder) {
+  if (decoder == nullptr) {
+    return MORSE_DEFAULT_ON_MARGIN;
+  }
+  return decoder->on_margin;
+}
+
+gdouble morse_decoder_get_min_transition_units(MorseDecoder *decoder) {
+  if (decoder == nullptr) {
+    return MORSE_DEFAULT_MIN_TRANSITION_UNITS;
+  }
+  return decoder->min_transition_units;
+}
+
+gdouble morse_decoder_get_gap_detect_ratio(MorseDecoder *decoder) {
+  if (decoder == nullptr) {
+    return MORSE_DEFAULT_GAP_DETECT_RATIO;
+  }
+  return decoder->gap_detect_ratio;
+}
+
+gdouble morse_decoder_get_dot_max_units(MorseDecoder *decoder) {
+  if (decoder == nullptr) {
+    return MORSE_DEFAULT_DOT_MAX_UNITS;
+  }
+  return decoder->dot_max_units;
+}
+
+gdouble morse_decoder_get_dash_min_units(MorseDecoder *decoder) {
+  if (decoder == nullptr) {
+    return MORSE_DEFAULT_DASH_MIN_UNITS;
+  }
+  return decoder->dash_min_units;
 }
 
 const gchar *morse_decoder_get_text(MorseDecoder *decoder) {
