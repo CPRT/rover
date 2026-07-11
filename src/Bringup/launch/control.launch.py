@@ -90,23 +90,11 @@ def generate_launch_description():
         condition=IfCondition(use_drive),
     )
 
-    arm_controller_move_it_spawner = Node(
+    arm_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=[
-            "arm_controller_move_group",
-        ],
-        parameters=[control_yaml],
-        output="screen",
-        condition=IfCondition(use_arm),
-    )
-
-    arm_controller_servo_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=[
-            "arm_controller_servo",
-            "--inactive",
+            "arm_controller",
         ],
         parameters=[control_yaml],
         output="screen",
@@ -119,8 +107,7 @@ def generate_launch_description():
             on_start=[
                 jsb_spawner,
                 chassis_controller_spawner,
-                arm_controller_move_it_spawner,
-                arm_controller_servo_spawner,
+                arm_controller_spawner,
             ],
         )
     )

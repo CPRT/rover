@@ -40,9 +40,6 @@ ArmTeleop::ArmTeleop(const rclcpp::NodeOptions &options)
       "/move_group_client/go_to_cam_coord");
   stop_move_group_client_ =
       this->create_client<std_srvs::srv::Trigger>("/move_group_client/stop");
-  switch_client_ =
-      this->create_client<controller_manager_msgs::srv::SwitchController>(
-          "/controller_manager/switch_controller");
   servo_input_client_ = this->create_client<moveit_msgs::srv::ServoCommandType>(
       "/servo_node/switch_command_type");
   clear_dot();
@@ -229,69 +226,6 @@ bool ArmTeleop::moveit_servo_configure(const ArmState requested_state) {
   return true;
 }
 
-bool ArmTeleop::configure_ros2_controller(const ArmState requested_state) {
-  constexpr char const *servo_contoller = "arm_controller_servo";
-  constexpr char const *move_group_contoller = "arm_controller_move_group";
-
-  if (current_state_ == requested_state) {
-    return true;
-  }
-
-  bool servo_needed = requested_state == IK || requested_state == MANUAL;
-  bool servo_on = current_state_ == IK || current_state_ == MANUAL;
-
-  if (servo_needed == servo_on) {
-    current_state_ = requested_state;
-    return true;
-  }
-
-  std::string wanted_controller =
-      servo_needed ? servo_contoller : move_group_contoller;
-  std::string current_controller =
-      servo_on ? servo_contoller : move_group_contoller;
-  if (current_controller == wanted_controller) {
-    // Logic above should mean this never happens
-    RCLCPP_WARN(this->get_logger(),
-                "(%s:%d) Current controller is the same as wanted controller "
-                "despite ealier check",
-                __FILE__, __LINE__);
-    return false;
-  }
-
-  // Switch controller
-  if (!switch_client_->wait_for_service(std::chrono::seconds(2))) {
-    RCLCPP_ERROR(this->get_logger(),
-                 "Controller switch service is unavailable!!!!");
-    return false;
-  }
-
-  auto switch_request = std::make_shared<
-      controller_manager_msgs::srv::SwitchController::Request>();
-  switch_request->activate_controllers.push_back(wanted_controller);
-  switch_request->deactivate_controllers.push_back(current_controller);
-  switch_request->strictness =
-      controller_manager_msgs::srv::SwitchController::Request::STRICT;
-  switch_request->activate_asap = true;
-
-  auto switch_result = switch_client_->async_send_request(switch_request);
-  if (switch_result.wait_for(std::chrono::seconds(5)) !=
-      std::future_status::ready) {
-    RCLCPP_ERROR(this->get_logger(),
-                 "Timed out switching ros2_control controller!!!!");
-    return false;
-  }
-
-  const auto switch_response = switch_result.get();
-  if (!switch_response->ok) {
-    RCLCPP_ERROR(this->get_logger(),
-                 "Could not switch ros2_control controller!!!!");
-    return false;
-  }
-
-  RCLCPP_INFO(this->get_logger(), "Switched to ros2_control controller %s",
-              wanted_controller.c_str());
-  return true;
-}
 std::string ArmTeleop::state_to_string(const ArmState state) {
   switch (state) {
   case ArmState::MANUAL:
@@ -308,10 +242,6 @@ std::string ArmTeleop::state_to_string(const ArmState state) {
 }
 
 bool ArmTeleop::switch_states(const ArmState requested_state) {
-  if (!configure_ros2_controller(requested_state)) {
-    return false;
-  }
-
   if (!moveit_servo_configure(requested_state)) {
     return false;
   }

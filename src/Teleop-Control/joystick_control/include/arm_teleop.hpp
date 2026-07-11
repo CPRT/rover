@@ -41,7 +41,6 @@ private:
   void clear_dot();
   bool check_initialized(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
   bool moveit_servo_configure(const ArmState requested_state);
-  bool configure_ros2_controller(const ArmState requested_state);
   ArmState requested_state(const std::vector<int32_t> &buttons) const;
   bool switch_states(const ArmState new_state);
   bool stop_move_group_motion();
@@ -67,8 +66,6 @@ private:
   rclcpp::Client<interfaces::srv::GoToCamCoord>::SharedPtr
       go_to_cam_coord_client_;
   rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr stop_move_group_client_;
-  rclcpp::Client<controller_manager_msgs::srv::SwitchController>::SharedPtr
-      switch_client_;
   rclcpp::Client<moveit_msgs::srv::ServoCommandType>::SharedPtr
       servo_input_client_;
 

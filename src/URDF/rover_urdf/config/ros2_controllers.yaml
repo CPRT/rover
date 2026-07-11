@@ -3,7 +3,7 @@
   ros__parameters:
     update_rate: 100  # Hz
 
-    arm_controller_move_group:
+    arm_controller:
       type: joint_trajectory_controller/JointTrajectoryController
 
     joint_state_broadcaster:
@@ -11,11 +11,8 @@
 
     chassis_controller:
       type: swerve_controller/SwerveController
-    
-    arm_controller_servo:
-      type: position_controllers/JointGroupPositionController
 
-arm_controller_move_group:
+arm_controller:
   ros__parameters:
     joints:
       - Joint_1
