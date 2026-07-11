@@ -43,7 +43,7 @@ class MastESP(Node):
         self.get_logger().debug(f"Received angle: {msg.data:.3f} rad -> PWM: {us} us")
         data = bytes("S" + str(us), "utf-8")
         self.ser.write(data)
-        
+
     def morse_callback(self, msg: String):
         self.get_logger().info(f"Transmitting morse: {msg.data}")
         data = bytes("M" + msg.data, "utf-8")
