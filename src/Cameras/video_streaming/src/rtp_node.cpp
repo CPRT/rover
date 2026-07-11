@@ -67,7 +67,7 @@ std::string RtpNode::get_pipeline_description() {
        << " name=h265_enc EnableTwopassCBR=true control-rate=1 "
        << "insert-sps-pps=true maxperf-enable=true ! queue ! "
        << "rtph265pay pt=96 config-interval=-1 ! "
-       << "udpsink host=" << dest_ip_ << " port=" << dest_port_;
+       << "udpsink sync=false host=" << dest_ip_ << " port=" << dest_port_;
   return desc.str();
 }
 
