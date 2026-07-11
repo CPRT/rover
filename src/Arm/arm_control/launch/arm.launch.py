@@ -108,7 +108,7 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
         parameters=[
             {"id": 15},
             {"max_voltage": 24.0},
-            {"max_current": 6.0},
+            {"max_current": 1.0},
             {"brake_mode": True},
             {"interface": "can1"},
         ],
