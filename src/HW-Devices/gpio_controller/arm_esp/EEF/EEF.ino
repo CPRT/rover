@@ -2,10 +2,6 @@
 #include <WiFi.h>
 #include "MorseEncoder.h"
 
-// Variables for test data
-int int_value;
-float float_value;
-bool bool_value = true;
 const uint8_t sensorPin = 4;
 
 // MAC Address of responder - edit as required
@@ -34,9 +30,11 @@ void OnDataSent(const wifi_tx_info_t *tx_info, esp_now_send_status_t status) {
 void OnDataRecv(const esp_now_recv_info *info,
                 const uint8_t *incomingData,
                 int len) {
+  if (len >= 32) {
+    len = 31;
+  }
   memcpy(morseIn, incomingData, len);
   morseIn[len] = '\0';
-  Serial.println(morseIn);
   morseOut.print(morseIn);
 }
 
@@ -76,7 +74,6 @@ void setup() {
 }
 
 void loop() {
-
   myData.d = getDistance();
   // Send message via ESP-NOW
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&myData, sizeof(myData));
