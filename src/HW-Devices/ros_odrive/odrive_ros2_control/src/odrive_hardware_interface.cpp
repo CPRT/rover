@@ -614,7 +614,7 @@ void Axis::on_can_msg(const rclcpp::Time &, const can_frame &frame) {
   } break;
   case Get_Error_msg_t::cmd_id: {
     if (Get_Error_msg_t msg; try_decode(msg)) {
-      axis_error_ = msg.Active_Errors || msg.Disarm_Reason;
+      axis_error_ = msg.Active_Errors | msg.Disarm_Reason;
     }
   } break;
   case Heartbeat_msg_t::cmd_id: {
