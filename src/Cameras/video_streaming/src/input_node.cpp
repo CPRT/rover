@@ -68,7 +68,7 @@ bool InputNode::create_pipeline() {
 
     switch (type) {
     case CameraType::TestSrc:
-      desc_stream << "videotestsrc is-live=true name=" << name << " ! ";
+      desc << "videotestsrc is-live=true name=" << name << " ! ";
       break;
     case CameraType::V4l2Src:
       if (!std::filesystem::exists(path)) {
@@ -76,21 +76,21 @@ bool InputNode::create_pipeline() {
                      path.c_str());
         continue;
       }
-      desc_stream << "v4l2src device=" << path << " name=" << name << " ! ";
+      desc << "v4l2src device=" << path << " name=" << name << " ! ";
       break;
     case CameraType::RosTopic:
-      desc_stream << "ros2src owns-ros=false topic=" << path << " name=" << name;
+      desc << "ros2src owns-ros=false topic=" << path << " name=" << name;
       if (encoded) {
-        desc_stream << "use-compressed=true";
+        desc << "use-compressed=true";
       }
-      desc_stream << " ! "
+      desc << " ! ";
     default:
       RCLCPP_WARN(this->get_logger(), "Unimplemented Type for camera: %s",
                   name.c_str());
       continue;
     }
     if (encoded) {
-      desc_stream << "jpegdec ! ";
+      desc << "jpegdec ! ";
     }
     int cam_width = this->get_parameter(name + ".width").as_int();
     int cam_height = this->get_parameter(name + ".height").as_int();

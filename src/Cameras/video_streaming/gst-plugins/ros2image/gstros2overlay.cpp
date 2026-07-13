@@ -65,7 +65,7 @@ static void dot_callback(GstRos2Overlay *self,
 }
 
 static void ros_spin_thread_fn(GstRos2Overlay *self) {
-    gst_ros2_common::spin_node(self->priv->node, self->priv->running);
+  gst_ros2_common::spin_node(self->priv->node, self->priv->running);
 }
 
 static void put_pixel_bgr(guint8 *data, int stride, int width, int height,
@@ -365,7 +365,7 @@ static void gst_ros2_overlay_class_init(GstRos2OverlayClass *klass) {
           "QoS profile: 'default' or 'sensor_data'", DEFAULT_QOS_PROFILE,
           (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
                         G_PARAM_CONSTRUCT_ONLY)));
-  
+
   gst_ros2_common::install_owns_ros_property(gobject_class, PROP_OWNS_ROS);
 
   gst_element_class_set_static_metadata(
@@ -491,8 +491,8 @@ static gboolean gst_ros2_overlay_start(GstBaseTransform *trans) {
   self->priv->node = std::make_shared<rclcpp::Node>(
       self->node_name ? self->node_name : DEFAULT_NODE_NAME, opts);
 
-  auto qos = gst_ros2_common::parse_qos_profile(
-      self->qos_profile, DEFAULT_QOS_PROFILE);
+  auto qos = gst_ros2_common::parse_qos_profile(self->qos_profile,
+                                                DEFAULT_QOS_PROFILE);
 
   self->priv->text_sub =
       self->priv->node->create_subscription<std_msgs::msg::String>(

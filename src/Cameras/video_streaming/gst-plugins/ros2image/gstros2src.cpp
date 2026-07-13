@@ -388,8 +388,8 @@ static gboolean gst_ros2_image_src_start(GstBaseSrc *basesrc) {
   node = std::make_shared<rclcpp::Node>(
       self->node_name ? self->node_name : DEFAULT_NODE_NAME, opts);
 
-  auto qos = gst_ros2_common::parse_qos_profile(
-      self->qos_profile, DEFAULT_QOS_PROFILE);
+  auto qos = gst_ros2_common::parse_qos_profile(self->qos_profile,
+                                                DEFAULT_QOS_PROFILE);
 
   if (self->use_compressed) {
     auto cb = [self](const sensor_msgs::msg::CompressedImage::SharedPtr msg) {
