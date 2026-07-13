@@ -49,6 +49,11 @@ private:
   static SensorType sensor_type_from_str(std::string str);
   int get_load_enc() const;
   void update_gravity_ff();
+  double ticks_to_rads(double ticks) const;
+  double rads_to_ticks(double rads) const;
+
+  // used in crossover_mode
+  double raw_position_{0.0};
 
   // Parameters
   int id_;

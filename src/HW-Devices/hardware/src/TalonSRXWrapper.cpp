@@ -94,8 +94,7 @@ TalonSRXWrapper::TalonSRXWrapper(const hardware_interface::ComponentInfo &joint,
   debug_pub_ = debug_node_->create_publisher<ros_phoenix::msg::MotorStatus>(
       joint.name + "/status", rclcpp::SystemDefaultsQoS());
 
-  sensor_offset_ticks_ =
-      static_cast<int>(sensor_offset * sensor_ticks_ / (2.0 * M_PI));
+  sensor_offset_ticks_ = static_cast<int>(rads_to_ticks(sensor_offset));
 }
 
 TalonSRXWrapper::SensorType
@@ -155,6 +154,14 @@ void TalonSRXWrapper::pub_status() const {
   debug_pub_->publish(status_msg);
 }
 
+double TalonSRXWrapper::ticks_to_rads(double ticks) const {
+  return ticks * (2.0 * M_PI) / sensor_ticks_;
+}
+
+double TalonSRXWrapper::rads_to_ticks(double rads) const {
+  return rads * sensor_ticks_ / (2.0 * M_PI);
+}
+
 void TalonSRXWrapper::write() {
   if (!initialized_) {
     if ((debug_node_->now() - start_time_).seconds() > kWaitDurationSec) {
@@ -179,37 +186,29 @@ void TalonSRXWrapper::write() {
         __FUNCTION__, id_);
     return;
   }
-  if (std::abs(command_ - position_) > M_PI &&
+  if (!crossover_mode_ && std::abs(command_ - position_) > M_PI &&
       control_type_ == motors::ControlMode::Position) {
     RCLCPP_WARN_THROTTLE(
         debug_node_->get_logger(), *debug_node_->get_clock(), 1000,
         "%s: Large position error (%.2f) for id %d, which may indicate a "
-        "problem with sensor configuration or an unexpected jump in position",
-        __FUNCTION__, command_ - position_, id_);
+        "problem with sensor configuration or an unexpected jump in position "
+        "(%.2f vs %.2f)",
+        __FUNCTION__, command_ - position_, id_, command_, position_);
     return;
   }
   double output = 0.0;
-  if (crossover_mode_ && std::abs(command_) > M_PI) {
-    RCLCPP_WARN_THROTTLE(
-        debug_node_->get_logger(), *debug_node_->get_clock(), 1000,
-        "%s: Command %.2f is outside of [-pi, pi] in crossover mode, which may "
-        "cause unexpected behavior for id %d",
-        __FUNCTION__, command_, id_);
-  }
   if (control_type_ == motors::ControlMode::Position) {
     if (crossover_mode_) {
-      double normalized = (command_ + M_PI) / (2.0 * M_PI);
-      double ticks = normalized * sensor_ticks_;
-      double ticks_with_offset = ticks + sensor_offset_ticks_;
-      output = fmod(ticks_with_offset, sensor_ticks_);
-      if (output < 0)
-        output += sensor_ticks_;
+      const double position_error =
+          std::remainder(command_ - raw_position_, 2.0 * M_PI);
+      const double target_position = raw_position_ + position_error;
+      output = rads_to_ticks(target_position) + sensor_offset_ticks_;
     } else {
-      output = command_ * sensor_ticks_ / (2.0 * M_PI) + sensor_offset_ticks_;
+      output = rads_to_ticks(command_) + sensor_offset_ticks_;
     }
   } else if (control_type_ == motors::ControlMode::Velocity) {
     // Talons use d / 100ms as vel
-    output = (command_ * sensor_ticks_ / (2.0 * M_PI)) / 10.0;
+    output = rads_to_ticks(command_) / 10.0;
   }
   talon_controller_->Set(control_type_, output,
                          motors::DemandType::DemandType_ArbitraryFeedForward,
@@ -217,26 +216,21 @@ void TalonSRXWrapper::write() {
 }
 
 void TalonSRXWrapper::read() {
-  int raw_position =
-      talon_controller_->GetSelectedSensorPosition() - sensor_offset_ticks_;
+  const int raw_ticks = talon_controller_->GetSelectedSensorPosition() -
+                        static_cast<int>(sensor_offset_ticks_);
+  raw_position_ = ticks_to_rads(raw_ticks);
   if (crossover_mode_) {
-    raw_position %= sensor_ticks_;
-    if (raw_position < 0) {
-      raw_position += sensor_ticks_;
-    }
-    double normalized = static_cast<double>(raw_position) / sensor_ticks_;
-    position_ = normalized * 2.0 * M_PI - M_PI;
+    position_ = std::remainder(raw_position_, 2.0 * M_PI);
   } else {
-    position_ = raw_position * (2.0 * M_PI) / sensor_ticks_;
+    position_ = raw_position_;
   }
   double raw_velocity = talon_controller_->GetSelectedSensorVelocity();
   // Talons use d / 100ms as vel
-  velocity_ = raw_velocity * 10 * (2.0 * M_PI) / sensor_ticks_;
+  velocity_ = 10 * ticks_to_rads(raw_velocity);
 }
 
 int TalonSRXWrapper::get_load_enc() const {
   auto &sensor_collection = talon_controller_->GetSensorCollection();
-  int abs_ticks = 0;
   switch (load_sensor_) {
   case SensorType::PWM:
     return sensor_collection.GetPulseWidthPosition();
@@ -298,7 +292,7 @@ void TalonSRXWrapper::configure() {
   }
 
   talon_controller_->SetNeutralMode(NeutralMode::Brake);
-  talon_controller_->ConfigFeedbackNotContinuous(crossover_mode_);
+  talon_controller_->ConfigFeedbackNotContinuous(false);
   talon_controller_->ConfigSelectedFeedbackCoefficient(1.0);
   talon_controller_->EnableVoltageCompensation(true);
   talon_controller_->SetSensorPhase(invert_sensor_);
