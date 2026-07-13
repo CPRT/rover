@@ -370,7 +370,11 @@ void ArmTeleop::manual_arm_control(
                           -static_cast<double>(buttons[kWristYaw_positive] -
                                                buttons[kWristYaw_negative]),
                           -axes[kJoint6Axis]};
-
+  // Map throttle from [-1, 1] to [0, 1]
+  const auto throttle = (axes[kThrottleAxis] + 1.0) / 2.0;
+  for (auto &vel : joint_msg.velocities) {
+    vel *= throttle;
+  }
   joint_pub_->publish(joint_msg);
 }
 
@@ -383,15 +387,16 @@ void ArmTeleop::ik_arm_control(
   auto &axes = joystickMsg->axes;
   auto &buttons = joystickMsg->buttons;
 
-  twist_msg.twist.linear.x = axes[kJoint2Axis];
-  twist_msg.twist.linear.y = axes[kJoint1Axis];
-  twist_msg.twist.linear.z = axes[kJoint3Axis];
-  twist_msg.twist.angular.x = axes[kJoint4Axis];
-  twist_msg.twist.angular.y = axes[kJoint6Axis];
-  twist_msg.twist.angular.z =
-      (static_cast<double>(buttons[kWristYaw_positive] -
-                           buttons[kWristYaw_negative])) *
-      axes[kThrottleAxis];
+  const auto throttle = (axes[kThrottleAxis] + 1.0) / 2.0;
+
+  twist_msg.twist.linear.x = axes[kJoint3Axis] * throttle;
+  twist_msg.twist.linear.y = axes[kJoint1Axis] * throttle;
+  twist_msg.twist.linear.z = axes[kJoint2Axis] * throttle;
+  twist_msg.twist.angular.x = -axes[kJoint4Axis] * throttle;
+  twist_msg.twist.angular.y = static_cast<double>(buttons[kWristYaw_positive] -
+                                                  buttons[kWristYaw_negative]) *
+                              throttle;
+  twist_msg.twist.angular.z = -axes[kJoint6Axis] * throttle;
 
   ik_pub_->publish(twist_msg);
 }
