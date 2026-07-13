@@ -31,7 +31,15 @@ public:
   ~ArmTeleop();
 
 private:
-  enum ArmState { NONE = 0, MANUAL, IK, POS };
+  enum ArmState {
+    NO_MESSAGE = 0,
+    UNPLUG_ERROR,
+    WIGGLE_WARNING,
+    IDLE,
+    MANUAL,
+    IK,
+    POS
+  };
 
   void manual_arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
   void ik_arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
@@ -39,7 +47,8 @@ private:
   void endeffector_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
   void clipboards_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
   void clear_dot();
-  bool check_initialized(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
+  ArmState
+  check_initialized(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
   bool moveit_servo_configure(const ArmState requested_state);
   ArmState requested_state(const std::vector<int32_t> &buttons) const;
   bool switch_states(const ArmState new_state);
@@ -50,6 +59,8 @@ private:
   void run();
   void declareParameters();
   void loadParameters();
+  void publishState(const ArmState state);
+  bool is_ready(const ArmState state);
   static std::string state_to_string(const ArmState state);
 
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
@@ -70,8 +81,6 @@ private:
       servo_input_client_;
 
   ArmState current_state_;
-
-  bool initialized_ = false;
 
   int kThrottleAxis;
   int kJoint1Axis;

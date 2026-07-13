@@ -10,7 +10,7 @@ ArmTeleop::ArmTeleop(const rclcpp::NodeOptions &options)
     : Node("arm_node", options) {
   declareParameters();
   loadParameters();
-  current_state_ = NONE;
+  current_state_ = NO_MESSAGE;
   joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
       "/joy", rclcpp::QoS(2).best_effort(),
       [this](const sensor_msgs::msg::Joy::SharedPtr msg) {
@@ -189,7 +189,7 @@ void ArmTeleop::endeffector_control(
 }
 
 bool ArmTeleop::moveit_servo_configure(const ArmState requested_state) {
-  if (requested_state == NONE) {
+  if (requested_state == IDLE) {
     return true;
   }
   if (!servo_input_client_->wait_for_service(std::chrono::seconds(2))) {
@@ -228,14 +228,20 @@ bool ArmTeleop::moveit_servo_configure(const ArmState requested_state) {
 
 std::string ArmTeleop::state_to_string(const ArmState state) {
   switch (state) {
+  case ArmState::NO_MESSAGE:
+    return "Waiting";
+  case ArmState::UNPLUG_ERROR:
+    return "Error";
+  case ArmState::WIGGLE_WARNING:
+    return "Warning";
+  case ArmState::IDLE:
+    return "Idle";
   case ArmState::MANUAL:
     return "Manual";
   case ArmState::IK:
     return "Cartesian IK";
   case ArmState::POS:
     return "Visual Position";
-  case ArmState::NONE:
-    return "Disabled";
   default:
     return "Unknown";
   }
@@ -246,14 +252,12 @@ bool ArmTeleop::switch_states(const ArmState requested_state) {
     return false;
   }
 
-  if (current_state_ == NONE) {
+  if (current_state_ == IDLE) {
     stop_move_group_motion();
   }
 
   current_state_ = requested_state;
-  auto msg = std_msgs::msg::String();
-  msg.data = state_to_string(current_state_);
-  state_pub_->publish(msg);
+  publishState(current_state_);
   return true;
 }
 
@@ -266,27 +270,40 @@ void ArmTeleop::clear_dot() {
   targetPositionY = kCamHeight / 2;
 }
 
-bool ArmTeleop::check_initialized(
+ArmTeleop::ArmState ArmTeleop::check_initialized(
     const sensor_msgs::msg::Joy::SharedPtr joystickMsg) {
   if (std::abs(joystickMsg->axes[kJoint1Axis]) < 0.01 &&
       std::abs(joystickMsg->axes[kJoint2Axis]) < 0.01 &&
       std::abs(joystickMsg->axes[kJoint3Axis]) < 0.01 &&
       std::abs(joystickMsg->axes[kJoint4Axis]) < 0.01 &&
       std::abs(joystickMsg->axes[kJoint6Axis]) < 0.01) {
-    return true;
+    return IDLE;
   }
-
-  RCLCPP_WARN_THROTTLE(
+  // Wiggle warning has values that are 1 on joints 1, 2, and 4
+  // When each axes is moved even a bit, it reads properly
+  if ((std::abs(joystickMsg->axes[kJoint1Axis]) > 0.99 ||
+       std::abs(joystickMsg->axes[kJoint2Axis]) > 0.99 ||
+       std::abs(joystickMsg->axes[kJoint4Axis]) > 0.99)) {
+    RCLCPP_WARN_THROTTLE(
+        this->get_logger(), *(this->get_clock()), 1000,
+        "Arm Controller reading non-zero values on joystick axes. "
+        "Please wiggle the joysticks to initialize. (Throttled to 1s)");
+    return WIGGLE_WARNING;
+  }
+  // Other errors probably mean the joystick is in a bad state and needs to be
+  // unplugged and replugged
+  RCLCPP_ERROR_THROTTLE(
       this->get_logger(), *(this->get_clock()), 1000,
-      "Arm Controller not reading zeros on joystick axes. "
-      "Please center joysticks to initialize. (Throttled to 1s)");
-  return false;
+      "Arm Controller reading non-zero values on joystick axes. "
+      "Please unplug and replug the joystick. "
+      "(Throttled to 1s)");
+  return UNPLUG_ERROR;
 }
 
 ArmTeleop::ArmState
 ArmTeleop::requested_state(const std::vector<int32_t> &buttons) const {
   if (buttons[kDisableButton]) {
-    return NONE;
+    return IDLE;
   }
 
   if (buttons[kIkButton]) {
@@ -304,7 +321,30 @@ ArmTeleop::requested_state(const std::vector<int32_t> &buttons) const {
   return current_state_;
 }
 
+bool ArmTeleop::is_ready(const ArmState state) {
+  if (state == NO_MESSAGE) {
+    return false;
+  }
+
+  if (state == UNPLUG_ERROR) {
+    return false;
+  }
+
+  if (state == WIGGLE_WARNING) {
+    return false;
+  }
+
+  return true;
+}
+
+void ArmTeleop::publishState(const ArmState state) {
+  auto msg = std_msgs::msg::String();
+  msg.data = state_to_string(state);
+  state_pub_->publish(msg);
+}
+
 void ArmTeleop::run() {
+  publishState(current_state_);
   while (true) {
     std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg;
     {
@@ -316,10 +356,13 @@ void ArmTeleop::run() {
       joystickMsg = curr_msg_;
       curr_msg_.reset();
     }
-
-    if (!initialized_) {
-      initialized_ = check_initialized(joystickMsg);
-      last_msg_ = joystickMsg;
+    if (!is_ready(current_state_)) {
+      const auto new_state = check_initialized(joystickMsg);
+      if (new_state == current_state_) {
+        continue;
+      }
+      current_state_ = new_state;
+      publishState(current_state_);
       continue;
     }
 
@@ -361,7 +404,7 @@ void ArmTeleop::manual_arm_control(
   auto &axes = joystickMsg->axes;
   auto &buttons = joystickMsg->buttons;
 
-  joint_msg.header.stamp = joystickMsg->header.stamp;
+  joint_msg.header.stamp = now();
 
   joint_msg.velocities = {-axes[kJoint1Axis],
                           -axes[kJoint2Axis],
