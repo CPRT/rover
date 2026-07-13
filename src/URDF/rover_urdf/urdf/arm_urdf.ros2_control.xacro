@@ -79,7 +79,7 @@
         <param name="sensor_type">quadrature</param> <!-- or "quadrature" -->
         <param name="sensor_ticks">2039808</param>
         <param name="sensor_offset">0.0</param>
-        <param name="continuous">true</param> <!-- or "crossover" -->
+        <param name="crossover">true</param> <!-- or "continuous" -->
         <param name="invert">true</param>
         <param name="can_interface">can1</param>
         <param name="invert_sensor">true</param>
