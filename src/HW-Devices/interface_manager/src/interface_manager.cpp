@@ -38,7 +38,7 @@ void InterfaceManagerNode::timer_callback() {
 
   fd = open("/sys/class/net/can0/operstate", O_RDONLY);
   len = read(fd, buf, 16);
-  buf[len] = '\0';
+  buf[len - 1] = '\0';
   msg.status = buf;
   close(fd);
 
