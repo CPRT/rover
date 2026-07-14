@@ -14,10 +14,13 @@ public:
 
 private:
   void timer_callback();
+  void send_can(char *name,
+                rclcpp::Publisher<interfaces::msg::CANStatus>::SharedPtr pub);
 
   rclcpp::TimerBase::SharedPtr timer_;
 
-  rclcpp::Publisher<interfaces::msg::CANStatus>::SharedPtr can_status_pub_;
+  rclcpp::Publisher<interfaces::msg::CANStatus>::SharedPtr can0_status_pub_;
+  rclcpp::Publisher<interfaces::msg::CANStatus>::SharedPtr can1_status_pub_;
 };
 
 #endif // INTERFACE_MANAGER_HPP
