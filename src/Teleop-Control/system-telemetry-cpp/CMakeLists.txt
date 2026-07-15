@@ -47,7 +47,7 @@ ament_target_dependencies(system_telemetry_publisher
 
 ament_target_dependencies(node_status_publisher
   rclcpp
-  std_msgs
+  interfaces
 )
 
 add_executable(snmp_network_stats

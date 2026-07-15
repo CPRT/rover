@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "interfaces/msg/node_list.hpp"
+
 class NodeStatusPublisher : public rclcpp::Node {
 public:
   NodeStatusPublisher();
@@ -14,7 +16,9 @@ public:
 private:
   void publish_nodes();
 
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_;
+  double frequency_;
+
+  rclcpp::Publisher<interfaces::msg::NodeList>::SharedPtr publisher_;
   rclcpp::TimerBase::SharedPtr timer_;
 };
 

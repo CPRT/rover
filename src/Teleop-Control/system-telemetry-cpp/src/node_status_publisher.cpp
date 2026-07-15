@@ -4,39 +4,27 @@
 #include <sstream>
 #include <vector>
 
-NodeStatusPublisher::NodeStatusPublisher() : Node("node_status_publisher") {
+NodeStatusPublisher::NodeStatusPublisher()
+    : Node("node_status_publisher"),
+      frequency_(this->declare_parameter<double>("frequency", 1.0)) {
 
   rclcpp::QoS qos(10);
   qos.transient_local();
 
   publisher_ =
-      this->create_publisher<std_msgs::msg::String>("/system/nodes", qos);
+      this->create_publisher<interfaces::msg::NodeList>("/system/nodes", qos);
 
+  const auto period = std::chrono::duration<double>(1.0 / frequency_);
   timer_ = this->create_wall_timer(
-      std::chrono::seconds(1),
+      std::chrono::duration_cast<std::chrono::nanoseconds>(period),
       std::bind(&NodeStatusPublisher::publish_nodes, this));
 
   RCLCPP_INFO(this->get_logger(), "NodeStatusPublisher started (ROS-native)");
 }
 
 void NodeStatusPublisher::publish_nodes() {
-  // Get all nodes in the ROS graph (native API)
-  std::vector<std::string> nodes = this->get_node_names();
-
-  // Build JSON
-  std::ostringstream json;
-  json << "{\"nodes\": [";
-
-  for (size_t i = 0; i < nodes.size(); ++i) {
-    json << "\"" << nodes[i] << "\"";
-    if (i + 1 < nodes.size())
-      json << ", ";
-  }
-
-  json << "]}";
-
-  std_msgs::msg::String msg;
-  msg.data = json.str();
+  interfaces::msg::NodeList msg;
+  msg.nodes = this->get_node_names();
 
   publisher_->publish(msg);
 }
