@@ -24,6 +24,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/EspSensorReadings.msg"
   "msg/GasSensorReading.msg"
   "msg/MoveGroupStatus.msg"
+  "msg/NodeList.msg"
   "msg/ObjectDetected.msg"
   "msg/PolarimeterSweep.msg"
   "msg/PwmCommand.msg"

@@ -38,9 +38,12 @@ def generate_launch_description():
         output="screen",
     )
 
+    status_node = Node(
+        package="system-telemetry-cpp",
+        executable="node_status_publisher",
+        name="node_status_publisher",
+    )
+
     return LaunchDescription(
-        get_included_launch_descriptions(launch_files)
-        + [
-            snmp_node,
-        ]
+        get_included_launch_descriptions(launch_files) + [snmp_node, status_node]
     )
