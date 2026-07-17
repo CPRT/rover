@@ -179,6 +179,7 @@ RUN if [ "$USE_NVIDIA" = "true" ]; then \
 # Stage 5: Minimal Runtime Base
 ############################
 FROM ros2-base AS runtime
+ARG USE_NVIDIA=true
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 WORKDIR /
@@ -205,6 +206,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gstreamer1.0-libav \
     gstreamer1.0-nice \
     && rm -rf /var/lib/apt/lists/*
+
+RUN if [ "$USE_NVIDIA" = "true" ]; then \
+        apt-get update && apt-get install -y --no-install-recommends \
+            libnvinfer10 libnvinfer-plugin10 libnvonnxparsers10 \
+        && rm -rf /var/lib/apt/lists/*; \
+    else \
+        echo "Skipping NVIDIA dependencies installation"; \
+    fi
 
 RUN source /opt/ros/$ROS_DISTRO/setup.bash \
     && rosdep init \
