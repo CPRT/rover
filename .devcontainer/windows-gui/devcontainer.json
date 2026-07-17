@@ -1,6 +1,6 @@
 {
   "name": "CPRT Dev Container (Windows Host + GUI)",
-  "image": "cprtsoftware/rover:dev-amd64",
+  "image": "cprtsoftware/rover:dev-lite",
 
   // GUI support via WSLg. Unlike the Linux configs, the X11 socket cannot be
   // mounted from /tmp/.X11-unix: that path is a WSLg tmpfs inside the user's
@@ -21,10 +21,10 @@
     "NVIDIA_DRIVER_CAPABILITIES": "all"
   },
 
-  "remoteUser": "vscode",
-  "containerUser": "vscode",
+  "remoteUser": "ubuntu",
+  "containerUser": "ubuntu",
   "remoteEnv": {
-    "USER": "vscode"
+    "USER": "ubuntu"
   },
 
   "customizations": {
@@ -35,5 +35,5 @@
       "extensions": [ "ms-vscode.cpptools", "ms-azuretools.vscode-docker" ]
     }
   },
-  "postCreateCommand": "echo 'source /opt/ros/humble/setup.bash' >> ~/.bashrc"
+  "postCreateCommand": "echo 'source /opt/ros/jazzy/setup.bash' >> ~/.bashrc"
 }
