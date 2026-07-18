@@ -19,7 +19,8 @@
     "--group-add=video",
     "--group-add=render",
     "--group-add=systemd-journal",
-    "--group-add=dialout"
+    "--group-add=dialout",
+    "--group-add=984"
   ],
   "mounts": [
     "source=${env:HOME}/.ssh,target=/home/ubuntu/.ssh,type=bind,consistency=cached",
