@@ -62,7 +62,7 @@ class HeadlightNode(Node):
 
         self.left_path = f"{self.base_path}/pwmchip{left_chip_id}"
         self.right_path = f"{self.base_path}/pwmchip{right_chip_id}"
-    
+
     def write(self, path, value) -> bool:
         try:
             with open(path, "w", encoding="utf-8") as sys_file:
@@ -82,7 +82,6 @@ class HeadlightNode(Node):
     def export_pwm(self, path: str):
         path = path + "/export"
         self.write(path, "0")
-        
 
     def set_period(self, path: str, period_ns: int):
         path = path + "/pwm0/period"
