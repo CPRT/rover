@@ -33,3 +33,66 @@ input_node:
       width: 1280
     Test:
       type: 1
+    presets:
+    - "DrivePreset"
+    - "EEFPreset"
+    - "BellyPreset"
+    - "DriveEEFPreset"
+    - "EEFDrivePreset"
+    DrivePreset:
+      name: "Drive"
+      sources:
+      - "Drive"
+      Drive:
+        width: 100
+        height: 100
+        origin_x: 0
+        origin_y: 0
+    EEFPreset:
+      name: "EEF"
+      sources:
+      - "EndEffector"
+      EndEffector:
+        width: 100
+        height: 100
+        origin_x: 0
+        origin_y: 0
+    BellyPreset:
+      name: "Belly"
+      sources:
+      - "Belly"
+      Belly:
+        width: 100
+        height: 100
+        origin_x: 0
+        origin_y: 0
+    DriveEEFPreset:
+      name: "Drive + EEF"
+      sources:
+      - "Drive"
+      - "EndEffector"
+      Drive:
+        width: 100
+        height: 100
+        origin_x: 0
+        origin_y: 0
+      EndEffector:
+        width: 30
+        height: 30
+        origin_x: 70
+        origin_y: 0
+    EEFDrivePreset:
+      name: "EEF + Drive"
+      sources:
+      - "EndEffector"
+      - "Drive"
+      EndEffector:
+        width: 100
+        height: 100
+        origin_x: 0
+        origin_y: 0
+      Drive:
+        width: 30
+        height: 30
+        origin_x: 70
+        origin_y: 0

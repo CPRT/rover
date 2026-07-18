@@ -45,6 +45,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SaveCurrentPose.srv"
   "srv/VideoCapture.srv"
   "srv/VideoOut.srv"
+  "srv/VideoPreset.srv"
   DEPENDENCIES 
   builtin_interfaces
   geometry_msgs 

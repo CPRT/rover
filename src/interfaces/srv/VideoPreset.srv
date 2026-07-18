@@ -1,0 +1,8 @@
+# VideoPreset.srv
+
+string id
+string name
+
+VideoSource[] sources
+---
+bool success

@@ -10,6 +10,9 @@ InputNode::InputNode(const rclcpp::NodeOptions &options)
   video_service_ = this->create_service<interfaces::srv::VideoOut>(
       "start_video", std::bind(&InputNode::video_cb, this,
                                std::placeholders::_1, std::placeholders::_2));
+  preset_service_ = this->create_service<interfaces::srv::VideoPreset>(
+      "~/new_preset", std::bind(&InputNode::preset_cb, this,
+                                std::placeholders::_1, std::placeholders::_2));
   get_cam_service_ = create_service<interfaces::srv::GetCameras>(
       "~/get_cameras",
       [this](
@@ -36,6 +39,20 @@ void InputNode::declare_parameters() {
     this->declare_parameter(name + ".width", 0);
     this->declare_parameter(name + ".height", 0);
     this->declare_parameter(name + ".framerate", 0);
+  }
+  this->declare_parameter("presets", std::vector<std::string>());
+  this->get_parameter("presets", presets_);
+  for (const auto &preset : presets_) {
+    this->declare_parameter(preset + ".name", std::string());
+    this->declare_parameter(preset + ".sources", std::vector<std::string>());
+    std::vector<std::string> sources;
+    this->get_parameter(preset + ".sources", sources);
+    for (const auto &source : sources) {
+      this->declare_parameter(preset + "." + source + ".width", 0);
+      this->declare_parameter(preset + "." + source + ".height", 0);
+      this->declare_parameter(preset + "." + source + ".origin_x", 0);
+      this->declare_parameter(preset + "." + source + ".origin_y", 0);
+    }
   }
 }
 
@@ -236,17 +253,28 @@ void InputNode::video_cb(
     gst_object_unref(pad);
   }
   size_t order = 0;
-  for (const auto &source : request->sources) {
-    const std::string &name = source.name;
-    const int height = source.height * total_height / 100;
-    const int width = source.width * total_width / 100;
-    const int origin_x = source.origin_x * total_width / 100;
-    const int origin_y = source.origin_y * total_height / 100;
+  std::vector<std::string> sources;
+  this->get_parameter(request->name + ".sources", sources);
+  for (const auto &source : sources) {
+    const int height =
+        this->get_parameter(request->name + "." + source + ".height").as_int() *
+        total_height / 100;
+    const int width =
+        this->get_parameter(request->name + "." + source + ".width").as_int() *
+        total_width / 100;
+    const int origin_x =
+        this->get_parameter(request->name + "." + source + ".origin_x")
+            .as_int() *
+        total_width / 100;
+    const int origin_y =
+        this->get_parameter(request->name + "." + source + ".origin_y")
+            .as_int() *
+        total_height / 100;
 
-    auto iter = source_map_.find(name);
+    auto iter = source_map_.find(source);
     if (iter == source_map_.end()) {
       RCLCPP_WARN(this->get_logger(), "%s: Could not find camera %s",
-                  __FUNCTION__, name.c_str());
+                  __FUNCTION__, source.c_str());
       continue;
     }
     const std::string pad_name = "sink_" + std::to_string(iter->second);
@@ -277,6 +305,38 @@ void InputNode::video_cb(
   if (response->success) {
     current_video_request_ = request;
   }
+}
+
+void InputNode::preset_cb(
+    const std::shared_ptr<interfaces::srv::VideoPreset::Request> request,
+    std::shared_ptr<interfaces::srv::VideoPreset::Response> response) {
+  for (const auto &preset :
+       presets_) { // FIXME: Definitely a better way to do this
+    if (preset == request->id) {
+      request->id += "1";
+    }
+  }
+  presets_.push_back(request->id);
+  this->set_parameter(rclcpp::Parameter("presets", presets_));
+  this->declare_parameter(request->id + ".name", request->name);
+  std::vector<std::string> sources;
+  for (const auto &source : request->sources) {
+    sources.push_back(source.name);
+    this->declare_parameter(request->id + "." + source.name + ".width",
+                            source.width);
+    this->declare_parameter(request->id + "." + source.name + ".height",
+                            source.height);
+    this->declare_parameter(request->id + "." + source.name + ".origin_x",
+                            source.origin_x);
+    this->declare_parameter(request->id + "." + source.name + ".origin_y",
+                            source.origin_y);
+  }
+  this->declare_parameter(request->id + ".sources", sources);
+  auto vid_req = std::make_shared<interfaces::srv::VideoOut::Request>();
+  vid_req->name = request->id;
+  auto vid_resp = std::make_shared<interfaces::srv::VideoOut::Response>();
+  this->video_cb(vid_req, vid_resp);
+  response->success = vid_resp->success;
 }
 
 RCLCPP_COMPONENTS_REGISTER_NODE(InputNode)

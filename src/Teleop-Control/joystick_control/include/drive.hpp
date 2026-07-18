@@ -20,7 +20,8 @@ private:
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr servo_m_pub_;
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
   rclcpp::Client<interfaces::srv::VideoOut>::SharedPtr camera_client_;
-  std::vector<interfaces::srv::VideoOut::Request> video_carousell_;
+  rclcpp::Client<rcl_interfaces::srv::GetParameters>::SharedPtr param_client_;
+  std::vector<std::string> video_carousell_;
   size_t video_carousell_idx_;
 
   void camera_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
