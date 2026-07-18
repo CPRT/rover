@@ -28,6 +28,7 @@ add_library(${PROJECT_NAME} SHARED
   src/input_node.cpp
   src/detect_node.cpp
   src/webrtc_node.cpp
+  src/mosaic_webrtc_node.cpp
   src/srt_node.cpp
   src/srt_node_client.cpp
   src/rtp_node.cpp
@@ -71,6 +72,7 @@ rclcpp_components_register_nodes(${PROJECT_NAME}
   "InputNode"
   "DetectNode"
   "WebRtcNode"
+  "video_streaming::MosaicWebRtcNode"
   "VideoCaptureNode"
   "video_streaming::SrtNode"
   "video_streaming::SrtClientNode"

@@ -12,6 +12,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "ros_phoenix/msg/motor_control.hpp"
 #include "sensor_msgs/msg/joy.hpp"
+#include "std_msgs/msg/string.hpp"
 #include "std_srvs/srv/trigger.hpp"
 
 #include <atomic>
@@ -30,7 +31,15 @@ public:
   ~ArmTeleop();
 
 private:
-  enum ArmState { NONE = 0, MANUAL, IK, POS };
+  enum ArmState {
+    NO_MESSAGE = 0,
+    UNPLUG_ERROR,
+    WIGGLE_WARNING,
+    IDLE,
+    MANUAL,
+    IK,
+    POS
+  };
 
   void manual_arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
   void ik_arm_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
@@ -38,9 +47,9 @@ private:
   void endeffector_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
   void clipboards_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
   void clear_dot();
-  bool check_initialized(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
+  ArmState
+  check_initialized(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
   bool moveit_servo_configure(const ArmState requested_state);
-  bool configure_ros2_controller(const ArmState requested_state);
   ArmState requested_state(const std::vector<int32_t> &buttons) const;
   bool switch_states(const ArmState new_state);
   bool stop_move_group_motion();
@@ -50,12 +59,16 @@ private:
   void run();
   void declareParameters();
   void loadParameters();
+  void publishState(const ArmState state);
+  bool is_ready(const ArmState state);
+  static std::string state_to_string(const ArmState state);
 
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
   rclcpp::Publisher<control_msgs::msg::JointJog>::SharedPtr joint_pub_;
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr ik_pub_;
   rclcpp::Publisher<ros_phoenix::msg::MotorControl>::SharedPtr eef_pub_;
   rclcpp::Publisher<geometry_msgs::msg::Vector3>::SharedPtr dot_pub_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr state_pub_;
 
   rclcpp::Client<interfaces::srv::GoToNamedPose>::SharedPtr
       go_to_named_pose_client_;
@@ -64,14 +77,10 @@ private:
   rclcpp::Client<interfaces::srv::GoToCamCoord>::SharedPtr
       go_to_cam_coord_client_;
   rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr stop_move_group_client_;
-  rclcpp::Client<controller_manager_msgs::srv::SwitchController>::SharedPtr
-      switch_client_;
   rclcpp::Client<moveit_msgs::srv::ServoCommandType>::SharedPtr
       servo_input_client_;
 
   ArmState current_state_;
-
-  bool initialized_ = false;
 
   int kThrottleAxis;
   int kJoint1Axis;

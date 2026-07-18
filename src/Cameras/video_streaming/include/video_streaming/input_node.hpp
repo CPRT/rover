@@ -18,15 +18,12 @@ protected:
   bool create_pipeline() override;
   void declare_parameters();
 
-  /**
-   * @brief Callback function to configure the video feed.
-   *
-   * @param request The request object containing video output parameters.
-   * @param response The response object to be populated with the result.
-   */
   void
   video_cb(const std::shared_ptr<interfaces::srv::VideoOut::Request> request,
            std::shared_ptr<interfaces::srv::VideoOut::Response> response);
+
+  // Apply fixed grid layout to the mosaic compositor after pipeline creation.
+  bool set_mosaic_layout();
 
 private:
   std::map<std::string, size_t> source_map_;

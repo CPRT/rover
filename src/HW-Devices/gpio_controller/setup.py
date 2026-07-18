@@ -27,6 +27,7 @@ setup(
             "lights = gpio_controller.lights:main",
             "mast_esp = gpio_controller.mast_esp:main",
             "pdb_rails = gpio_controller.pdb_rails:main",
+            "headlights = gpio_controller.headlights:main",
         ],
     },
 )

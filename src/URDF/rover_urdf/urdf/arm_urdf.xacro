@@ -343,7 +343,7 @@
         link="Link_5" />
         <axis
         xyz="0 0 -1" />
-        <limit lower="-3.14" upper="3.14" effort="100.0" velocity="1.2"/>
+        <limit lower="-3.14" upper="3.14" effort="100.0" velocity="0.5"/>
     </joint>
     <link
         name="Link_6">
@@ -412,7 +412,7 @@
         link="Link_6" />
         <axis
         xyz="0 -1 0" />
-        <limit lower="-1.0" upper="1.0" effort="100.0" velocity="0.4"/>
+        <limit lower="-1.0" upper="1.0" effort="100.0" velocity="0.5"/>
     </joint>
     <link
         name="EndEffector">
@@ -481,7 +481,7 @@
         link="EndEffector" />
         <axis
         xyz="0 0 1" />
-        <limit effort="100.0" velocity="0.6"/>
+        <limit effort="100.0" velocity="0.5"/>
     </joint>
 
   </xacro:macro>

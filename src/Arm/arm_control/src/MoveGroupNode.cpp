@@ -66,6 +66,12 @@ MoveGroupNode::MoveGroupNode(const rclcpp::NodeOptions &options)
                 std::placeholders::_1, std::placeholders::_2),
       rmw_qos_profile_services_default, service_callback_group_);
 
+  stop_service_ = create_service<std_srvs::srv::Trigger>(
+      "~/stop",
+      std::bind(&MoveGroupNode::stopCallback, this, std::placeholders::_1,
+                std::placeholders::_2),
+      rmw_qos_profile_services_default, service_callback_group_);
+
   publishStatus(interfaces::msg::MoveGroupStatus::IDLE, "Initializing");
 
   initialization_timer_ =
@@ -479,6 +485,27 @@ void MoveGroupNode::goToCamCoordCallback(
     publishStatus(interfaces::msg::MoveGroupStatus::FAILED, response->message,
                   "camera_coordinate");
   }
+}
+
+void MoveGroupNode::stopCallback(
+    const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+  (void)request;
+
+  std::lock_guard<std::mutex> command_lock(command_mutex_);
+
+  if (!initialized_ || !move_group_) {
+    response->success = false;
+    response->message = "MoveGroupInterface is not initialized";
+    return;
+  }
+
+  move_group_->stop();
+
+  response->success = true;
+  response->message = "Motion stopped";
+
+  publishStatus(interfaces::msg::MoveGroupStatus::IDLE, "Idle");
 }
 
 } // namespace arm_control

@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=nvidia/cuda:13.2.1-cudnn-runtime-ubuntu24.04
+ARG BASE_IMAGE=nvidia/cuda:13.3.0-cudnn-runtime-ubuntu24.04
 FROM ${BASE_IMAGE} AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -134,6 +134,16 @@ RUN git clone --branch master --depth 1 https://github.com/RidgeRun/gst-interpip
     && meson compile -C builddir \
     && meson install -C builddir \
     && rm -rf builddir
+
+# Nvidia plugin patch
+COPY patches/libs/libgstnvcompositor.so /libgstnvcompositor.so
+RUN if uname -m | grep -q 'aarch64'; then \
+        echo "arm64 detected - performing nvcompositor overwrite"; \
+        cp /libgstnvcompositor.so /opt/gstreamer/lib/gstreamer-1.0/libgstnvcompositor.so; \
+    else \
+        echo "x86 detected - skipping nvcompositor overwrite"; \
+    fi
+
 ENV PATH=/opt/gstreamer/bin:$PATH
 ENV LD_LIBRARY_PATH=/opt/gstreamer/lib:$LD_LIBRARY_PATH
 ENV PKG_CONFIG_PATH=/opt/gstreamer/lib/pkgconfig:$PKG_CONFIG_PATH
@@ -143,7 +153,7 @@ ENV PKG_CONFIG_PATH=/opt/gstreamer/lib/pkgconfig:$PKG_CONFIG_PATH
 ############################
 FROM nvcr.io/nvidia/deepstream:9.0-triton-multiarch AS deepstream-base
 ARG CUDA_MAJOR=13
-ARG CUDA_MINOR=2
+ARG CUDA_MINOR=3
 ARG USE_NVIDIA=true
 RUN if [ "$USE_NVIDIA" = "true" ]; then \
         apt-get update && apt-get install -y --no-install-recommends \
@@ -169,6 +179,7 @@ RUN if [ "$USE_NVIDIA" = "true" ]; then \
 # Stage 5: Minimal Runtime Base
 ############################
 FROM ros2-base AS runtime
+ARG USE_NVIDIA=true
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 WORKDIR /
@@ -195,6 +206,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gstreamer1.0-libav \
     gstreamer1.0-nice \
     && rm -rf /var/lib/apt/lists/*
+
+RUN if [ "$USE_NVIDIA" = "true" ]; then \
+        apt-get update && apt-get install -y --no-install-recommends \
+            libnvinfer10 libnvinfer-plugin10 libnvonnxparsers10 \
+        && rm -rf /var/lib/apt/lists/*; \
+    else \
+        echo "Skipping NVIDIA dependencies installation"; \
+    fi
 
 RUN source /opt/ros/$ROS_DISTRO/setup.bash \
     && rosdep init \

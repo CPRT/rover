@@ -85,8 +85,7 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
     servo_parameters = [
         {
             "moveit_servo": servo_yaml,
-            "publish_frequency": 100.0,
-            "butterworth_filter_coeff": 2.0,
+            "butterworth_filter_coeff": 1.5,
         },
         moveit_config.robot_description_semantic,
         moveit_config.robot_description_kinematics,
@@ -109,8 +108,9 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
         parameters=[
             {"id": 15},
             {"max_voltage": 24.0},
-            {"max_current": 6.0},
+            {"max_current": 1.0},
             {"brake_mode": True},
+            {"interface": "can1"},
         ],
     )
     joystick_control_dir = get_package_share_directory("joystick_control")
@@ -136,7 +136,6 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
         namespace="",
         package="ros_phoenix",
         executable="phoenix_container",
-        parameters=[{"interface": "can0"}],
         composable_node_descriptions=[
             eef_component,
             servo_component,

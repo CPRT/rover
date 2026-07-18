@@ -13,12 +13,14 @@
     "--volume=/tmp/argus_socket:/tmp/argus_socket",
     "--volume=/usr/local/zed:/usr/local/zed",
     "--runtime=nvidia",
+    "--env", "NVIDIA_DISABLE_REQUIRE=true",
     "--gpus=all",
     "--ipc=host",
     "--group-add=video",
     "--group-add=render",
     "--group-add=systemd-journal",
-    "--group-add=dialout"
+    "--group-add=dialout",
+    "--group-add=984"
   ],
   "mounts": [
     "source=${env:HOME}/.ssh,target=/home/ubuntu/.ssh,type=bind,consistency=cached",

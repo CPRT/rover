@@ -175,6 +175,7 @@ SnmpNetworkStatsNode::snmp_walk_first_int(const std::string &base_oid_str) {
 
     netsnmp_variable_list *vars = response->variables;
     if (!vars) {
+      RCLCPP_WARN(this->get_logger(), "No vars: %s", base_oid_str.c_str());
       snmp_free_pdu(response);
       break;
     }
@@ -183,6 +184,7 @@ SnmpNetworkStatsNode::snmp_walk_first_int(const std::string &base_oid_str) {
                          vars->name_length) != 0 &&
         (vars->name_length < root_oid_len ||
          std::memcmp(root_oid, vars->name, root_oid_len * sizeof(oid)) != 0)) {
+      RCLCPP_WARN(this->get_logger(), "Bad compare: %s", base_oid_str.c_str());
       snmp_free_pdu(response);
       break;
     }
@@ -247,11 +249,11 @@ void SnmpNetworkStatsNode::poll_and_publish() {
   RCLCPP_DEBUG(this->get_logger(), "Polling SNMP data at time: %.2f seconds",
                std::chrono::duration<double>(now.time_since_epoch()).count());
 
-  const auto signal_strength = snmp_walk_first_int(oid_signal_strength_base_);
-  const auto noise_floor = snmp_walk_first_int(oid_noise_floor_base_);
-  const auto ccq_tx = snmp_walk_first_int(oid_ccq_tx_base_);
-  const auto bandwidth_tx = snmp_walk_first_int(oid_bandwidth_tx_base_);
-  const auto bandwidth_rx = snmp_walk_first_int(oid_bandwidth_rx_base_);
+  const auto signal_strength = snmp_get_int(oid_signal_strength_base_);
+  const auto noise_floor = snmp_get_int(oid_noise_floor_base_);
+  const auto ccq_tx = snmp_get_int(oid_ccq_tx_base_);
+  const auto bandwidth_tx = snmp_get_int(oid_bandwidth_tx_base_);
+  const auto bandwidth_rx = snmp_get_int(oid_bandwidth_rx_base_);
 
   const auto rx_counter_raw = snmp_get_int(oid_rx_counter_);
   const auto tx_counter_raw = snmp_get_int(oid_tx_counter_);

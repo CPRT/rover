@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Load config
 IMAGE_NAME="cprtsoftware/rover"
-BASE_IMAGE=nvidia/cuda:13.2.1-cudnn-runtime-ubuntu24.04
+BASE_IMAGE=nvidia/cuda:13.3.0-cudnn-runtime-ubuntu24.04
 GIT_SHA=$(git rev-parse HEAD)
 
 # Default settings
