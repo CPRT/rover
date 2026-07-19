@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <rclcpp_components/register_node_macro.hpp>
 
+namespace video_streaming {
+
 ZoomNode::ZoomNode(const rclcpp::NodeOptions &options)
     : BaseVideoNode("zoom_node", options) {
   this->declare_parameter<std::string>("listen_to", "input");
@@ -9,13 +11,13 @@ ZoomNode::ZoomNode(const rclcpp::NodeOptions &options)
   this->declare_parameter<int>("height", 1080);
   this->declare_parameter<int>("width", 1920);
   zoom_sub_ = this->create_subscription<std_msgs::msg::Float32>(
-      "zoom", rclcpp::QoS(rclcpp::KeepLast(1)).reliable(),
+      "~/zoom", rclcpp::QoS(rclcpp::KeepLast(1)).reliable(),
       std::bind(&ZoomNode::zoom_cb, this, std::placeholders::_1));
   pan_sub_ = this->create_subscription<std_msgs::msg::Int8>(
-      "pan", rclcpp::QoS(rclcpp::KeepLast(1)).best_effort(),
+      "~/pan", rclcpp::QoS(rclcpp::KeepLast(1)).best_effort(),
       std::bind(&ZoomNode::pan_cb, this, std::placeholders::_1));
   tilt_sub_ = this->create_subscription<std_msgs::msg::Int8>(
-      "tilt", rclcpp::QoS(rclcpp::KeepLast(1)).best_effort(),
+      "~/tilt", rclcpp::QoS(rclcpp::KeepLast(1)).best_effort(),
       std::bind(&ZoomNode::tilt_cb, this, std::placeholders::_1));
   start_pipeline();
 }
@@ -26,12 +28,11 @@ bool ZoomNode::create_pipeline() {
           << this->get_parameter("listen_to").as_string()
           << " is-live=true "
              "allow-renegotiation=true name=src ! ";
-  desc_ss << "nvvideoconvert ! capsfilter caps=\""
+  desc_ss << "nvvidconv ! capsfilter caps=\""
           << "video/x-raw(memory:NVMM),format=NV12,width="
           << this->get_parameter("width").as_int()
           << ",height=" << this->get_parameter("height").as_int() << "\" ! ";
-  desc_ss << "nvvideoconvert name=zoomer src-crop=\"" << crop_.to_string()
-          << "\" ! " << "interpipesink name=";
+  desc_ss << "nvvidconv name=zoomer ! interpipesink name=";
   desc_ss << this->get_parameter("output_to").as_string();
 
   RCLCPP_INFO(this->get_logger(), "Creating pipeline: %s",
@@ -63,23 +64,34 @@ bool ZoomNode::create_pipeline() {
 }
 
 void ZoomNode::update() {
-  uint32_t total_height =
-      static_cast<uint32_t>(this->get_parameter("height").as_int());
-  uint32_t total_width =
-      static_cast<uint32_t>(this->get_parameter("width").as_int());
-  uint32_t crop_from_height =
-      static_cast<uint32_t>(total_height * (zoom_ - 1.0f) / (2.0f * zoom_));
-  uint32_t crop_from_width =
-      static_cast<uint32_t>(total_width * (zoom_ - 1.0f) / (2.0f * zoom_));
-  crop_.top = static_cast<uint16_t>(crop_from_height * (tilt_ / 100.0f));
-  crop_.bottom =
-      static_cast<uint16_t>(crop_from_height * (1.0f - (tilt_ / 100.0f)));
-  crop_.left = static_cast<uint16_t>(crop_from_width * (pan_ / 100.0f));
-  crop_.right =
-      static_cast<uint16_t>(crop_from_width * (1.0f - (pan_ / 100.0f)));
+  uint16_t total_height =
+      static_cast<uint16_t>(this->get_parameter("height").as_int());
+  uint16_t total_width =
+      static_cast<uint16_t>(this->get_parameter("width").as_int());
+  uint16_t crop_from_height =
+      static_cast<uint16_t>(total_height * (zoom_ - 1.0f) / zoom_);
+  uint16_t crop_from_width =
+      static_cast<uint16_t>(total_width * (zoom_ - 1.0f) / zoom_);
+
+  auto crop_from_left =
+      static_cast<uint16_t>(crop_from_width * (pan_ / 100.0f));
+  auto crop_from_top =
+      static_cast<uint16_t>(crop_from_height * (tilt_ / 100.0f));
+  auto crop_from_right =
+      static_cast<uint16_t>(crop_from_width * ((100 - pan_) / 100.0f));
+  auto crop_from_bottom =
+      static_cast<uint16_t>(crop_from_height * ((100 - tilt_) / 100.0f));
+
   GstElement *zoomer = get_element("zoomer");
   if (zoomer) {
-    g_object_set(zoomer, "src-crop", crop_.to_string().c_str(), nullptr);
+    pause_pipeline();
+    g_object_set(zoomer, "left", crop_from_left, "top", crop_from_top, "right",
+                 crop_from_right, "bottom", crop_from_bottom, nullptr);
+    resume_pipeline();
+    RCLCPP_INFO(this->get_logger(),
+                "Set zoom parameters l: %d t: %d r: %d b: %d", crop_from_left,
+                crop_from_top, crop_from_right, crop_from_bottom);
+    gst_object_unref(zoomer);
   } else {
     RCLCPP_ERROR(this->get_logger(), "Could not find zoomer element.");
   }
@@ -89,6 +101,8 @@ void ZoomNode::zoom_cb(const std_msgs::msg::Float32::SharedPtr msg) {
   float zoom = msg->data;
   if (zoom < 1.0f) {
     zoom = 1.0f;
+  } else if (zoom > 10.0f) {
+    zoom = 10.0f;
   }
   zoom_ = zoom;
   update();
@@ -116,4 +130,6 @@ void ZoomNode::tilt_cb(const std_msgs::msg::Int8::SharedPtr msg) {
   update();
 }
 
-RCLCPP_COMPONENTS_REGISTER_NODE(ZoomNode)
+} // namespace video_streaming
+
+RCLCPP_COMPONENTS_REGISTER_NODE(video_streaming::ZoomNode)

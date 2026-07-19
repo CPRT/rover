@@ -79,6 +79,7 @@ rclcpp_components_register_nodes(${PROJECT_NAME}
   "video_streaming::SrtClientNode"
   "video_streaming::RtpNode"
   "video_streaming::RtpClientNode"
+  "video_streaming::ZoomNode"
 )
 
 # ---- Install

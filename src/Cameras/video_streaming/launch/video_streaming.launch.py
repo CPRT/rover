@@ -29,6 +29,7 @@ def generate_launch_description():
                 "mallet_config": config_dir + "/mallet/mallet.txt",
                 "rockpick_config": config_dir + "/hammer/hammer.txt",
                 "detection_type": "NONE",
+                "listen_to": "zoom",
             }
         ],
     )
@@ -41,6 +42,13 @@ def generate_launch_description():
         parameters=[{"dest_ip": "192.168.0.20", "dest_port": 5004, "bitrate": 500000}],
     )
 
+    zoom_node = ComposableNode(
+        package="video_streaming",
+        plugin="video_streaming::ZoomNode",
+        name="zoom_node",
+        namespace="",
+        parameters=[{"listen_to": "input"}],
+    )
     capture_node = ComposableNode(
         package="video_streaming",
         plugin="VideoCaptureNode",
@@ -66,6 +74,7 @@ def generate_launch_description():
         executable="component_container_mt",
         composable_node_descriptions=[
             input_node,
+            zoom_node,
             detect_node,
             capture_node,
             rtp_node,
