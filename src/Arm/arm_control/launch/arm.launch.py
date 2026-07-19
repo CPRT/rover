@@ -7,7 +7,7 @@ import yaml
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import GroupAction
+from launch.actions import GroupAction, RegisterEventHandler
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 
@@ -16,6 +16,7 @@ from launch_ros.actions import Node, ComposableNodeContainer
 from moveit_configs_utils import MoveItConfigsBuilder
 from moveit_configs_utils.launch_utils import DeclareBooleanLaunchArg
 from moveit_configs_utils.launches import generate_moveit_rviz_launch
+from launch.event_handlers import OnProcessStart
 from launch_ros.descriptions import ComposableNode
 
 
@@ -144,7 +145,13 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
         ],
     )
 
-    ld.add_action(container)
+    delayed_arm_start = RegisterEventHandler(
+        OnProcessStart(
+            target_action=move_group,
+            on_start=[container],
+        )
+    )
+    ld.add_action(delayed_arm_start)
 
     return ld
 

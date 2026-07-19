@@ -13,7 +13,7 @@ from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, Command
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
-from launch.event_handlers import OnProcessStart
+from launch.event_handlers import OnProcessStart, OnProcessExit
 
 
 def generate_launch_description():
@@ -69,7 +69,14 @@ def generate_launch_description():
             ("~/cmd_vel", "/cmd_vel"),
         ],
     )
-
+    delayed_controller_manager = RegisterEventHandler(
+        OnProcessStart(
+            target_action=start_robot_state_publisher_cmd,
+            on_start=[
+                controller_manager,
+            ],
+        )
+    )
     jsb_spawner = Node(
         package="controller_manager",
         executable="spawner",
@@ -132,12 +139,21 @@ def generate_launch_description():
         condition=IfCondition(use_drive),
     )
 
+    delayed_arm_launch = RegisterEventHandler(
+        OnProcessExit(
+            target_action=arm_controller_spawner,
+            on_exit=[
+                arm_launch,
+            ],
+        )
+    )
+
     ld = LaunchDescription()
     ld.add_action(declare_use_arm_cmd)
     ld.add_action(declare_use_drive_cmd)
     ld.add_action(start_robot_state_publisher_cmd)
-    ld.add_action(controller_manager)
+    ld.add_action(delayed_controller_manager)
     ld.add_action(delayed_spawners)
-    ld.add_action(arm_launch)
+    ld.add_action(delayed_arm_launch)
     ld.add_action(drive_control_node)
     return ld
