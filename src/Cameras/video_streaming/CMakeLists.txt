@@ -34,6 +34,7 @@ add_library(${PROJECT_NAME} SHARED
   src/rtp_node.cpp
   src/rtp_client_node.cpp
   src/capture_node.cpp
+  src/zoom_node.cpp
 )
 
 include_directories(
