@@ -82,6 +82,8 @@ def generate_launch_description():
         executable="spawner",
         arguments=[
             "joint_state_broadcaster",
+            "--controller-manager-timeout", "120",
+            "--service-call-timeout", "120",
         ],
         parameters=[control_yaml],
         output="screen",
@@ -91,6 +93,8 @@ def generate_launch_description():
         executable="spawner",
         arguments=[
             "chassis_controller",
+            "--controller-manager-timeout", "120",
+            "--service-call-timeout", "120",
         ],
         parameters=[control_yaml],
         output="screen",
@@ -102,6 +106,8 @@ def generate_launch_description():
         executable="spawner",
         arguments=[
             "arm_controller",
+            "--controller-manager-timeout", "120",
+            "--service-call-timeout", "120",
         ],
         parameters=[control_yaml],
         output="screen",

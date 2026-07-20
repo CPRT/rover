@@ -113,11 +113,5 @@
         <state_interface name="velocity"/>
       </joint>
     </ros2_control>
-    <ros2_control name="${name}_fake" type="system">
-      <hardware>
-        <!-- By default, set up controllers for simulation. This won't work on real hardware -->
-        <plugin>mock_components/GenericSystem</plugin>
-      </hardware>
-    </ros2_control>
   </xacro:macro>
 </robot>
