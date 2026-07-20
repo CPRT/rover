@@ -111,6 +111,7 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
             {"max_current": 1.0},
             {"brake_mode": True},
             {"interface": "can1"},
+            {"invert": True},
         ],
     )
     joystick_control_dir = get_package_share_directory("joystick_control")
