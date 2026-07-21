@@ -23,27 +23,72 @@
         <joint name="Joint_1" value="0.0"/>
         <joint name="Joint_2" value="0.2592895665312099"/>
         <joint name="Joint_3" value="1.9420196774632217"/>
-        <joint name="Joint_4" value="-0.032213596545598466"/>
+        <joint name="Joint_4" value="0.0"/>
         <joint name="Joint_5" value="-0.5144412985335742"/>
         <joint name="Joint_6" value="0.0"/>
     </group_state>
 
-    <group_state name="High wall" group="arm">
-        <joint name="Joint_1" value="0.0"/>
-        <joint name="Joint_2" value="-0.12863230351461646"/>
-        <joint name="Joint_3" value="1.2471263805510262"/>
-        <joint name="Joint_4" value="-0.032213596545598466"/>
-        <joint name="Joint_5" value="-0.18899328654612874"/>
-        <joint name="Joint_6" value="-3.080282706597673e-06"/>
-    </group_state>
-
-    <group_state name="Low wall" group="arm">
+    <group_state name="Front 40cm" group="arm">
         <joint name="Joint_1" value="0.0"/>
         <joint name="Joint_2" value="-1.026693041726237"/>
         <joint name="Joint_3" value="1.4388739790367313"/>
-        <joint name="Joint_4" value="-0.032213596545598466"/>
+        <joint name="Joint_4" value="0.0"/>
         <joint name="Joint_5" value="0.9076258349677224"/>
-        <joint name="Joint_6" value="-3.080282706597673e-06"/>
+        <joint name="Joint_6" value="0.0"/>
+    </group_state>
+
+    <group_state name="Front 50cm" group="arm">
+        <joint name="Joint_1" value="0.0"/>
+        <joint name="Joint_2" value="-0.93004925603321537"/>
+        <joint name="Joint_3" value="1.4404079598246171"/>
+        <joint name="Joint_4" value="0.0"/>
+        <joint name="Joint_5" value="0.9089748092836316"/>
+        <joint name="Joint_6" value="0.0"/>
+    </group_state>
+
+    <group_state name="Front 60cm" group="arm">
+        <joint name="Joint_1" value="0.0"/>
+        <joint name="Joint_2" value="-0.7614518095014043"/>
+        <joint name="Joint_3" value="1.543184672612955"/>
+        <joint name="Joint_4" value="0.0"/>
+        <joint name="Joint_5" value="0.775595629185409"/>
+        <joint name="Joint_6" value="0.0"/>
+    </group_state>
+
+    <group_state name="Front 70cm" group="arm">
+        <joint name="Joint_1" value="0.0"/>
+        <joint name="Joint_2" value="-0.5568421416360253"/>
+        <joint name="Joint_3" value="1.7073206169167185"/>
+        <joint name="Joint_4" value="0.0"/>
+        <joint name="Joint_5" value="0.7755834577069896"/>
+        <joint name="Joint_6" value="0.0"/>
+    </group_state>
+
+    <group_state name="Front 80cm" group="arm">
+        <joint name="Joint_1" value="0.0"/>
+        <joint name="Joint_2" value="-0.18786770567259595"/>
+        <joint name="Joint_3" value="1.863786657281054"/>
+        <joint name="Joint_4" value="0.0"/>
+        <joint name="Joint_5" value="0.5581513245801785"/>
+        <joint name="Joint_6" value="0.0"/>
+    </group_state>
+
+    <group_state name="Front 90cm" group="arm">
+        <joint name="Joint_1" value="0.0"/>
+        <joint name="Joint_2" value="-0.12874540463716078"/>
+        <joint name="Joint_3" value="1.6659031356438063"/>
+        <joint name="Joint_4" value="0.0"/>
+        <joint name="Joint_5" value="0.3294631018377682"/>
+        <joint name="Joint_6" value="0.0"/>
+    </group_state>
+
+    <group_state name="Front 100cm" group="arm">
+        <joint name="Joint_1" value="0.0"/>
+        <joint name="Joint_2" value="-0.12863230351461646"/>
+        <joint name="Joint_3" value="1.2471263805510262"/>
+        <joint name="Joint_4" value="0.0"/>
+        <joint name="Joint_5" value="-0.18899328654612874"/>
+        <joint name="Joint_6" value="0.0"/>
     </group_state>
 
     <group_state name="Pick up front" group="arm">
