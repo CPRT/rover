@@ -87,9 +87,9 @@ class RoboClawAntennaNode(Node):
             return
 
         self.current_encoder = enc
-
-        antenna_radians = (enc / counts_per_rev) * (math.pi * 2)
-        antenna_encoder_pub.publish(enc)
+        antenna_radians = Float32()
+        antenna_radians.data = float(enc / self.counts_per_rev) * (math.pi * 2)
+        self.antenna_encoder_pub.publish(antenna_radians)
 
     # Position Control
     def drive_to_position(self, target):
