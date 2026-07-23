@@ -1,5 +1,6 @@
 #include "gstmorse_led.hpp"
 
+#include "metric_plot.hpp"
 #include "morse_decoder.hpp"
 #include "morse_timing.hpp"
 
@@ -27,6 +28,8 @@ enum {
   PROP_GAP_DETECT_RATIO,
   PROP_DOT_MAX_UNITS,
   PROP_DASH_MIN_UNITS,
+  PROP_METRIC,
+  PROP_METRIC_PLOT_PATH,
 };
 
 enum {
@@ -73,6 +76,9 @@ struct _GstMorseLED {
   MorseDecoder *decoder;
   gboolean draw_roi;
   gboolean last_led_on;
+
+  gfloat last_metric;
+  MetricPlotRecorder *metric_plot;
 };
 
 static void gst_morse_led_init(GstMorseLED *self);
@@ -83,6 +89,8 @@ static void gst_morse_led_set_property(GObject *object, guint prop_id,
                                        const GValue *value, GParamSpec *pspec);
 static void gst_morse_led_get_property(GObject *object, guint prop_id,
                                        GValue *value, GParamSpec *pspec);
+static GstStateChangeReturn
+gst_morse_led_change_state(GstElement *element, GstStateChange transition);
 
 static GstFlowReturn gst_morse_led_transform_frame_ip(GstVideoFilter *filter,
                                                       GstVideoFrame *frame);
@@ -115,6 +123,8 @@ static void gst_morse_led_init(GstMorseLED *self) {
 
   self->draw_roi = FALSE;
   self->last_led_on = FALSE;
+  self->last_metric = 0.0f;
+  self->metric_plot = new MetricPlotRecorder();
 
   self->decoder = morse_decoder_new();
   morse_decoder_set_wpm(self->decoder, self->wpm);
@@ -125,10 +135,15 @@ static void gst_morse_led_init(GstMorseLED *self) {
 
 static void gst_morse_led_finalize(GObject *object) {
   GstMorseLED *self = GST_MORSE_LED(object);
+  if (self->metric_plot != nullptr) {
+    self->metric_plot->write_and_clear();
+  }
   if (self->decoder != nullptr) {
     morse_decoder_free(self->decoder);
     self->decoder = nullptr;
   }
+  delete self->metric_plot;
+  self->metric_plot = nullptr;
   g_mutex_clear(&self->lock);
   G_OBJECT_CLASS(gst_morse_led_parent_class)->finalize(object);
 }
@@ -218,6 +233,11 @@ static void gst_morse_led_set_property(GObject *object, guint prop_id,
   case PROP_DASH_MIN_UNITS:
     morse_decoder_set_dash_min_units(self->decoder, g_value_get_double(value));
     break;
+  case PROP_METRIC_PLOT_PATH:
+    if (self->metric_plot != nullptr) {
+      self->metric_plot->set_path(g_value_get_string(value));
+    }
+    break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
     break;
@@ -297,6 +317,14 @@ static void gst_morse_led_get_property(GObject *object, guint prop_id,
   case PROP_DASH_MIN_UNITS:
     g_value_set_double(value, morse_decoder_get_dash_min_units(self->decoder));
     break;
+  case PROP_METRIC:
+    g_value_set_float(value, self->last_metric);
+    break;
+  case PROP_METRIC_PLOT_PATH:
+    g_value_set_string(value, self->metric_plot != nullptr
+                                  ? self->metric_plot->path()
+                                  : nullptr);
+    break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
     break;
@@ -313,6 +341,7 @@ static void gst_morse_led_class_init(GstMorseLEDClass *klass) {
   gobject_class->finalize = gst_morse_led_finalize;
   gobject_class->set_property = gst_morse_led_set_property;
   gobject_class->get_property = gst_morse_led_get_property;
+  element_class->change_state = gst_morse_led_change_state;
 
   gst_element_class_set_static_metadata(
       element_class, "Morse LED Decoder", "Filter/Effect/Video",
@@ -330,11 +359,11 @@ static void gst_morse_led_class_init(GstMorseLEDClass *klass) {
 
   g_object_class_install_property(
       gobject_class, PROP_START_DETECTION,
-      g_param_spec_boolean(
-          "start-detection", "Start Detection",
-          "Enable Morse decoding from incoming frames", TRUE,
-          (GParamFlags)(G_PARAM_READWRITE | GST_PARAM_MUTABLE_READY |
-                        G_PARAM_STATIC_STRINGS)));
+      g_param_spec_boolean("start-detection", "Start Detection",
+                           "Enable Morse decoding from incoming frames", TRUE,
+                           (GParamFlags)(G_PARAM_READWRITE |
+                                         GST_PARAM_MUTABLE_READY |
+                                         G_PARAM_STATIC_STRINGS)));
   g_object_class_install_property(
       gobject_class, PROP_ROI_X,
       g_param_spec_int(
@@ -357,12 +386,12 @@ static void gst_morse_led_class_init(GstMorseLEDClass *klass) {
           (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
   g_object_class_install_property(
       gobject_class, PROP_WPM,
-      g_param_spec_uint(
-          "wpm", "Words Per Minute",
-          "Morse speed in words per minute (PARIS timing)", 1, 200,
-          MORSE_DEFAULT_WPM,
-          (GParamFlags)(G_PARAM_READWRITE | GST_PARAM_MUTABLE_READY |
-                        G_PARAM_STATIC_STRINGS)));
+      g_param_spec_uint("wpm", "Words Per Minute",
+                        "Morse speed in words per minute (PARIS timing)", 1,
+                        200, MORSE_DEFAULT_WPM,
+                        (GParamFlags)(G_PARAM_READWRITE |
+                                      GST_PARAM_MUTABLE_READY |
+                                      G_PARAM_STATIC_STRINGS)));
   g_object_class_install_property(
       gobject_class, PROP_CALIBRATE,
       g_param_spec_boolean(
@@ -399,8 +428,8 @@ static void gst_morse_led_class_init(GstMorseLEDClass *klass) {
       gobject_class, PROP_ON_MARGIN,
       g_param_spec_float(
           "on-margin", "On Margin",
-          "Red-dominance margin above baseline to treat the LED as on ",
-          0.0f, 1.0f, MORSE_DEFAULT_ON_MARGIN,
+          "Red-dominance margin above baseline to treat the LED as on ", 0.0f,
+          1.0f, MORSE_DEFAULT_ON_MARGIN,
           (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
   g_object_class_install_property(
       gobject_class, PROP_MIN_TRANSITION_UNITS,
@@ -435,6 +464,20 @@ static void gst_morse_led_class_init(GstMorseLEDClass *klass) {
           MORSE_DEFAULT_DASH_MIN_UNITS,
           (GParamFlags)(G_PARAM_READWRITE | GST_PARAM_MUTABLE_READY |
                         G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property(
+      gobject_class, PROP_METRIC,
+      g_param_spec_float(
+          "metric", "Metric",
+          "Latest ROI lit-fraction metric fed to the Morse decoder", 0.0f, 1.0f,
+          0.0f, (GParamFlags)(G_PARAM_READABLE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property(
+      gobject_class, PROP_METRIC_PLOT_PATH,
+      g_param_spec_string(
+          "metric-plot-path", "Metric Plot Path",
+          "If set, write a metric-vs-time plot image (.ppm) and CSV when the "
+          "element stops. For .png paths a .ppm/.csv with the same stem are "
+          "written.",
+          nullptr, (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
   morse_led_signals[SIGNAL_CHARACTER_DECODED] =
       g_signal_new("character-decoded", G_TYPE_FROM_CLASS(klass),
@@ -487,19 +530,22 @@ static gfloat gst_morse_led_compute_roi_metric(const GstVideoFrame *frame,
   const guint8 *data =
       static_cast<const guint8 *>(GST_VIDEO_FRAME_PLANE_DATA(frame, 0));
   const gint stride = GST_VIDEO_FRAME_PLANE_STRIDE(frame, 0);
-  gdouble sum = 0.0;
+  constexpr gfloat kDominanceGate = 0.3f;
+  guint lit = 0;
   guint count = 0;
   for (gint y = y0; y < y1; ++y) {
     const guint8 *row = data + y * stride;
     for (gint x = x0; x < x1; ++x) {
-      sum += gst_morse_led_pixel_dominance(row + x * 3);
+      if (gst_morse_led_pixel_dominance(row + x * 3) > kDominanceGate) {
+        ++lit;
+      }
       ++count;
     }
   }
   if (count == 0) {
     return 0.0f;
   }
-  return static_cast<gfloat>(sum / static_cast<gdouble>(count));
+  return static_cast<gfloat>(lit) / static_cast<gfloat>(count);
 }
 
 // calibrates the ROI by accumulating the sum of the red-dominance of the
@@ -511,7 +557,6 @@ static void gst_morse_led_accumulate_calibration(GstMorseLED *self,
   const guint8 *data =
       static_cast<const guint8 *>(GST_VIDEO_FRAME_PLANE_DATA(frame, 0));
   const gint stride = GST_VIDEO_FRAME_PLANE_STRIDE(frame, 0);
-
 
   gdouble sum_x = 0.0;
   gdouble sum_y = 0.0;
@@ -549,7 +594,6 @@ static void gst_morse_led_finish_calibration(GstMorseLED *self,
   const gdouble center_y =
       self->calibration_sum_y / self->calibration_sum_weight;
   gst_morse_led_center_roi(self, frame_w, frame_h, center_x, center_y);
-
 
   g_mutex_lock(&self->lock);
   gint roi_x = self->roi_x;
@@ -589,8 +633,9 @@ static void gst_morse_led_update_calibration(GstMorseLED *self,
   gst_morse_led_reset_calibration(self);
 }
 
-static inline void gst_morse_led_set_pixel(guint8 *data, gint stride, gint x, gint y,
-                                    guint8 r, guint8 g, guint8 b) {
+static inline void gst_morse_led_set_pixel(guint8 *data, gint stride, gint x,
+                                           gint y, guint8 r, guint8 g,
+                                           guint8 b) {
   guint8 *px = data + y * stride + x * 3;
   px[0] = r;
   px[1] = g;
@@ -639,6 +684,17 @@ static void gst_morse_led_draw_roi_box(GstVideoFrame *frame, gint roi_x,
   }
 }
 
+static GstStateChangeReturn
+gst_morse_led_change_state(GstElement *element, GstStateChange transition) {
+  GstMorseLED *self = GST_MORSE_LED(element);
+  if (transition == GST_STATE_CHANGE_READY_TO_NULL &&
+      self->metric_plot != nullptr) {
+    self->metric_plot->write_and_clear();
+  }
+  return GST_ELEMENT_CLASS(gst_morse_led_parent_class)
+      ->change_state(element, transition);
+}
+
 static GstFlowReturn gst_morse_led_transform_frame_ip(GstVideoFilter *filter,
                                                       GstVideoFrame *frame) {
   GstMorseLED *self = GST_MORSE_LED(filter);
@@ -656,8 +712,8 @@ static GstFlowReturn gst_morse_led_transform_frame_ip(GstVideoFilter *filter,
   g_mutex_lock(&self->lock);
   gint roi_x = self->roi_x;
   gint roi_y = self->roi_y;
-  const guint roi_width = self->roi_width;
-  const guint roi_height = self->roi_height;
+  guint roi_width = self->roi_width;
+  guint roi_height = self->roi_height;
   g_mutex_unlock(&self->lock);
 
   if (self->start_detection) {
@@ -668,8 +724,26 @@ static GstFlowReturn gst_morse_led_transform_frame_ip(GstVideoFilter *filter,
     roi_y = self->roi_y;
     g_mutex_unlock(&self->lock);
 
-    const gfloat metric = gst_morse_led_compute_roi_metric(
-        frame, roi_x, roi_y, roi_width, roi_height);
+    gfloat metric = gst_morse_led_compute_roi_metric(frame, roi_x, roi_y,
+                                                     roi_width, roi_height);
+    while (metric >= 1.0f) {
+      g_mutex_lock(&self->lock);
+      self->roi_x = std::max(1, self->roi_x - 50);
+      self->roi_y = std::max(1, self->roi_y - 50);
+      self->roi_width = static_cast<guint>(
+          std::min(GST_VIDEO_FRAME_WIDTH(frame) - 1,
+                   static_cast<gint>(self->roi_width + 100)));
+      self->roi_height = static_cast<guint>(
+          std::min(GST_VIDEO_FRAME_HEIGHT(frame) - 1,
+                   static_cast<gint>(self->roi_height + 100)));
+      roi_x = self->roi_x;
+      roi_y = self->roi_y;
+      roi_width = self->roi_width;
+      roi_height = self->roi_height;
+      g_mutex_unlock(&self->lock);
+      metric = gst_morse_led_compute_roi_metric(frame, roi_x, roi_y, roi_width,
+                                                roi_height);
+    }
 
     gchar new_chars[16];
     gsize new_char_count = 0;
@@ -682,6 +756,16 @@ static GstFlowReturn gst_morse_led_transform_frame_ip(GstVideoFilter *filter,
     if (new_len > old_len) {
       new_char_count = std::min(new_len - old_len, sizeof(new_chars));
       std::memcpy(new_chars, new_text + old_len, new_char_count);
+    }
+    const gboolean led_on_now = morse_decoder_get_led_on(self->decoder);
+    const gfloat on_margin = morse_decoder_get_on_margin(self->decoder);
+    const gfloat baseline = morse_decoder_get_baseline(self->decoder);
+    const gfloat threshold_on = baseline + on_margin;
+    const gfloat threshold_off = baseline + on_margin * 0.5f;
+    self->last_metric = metric;
+    if (self->metric_plot != nullptr) {
+      self->metric_plot->append(timestamp_sec, metric, threshold_on,
+                                threshold_off, led_on_now);
     }
     g_mutex_unlock(&self->lock);
     if (new_char_count > 0) {
@@ -700,8 +784,10 @@ static GstFlowReturn gst_morse_led_transform_frame_ip(GstVideoFilter *filter,
   }
 
   if (self->draw_roi) {
-    const gboolean led_on = self->start_detection ? morse_decoder_get_led_on(self->decoder) : FALSE;
-    gst_morse_led_draw_roi_box(frame, roi_x, roi_y, roi_width, roi_height, led_on);
+    const gboolean led_on =
+        self->start_detection ? morse_decoder_get_led_on(self->decoder) : FALSE;
+    gst_morse_led_draw_roi_box(frame, roi_x, roi_y, roi_width, roi_height,
+                               led_on);
   }
 
   return GST_FLOW_OK;

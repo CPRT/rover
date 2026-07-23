@@ -63,6 +63,7 @@ void morse_decoder_set_dash_min_units(MorseDecoder *decoder,
                                       gdouble dash_min_units);
 
 gfloat morse_decoder_get_on_margin(MorseDecoder *decoder);
+gfloat morse_decoder_get_baseline(MorseDecoder *decoder);
 gdouble morse_decoder_get_min_transition_units(MorseDecoder *decoder);
 gdouble morse_decoder_get_gap_detect_ratio(MorseDecoder *decoder);
 gdouble morse_decoder_get_dot_max_units(MorseDecoder *decoder);

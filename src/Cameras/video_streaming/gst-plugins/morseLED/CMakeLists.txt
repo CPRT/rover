@@ -15,6 +15,7 @@ add_library(gstmorseLED SHARED
   gstmorse_led.cpp
   gstmorse_led_sim.cpp
   morse_decoder.cpp
+  metric_plot.cpp
 )
 
 target_compile_definitions(gstmorseLED PRIVATE
