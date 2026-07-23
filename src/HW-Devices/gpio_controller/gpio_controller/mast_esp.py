@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 from interfaces.msg import Distance
 import serial
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, String
 
 
 def convert_from_radians(angle, servo_min, servo_max, servo_rom):
@@ -21,6 +21,9 @@ class MastESP(Node):
         self.us_sub = self.create_subscription(
             Float32, "/mast_angle", self.mast_callback, 3
         )
+        self.morse_sub = self.create_subscription(
+            String, "/morse_transmission", self.morse_callback, 3
+        )
 
         self.declare_parameter("min", 500.0)
         self.declare_parameter("max", 2500.0)
@@ -38,7 +41,12 @@ class MastESP(Node):
             msg.data, self.servo_min, self.servo_max, self.servo_rom
         )
         self.get_logger().debug(f"Received angle: {msg.data:.3f} rad -> PWM: {us} us")
-        data = bytes("M" + str(us), "utf-8")
+        data = bytes("S" + str(us), "utf-8")
+        self.ser.write(data)
+
+    def morse_callback(self, msg: String):
+        self.get_logger().info(f"Transmitting morse: {msg.data}")
+        data = bytes("M" + msg.data, "utf-8")
         self.ser.write(data)
 
     def loop(self):
