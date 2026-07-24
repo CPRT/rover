@@ -1,6 +1,6 @@
 # VideoOut.srv
 
-VideoSource sources[]
+VideoSource[] sources
 
 ---
 bool success

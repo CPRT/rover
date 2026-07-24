@@ -241,7 +241,7 @@ void InputNode::video_cb(
     const int height = source.height * total_height / 100;
     const int width = source.width * total_width / 100;
     const int origin_x = source.origin_x * total_width / 100;
-    const int origin_y = source.origin_y * total_height / 100; 
+    const int origin_y = source.origin_y * total_height / 100;
 
     auto iter = source_map_.find(name);
     if (iter == source_map_.end()) {
