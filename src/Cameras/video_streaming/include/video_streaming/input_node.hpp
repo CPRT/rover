@@ -2,7 +2,6 @@
 #include "base_video_node.hpp"
 #include <interfaces/srv/get_cameras.hpp>
 #include <interfaces/srv/video_out.hpp>
-#include <interfaces/srv/video_preset.hpp>
 
 class InputNode : public BaseVideoNode {
 public:
@@ -22,18 +21,13 @@ protected:
   void
   video_cb(const std::shared_ptr<interfaces::srv::VideoOut::Request> request,
            std::shared_ptr<interfaces::srv::VideoOut::Response> response);
-  void preset_cb(
-      const std::shared_ptr<interfaces::srv::VideoPreset::Request> request,
-      std::shared_ptr<interfaces::srv::VideoPreset::Response> response);
 
   // Apply fixed grid layout to the mosaic compositor after pipeline creation.
   bool set_mosaic_layout();
 
 private:
   std::map<std::string, size_t> source_map_;
-  std::vector<std::string> presets_;
   rclcpp::Service<interfaces::srv::VideoOut>::SharedPtr video_service_;
   rclcpp::Service<interfaces::srv::GetCameras>::SharedPtr get_cam_service_;
-  rclcpp::Service<interfaces::srv::VideoPreset>::SharedPtr preset_service_;
   std::shared_ptr<interfaces::srv::VideoOut::Request> current_video_request_;
 };

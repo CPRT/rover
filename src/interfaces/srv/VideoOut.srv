@@ -1,5 +1,6 @@
 # VideoOut.srv
 
-string name
+VideoSource sources[]
+
 ---
 bool success
