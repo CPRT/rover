@@ -9,13 +9,13 @@ drive::drive() : Node("drive_node"), initialized_(false) {
   servo_m_pub_ =
       this->create_publisher<std_msgs::msg::Float32>("/mast_angle", 10);
 
-  camera_client_ =
-      this->create_client<interfaces::srv::VideoOut>("/start_video");
+  preset_client_ =
+      this->create_client<interfaces::srv::VideoPreset>("/request_preset");
+  list_presets_client_ =
+      this->create_client<interfaces::srv::GetPresets>("/list_presets");
   joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
       "/joy", rclcpp::QoS(2).best_effort(),
       std::bind(&drive::drive_control, this, std::placeholders::_1));
-  param_client_ = this->create_client<rcl_interfaces::srv::GetParameters>(
-      "/input_node/get_parameters");
   RCLCPP_INFO(this->get_logger(), "Drive controller started");
   servo_y_ = kDefaultServoY;
   servo_x_ = kDefaultServoX;
@@ -23,22 +23,18 @@ drive::drive() : Node("drive_node"), initialized_(false) {
   setCarousell();
 };
 void drive::setCarousell() {
-  if (!param_client_->wait_for_service(std::chrono::seconds(2))) {
-    RCLCPP_ERROR(this->get_logger(),
-                 "Input node get parameters service is unavailable!!!!");
+  if (!list_presets_client_->wait_for_service(std::chrono::seconds(2))) {
+    RCLCPP_ERROR(this->get_logger(), "List presets service is unavailable!!!!");
     return;
   }
 
-  auto request =
-      std::make_shared<rcl_interfaces::srv::GetParameters::Request>();
-  request->names.push_back("presets");
+  auto request = std::make_shared<interfaces::srv::GetPresets::Request>();
 
-  param_client_->async_send_request(
+  list_presets_client_->async_send_request(
       request,
-      [this](rclcpp::Client<rcl_interfaces::srv::GetParameters>::SharedFuture
-                 msg) {
+      [this](rclcpp::Client<interfaces::srv::GetPresets>::SharedFuture msg) {
         auto response = msg.get();
-        video_carousell_ = std::move(response->values[0].string_array_value);
+        video_carousell_ = std::move(response->presets);
         video_carousell_idx_ = 0;
       });
 }
@@ -67,11 +63,11 @@ void drive::camera_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
       video_carousell_idx_ = 0;
     }
   }
-  auto request = std::make_shared<interfaces::srv::VideoOut::Request>();
+  auto request = std::make_shared<interfaces::srv::VideoPreset::Request>();
   request->name = video_carousell_[video_carousell_idx_];
   RCLCPP_INFO(this->get_logger(), "Sending Video preset %s",
               request->name.c_str());
-  camera_client_->async_send_request(request);
+  preset_client_->async_send_request(request);
 }
 
 void drive::drive_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
