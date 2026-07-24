@@ -30,9 +30,7 @@ setup(
     license="TODO: License declaration",
     entry_points={
         "console_scripts": [
-            "gas_sensor = science_sensors.gas_sensor:main",
             "panoramic = science_sensors.panoramic:main",
-            "esp_serial_bridge = science_sensors.esp_serial_bridge:main",
             "polarimeter = science_sensors.polarimeter:main",
         ],
     },
