@@ -1,0 +1,4 @@
+# GetPresets.srv
+
+---
+string[] presets

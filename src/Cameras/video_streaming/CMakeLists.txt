@@ -34,6 +34,7 @@ add_library(${PROJECT_NAME} SHARED
   src/rtp_node.cpp
   src/rtp_client_node.cpp
   src/capture_node.cpp
+  src/preset_node.cpp
 )
 
 include_directories(
@@ -67,13 +68,14 @@ ament_target_dependencies(${PROJECT_NAME}
 # If pkg-config provided extra compile flags (e.g., -D, -pthread)
 target_compile_options(${PROJECT_NAME} PRIVATE ${GST_CFLAGS_OTHER})
 
-# Register both composable nodes
+# Register composable nodes
 rclcpp_components_register_nodes(${PROJECT_NAME}
   "InputNode"
   "DetectNode"
   "WebRtcNode"
   "video_streaming::MosaicWebRtcNode"
   "VideoCaptureNode"
+  "PresetNode"
   "video_streaming::SrtNode"
   "video_streaming::SrtClientNode"
   "video_streaming::RtpNode"
