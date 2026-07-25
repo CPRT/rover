@@ -6,7 +6,7 @@
   "runArgs": [
     "--network=host",
     "--privileged",
-    "--volume=/dev/v4l/by-id:/dev/v4l/by-id",
+    "--volume=/dev/v4l/:/dev/v4l/",
     "--volume=/dev/serial/by-id:/dev/serial/by-id",
     "--volume=/sys:/sys",
     "--volume=/etc/timezone:/etc/timezone",
