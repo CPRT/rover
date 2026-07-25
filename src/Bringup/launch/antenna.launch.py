@@ -19,21 +19,21 @@ def generate_launch_description():
                 default_value="false",
                 description="If true, load basestation config on startup",
             ),
-            # launch_ros.actions.Node(
-            #     package="gps",
-            #     executable="gps_base_pub_node",
-            #     name="gps_base_pub_node",
-            #     parameters=[
-            #         {
-            #             "Device": "/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_GNSS_receiver-if00"
-            #         },
-            #         {"Baudrate": 115200},
-            #         {"Freq": 5.0},  # Publish rate (hz)
-            #         {"SvinMindur": 300},  # Survey in time (s)
-            #         {"SvinMinAccDur": 10_000},  # Survey in accuracy (mm)
-            #         {"QueueDepth": 10},
-            #     ],
-            # ),
+            launch_ros.actions.Node(
+                package="gps",
+                executable="gps_base_pub_node",
+                name="gps_base_pub_node",
+                parameters=[
+                    {
+                        "Device": "/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_GNSS_receiver-if00"
+                    },
+                    {"Baudrate": 115200},
+                    {"Freq": 5.0},  # Publish rate (hz)
+                    {"SvinMinDur": 300},  # Survey-in minimum duration (s)
+                    {"SvinAccLimit": 10_000},  # Survey-in accuracy limit (mm)
+                    {"QueueDepth": 10},
+                ],
+            ),
             launch_ros.actions.Node(
                 package="gps",
                 executable="antenna_pointing_node",
