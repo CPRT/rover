@@ -20,16 +20,16 @@ input_node:
       type: 0
       encoded: true
     Bottom:
-      path: "/dev/v4l/by-id/usb-HD_Camera_Manufacturer_USB_2.0_Camera-video-index0"
+      path: "/dev/v4l/by-path/platform-3610000.usb-usb-0:4.1.1:1.0-video-index0"
       type: 0
       encoded: true
       height: 480
       width: 640
     Mast:
-      path: "/dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._Webcam_Webcam-video-index0"
+      path: "/dev/v4l/by-path/platform-141a0000.pcie-pci-0005:01:00.0-usb-0:4.3:1.0-video-index0"
       type: 0
       encoded: true
-      height: 720
-      width: 1280
+      height: 768
+      width: 1024
     Test:
       type: 1
