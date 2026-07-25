@@ -60,7 +60,7 @@ class RoboClawAntennaNode(Node):
 
     # Angle to Encoder Command
     def pos_callback(self, msg: Float32):
-        norm = msg.data / math.pi * 2
+        norm = (float(msg.data) % (math.pi * 2)) / (math.pi * 2)
 
         self.target_encoder = self.zero_offset + int(norm * self.counts_per_rev)
 
