@@ -33,6 +33,21 @@ def generate_launch_description():
         ],
     )
 
+    morse_led_node = ComposableNode(
+        package="video_streaming",
+        plugin="MorseLedNode",
+        name="morse_led_node",
+        namespace="",
+        parameters=[
+            {
+                "listen_to": "input",
+                "start_detection": False,
+                "calibrate": False,
+                "draw_roi": False,
+            }
+        ],
+    )
+
     rtp_node = ComposableNode(
         package="video_streaming",
         plugin="video_streaming::RtpNode",
@@ -67,6 +82,7 @@ def generate_launch_description():
         composable_node_descriptions=[
             input_node,
             detect_node,
+            morse_led_node,
             capture_node,
             rtp_node,
             mosaic_webrtc_node,

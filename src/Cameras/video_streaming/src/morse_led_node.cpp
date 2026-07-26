@@ -4,12 +4,17 @@
 
 static void on_character_decoded(GstElement * /*element*/, guint char_code,
                                  gpointer user_data);
+static void on_calibrate_notify(GObject *element, GParamSpec * /*pspec*/,
+                                gpointer user_data);
+static void on_roi_locked(GstElement * /*element*/, gint roi_x, gint roi_y,
+                          guint /*roi_width*/, guint /*roi_height*/,
+                          gpointer user_data);
 
 MorseLedNode::MorseLedNode(const rclcpp::NodeOptions &options)
     : BaseVideoNode("morse_led_node", options) {
   declare_parameters();
-  param_callback_handle_ = this->add_on_set_parameters_callback(std::bind(
-      &MorseLedNode::on_parameter_change, this, std::placeholders::_1));
+  post_set_param_callback_handle_ = this->add_post_set_parameters_callback(
+      std::bind(&MorseLedNode::on_parameters_set, this, std::placeholders::_1));
   character_pub_ = this->create_publisher<std_msgs::msg::String>(
       "morse_character", rclcpp::QoS(rclcpp::KeepLast(50)).reliable());
   text_pub_ = this->create_publisher<std_msgs::msg::String>(
@@ -124,6 +129,9 @@ bool MorseLedNode::start_pipeline() {
   }
   g_signal_connect(morse, "character-decoded", G_CALLBACK(on_character_decoded),
                    this);
+  g_signal_connect(morse, "notify::calibrate", G_CALLBACK(on_calibrate_notify),
+                   this);
+  g_signal_connect(morse, "roi-locked", G_CALLBACK(on_roi_locked), this);
   gst_object_unref(morse);
   return true;
 }
@@ -157,6 +165,32 @@ void MorseLedNode::publish_decoded_text(const std::string &text) {
   }
 }
 
+void MorseLedNode::sync_calibrate_state(bool calibrating) {
+  if (this->get_parameter("calibrate").as_bool() == calibrating) {
+    return;
+  }
+  RCLCPP_INFO(this->get_logger(),
+              "morseLED element reported calibrate=%s; syncing parameter.",
+              calibrating ? "true" : "false");
+  applying_plugin_sync_ = true;
+  this->set_parameters({rclcpp::Parameter("calibrate", calibrating)});
+  applying_plugin_sync_ = false;
+}
+
+void MorseLedNode::sync_roi_state(int roi_x, int roi_y) {
+  if (this->get_parameter("roi_x").as_int() == roi_x &&
+      this->get_parameter("roi_y").as_int() == roi_y) {
+    return;
+  }
+  RCLCPP_INFO(this->get_logger(),
+              "morseLED element locked ROI to (%d, %d); syncing parameters.",
+              roi_x, roi_y);
+  applying_plugin_sync_ = true;
+  this->set_parameters(
+      {rclcpp::Parameter("roi_x", roi_x), rclcpp::Parameter("roi_y", roi_y)});
+  applying_plugin_sync_ = false;
+}
+
 static void on_character_decoded(GstElement * /*element*/, guint char_code,
                                  gpointer user_data) {
   auto *self = static_cast<MorseLedNode *>(user_data);
@@ -166,11 +200,32 @@ static void on_character_decoded(GstElement * /*element*/, guint char_code,
   self->publish_character(char_code);
 }
 
-rcl_interfaces::msg::SetParametersResult MorseLedNode::on_parameter_change(
+static void on_calibrate_notify(GObject *element, GParamSpec * /*pspec*/,
+                                gpointer user_data) {
+  auto *self = static_cast<MorseLedNode *>(user_data);
+  if (!self || !element) {
+    return;
+  }
+  gboolean calibrating = FALSE;
+  g_object_get(element, "calibrate", &calibrating, nullptr);
+  self->sync_calibrate_state(calibrating == TRUE);
+}
+
+static void on_roi_locked(GstElement * /*element*/, gint roi_x, gint roi_y,
+                          guint /*roi_width*/, guint /*roi_height*/,
+                          gpointer user_data) {
+  auto *self = static_cast<MorseLedNode *>(user_data);
+  if (!self) {
+    return;
+  }
+  self->sync_roi_state(roi_x, roi_y);
+}
+
+void MorseLedNode::on_parameters_set(
     const std::vector<rclcpp::Parameter> &parameters) {
-  rcl_interfaces::msg::SetParametersResult result;
-  result.successful = true;
-  result.reason = "success";
+  if (applying_plugin_sync_.load()) {
+    return;
+  }
 
   bool needs_restart = false;
   bool update_element = false;
@@ -199,10 +254,8 @@ rcl_interfaces::msg::SetParametersResult MorseLedNode::on_parameter_change(
     if (!start_pipeline()) {
       RCLCPP_ERROR(this->get_logger(),
                    "Failed to restart pipeline after parameter change.");
-      result.successful = false;
-      result.reason = "Failed to restart pipeline after parameter change.";
     }
-    return result;
+    return;
   }
 
   if (update_element) {
@@ -212,7 +265,6 @@ rcl_interfaces::msg::SetParametersResult MorseLedNode::on_parameter_change(
       gst_object_unref(morse);
     }
   }
-  return result;
 }
 
 RCLCPP_COMPONENTS_REGISTER_NODE(MorseLedNode)
