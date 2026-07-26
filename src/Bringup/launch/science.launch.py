@@ -40,6 +40,7 @@ def generate_launch_description():
                 plugin="ros_phoenix::TalonSRX",
                 name="elevator",
                 parameters=[
+                    {"interface": "can1"},
                     {"id": 20},
                     {"max_voltage": 24.0},
                     {"brake_mode": True},
@@ -51,6 +52,7 @@ def generate_launch_description():
                 plugin="ros_phoenix::TalonSRX",
                 name="drill",
                 parameters=[
+                    {"interface": "can1"},
                     {"id": 21},
                     {"max_voltage": 24.0},
                     {"brake_mode": True},
@@ -61,10 +63,11 @@ def generate_launch_description():
         output="screen",
     )
 
-    esp_serial_bridge = Node(
+    science_sensors = Node(
         package="science_sensors",
-        executable="esp_serial_bridge",
-        name="esp_serial_bridge",
+        executable="science_sensors",
+        name="science_sensors",
+        parameters=[{"interface": "can1"}]
     )
 
     panoramic = Node(
@@ -82,7 +85,7 @@ def generate_launch_description():
     ld = LaunchDescription()
     ld.add_action(science_drill_control)
     ld.add_action(talon_container)
-    ld.add_action(esp_serial_bridge)
+    ld.add_action(science_sensors)
     ld.add_action(polarimeter)
     ld.add_action(panoramic)
     return ld
