@@ -1,0 +1,40 @@
+drive_teleop_node:
+  ros__parameters:
+    forward_axis: 1
+    strafe_axis: 0
+    yaw_axis: 2
+    max_linear: 2.0
+    max_angular: 1.0
+    servo_y_axis: 7
+    servo_x_axis: 6
+    servo_home_button: 1
+    servo_increment: 0.02
+    mast_left_button: 0
+    mast_right_button: 2
+    servo_min: 0.0
+    servo_max: 6.28
+    default_servo_x: 3.10
+    default_servo_y: 3.75
+
+arm_teleop_node:
+  ros__parameters:
+    throttle:
+      axis: 3
+    joint_1_axis: 0
+    joint_2_axis: 1
+    joint_3_axis: 5
+    joint_4_axis: 2
+    wrist_yaw_positive: 3
+    wrist_yaw_negative: 5
+    joint_6_axis: 4
+    dot_inc: 4
+
+drill_teleop_node:
+  ros__parameters:
+    drill_power_axis: 2
+    drill_elevation_axis: 1
+    joy_first_message_timeout_s: 10.0
+    max_drill_duty: 1.0
+    max_elevator_duty: 1.0
+    drill_cmd_topic: "/drill/set"
+    elevator_cmd_topic: "/elevator/set"
