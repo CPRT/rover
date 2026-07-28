@@ -115,7 +115,7 @@ def arm_launch(moveit_config, launch_package_path=None) -> LaunchDescription:
         ],
     )
     joystick_control_dir = get_package_share_directory("joystick_control")
-    joy_parameters_file = os.path.join(joystick_control_dir, "pxn.yaml")
+    joy_parameters_file = os.path.join(joystick_control_dir, "3dpro.yaml")
 
     arm_control_component = ComposableNode(
         package="joystick_control",

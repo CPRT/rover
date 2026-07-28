@@ -36,7 +36,7 @@ def generate_launch_description():
     pkg_joystick_control = get_package_share_directory("joystick_control")
     parameters_file = os.path.join(pkg_joystick_control, "pxn.yaml")
     # Detect IDs dynamically
-    arm_dev = "/dev/input/by-id/usb-LiteStar_PXN-2113_Pro-joystick"
+    arm_dev = "/dev/input/by-id/usb-Logitech_Logitech_Extreme_3D-joystick"
     drive_dev = find_ps5()
 
     ld = LaunchDescription()
