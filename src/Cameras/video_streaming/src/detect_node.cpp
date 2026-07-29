@@ -129,7 +129,8 @@ bool DetectNode::create_pipeline() {
                "name=aruco_detector ! queue ! videoconvert ! ";
     break;
   case DetectionType::MORSE:
-    desc_ss << "videoconvert ! queue ! videoconvert ! "
+    desc_ss << "nvvidconv ! video/x-raw ! videoconvert ! "
+               "video/x-raw,format=RGB ! "
                "morseLED name=morse_decoder ! queue ! videoconvert ! ";
     break;
   case DetectionType::NONE:
