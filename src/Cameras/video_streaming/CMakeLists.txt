@@ -27,7 +27,6 @@ add_library(${PROJECT_NAME} SHARED
   src/base_video_node.cpp
   src/input_node.cpp
   src/detect_node.cpp
-  src/morse_led_node.cpp
   src/webrtc_node.cpp
   src/mosaic_webrtc_node.cpp
   src/srt_node.cpp
@@ -72,7 +71,6 @@ target_compile_options(${PROJECT_NAME} PRIVATE ${GST_CFLAGS_OTHER})
 rclcpp_components_register_nodes(${PROJECT_NAME}
   "InputNode"
   "DetectNode"
-  "MorseLedNode"
   "WebRtcNode"
   "video_streaming::MosaicWebRtcNode"
   "VideoCaptureNode"

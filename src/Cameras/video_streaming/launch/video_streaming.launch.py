@@ -28,22 +28,12 @@ def generate_launch_description():
                 "bottle_config": config_dir + "/bottle/bottle.txt",
                 "mallet_config": config_dir + "/mallet/mallet.txt",
                 "rockpick_config": config_dir + "/hammer/hammer.txt",
+                # Options: NONE, ARUCO, MORSE, WATER_BOTTLE, MALLET, ROCKPICK
                 "detection_type": "NONE",
-            }
-        ],
-    )
-
-    morse_led_node = ComposableNode(
-        package="video_streaming",
-        plugin="MorseLedNode",
-        name="morse_led_node",
-        namespace="",
-        parameters=[
-            {
-                "listen_to": "input",
+                # Morse LED params (used when detection_type == MORSE)
                 "start_detection": False,
-                "calibrate": False,
-                "draw_roi": False,
+                "calibrate": True,
+                "draw_roi": True,
             }
         ],
     )
@@ -82,7 +72,6 @@ def generate_launch_description():
         composable_node_descriptions=[
             input_node,
             detect_node,
-            morse_led_node,
             capture_node,
             rtp_node,
             mosaic_webrtc_node,

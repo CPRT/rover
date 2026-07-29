@@ -9,6 +9,13 @@ static void on_marker_detected(GstElement *element, gint marker_id,
                                gpointer user_data);
 static GstPadProbeReturn
 metadata_probe_callback(GstPad *pad, GstPadProbeInfo *info, gpointer user_data);
+static void on_morse_character_decoded(GstElement * /*element*/,
+                                       guint char_code, gpointer user_data);
+static void on_morse_calibrate_notify(GObject *element, GParamSpec * /*pspec*/,
+                                      gpointer user_data);
+static void on_morse_roi_locked(GstElement * /*element*/, gint roi_x,
+                                gint roi_y, guint /*roi_width*/,
+                                guint /*roi_height*/, gpointer user_data);
 
 DetectNode::DetectNode(const rclcpp::NodeOptions &options)
     : BaseVideoNode("detect_node", options),
@@ -21,14 +28,68 @@ DetectNode::DetectNode(const rclcpp::NodeOptions &options)
   this->declare_parameter<std::string>("rockpick_config",
                                        "config/rockpick/rockpick.txt");
   this->declare_parameter<std::string>("listen_to", "input");
+  declare_morse_parameters();
   param_callback_handle_ = this->add_on_set_parameters_callback(
       std::bind(&DetectNode::on_parameter_change, this, std::placeholders::_1));
+  post_set_param_callback_handle_ = this->add_post_set_parameters_callback(
+      std::bind(&DetectNode::on_parameters_set, this, std::placeholders::_1));
   marker_pub_ = this->create_publisher<std_msgs::msg::Int32>(
       "marker_detected", rclcpp::QoS(rclcpp::KeepLast(10)).reliable());
   object_detected_pub_ =
       this->create_publisher<interfaces::msg::ObjectDetected>(
           "object_detected", rclcpp::QoS(rclcpp::KeepLast(10)).reliable());
+  morse_character_pub_ = this->create_publisher<std_msgs::msg::String>(
+      "morse_character", rclcpp::QoS(rclcpp::KeepLast(50)).reliable());
+  morse_text_pub_ = this->create_publisher<std_msgs::msg::String>(
+      "morse_text", rclcpp::QoS(rclcpp::KeepLast(10)).reliable());
   start_pipeline();
+}
+
+void DetectNode::declare_morse_parameters() {
+  this->declare_parameter<bool>("start_detection", true);
+  this->declare_parameter<int>("roi_x", 0);
+  this->declare_parameter<int>("roi_y", 0);
+  this->declare_parameter<int>("roi_width", 96);
+  this->declare_parameter<int>("roi_height", 96);
+  this->declare_parameter<int>("wpm", 18);
+  this->declare_parameter<bool>("calibrate", false);
+  this->declare_parameter<double>("calibration_seconds", 2.0);
+  this->declare_parameter<bool>("draw_roi", false);
+  this->declare_parameter<double>("on_margin", 0.015);
+  this->declare_parameter<double>("min_transition_units", 0.08);
+  this->declare_parameter<double>("gap_detect_ratio", 0.8);
+  this->declare_parameter<double>("dot_max_units", 1.8);
+  this->declare_parameter<double>("dash_min_units", 2.2);
+  this->declare_parameter<std::string>("metric_plot_path", "");
+}
+
+void DetectNode::apply_morse_element_properties(GstElement *morse) {
+  g_object_set(
+      morse, "start-detection",
+      this->get_parameter("start_detection").as_bool() ? TRUE : FALSE, "roi-x",
+      this->get_parameter("roi_x").as_int(), "roi-y",
+      this->get_parameter("roi_y").as_int(), "roi-width",
+      static_cast<guint>(this->get_parameter("roi_width").as_int()),
+      "roi-height",
+      static_cast<guint>(this->get_parameter("roi_height").as_int()), "wpm",
+      static_cast<guint>(this->get_parameter("wpm").as_int()), "calibrate",
+      this->get_parameter("calibrate").as_bool() ? TRUE : FALSE,
+      "calibration-seconds",
+      this->get_parameter("calibration_seconds").as_double(), "draw-roi",
+      this->get_parameter("draw_roi").as_bool() ? TRUE : FALSE, "on-margin",
+      static_cast<gfloat>(this->get_parameter("on_margin").as_double()),
+      "min-transition-units",
+      this->get_parameter("min_transition_units").as_double(),
+      "gap-detect-ratio", this->get_parameter("gap_detect_ratio").as_double(),
+      "dot-max-units", this->get_parameter("dot_max_units").as_double(),
+      "dash-min-units", this->get_parameter("dash_min_units").as_double(),
+      nullptr);
+
+  const std::string plot_path =
+      this->get_parameter("metric_plot_path").as_string();
+  if (!plot_path.empty()) {
+    g_object_set(morse, "metric-plot-path", plot_path.c_str(), nullptr);
+  }
 }
 
 static std::string get_detection_pipeline_str(std::string config_path) {
@@ -67,6 +128,10 @@ bool DetectNode::create_pipeline() {
                "detect-every=10 "
                "name=aruco_detector ! queue ! videoconvert ! ";
     break;
+  case DetectionType::MORSE:
+    desc_ss << "videoconvert ! queue ! videoconvert ! "
+               "morseLED name=morse_decoder ! queue ! videoconvert ! ";
+    break;
   case DetectionType::NONE:
     desc_ss << "identity ! ";
     break;
@@ -97,6 +162,17 @@ bool DetectNode::create_pipeline() {
     return false;
   }
 
+  if (detection_type_ == DetectionType::MORSE) {
+    GstElement *morse = gst_bin_get_by_name(GST_BIN(p), "morse_decoder");
+    if (!morse) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to get morseLED element.");
+      gst_object_unref(p);
+      return false;
+    }
+    apply_morse_element_properties(morse);
+    gst_object_unref(morse);
+  }
+
   pipeline_ = p;
   return true;
 }
@@ -113,6 +189,19 @@ bool DetectNode::start_pipeline() {
     g_signal_connect(aruco, "marker-detected", G_CALLBACK(on_marker_detected),
                      marker_pub_.get());
     gst_object_unref(aruco);
+  } else if (detection_type_ == DetectionType::MORSE) {
+    GstElement *morse = get_element("morse_decoder");
+    if (!morse) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to get morseLED element.");
+      return false;
+    }
+    g_signal_connect(morse, "character-decoded",
+                     G_CALLBACK(on_morse_character_decoded), this);
+    g_signal_connect(morse, "notify::calibrate",
+                     G_CALLBACK(on_morse_calibrate_notify), this);
+    g_signal_connect(morse, "roi-locked", G_CALLBACK(on_morse_roi_locked),
+                     this);
+    gst_object_unref(morse);
   } else if (detection_type_ == DetectionType::MALLET ||
              detection_type_ == DetectionType::WATER_BOTTLE) {
     GstElement *osd = get_element("osd");
@@ -187,6 +276,134 @@ static void on_marker_detected(GstElement *element, gint marker_id,
   marker_pub->publish(msg);
 }
 
+void DetectNode::publish_morse_character(guint char_code) {
+  std_msgs::msg::String msg;
+  msg.data = std::string(1, static_cast<char>(char_code));
+  RCLCPP_INFO(this->get_logger(), "Morse character decoded: '%s'",
+              msg.data.c_str());
+  if (morse_character_pub_) {
+    morse_character_pub_->publish(msg);
+  }
+
+  GstElement *morse = get_element("morse_decoder");
+  if (morse) {
+    gchar *decoded = nullptr;
+    g_object_get(morse, "decoded-text", &decoded, nullptr);
+    if (decoded) {
+      publish_morse_text(decoded);
+      g_free(decoded);
+    }
+    gst_object_unref(morse);
+  }
+}
+
+void DetectNode::publish_morse_text(const std::string &text) {
+  std_msgs::msg::String msg;
+  msg.data = text;
+  if (morse_text_pub_) {
+    morse_text_pub_->publish(msg);
+  }
+}
+
+void DetectNode::sync_morse_calibrate_state(bool calibrating) {
+  if (this->get_parameter("calibrate").as_bool() == calibrating) {
+    return;
+  }
+  RCLCPP_INFO(this->get_logger(),
+              "morseLED element reported calibrate=%s; syncing parameter.",
+              calibrating ? "true" : "false");
+  applying_morse_plugin_sync_ = true;
+  this->set_parameters({rclcpp::Parameter("calibrate", calibrating)});
+  applying_morse_plugin_sync_ = false;
+}
+
+void DetectNode::sync_morse_roi_state(int roi_x, int roi_y) {
+  if (this->get_parameter("roi_x").as_int() == roi_x &&
+      this->get_parameter("roi_y").as_int() == roi_y) {
+    return;
+  }
+  RCLCPP_INFO(this->get_logger(),
+              "morseLED element locked ROI to (%d, %d); syncing parameters.",
+              roi_x, roi_y);
+  applying_morse_plugin_sync_ = true;
+  this->set_parameters(
+      {rclcpp::Parameter("roi_x", roi_x), rclcpp::Parameter("roi_y", roi_y)});
+  applying_morse_plugin_sync_ = false;
+}
+
+static void on_morse_character_decoded(GstElement * /*element*/,
+                                       guint char_code, gpointer user_data) {
+  auto *self = static_cast<DetectNode *>(user_data);
+  if (!self) {
+    return;
+  }
+  self->publish_morse_character(char_code);
+}
+
+static void on_morse_calibrate_notify(GObject *element, GParamSpec * /*pspec*/,
+                                      gpointer user_data) {
+  auto *self = static_cast<DetectNode *>(user_data);
+  if (!self || !element) {
+    return;
+  }
+  gboolean calibrating = FALSE;
+  g_object_get(element, "calibrate", &calibrating, nullptr);
+  self->sync_morse_calibrate_state(calibrating == TRUE);
+}
+
+static void on_morse_roi_locked(GstElement * /*element*/, gint roi_x,
+                                gint roi_y, guint /*roi_width*/,
+                                guint /*roi_height*/, gpointer user_data) {
+  auto *self = static_cast<DetectNode *>(user_data);
+  if (!self) {
+    return;
+  }
+  self->sync_morse_roi_state(roi_x, roi_y);
+}
+
+void DetectNode::on_parameters_set(
+    const std::vector<rclcpp::Parameter> &parameters) {
+  if (applying_morse_plugin_sync_.load()) {
+    return;
+  }
+
+  bool needs_restart = false;
+  bool update_morse_element = false;
+  for (const auto &param : parameters) {
+    const std::string &name = param.get_name();
+    if (name == "detection_type" || name == "listen_to") {
+      needs_restart = true;
+    } else if (name == "start_detection" || name == "roi_x" ||
+               name == "roi_y" || name == "roi_width" || name == "roi_height" ||
+               name == "wpm" || name == "calibrate" ||
+               name == "calibration_seconds" || name == "draw_roi" ||
+               name == "on_margin" || name == "min_transition_units" ||
+               name == "gap_detect_ratio" || name == "dot_max_units" ||
+               name == "dash_min_units" || name == "metric_plot_path") {
+      update_morse_element = true;
+    }
+  }
+
+  if (needs_restart) {
+    RCLCPP_INFO(this->get_logger(),
+                "Restarting pipeline to apply parameter changes.");
+    stop_pipeline();
+    if (!start_pipeline()) {
+      RCLCPP_ERROR(this->get_logger(),
+                   "Failed to restart pipeline after parameter change.");
+    }
+    return;
+  }
+
+  if (update_morse_element && detection_type_ == DetectionType::MORSE) {
+    GstElement *morse = get_element("morse_decoder");
+    if (morse) {
+      apply_morse_element_properties(morse);
+      gst_object_unref(morse);
+    }
+  }
+}
+
 DetectNode::DetectionType
 DetectNode::string_to_detection_type(const std::string &type_str) {
   if (type_str == "WATER_BOTTLE") {
@@ -197,6 +414,8 @@ DetectNode::string_to_detection_type(const std::string &type_str) {
     return DetectionType::ROCKPICK;
   } else if (type_str == "ARUCO") {
     return DetectionType::ARUCO;
+  } else if (type_str == "MORSE") {
+    return DetectionType::MORSE;
   } else if (type_str == "NONE") {
     return DetectionType::NONE;
   } else {
@@ -216,6 +435,8 @@ std::string DetectNode::detection_type_to_string() const {
     return "ROCKPICK";
   case DetectionType::ARUCO:
     return "ARUCO";
+  case DetectionType::MORSE:
+    return "MORSE";
   case DetectionType::NONE:
   default:
     return "NONE";
@@ -243,7 +464,6 @@ rcl_interfaces::msg::SetParametersResult DetectNode::on_parameter_change(
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
   result.reason = "success";
-  bool needs_restart = false;
   for (const auto &param : parameters) {
     if (param.get_name() == "bottle_config" ||
         param.get_name() == "mallet_config" ||
@@ -251,26 +471,19 @@ rcl_interfaces::msg::SetParametersResult DetectNode::on_parameter_change(
       RCLCPP_WARN(this->get_logger(),
                   "Changing model configs can only be done at startup.");
     } else if (param.get_name() == "detection_type") {
-      std::string type_str = param.as_string();
-      detection_type_ = string_to_detection_type(type_str);
+      const std::string type_str = param.as_string();
+      if (type_str != "WATER_BOTTLE" && type_str != "MALLET" &&
+          type_str != "ROCKPICK" && type_str != "ARUCO" &&
+          type_str != "MORSE" && type_str != "NONE") {
+        result.successful = false;
+        result.reason = "Invalid detection_type: " + type_str;
+        return result;
+      }
       RCLCPP_INFO(this->get_logger(), "detection_type set to %s",
                   type_str.c_str());
-      needs_restart = true;
     } else if (param.get_name() == "listen_to") {
       RCLCPP_INFO(this->get_logger(), "Changing listen_to parameter to %s.",
                   param.as_string().c_str());
-      needs_restart = true;
-    }
-  }
-  if (needs_restart) {
-    RCLCPP_INFO(this->get_logger(),
-                "Restarting pipeline to apply parameter changes.");
-    stop_pipeline();
-    if (!start_pipeline()) {
-      RCLCPP_ERROR(this->get_logger(),
-                   "Failed to restart pipeline after parameter change.");
-      result.successful = false;
-      result.reason = "Failed to restart pipeline after parameter change.";
     }
   }
   return result;
