@@ -67,7 +67,7 @@ def generate_launch_description():
         package="science_sensors",
         executable="science_sensors",
         name="science_sensors",
-        parameters=[{"interface": "can1"}]
+        parameters=[{"interface": "can1"}],
     )
 
     panoramic = Node(

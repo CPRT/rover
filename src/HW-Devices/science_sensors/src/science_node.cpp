@@ -1,5 +1,8 @@
 #include "science_node.hpp"
 
+#include <fcntl.h>
+#include <sys/stat.h>
+
 enum CmdId : uint32_t {
   SetMotor = 0x00,
   SetServo = 0x01,
@@ -15,6 +18,10 @@ ScienceNode::ScienceNode(const std::string name,
     : rclcpp::Node(name, options) {
   this->declare_parameter<std::string>("interface", "can0");
   this->declare_parameter<uint16_t>("node_id", 30);
+  this->declare_parameter<uint16_t>("sweep_timeout", 60);
+  this->declare_parameter<std::string>("output_dir", "/usr/local/zed/polar/");
+
+  mkdir(this->get_parameter("output_dir").as_string().c_str(), 0777);
 
   this->adc_pub_ =
       this->create_publisher<interfaces::msg::ScienceADC>("/science/adc", 10);
@@ -22,6 +29,8 @@ ScienceNode::ScienceNode(const std::string name,
       this->create_publisher<interfaces::msg::DHT22>("/science/temp", 10);
   this->co2_pub_ =
       this->create_publisher<std_msgs::msg::UInt16>("/science/co2", 10);
+  this->polar_pub_ = this->create_publisher<interfaces::msg::PolarimeterSweep>(
+      "/science/polarimeter", 10);
 
   this->motor_sub_ = this->create_subscription<interfaces::msg::ScienceMotor>(
       "/science/motor", rclcpp::QoS(1).reliable(),
@@ -39,20 +48,18 @@ ScienceNode::ScienceNode(const std::string name,
         servo_evt_.set();
       });
 
+  this->polar_srv_ = this->create_service<interfaces::srv::RunPolarimeter>(
+      "/science/run_polarimeter",
+      std::bind(&ScienceNode::polar_callback, this, std::placeholders::_1,
+                std::placeholders::_2));
+
   RCLCPP_INFO(this->get_logger(), "Science Sensors Node started");
 }
 
 void ScienceNode::deinit() {
-  //   if (axis_idle_on_shutdown_) {
-  //     struct can_frame frame;
-  //     frame.can_id = node_id_ << 5 | CmdId::kSetAxisState;
-  //     write_le<uint32_t>(ODriveAxisState::AXIS_STATE_IDLE, frame.data);
-  //     frame.can_dlc = 4;
-  //     can_intf_.send_can_frame(frame);
-  //   }
-
-  //   sub_evt_.deinit();
-  //   srv_evt_.deinit();
+  motor_evt_.deinit();
+  servo_evt_.deinit();
+  req_polar_evt_.deinit();
   can_intf_.deinit();
 }
 
@@ -78,6 +85,12 @@ bool ScienceNode::init(EpollEventLoop *event_loop) {
                        std::bind(&ScienceNode::servo_callback, this))) {
     RCLCPP_ERROR(this->get_logger(),
                  "Failed to initialize servo subscriber event");
+    return false;
+  }
+  if (!req_polar_evt_.init(event_loop,
+                           std::bind(&ScienceNode::request_polar, this))) {
+    RCLCPP_ERROR(this->get_logger(),
+                 "Failed to initialize polarimeter request event");
     return false;
   }
   RCLCPP_INFO(this->get_logger(), "node_id: %d", node_id_);
@@ -127,6 +140,24 @@ void ScienceNode::recv_callback(const can_frame &frame) {
     }
     break;
   }
+  case CmdId::PolarData: {
+    if (!verify_length("PolarData", 7, frame.can_dlc))
+      break;
+    if (frame.data[0] != polar_index_)
+      RCLCPP_WARN(this->get_logger(),
+                  "Polarimeter indexing mismatch: expected packet starting at "
+                  "index %d, got %d",
+                  polar_index_, frame.data[0]);
+    polar_index_ = frame.data[0];
+    polar_points_[polar_index_++] = (frame.data[1] << 8) | frame.data[2];
+    polar_points_[polar_index_++] = (frame.data[3] << 8) | frame.data[4];
+    polar_points_[polar_index_++] = (frame.data[5] << 8) | frame.data[6];
+
+    if (polar_index_ == SCAN_STEPS) {
+      polar_cond_.notify_one();
+    }
+    break;
+  }
   case CmdId::SetMotor:
   case CmdId::SetServo:
   case CmdId::PolarScan: {
@@ -166,6 +197,68 @@ void ScienceNode::servo_callback() {
     frame.data[2] = servo_msg_.us & 0xff;
   }
   frame.can_dlc = 3;
+  can_intf_.send_can_frame(frame);
+}
+
+void ScienceNode::polar_callback(
+    const std::shared_ptr<interfaces::srv::RunPolarimeter::Request> request,
+    std::shared_ptr<interfaces::srv::RunPolarimeter::Response> response) {
+  {
+    std::unique_lock<std::mutex> guard(polar_mutex_);
+    for (int i = 0; i < SCAN_STEPS; i++) {
+      polar_points_[i] = 0;
+    }
+    polar_index_ = 0;
+  }
+  req_polar_evt_.set();
+
+  std::unique_lock<std::mutex> guard(polar_mutex_);
+  if (polar_cond_.wait_for(
+          guard, std::chrono::seconds(
+                     this->get_parameter("sweep_timeout").as_int())) ==
+      std::cv_status::timeout) {
+    response->success = false;
+    response->message = "Timeout waiting for polarimeter samples";
+    return;
+  } else {
+    if (polar_index_ != SCAN_STEPS) {
+      RCLCPP_WARN(this->get_logger(),
+                  "Polar tried writing without a full buffer");
+      response->success = false;
+      response->message = "Tried writing without a full sample buffer";
+    }
+    if (this->polar_pub_) {
+      interfaces::msg::PolarimeterSweep msg;
+      msg.readings.assign(polar_points_, polar_points_ + SCAN_STEPS);
+      this->polar_pub_->publish(msg);
+    }
+
+    char path[128];
+    sprintf(path, "%spolarimeter_%s_%.0f.csv",
+            this->get_parameter("output_dir").as_string().c_str(),
+            request->title.c_str(), this->now().seconds());
+    int fd = open(path, O_CREAT | O_WRONLY, 777);
+
+    char contents[1024];
+    uint16_t pos = 0;
+
+    pos += sprintf(contents, "step, reading\n");
+
+    for (int i = 0; i < SCAN_STEPS; i++) {
+      pos += sprintf(contents + pos, "%d, %d\n", i, polar_points_[i]);
+    }
+    write(fd, contents, pos - 1);
+    response->success = true;
+    response->message = "48 samples saved";
+    response->file_path = path;
+    RCLCPP_INFO(this->get_logger(), "Polarimeter sweep saved to %s", path);
+  }
+}
+
+void ScienceNode::request_polar() {
+  struct can_frame frame;
+  frame.can_id = node_id_ << 5 | CmdId::PolarScan;
+  frame.can_dlc = 0;
   can_intf_.send_can_frame(frame);
 }
 
