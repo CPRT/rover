@@ -31,7 +31,6 @@ setup(
     entry_points={
         "console_scripts": [
             "panoramic = science_sensors.panoramic:main",
-            "polarimeter = science_sensors.polarimeter:main",
         ],
     },
 )
