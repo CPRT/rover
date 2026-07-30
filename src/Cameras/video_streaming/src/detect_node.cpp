@@ -124,20 +124,21 @@ bool DetectNode::create_pipeline() {
         this->get_parameter("rockpick_config").as_string());
     break;
   case DetectionType::ARUCO:
-    desc_ss << "videoconvert ! queue ! videoconvert ! arucomarker "
-               "detect-every=10 "
-               "name=aruco_detector ! queue ! videoconvert ! ";
+    desc_ss << "nvvidconv ! video/x-raw,format=NV12 ! videoconvert ! "
+               "arucomarker name=aruco_detector detect-every=10 ! queue ! "
+               "videoconvert ! video/x-raw,format=NV12 ! ";
     break;
   case DetectionType::MORSE:
-    desc_ss << "nvvidconv ! video/x-raw ! videoconvert ! "
-               "video/x-raw,format=RGB ! "
-               "morseLED name=morse_decoder ! queue ! videoconvert ! ";
+    desc_ss << "nvvidconv ! video/x-raw,format=NV12 ! videoconvert ! "
+               "morseLED name=morse_decoder ! queue ! videoconvert ! "
+               "video/x-raw,format=NV12 ! ";
     break;
   case DetectionType::NONE:
     desc_ss << "identity ! ";
     break;
   }
-  desc_ss << "nvvidconv ! interpipesink name=detect";
+  desc_ss << "nvvidconv ! video/x-raw(memory:NVMM),format=NV12 ! interpipesink "
+             "name=detect";
 
   RCLCPP_INFO(this->get_logger(), "Creating pipeline: %s",
               desc_ss.str().c_str());
