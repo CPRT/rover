@@ -76,12 +76,6 @@ def generate_launch_description():
         name="panoramic",
     )
 
-    polarimeter = Node(
-        package="science_sensors",
-        executable="polarimeter",
-        name="polarimeter",
-    )
-
     ld = LaunchDescription()
     ld.add_action(science_drill_control)
     ld.add_action(talon_container)
