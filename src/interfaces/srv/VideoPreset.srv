@@ -1,5 +1,0 @@
-# VideoPreset.srv
-
-string name
----
-bool success

@@ -1,4 +1,4 @@
 # GetPresets.srv
 
 ---
-string[] presets
+VideoPreset[] presets

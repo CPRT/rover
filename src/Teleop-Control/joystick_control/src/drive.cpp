@@ -9,8 +9,8 @@ drive::drive() : Node("drive_node"), initialized_(false) {
   servo_m_pub_ =
       this->create_publisher<std_msgs::msg::Float32>("/mast_angle", 10);
 
-  preset_client_ =
-      this->create_client<interfaces::srv::VideoPreset>("/request_preset");
+  camera_client_ =
+      this->create_client<interfaces::srv::VideoOut>("/start_video");
   list_presets_client_ =
       this->create_client<interfaces::srv::GetPresets>("/list_presets");
   joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
@@ -63,11 +63,11 @@ void drive::camera_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
       video_carousell_idx_ = 0;
     }
   }
-  auto request = std::make_shared<interfaces::srv::VideoPreset::Request>();
-  request->name = video_carousell_[video_carousell_idx_];
+  auto request = std::make_shared<interfaces::srv::VideoOut::Request>();
+  request->sources = video_carousell_[video_carousell_idx_].sources;
   RCLCPP_INFO(this->get_logger(), "Sending Video preset %s",
-              request->name.c_str());
-  preset_client_->async_send_request(request);
+              video_carousell_[video_carousell_idx_].name.c_str());
+  camera_client_->async_send_request(request);
 }
 
 void drive::drive_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {

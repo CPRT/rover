@@ -2,8 +2,9 @@
 #define DRIVE_HPP
 
 #include "geometry_msgs/msg/twist.hpp"
+#include "interfaces/msg/video_preset.hpp"
 #include "interfaces/srv/get_presets.hpp"
-#include "interfaces/srv/video_preset.hpp"
+#include "interfaces/srv/video_out.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/joy.hpp"
 #include "std_msgs/msg/float32.hpp"
@@ -19,9 +20,9 @@ private:
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr servo_x_pub_;
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr servo_m_pub_;
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
-  rclcpp::Client<interfaces::srv::VideoPreset>::SharedPtr preset_client_;
+  rclcpp::Client<interfaces::srv::VideoOut>::SharedPtr camera_client_;
   rclcpp::Client<interfaces::srv::GetPresets>::SharedPtr list_presets_client_;
-  std::vector<std::string> video_carousell_;
+  std::vector<interfaces::msg::VideoPreset> video_carousell_;
   size_t video_carousell_idx_;
 
   void camera_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
