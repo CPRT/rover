@@ -19,7 +19,7 @@ from launch.event_handlers import OnProcessStart
 
 def generate_launch_description():
     joystick_control_dir = get_package_share_directory("joystick_control")
-    joy_parameters_file = os.path.join(joystick_control_dir, "pxn.yaml")
+    joy_parameters_file = os.path.join(joystick_control_dir, "3dpro.yaml")
 
     science_drill_control = Node(
         package="joystick_control",
