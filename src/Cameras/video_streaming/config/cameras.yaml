@@ -5,7 +5,7 @@ input_node:
     camera_name:
     - "Drive"
     - "EndEffector"
-    - "Bottom"
+    - "Belly"
     - "Mast"
     - "Test"
     Drive:
@@ -19,7 +19,7 @@ input_node:
       path: "/dev/v4l/by-id/usb-MACROSILICON_USB_Video_20200909-video-index0"
       type: 0
       encoded: true
-    Bottom:
+    Belly:
       path: "/dev/v4l/by-path/platform-3610000.usb-usb-0:4.1.1:1.0-video-index0"
       type: 0
       encoded: true
