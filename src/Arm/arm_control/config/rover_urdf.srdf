@@ -116,6 +116,14 @@
         <joint name="Joint_5" value="-0.9981280799037772"/>
         <joint name="Joint_6" value="0.9525805072980369"/>
     </group_state>
+    <group_state name="XLR" group="arm">
+        <joint name="Joint_1" value="0.7642728707215887"/>
+        <joint name="Joint_2" value="-0.4040763307765948"/>
+        <joint name="Joint_3" value="1.68382399045105"/>
+        <joint name="Joint_4" value="-0.09970875121256667"/>
+        <joint name="Joint_5" value="-0.7235171499648543"/>
+        <joint name="Joint_6" value="-0.2045246111526723"/>
+    </group_state>
     <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
     <end_effector name="EEF" parent_link="base_link" group="arm"/>
     <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
