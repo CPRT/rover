@@ -29,7 +29,12 @@ def generate_launch_description():
                 "bottle_config": config_dir + "/bottle/bottle.txt",
                 "mallet_config": config_dir + "/mallet/mallet.txt",
                 "rockpick_config": config_dir + "/hammer/hammer.txt",
+                # Options: NONE, ARUCO, MORSE, WATER_BOTTLE, MALLET, ROCKPICK
                 "detection_type": "NONE",
+                # Morse LED params (used when detection_type == MORSE)
+                "start_detection": False,
+                "calibrate": True,
+                "draw_roi": True,
             }
         ],
     )
