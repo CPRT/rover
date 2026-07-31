@@ -40,6 +40,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GoToPose.srv"
   "srv/GraphDot.srv"
   "srv/RunPolarimeter.srv"
+  "srv/GetCamera.srv"
+  "srv/SetCamera.srv"
   DEPENDENCIES 
   builtin_interfaces
   geometry_msgs 

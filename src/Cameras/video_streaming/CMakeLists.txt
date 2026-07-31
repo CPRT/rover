@@ -13,6 +13,7 @@ find_package(rclcpp_components REQUIRED)
 find_package(interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(PkgConfig REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 pkg_check_modules(GSTREAMER REQUIRED IMPORTED_TARGET gstreamer-1.0)
 pkg_check_modules(GST_APP REQUIRED IMPORTED_TARGET gstreamer-app-1.0)
@@ -33,6 +34,7 @@ add_library(${PROJECT_NAME} SHARED
   src/rtp_node.cpp
   src/rtp_client_node.cpp
   src/capture_node.cpp
+  src/camera_settings_server.cpp
 )
 
 include_directories(
@@ -55,6 +57,7 @@ target_link_libraries(${PROJECT_NAME}
   PkgConfig::GSTREAMER
   PkgConfig::GST_APP
   PkgConfig::GST_VIDEO
+  yaml-cpp
 )
 ament_target_dependencies(${PROJECT_NAME}
   rclcpp
@@ -76,6 +79,7 @@ rclcpp_components_register_nodes(${PROJECT_NAME}
   "video_streaming::SrtClientNode"
   "video_streaming::RtpNode"
   "video_streaming::RtpClientNode"
+  "video_streaming::CameraSettingsServer"
 )
 
 # ---- Install

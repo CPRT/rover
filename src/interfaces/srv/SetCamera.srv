@@ -1,0 +1,22 @@
+#For replacement webUi for Erik's tool
+
+string camera
+
+int16 backlight_compenstation
+int8 auto_exposure
+int8 brightness
+int16 contrast
+int8 hue
+int16 saturation
+int32 exposure_time_absolute
+int32 gain
+bool white_balance_automatic
+int32 white_balance_temperature
+bool exposure_dynamic_framerate
+int16 gamma
+int8 power_line_frequency
+int8 sharpness
+
+---
+
+bool success
