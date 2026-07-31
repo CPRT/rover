@@ -46,15 +46,15 @@ DetectNode::DetectNode(const rclcpp::NodeOptions &options)
 }
 
 void DetectNode::declare_morse_parameters() {
-  this->declare_parameter<bool>("start_detection", true);
+  this->declare_parameter<bool>("start_detection", false);
   this->declare_parameter<int>("roi_x", 0);
   this->declare_parameter<int>("roi_y", 0);
   this->declare_parameter<int>("roi_width", 96);
   this->declare_parameter<int>("roi_height", 96);
   this->declare_parameter<int>("wpm", 18);
-  this->declare_parameter<bool>("calibrate", false);
+  this->declare_parameter<bool>("calibrate", true);
   this->declare_parameter<double>("calibration_seconds", 2.0);
-  this->declare_parameter<bool>("draw_roi", false);
+  this->declare_parameter<bool>("draw_roi", true);
   this->declare_parameter<double>("on_margin", 0.015);
   this->declare_parameter<double>("min_transition_units", 0.08);
   this->declare_parameter<double>("gap_detect_ratio", 0.8);
