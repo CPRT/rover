@@ -28,6 +28,15 @@
         <joint name="Joint_6" value="0.0"/>
     </group_state>
 
+    <group_state name="Lowest front" group="arm">
+        <joint name="Joint_1" value="0.0"/>
+        <joint name="Joint_2" value="-1.4164782714913322"/>
+        <joint name="Joint_3" value="1.4664856332186729"/>
+        <joint name="Joint_4" value="0.0"/>
+        <joint name="Joint_5" value="0.8933393281059383"/>
+        <joint name="Joint_6" value="0.0"/>
+    </group_state>
+
     <group_state name="Front 40cm" group="arm">
         <joint name="Joint_1" value="0.0"/>
         <joint name="Joint_2" value="-1.026693041726237"/>
