@@ -38,6 +38,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GetCameras.srv"
   "srv/GetNamedTargets.srv"
   "srv/GetPresets.srv"
+  "srv/GetTopics.srv"
   "srv/GoToCamCoord.srv"
   "srv/GoToNamedPose.srv"
   "srv/GoToPose.srv"
