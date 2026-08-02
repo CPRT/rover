@@ -32,14 +32,14 @@ ArmTeleop::ArmTeleop(const rclcpp::NodeOptions &options)
       "~/state", rclcpp::QoS(1).reliable().transient_local());
   go_to_named_pose_client_ =
       this->create_client<interfaces::srv::GoToNamedPose>(
-          "/move_group_client/go_to_named_pose");
+          "/move_group_interface/go_to_named_pose");
   save_current_pose_client_ =
       this->create_client<interfaces::srv::SaveCurrentPose>(
-          "/move_group_client/save_current_pose");
+          "/move_group_interface/save_current_pose");
   go_to_cam_coord_client_ = this->create_client<interfaces::srv::GoToCamCoord>(
-      "/move_group_client/go_to_cam_coord");
+      "/move_group_interface/go_to_cam_coord");
   stop_move_group_client_ =
-      this->create_client<std_srvs::srv::Trigger>("/move_group_client/stop");
+      this->create_client<std_srvs::srv::Trigger>("/move_group_interface/stop");
   servo_input_client_ = this->create_client<moveit_msgs::srv::ServoCommandType>(
       "/servo_node/switch_command_type");
   clear_dot();
