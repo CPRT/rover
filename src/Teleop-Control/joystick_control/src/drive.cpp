@@ -11,8 +11,14 @@ drive::drive() : Node("drive_node"), initialized_(false) {
 
   camera_client_ =
       this->create_client<interfaces::srv::VideoOut>("/start_video");
-  list_presets_client_ =
-      this->create_client<interfaces::srv::GetPresets>("/list_presets");
+
+  auto presets_qos =
+      rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
+
+  presets_sub_ = this->create_subscription<interfaces::msg::VideoPresets>(
+      "/video_presets", presets_qos,
+      std::bind(&drive::presets_cb, this, std::placeholders::_1));
+
   joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
       "/joy", rclcpp::QoS(2).best_effort(),
       std::bind(&drive::drive_control, this, std::placeholders::_1));
@@ -24,24 +30,15 @@ drive::drive() : Node("drive_node"), initialized_(false) {
   servo_x_ = kDefaultServoX;
   servo_mast_ = 0;
   drive_throttle_ = 1.0f;
-  setCarousell();
 };
 
-void drive::setCarousell() {
-  if (!list_presets_client_->wait_for_service(std::chrono::seconds(2))) {
-    RCLCPP_ERROR(this->get_logger(), "List presets service is unavailable!!!!");
-    return;
-  }
+void drive::presets_cb(
+    const interfaces::msg::VideoPresets::SharedPtr presets_msg) {
+  video_carousell_ = presets_msg->presets;
+  video_carousell_idx_ = 0;
 
-  auto request = std::make_shared<interfaces::srv::GetPresets::Request>();
-
-  list_presets_client_->async_send_request(
-      request,
-      [this](rclcpp::Client<interfaces::srv::GetPresets>::SharedFuture msg) {
-        auto response = msg.get();
-        video_carousell_ = std::move(response->presets);
-        video_carousell_idx_ = 0;
-      });
+  RCLCPP_INFO(this->get_logger(), "Received %zu video presets",
+              video_carousell_.size());
 }
 
 void drive::drive_throttle_cb(
@@ -65,6 +62,12 @@ void drive::camera_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
     return;
   }
   cam_debounce_ = true;
+
+  if (video_carousell_.empty()) {
+    RCLCPP_WARN(this->get_logger(), "No video presets have been received");
+    return;
+  }
+
   if (left_but) {
     if (video_carousell_idx_ == 0) {
       video_carousell_idx_ = video_carousell_.size();
@@ -72,7 +75,7 @@ void drive::camera_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
     --video_carousell_idx_;
   }
   if (right_but) {
-    if (++video_carousell_idx_ == video_carousell_.size()) {
+    if (++video_carousell_idx_ >= video_carousell_.size()) {
       video_carousell_idx_ = 0;
     }
   }

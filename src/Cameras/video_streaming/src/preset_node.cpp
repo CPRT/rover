@@ -6,13 +6,15 @@ PresetNode::PresetNode(const rclcpp::NodeOptions &options)
   declare_parameters();
   load_presets();
 
-  list_presets_service_ = this->create_service<interfaces::srv::GetPresets>(
-      "/list_presets",
-      [this](
-          const std::shared_ptr<interfaces::srv::GetPresets::Request> request,
-          std::shared_ptr<interfaces::srv::GetPresets::Response> response) {
-        response->presets = presets_;
-      });
+  auto presets_qos =
+      rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
+
+  presets_pub_ = this->create_publisher<interfaces::msg::VideoPresets>(
+      "/video_presets", presets_qos);
+
+  interfaces::msg::VideoPresets presets_msg;
+  presets_msg.presets = presets_;
+  presets_pub_->publish(presets_msg);
 
   RCLCPP_INFO(this->get_logger(), "PresetNode started");
 }

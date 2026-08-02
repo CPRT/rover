@@ -4,7 +4,7 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include "interfaces/msg/video_preset.hpp"
-#include "interfaces/srv/get_presets.hpp"
+#include "interfaces/msg/video_presets.hpp"
 
 class PresetNode : public rclcpp::Node {
 public:
@@ -16,7 +16,7 @@ private:
   void load_presets();
 
   std::vector<interfaces::msg::VideoPreset> presets_;
-  rclcpp::Service<interfaces::srv::GetPresets>::SharedPtr list_presets_service_;
+  rclcpp::Publisher<interfaces::msg::VideoPresets>::SharedPtr presets_pub_;
 };
 
 #endif // PRESET_NODE_HPP
