@@ -16,12 +16,17 @@ drive::drive() : Node("drive_node"), initialized_(false) {
   joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
       "/joy", rclcpp::QoS(2).best_effort(),
       std::bind(&drive::drive_control, this, std::placeholders::_1));
+  drive_throttle_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+      "/drive_throttle", 10,
+      std::bind(&drive::drive_throttle_cb, this, std::placeholders::_1));
   RCLCPP_INFO(this->get_logger(), "Drive controller started");
   servo_y_ = kDefaultServoY;
   servo_x_ = kDefaultServoX;
   servo_mast_ = 0;
+  drive_throttle_ = 1.0f;
   setCarousell();
 };
+
 void drive::setCarousell() {
   if (!list_presets_client_->wait_for_service(std::chrono::seconds(2))) {
     RCLCPP_ERROR(this->get_logger(), "List presets service is unavailable!!!!");
@@ -37,6 +42,14 @@ void drive::setCarousell() {
         video_carousell_ = std::move(response->presets);
         video_carousell_idx_ = 0;
       });
+}
+
+void drive::drive_throttle_cb(
+    const std_msgs::msg::Float32::SharedPtr throttle_msg) {
+  drive_throttle_ = std::clamp(throttle_msg->data, 0.0f, 1.0f);
+
+  RCLCPP_INFO(this->get_logger(), "Drive throttle set to %.2f",
+              drive_throttle_);
 }
 
 void drive::camera_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
@@ -80,9 +93,11 @@ void drive::drive_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
     return;
   }
   auto twist = geometry_msgs::msg::Twist();
-  twist.linear.x = joystickMsg->axes[kForwardAxis] * kMaxLinear;
-  twist.linear.y = joystickMsg->axes[kStrafeAxis] * kMaxLinear;
-  twist.angular.z = joystickMsg->axes[kYawAxis] * kMaxAngular;
+  twist.linear.x =
+      joystickMsg->axes[kForwardAxis] * kMaxLinear * drive_throttle_;
+  twist.linear.y =
+      joystickMsg->axes[kStrafeAxis] * kMaxLinear * drive_throttle_;
+  twist.angular.z = joystickMsg->axes[kYawAxis] * kMaxAngular * drive_throttle_;
 
   twist_pub_->publish(twist);
   camera_control(joystickMsg);
@@ -141,6 +156,7 @@ void drive::declare_parameters() {
   this->declare_parameter("default_servo_x", 0.0);
   this->declare_parameter("default_servo_y", 0.0);
 }
+
 void drive::load_parameters() {
   this->get_parameter("max_linear", kMaxLinear);
   this->get_parameter("max_angular", kMaxAngular);

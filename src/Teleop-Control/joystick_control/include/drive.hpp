@@ -20,12 +20,14 @@ private:
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr servo_x_pub_;
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr servo_m_pub_;
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
+  rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr drive_throttle_sub_;
   rclcpp::Client<interfaces::srv::VideoOut>::SharedPtr camera_client_;
   rclcpp::Client<interfaces::srv::GetPresets>::SharedPtr list_presets_client_;
   std::vector<interfaces::msg::VideoPreset> video_carousell_;
   size_t video_carousell_idx_;
 
   void camera_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg);
+  void drive_throttle_cb(const std_msgs::msg::Float32::SharedPtr throttle_msg);
   void declare_parameters();
   void load_parameters();
   void setCarousell();
@@ -54,6 +56,7 @@ private:
   double servo_y_;
   double servo_x_;
   double servo_mast_;
+  float drive_throttle_;
 
   bool cam_debounce_;
 };
