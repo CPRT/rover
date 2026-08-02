@@ -102,6 +102,11 @@ void drive::drive_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
       joystickMsg->axes[kStrafeAxis] * kMaxLinear * drive_throttle_;
   twist.angular.z = joystickMsg->axes[kYawAxis] * kMaxAngular * drive_throttle_;
 
+  if (joystickMsg->buttons[kLockTurnBut]) {
+    twist.angular.z = 0.0;
+    twist.linear.y = 0.0;
+  }
+
   twist_pub_->publish(twist);
   camera_control(joystickMsg);
 
@@ -152,6 +157,7 @@ void drive::declare_parameters() {
   this->declare_parameter("mast_right_button", 1);
   this->declare_parameter("cam_left_button", 4);
   this->declare_parameter("cam_right_button", 5);
+  this->declare_parameter("lock_turn_button", 6);
   this->declare_parameter("servo_increment", 0.01);
   this->declare_parameter("servo_min", -3.14);
   this->declare_parameter("servo_max", 3.14);
@@ -173,6 +179,7 @@ void drive::load_parameters() {
   this->get_parameter("mast_right_button", kMastRightButton);
   this->get_parameter("cam_left_button", kCamLeftBut);
   this->get_parameter("cam_right_button", kCamRightBut);
+  this->get_parameter("lock_turn_button", kLockTurnBut);
   this->get_parameter("servo_increment", kServoIncrement);
   this->get_parameter("servo_min", kServoMin);
   this->get_parameter("servo_max", kServoMax);

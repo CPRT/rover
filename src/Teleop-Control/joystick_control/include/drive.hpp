@@ -43,6 +43,7 @@ private:
   int kServoHomeButton;
   int kMastLeftButton;
   int kMastRightButton;
+  int kLockTurnBut;
   int kCamLeftBut;
   int kCamRightBut;
   double kServoIncrement;
