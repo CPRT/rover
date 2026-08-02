@@ -8,6 +8,7 @@ preset_node:
     - "DriveEEFPreset"
     - "EEFDrivePreset"
     - "EEFDriveMast"
+    - "DriveMastPreset"
     DrivePreset:
       name: "Drive"
       sources:
@@ -94,4 +95,19 @@ preset_node:
         width: 40
         height: 40
         origin_x: 0
+        origin_y: 0
+    DriveMastPreset:
+      name: "Drive + Mast"
+      sources:
+      - "Drive"
+      - "Mast"
+      Drive:
+        width: 100
+        height: 100
+        origin_x: 0
+        origin_y: 0
+      Mast:
+        width: 30
+        height: 30
+        origin_x: 70
         origin_y: 0
