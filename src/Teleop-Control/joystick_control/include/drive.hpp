@@ -52,6 +52,7 @@ private:
   double kJoyDeadzone;
   double kDefaultServoX;
   double kDefaultServoY;
+  double kDefaultServoM;
 
   bool initialized_;
   double servo_y_;

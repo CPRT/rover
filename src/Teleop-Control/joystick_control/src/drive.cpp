@@ -28,7 +28,7 @@ drive::drive() : Node("drive_node"), initialized_(false) {
   RCLCPP_INFO(this->get_logger(), "Drive controller started");
   servo_y_ = kDefaultServoY;
   servo_x_ = kDefaultServoX;
-  servo_mast_ = 0;
+  servo_mast_ = kDefaultServoM;
   drive_throttle_ = 1.0f;
 };
 
@@ -109,10 +109,12 @@ void drive::drive_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
 
   twist_pub_->publish(twist);
   camera_control(joystickMsg);
-
+  bool pub_mast = false;
   if (joystickMsg->buttons[kServoHomeButton]) {
     servo_y_ = kDefaultServoY;
     servo_x_ = kDefaultServoX;
+    servo_mast_ = kDefaultServoM;
+    pub_mast = true;
   }
 
   if (joystickMsg->axes[kServoYAxis] > kJoyDeadzone) {
@@ -122,8 +124,10 @@ void drive::drive_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   }
   if (joystickMsg->buttons[kMastLeftButton]) {
     servo_mast_ -= kServoIncrement;
+    pub_mast = true;
   } else if (joystickMsg->buttons[kMastRightButton]) {
     servo_mast_ += kServoIncrement;
+    pub_mast = true;
   }
   if (joystickMsg->axes[kServoXAxis] > kJoyDeadzone) {
     servo_x_ += kServoIncrement;
@@ -138,10 +142,11 @@ void drive::drive_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   servo_x_ = std::clamp(servo_x_, kServoMin, kServoMax);
   servo_msg.data = servo_x_;
   servo_x_pub_->publish(servo_msg);
-
-  servo_mast_ = std::clamp(servo_mast_, kServoMin, kServoMax);
-  servo_msg.data = servo_mast_;
-  servo_m_pub_->publish(servo_msg);
+  if (pub_mast) {
+    servo_mast_ = std::clamp(servo_mast_, kServoMin, kServoMax);
+    servo_msg.data = servo_mast_;
+    servo_m_pub_->publish(servo_msg);
+  }
 };
 
 void drive::declare_parameters() {
@@ -164,6 +169,7 @@ void drive::declare_parameters() {
   this->declare_parameter("joy_deadzone", 0.01);
   this->declare_parameter("default_servo_x", 0.0);
   this->declare_parameter("default_servo_y", 0.0);
+  this->declare_parameter("default_servo_m", 0.0);
 }
 
 void drive::load_parameters() {
@@ -186,6 +192,7 @@ void drive::load_parameters() {
   this->get_parameter("joy_deadzone", kJoyDeadzone);
   this->get_parameter("default_servo_x", kDefaultServoX);
   this->get_parameter("default_servo_y", kDefaultServoY);
+  this->get_parameter("default_servo_m", kDefaultServoM);
 
   RCLCPP_INFO(this->get_logger(), "Loaded Max Linear: %f", kMaxLinear);
   RCLCPP_INFO(this->get_logger(), "Loaded Max Angular: %f", kMaxAngular);
