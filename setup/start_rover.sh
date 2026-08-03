@@ -11,7 +11,7 @@ if [ -z "$web_server_id" ]; then
         --ipc host \
         --name web-server \
         $ROVER_DOCKER_IMAGE \
-        ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+        ros2 launch bringup websocket.launch.py
 else
     echo "Web server is already running."
 fi

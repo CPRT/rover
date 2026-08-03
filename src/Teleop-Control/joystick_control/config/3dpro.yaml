@@ -15,6 +15,7 @@ drive_teleop_node:
     servo_max: 6.28
     default_servo_x: 3.10
     default_servo_y: 3.75
+    default_servo_m: 4.2
 
 arm_teleop_node:
   ros__parameters:
