@@ -1,6 +1,8 @@
 #ifndef SCIENCE_SENSORS_HPP
 #define SCIENCE_SENSORS_HPP
 
+#include <condition_variable>
+#include <mutex>
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/u_int16.hpp>
 

@@ -71,7 +71,7 @@ def generate_launch_description():
     )
 
     panoramic = Node(
-        package="science_sensors",
+        package="science_python",
         executable="panoramic",
         name="panoramic",
     )
@@ -80,6 +80,5 @@ def generate_launch_description():
     ld.add_action(science_drill_control)
     ld.add_action(talon_container)
     ld.add_action(science_sensors)
-    ld.add_action(polarimeter)
     ld.add_action(panoramic)
     return ld

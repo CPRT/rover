@@ -143,6 +143,7 @@ void ScienceNode::recv_callback(const can_frame &frame) {
   case CmdId::PolarData: {
     if (!verify_length("PolarData", 7, frame.can_dlc))
       break;
+    std::lock_guard<std::mutex> guard(polar_mutex_);
     if (frame.data[0] != polar_index_)
       RCLCPP_WARN(this->get_logger(),
                   "Polarimeter indexing mismatch: expected packet starting at "
@@ -226,6 +227,7 @@ void ScienceNode::polar_callback(
                   "Polar tried writing without a full buffer");
       response->success = false;
       response->message = "Tried writing without a full sample buffer";
+      return;
     }
     if (this->polar_pub_) {
       interfaces::msg::PolarimeterSweep msg;
@@ -234,22 +236,24 @@ void ScienceNode::polar_callback(
     }
 
     char path[128];
-    sprintf(path, "%spolarimeter_%s_%.0f.csv",
-            this->get_parameter("output_dir").as_string().c_str(),
-            request->title.c_str(), this->now().seconds());
-    int fd = open(path, O_CREAT | O_WRONLY, 777);
+    snprintf(path, sizeof(path), "%spolarimeter_%s_%.0f.csv",
+             this->get_parameter("output_dir").as_string().c_str(),
+             request->title.c_str(), this->now().seconds());
+    int fd = open(path, O_CREAT | O_WRONLY, 0777);
 
     char contents[1024];
     uint16_t pos = 0;
 
-    pos += sprintf(contents, "step, reading\n");
+    pos += snprintf(contents, sizeof(contents) - pos, "step, reading\n");
 
     for (int i = 0; i < SCAN_STEPS; i++) {
-      pos += sprintf(contents + pos, "%d, %d\n", i, polar_points_[i]);
+      pos += snprintf(contents + pos, sizeof(contents) - pos, "%d, %d\n", i,
+                      polar_points_[i]);
     }
     write(fd, contents, pos - 1);
+    close(fd);
     response->success = true;
-    response->message = "48 samples saved";
+    response->message = "Polarimeter samples saved";
     response->file_path = path;
     RCLCPP_INFO(this->get_logger(), "Polarimeter sweep saved to %s", path);
   }
