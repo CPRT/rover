@@ -2,17 +2,14 @@ from setuptools import find_packages, setup
 import os
 from glob import glob
 
-package_name = "science_sensors"
+package_name = "science_python"
 
 setup(
     name=package_name,
     version="0.0.0",
     packages=find_packages(
-        include=["science_sensors", "science_sensors.*"], exclude=["test"]
+        include=["science_python", "science_python.*"], exclude=["test"]
     ),
-    package_data={
-        "science_sensors.stellarnet_driverLibs": ["*.so"],
-    },
     include_package_data=True,
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
@@ -22,7 +19,7 @@ setup(
             glob(os.path.join("launch", "*launch.[pxy][yma]*")),
         ),
     ],
-    install_requires=["setuptools", "pyserial"],
+    install_requires=["setuptools"],
     zip_safe=True,
     maintainer="aydan",
     maintainer_email="aj01cars@outlook.com",
@@ -30,7 +27,7 @@ setup(
     license="TODO: License declaration",
     entry_points={
         "console_scripts": [
-            "panoramic = science_sensors.panoramic:main",
+            "panoramic = science_python.panoramic:main",
         ],
     },
 )
