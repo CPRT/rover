@@ -15,7 +15,7 @@
 #include "interfaces/srv/run_polarimeter.hpp"
 #include "socket_can.hpp"
 
-#define SCAN_STEPS 48
+#define SCAN_STEPS 96
 
 class ScienceNode : public rclcpp::Node {
 public:

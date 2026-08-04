@@ -8,21 +8,23 @@ import math
 
 
 def plot_set(ax: plt.Axes, x_deg: list[int], readings: list[int], title: str):
-    x_deg = list(range(len(readings)))
     x_rad = np.deg2rad(x_deg)
 
     # --- Model: A cos^2(x - phi) + C ---
-    def cos2_model(x, A, phi, C):
-        return A * np.cos(x - phi) ** 2 + C
+    def cos2_model(x, A, B, phi, C):
+        return A * np.cos(B * x - phi) ** 2 + C
 
     # --- Initial parameter guesses ---
     A_guess = np.max(readings) - np.min(readings)
+    B_guess = 1
     phi_guess = np.deg2rad(50)
     C_guess = np.min(readings)
 
-    popt, _ = curve_fit(cos2_model, x_rad, readings, p0=[A_guess, phi_guess, C_guess])
+    popt, _ = curve_fit(
+        cos2_model, x_rad, readings, p0=[A_guess, B_guess, phi_guess, C_guess]
+    )
 
-    A_fit, phi_fit, C_fit = popt
+    A_fit, B_fit, phi_fit, C_fit = popt
 
     # Convert phase to degrees
     phase_deg = np.rad2deg(phi_fit)
@@ -30,11 +32,11 @@ def plot_set(ax: plt.Axes, x_deg: list[int], readings: list[int], title: str):
     # --- Generate smooth fit curve ---
     x_fit_deg = np.linspace(np.min(x_deg), np.max(x_deg), 1000)
     x_fit_rad = np.deg2rad(x_fit_deg)
-    y_fit = cos2_model(x_fit_rad, A_fit, phi_fit, C_fit)
+    y_fit = cos2_model(x_fit_rad, A_fit, B_fit, phi_fit, C_fit)
 
     # --- Plot ---
-    ax.scatter(x_deg, readings, label="Data")
-    ax.plot(x_fit_deg, y_fit, label="Cos² Fit")
+    ax.scatter([i * B_fit for i in x_deg], readings, label="Data")
+    ax.plot([i * B_fit for i in x_fit_deg], y_fit, label="Cos² Fit")
     ax.axvline(phase_deg, linestyle="--", label=f"Phase Offset = {phase_deg:.2f}°")
 
     ax.set_xlabel("Angle (degrees)")
@@ -67,7 +69,7 @@ props = dict(boxstyle="round", facecolor="grey", alpha=0.15)
 ax[0].text(
     0,
     -0.2,
-    f"Phase difference: {math.fabs(phase1 - phase2):.2f} deg\nConcentration: {conc:.2f} g/mL\nSpecific rotation: {math.fabs(phase1 - phase2) * 100 / (40 * conc):.4f} deg*cm^2/g",
+    f"Phase difference: {math.fabs(phase1 - phase2):.2f} deg\nConcentration: {conc:.2f} g/mL\nSpecific rotation: {math.fabs(phase1 - phase2) * 100 / (43.3 * conc):.4f} deg*cm^2/g",
     transform=ax[0].transAxes,
     verticalalignment="top",
     bbox=props,
