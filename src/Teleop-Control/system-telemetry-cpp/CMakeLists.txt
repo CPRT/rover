@@ -34,6 +34,7 @@ add_executable(system_telemetry_publisher
   src/cpu_collector.cpp
   src/memory_collector.cpp
   src/gpu_collector.cpp
+  src/temp_collector.cpp
 )
 
 add_executable(node_status_publisher
