@@ -50,7 +50,7 @@ class MastESP(Node):
         self.create_timer(0.001, self.loop)
         self._ensure_serial_connected(force=True)
         self.get_logger().info(
-            f"Mast ESP node started, port={self._port}, baud={self._baud}"
+            f"Mast ESP node started, port={self._port}, baud={self._baudrate}"
         )
 
     def _ensure_serial_connected(self, force: bool = False) -> bool:
