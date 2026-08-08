@@ -33,9 +33,7 @@ class AntennaPointingNode(Node):
         self.create_subscription(NavSatFix, "/base_station/fix", self.base_cb, 2)
         self.create_subscription(NavSatFix, "/gps/fix", self.rover_cb, 2)
 
-        self.bearing_pub = self.create_publisher(
-            Float32, "/antenna/tracker_bearing", 10
-        )
+        self.bearing_pub = self.create_publisher(Float32, "/antenna/target_bearing", 10)
 
         self.timer = self.create_timer(1.0 / self.freq, self.update)
 
@@ -76,9 +74,7 @@ class AntennaPointingNode(Node):
 
     def publish_bearing(self, bearing):
         msg = Float32()
-        msg.data = float(bearing) / (
-            math.pi * 2
-        )  # normalize the output for the roboclaw
+        msg.data = float(bearing)  # radians follow the ros standard, don't normalize
         self.bearing_pub.publish(msg)
 
     def bearing(self, lat1, lon1, lat2, lon2):
