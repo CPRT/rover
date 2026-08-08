@@ -10,6 +10,7 @@
 #include "interfaces/msg/system_telemetry.hpp"
 #include "memory_collector.hpp"
 #include "telemetry_collector.hpp"
+#include "temp_collector.hpp"
 
 SystemTelemetryPublisher::SystemTelemetryPublisher()
     : Node("system_telemetry_publisher") {
@@ -23,11 +24,13 @@ SystemTelemetryPublisher::SystemTelemetryPublisher()
   this->declare_parameter("cpu", true);
   this->declare_parameter("memory", true);
   this->declare_parameter("gpu", true);
+  this->declare_parameter("temp", true);
   const bool cpu = this->get_parameter("cpu").as_bool();
   const bool memory = this->get_parameter("memory").as_bool();
   const bool gpu = this->get_parameter("gpu").as_bool();
+  const bool temp = this->get_parameter("temp").as_bool();
 
-  if (!cpu && !memory && !gpu) {
+  if (!cpu && !memory && !gpu && !temp) {
     RCLCPP_ERROR(this->get_logger(), "No collectors enabled.");
     return;
   }
@@ -39,6 +42,9 @@ SystemTelemetryPublisher::SystemTelemetryPublisher()
   }
   if (gpu) {
     collectors_.emplace_back(std::make_unique<GPUCollector>());
+  }
+  if (temp) {
+    collectors_.emplace_back(std::make_unique<TempCollector>());
   }
 
   timer_ = this->create_wall_timer(
@@ -53,8 +59,10 @@ void SystemTelemetryPublisher::publish_telemetry() {
   }
   publisher_->publish(msg);
   RCLCPP_INFO(this->get_logger(),
-              "Published Telemetry: CPU: %.1f%%, Mem: %.1f%%, GPU: %.1f%%",
-              msg.cpu_usage, msg.mem_usage, msg.gpu_usage);
+              "Published Telemetry: CPU: %.1f%%, Mem: %.1f%%, GPU: %.1f%%, "
+              "Core Temp: %.1f C, Case Temp: %.1f C",
+              msg.cpu_usage, msg.mem_usage, msg.gpu_usage, msg.core_temp,
+              msg.case_temp);
 }
 
 int main(int argc, char *argv[]) {

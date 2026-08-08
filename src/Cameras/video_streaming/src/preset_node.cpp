@@ -12,10 +12,14 @@ PresetNode::PresetNode(const rclcpp::NodeOptions &options)
   presets_pub_ = this->create_publisher<interfaces::msg::VideoPresets>(
       "/video_presets", presets_qos);
 
+  cameras_client_ = this->create_client<interfaces::srv::GetCameras>(
+      "/input_node/get_cameras");
+
   interfaces::msg::VideoPresets presets_msg;
   presets_msg.presets = presets_;
   presets_pub_->publish(presets_msg);
 
+  sort_presets();
   RCLCPP_INFO(this->get_logger(), "PresetNode started");
 }
 
@@ -64,6 +68,49 @@ void PresetNode::load_presets() {
   }
 
   RCLCPP_INFO(this->get_logger(), "Loaded %ld presets", presets_.size());
+}
+
+void PresetNode::sort_presets() {
+  if (!cameras_client_->wait_for_service(std::chrono::seconds(5))) {
+    RCLCPP_ERROR(this->get_logger(), "Get cameras service is unavailable!!!!");
+    return;
+  }
+
+  auto request = std::make_shared<interfaces::srv::GetCameras::Request>();
+  cameras_client_->async_send_request(
+      request, [this](const std::shared_future<
+                      interfaces::srv::GetCameras::Response::SharedPtr>
+                          future) {
+        auto response = future.get();
+
+        std::vector<interfaces::msg::VideoPreset> new_presets;
+        int i = 0;
+        for (const auto &preset : presets_) {
+          int found = 0;
+          for (const auto &source : preset.sources) {
+            for (const auto &camera : response->sources) {
+              if (camera == source.name) {
+                found++;
+                break;
+              }
+            }
+          }
+          if (found == preset.sources.size()) {
+            new_presets.push_back(preset);
+          }
+          i++;
+        }
+
+        presets_ = std::move(new_presets);
+
+        RCLCPP_INFO(this->get_logger(),
+                    "Sorted to %ld available presets using %ld cameras",
+                    presets_.size(), response->sources.size());
+
+        interfaces::msg::VideoPresets presets_msg;
+        presets_msg.presets = presets_;
+        presets_pub_->publish(presets_msg);
+      });
 }
 
 RCLCPP_COMPONENTS_REGISTER_NODE(PresetNode)

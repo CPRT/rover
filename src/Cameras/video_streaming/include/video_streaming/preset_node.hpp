@@ -5,6 +5,7 @@
 
 #include "interfaces/msg/video_preset.hpp"
 #include "interfaces/msg/video_presets.hpp"
+#include "interfaces/srv/get_cameras.hpp"
 
 class PresetNode : public rclcpp::Node {
 public:
@@ -14,9 +15,11 @@ public:
 private:
   void declare_parameters();
   void load_presets();
+  void sort_presets();
 
   std::vector<interfaces::msg::VideoPreset> presets_;
   rclcpp::Publisher<interfaces::msg::VideoPresets>::SharedPtr presets_pub_;
+  rclcpp::Client<interfaces::srv::GetCameras>::SharedPtr cameras_client_;
 };
 
 #endif // PRESET_NODE_HPP
