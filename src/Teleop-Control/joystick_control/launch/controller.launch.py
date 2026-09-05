@@ -7,7 +7,7 @@ from ament_index_python.packages import get_package_share_directory
 def find_ps5():
     try:
         # check for wired first
-        wired_path = "/dev/input/by-id/usb-Sony_Interactive_Entertainment_DualSense_Wireless_Controller-if03-joystick"
+        wired_path = "/dev/input/by-id/usb-ZhiXu_GuliKit_Controller_D-joystick"
         if os.path.exists(wired_path):
             return wired_path
         # Check wireless after

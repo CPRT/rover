@@ -18,6 +18,7 @@ def generate_launch_description():
                 executable="USB_Servo",
                 name="USB_Servo_node",
                 parameters=[parent_params, child_params],
+                respawn=True,
             )
         ]
     )
