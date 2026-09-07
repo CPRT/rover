@@ -1,12 +1,12 @@
 drive_teleop_node:
   ros__parameters:
-    forward_axis: 3
-    strafe_axis: 2
-    yaw_axis: 0
+    forward_axis: 1
+    strafe_axis: 0
+    yaw_axis: 3
     max_linear: 2.0
     max_angular: 1.0
-    servo_y_axis: 5
-    servo_x_axis: 4
+    servo_y_axis: 7
+    servo_x_axis: 6
     servo_home_button: 0
     servo_increment: 0.02
     mast_left_button: 2
