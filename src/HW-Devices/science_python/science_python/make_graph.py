@@ -16,7 +16,7 @@ def plot_set(ax: plt.Axes, x_deg: list[int], readings: list[int], title: str):
 
     # --- Initial parameter guesses ---
     A_guess = np.max(readings) - np.min(readings)
-    B_guess = 1
+    B_guess = 3.25
     phi_guess = np.deg2rad(50)
     C_guess = np.min(readings)
 
@@ -27,7 +27,7 @@ def plot_set(ax: plt.Axes, x_deg: list[int], readings: list[int], title: str):
     A_fit, B_fit, phi_fit, C_fit = popt
 
     # Convert phase to degrees
-    phase_deg = np.rad2deg(phi_fit)
+    phase_deg = np.rad2deg(phi_fit) + 90
 
     # --- Generate smooth fit curve ---
     x_fit_deg = np.linspace(np.min(x_deg), np.max(x_deg), 1000)
@@ -55,7 +55,13 @@ def plot_file(ax: plt.Axes, filename: str, title: str):
         for row in reader:
             x_deg.append(int(row[0]))
             readings.append(int(row[1]))
-    return plot_set(ax, x_deg, readings, title)
+    readings_sort = []
+    x_deg_sort = []
+    for i in range(len(x_deg)):
+        if readings[i] < 4090:
+            x_deg_sort.append(x_deg[i])
+            readings_sort.append(readings[i])
+    return plot_set(ax, x_deg_sort, readings_sort, title)
 
 
 fig, ax = plt.subplots(1, 2, figsize=(12, 5))
@@ -69,7 +75,7 @@ props = dict(boxstyle="round", facecolor="grey", alpha=0.15)
 ax[0].text(
     0,
     -0.2,
-    f"Phase difference: {math.fabs(phase1 - phase2):.2f} deg\nConcentration: {conc:.2f} g/mL\nSpecific rotation: {math.fabs(phase1 - phase2) * 100 / (43.3 * conc):.4f} deg*cm^2/g",
+    f"Phase difference: {math.fabs(phase1 - phase2):.2f} deg\nConcentration: {conc:.3f} g/mL\nSpecific rotation: {math.fabs(phase1 - phase2) * 100 / (43.3 * conc):.4f} deg*cm^2/g",
     transform=ax[0].transAxes,
     verticalalignment="top",
     bbox=props,
