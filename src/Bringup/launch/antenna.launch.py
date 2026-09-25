@@ -29,8 +29,8 @@ def generate_launch_description():
                     },
                     {"Baudrate": 115200},
                     {"Freq": 5.0},  # Publish rate (hz)
-                    {"SvinMindur": 300},  # Survey in time (s)
-                    {"SvinMinAccDur": 10_000},  # Survey in accuracy (mm)
+                    {"SvinMinDur": 300},  # Survey-in minimum duration (s)
+                    {"SvinAccLimit": 10_000},  # Survey-in accuracy limit (mm)
                     {"QueueDepth": 10},
                 ],
             ),
@@ -61,7 +61,10 @@ def generate_launch_description():
                         "CountsPerRev": 8192  # based on 4096 encoder resolution and 2:1 gear ratio
                     },
                 ],
-                remappings=[("/roboclaw_position", "/antenna/tracker_bearing")],
+                remappings=[
+                    ("/roboclaw_desired_position", "/antenna/target_bearing"),
+                    ("/roboclaw_actual_position", "/antenna/bearing"),
+                ],
             ),
             # Optionally run the standalone basestation config script when requested
             ExecuteProcess(
