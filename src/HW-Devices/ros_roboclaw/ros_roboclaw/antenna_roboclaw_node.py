@@ -66,7 +66,6 @@ class RoboClawAntennaNode(Node):
 
         error = self.wrap_error(self.target_encoder - self.current_encoder)
 
-        # self.get_logger().info(f"target= {norm * 360:.2f}°, {self.target_encoder}")
 
         self.drive_to_position(self.current_encoder + error)
 
