@@ -258,20 +258,20 @@ class GpsBaseNode(Node):
         e2 = 6.6943799901414e-3  # first eccentricity squared
 
         lon = math.atan2(y, x)
-        p = math.sqrt(x**2 + y**2)
+        p = math.sqrt(x ** 2 + y ** 2)
         lat = math.atan2(z, p * (1 - e2))  # initial estimate
 
         # Iterate to convergence (usually 3–4 iterations)
         for _ in range(10):
             sin_lat = math.sin(lat)
-            N = a / math.sqrt(1 - e2 * sin_lat**2)
+            N = a / math.sqrt(1 - e2 * sin_lat ** 2)
             lat_new = math.atan2(z + e2 * N * sin_lat, p)
             if abs(lat_new - lat) < 1e-12:
                 break
             lat = lat_new
 
         sin_lat = math.sin(lat)
-        N = a / math.sqrt(1 - e2 * sin_lat**2)
+        N = a / math.sqrt(1 - e2 * sin_lat ** 2)
         alt = (
             p / math.cos(lat) - N
             if abs(math.cos(lat)) > 1e-10

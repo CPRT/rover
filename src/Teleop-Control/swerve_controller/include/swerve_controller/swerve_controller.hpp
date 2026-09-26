@@ -134,7 +134,7 @@ private:
                                const std::vector<double> &cov_vector);
 
   /**
-   * @brief Compute and publish wheel-based odometry.
+   * @brief publish wheel-based odometry.
    *
    * Uses a least-squares rigid-body solve to estimate body twist:
    *   [vx, vy, wz]
@@ -142,6 +142,21 @@ private:
    * Pose is NOT integrated here; only twist is published.
    */
   void update_odometry_and_publish_(const rclcpp::Time &time);
+
+  /**
+   * @brief computes wheel geometry from twist message
+   */
+
+  void compute_wheel_odometry(geometry_msgs::msg::TwistStamped msg,
+                              const rclcpp::Time &time);
+
+  /**
+   * @brief computed wheel angle and velocity variable
+   * takes computed values from on_twist or on_twist_stamped to use in
+   * update_swerve
+   */
+
+  double wheel_angle_velocity[2][4];
 
   /**
    * @brief Solve a 3x3 linear system using Gauss-Jordan elimination.

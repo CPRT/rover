@@ -203,6 +203,10 @@ SwerveController::on_configure(const rclcpp_lifecycle::State &) {
   px_ = {x_f, x_f, x_r, x_r};
   py_ = {y_l, y_r, y_l, y_r};
 
+  wheel_angle_velocity =
+  { {M_PI/2, M_PI/2, M_PI/2, M_PI/2},
+    {0, 0, 0, 0} }
+
   RCLCPP_INFO(node->get_logger(), "SwerveController configured.");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -261,34 +265,11 @@ SwerveController::on_error(const rclcpp_lifecycle::State &) {
 controller_interface::return_type
 SwerveController::update(const rclcpp::Time &time,
                          const rclcpp::Duration &period) {
-  geometry_msgs::msg::TwistStamped cmd;
-  received_velocity_msg_.get(cmd);
-
-  if (cmd_timeout_ > 0.0) {
-    const double age = (time - cmd.header.stamp).seconds();
-    if (age > cmd_timeout_) {
-      for (auto &axle : axles_) {
-        axle.stop();
-      }
-      RCLCPP_WARN_THROTTLE(get_node()->get_logger(), *get_node()->get_clock(),
-                           1000,
-                           "SwerveController: Command timeout (age=%.3f > "
-                           "%.3f), stopping robot.",
-                           age, cmd_timeout_);
-    }
-  }
-
-  const double vx = cmd.twist.linear.x;
-  const double vy = cmd.twist.linear.y;
-  const double wz = cmd.twist.angular.z;
 
   for (size_t i = 0; i < axles_.size() && i < 4; ++i) {
-    const double vix = vx - wz * py_[i];
-    const double viy = vy + wz * px_[i];
 
-    double target_angle = std::atan2(viy, vix);
-    const double speed_m_s = std::hypot(vix, viy);
-    double target_wheel = speed_m_s / wheel_radius_;
+    double target_angle = wheel_angle_velocity[0][i];
+    double target_wheel = wheel_angle_velocity[1][i];
 
     const auto current_angle = axles_[i].currentAngle();
     if (!current_angle.has_value()) {
@@ -497,15 +478,54 @@ void SwerveController::on_message(
   stamped.header.stamp = get_node()->now();
   stamped.header.frame_id = "base_link";
   stamped.twist = *msg;
-  received_velocity_msg_.set(stamped);
+
+  compute_wheel_odometry(stamped, time);
 }
 
 void SwerveController::on_stamped_message(
     const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
-  received_velocity_msg_.set(*msg);
+  const time = get_node()->now();
+  compute_wheel_odometry(*msg, time);
 }
 
 } // namespace swerve_controller
+
+void SwerveController::compute_wheel_odometry(
+    geometry_msgs::msg::TwistStamped msg, const rclcpp::Time &time) {
+  if (cmd_timeout_ > 0.0) {
+    const double age = (time - msg.header.stamp).seconds();
+    if (age > cmd_timeout_) {
+      for (auto &axle : axles_) {
+        axle.stop();
+      }
+      RCLCPP_WARN_THROTTLE(get_node()->get_logger(), *get_node()->get_clock(),
+                           1000,
+                           "SwerveController: Command timeout (age=%.3f > "
+                           "%.3f), stopping robot.",
+                           age, cmd_timeout_);
+    }
+  }
+
+  const double vx = msg.twist.linear.x;
+  const double vy = msg.twist.linear.y;
+  const double wz = msg.twist.angular.z;
+
+  for (size_t i = 0; i < axles_.size() && i < 4; ++i) {
+
+    const double vix = vx - wz * py_[i];
+    const double viy = vy + wz * px_[i];
+
+    if
+      !(vx == 0 and vy == 0) { double target_angle = std::atan2(viy, vix); }
+
+    wheel_angle_velocity[0][i] = target_angle;
+
+    const double speed_m_s = std::hypot(vix, viy);
+    double target_wheel = speed_m_s / wheel_radius_;
+
+    wheel_angle_velocity[1][i] = target_wheel;
+  }
+}
 
 PLUGINLIB_EXPORT_CLASS(swerve_controller::SwerveController,
                        controller_interface::ControllerInterface);
