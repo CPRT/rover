@@ -41,7 +41,7 @@ class MastESP(Node):
         )
 
         self._serial = None
-        self._last_reconnect_attempt_ns = 0
+        self._last_connect_attempt_ns = 0
 
         self.servo_min = self.get_parameter("min").get_parameter_value().double_value
         self.servo_max = self.get_parameter("max").get_parameter_value().double_value
