@@ -32,6 +32,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/SrtStats.msg"
   "msg/SvinStatus.msg"
   "msg/SystemTelemetry.msg"
+  "msg/USBDevice.msg"
+  "msg/USBList.msg"
   "msg/VideoSource.msg"
   "srv/FilterGoals.srv"
   "srv/GetCameras.srv"

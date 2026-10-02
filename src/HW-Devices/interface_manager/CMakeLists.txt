@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(interface_manager LANGUAGES CXX)
+project(interface_manager LANGUAGES C CXX)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -26,12 +26,15 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(PkgConfig)
+pkg_check_modules(libusb REQUIRED libusb-1.0)
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 add_executable(${PROJECT_NAME}
+  "src/libnetlink.c"
   "src/interface_manager.cpp"
   "src/main.cpp"
 )
@@ -42,6 +45,11 @@ ament_target_dependencies(${PROJECT_NAME}
   "std_msgs"
   "interfaces"
   "rclcpp_lifecycle"
+)
+
+target_link_libraries(${PROJECT_NAME}
+  ${libusb_LIBRARIES}
+  -ludev
 )
 
 # Install Components
