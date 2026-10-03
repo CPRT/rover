@@ -290,8 +290,7 @@ SwerveController::update(const rclcpp::Time &time,
 
     const auto current_angle = axles_[i].currentAngle();
 
-
-    if(vix != 0 or viy != 0){
+    if (vix != 0 || viy != 0) {
       target_angle = std::atan2(viy, vix);
     } else {
       target_angle = current_angle.value();
