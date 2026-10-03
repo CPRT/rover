@@ -79,7 +79,7 @@ public:
    *
    * Optional for derived classes.
    */
-  virtual void activate(){};
+  virtual void activate() {};
 
 protected:
   /**
