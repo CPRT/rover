@@ -283,14 +283,22 @@ SwerveController::update(const rclcpp::Time &time,
   const double wz = cmd.twist.angular.z;
 
   for (size_t i = 0; i < axles_.size() && i < 4; ++i) {
+    double target_angle;
+
     const double vix = vx - wz * py_[i];
     const double viy = vy + wz * px_[i];
 
-    double target_angle = std::atan2(viy, vix);
+    const auto current_angle = axles_[i].currentAngle();
+
+    if (vix != 0 || viy != 0) {
+      target_angle = std::atan2(viy, vix);
+    } else {
+      target_angle = current_angle.value();
+    }
+
     const double speed_m_s = std::hypot(vix, viy);
     double target_wheel = speed_m_s / wheel_radius_;
 
-    const auto current_angle = axles_[i].currentAngle();
     if (!current_angle.has_value()) {
       RCLCPP_WARN_THROTTLE(
           get_node()->get_logger(), *get_node()->get_clock(), 1000,
