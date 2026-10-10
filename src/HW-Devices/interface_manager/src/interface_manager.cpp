@@ -194,12 +194,6 @@ InterfaceManagerNode::InterfaceManagerNode(const std::string name,
 
   hwdb = udev_hwdb_new(udev);
 
-  int err = libusb_init(&ctx);
-  if (err) {
-    fprintf(stderr, "unable to initialize libusb: %i\n", err);
-    // return EXIT_FAILURE;
-  }
-
   RCLCPP_INFO(get_logger(), "Interface Manager Node started");
 }
 
@@ -207,7 +201,6 @@ InterfaceManagerNode::InterfaceManagerNode(const std::string name,
 
 hwdb = udev_hwdb_unref(hwdb);
         udev = udev_unref(udev);
-  libusb_exit(ctx);
 */
 
 void InterfaceManagerNode::timer_callback() {
@@ -317,6 +310,10 @@ void InterfaceManagerNode::send_usb() {
   char vendor[128], product[128];
   ssize_t num_devs, i;
 
+  if (libusb_init(&ctx)) {
+    RCLCPP_ERROR(get_logger(), "Failed to initialize lisusb");
+    return;
+  }
   num_devs = libusb_get_device_list(ctx, &list);
 
   struct libusb_device *dev, *dev_next;
@@ -382,6 +379,7 @@ void InterfaceManagerNode::send_usb() {
   }
 
   libusb_free_device_list(list, 1);
+  libusb_exit(ctx);
 
   if (this->usb_list_pub_) {
     this->usb_list_pub_->publish(msg);
