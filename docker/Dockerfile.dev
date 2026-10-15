@@ -37,7 +37,6 @@ ARG CUDA_MINOR=3
 RUN apt-get update && apt-get install -y --no-install-recommends \
         cuda-compiler-${CUDA_MAJOR}-${CUDA_MINOR} \
         cuda-cudart-dev-${CUDA_MAJOR}-${CUDA_MINOR} \
-        libnvinfer10 libnvinfer-plugin10 libnvonnxparsers10 \
     && rm -rf /var/lib/apt/lists/*
 RUN groupadd -f zed && usermod -aG zed ubuntu
 RUN chmod -R a+r /usr/local/lib/python3.12/dist-packages/

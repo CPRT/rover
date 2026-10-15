@@ -48,6 +48,15 @@ class PanoramicNode(Node):
         msg.data = angle
         publisher.publish(msg)
 
+    @staticmethod
+    def crop_bottom(
+        image: npt.NDArray[np.uint8], percent: float = 0.10
+    ) -> npt.NDArray[np.uint8]:
+        percent = max(0.0, min(float(percent), 1.0))
+        h = image.shape[0]
+        new_h = int(h * (1.0 - percent))
+        return image[:new_h, :]
+
     def capture_image(self) -> npt.NDArray[np.uint8] | None:
         if not self.video_cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().error("Video capture service not available, exiting...")
@@ -99,6 +108,8 @@ class PanoramicNode(Node):
         if image is None or image.size == 0:
             self.get_logger().error("Failed to decode image")
             return None
+        # Hack: The bottom of our video stream is sometimes dirty. Remove it
+        image = self.crop_bottom(image, 0.10)
         return image
 
     def construct_panoramic(self, images):

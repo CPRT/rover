@@ -23,7 +23,7 @@ def generate_launch_description():
     use_arm = LaunchConfiguration("use_arm")
     use_drive = LaunchConfiguration("use_drive")
     joystick_control_dir = get_package_share_directory("joystick_control")
-    joy_parameters_file = os.path.join(joystick_control_dir, "pxn.yaml")
+    joy_parameters_file = os.path.join(joystick_control_dir, "8bitdo.yaml")
 
     declare_use_arm_cmd = DeclareLaunchArgument(
         "use_arm",

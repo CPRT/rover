@@ -10,7 +10,7 @@ COPY toolchain.cmake ./toolchain.cmake
 ARG BUILD_FLAGS=""
 
 RUN source /opt/ros/$ROS_DISTRO/setup.bash \
-    && colcon build --continue-on-error \
+    && colcon build \
        ${BUILD_FLAGS}
 
 ############################

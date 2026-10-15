@@ -1,7 +1,5 @@
 # VideoOut.srv
 
-int8 num_sources
-
 VideoSource[] sources
 
 ---

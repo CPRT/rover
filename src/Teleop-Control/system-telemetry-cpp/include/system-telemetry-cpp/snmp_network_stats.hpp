@@ -34,14 +34,15 @@ private:
   long timeout_us_;
   int retries_;
 
-  const std::string oid_signal_strength_base_ = "1.3.6.1.4.1.41112.1.4.7.1.3";
-  const std::string oid_noise_floor_base_ = "1.3.6.1.4.1.41112.1.4.7.1.4";
-  const std::string oid_ccq_tx_base_ = "1.3.6.1.4.1.41112.1.4.7.1.6";
-  const std::string oid_bandwidth_tx_base_ = "1.3.6.1.4.1.41112.1.4.7.1.11";
-  const std::string oid_bandwidth_rx_base_ = "1.3.6.1.4.1.41112.1.4.7.1.12";
+  const std::string oid_signal_strength_base_ =
+      "iso.3.6.1.4.1.41112.1.4.5.1.5.1";
+  const std::string oid_noise_floor_base_ = "iso.3.6.1.4.1.41112.1.4.5.1.8.1";
+  const std::string oid_ccq_tx_base_ = "iso.3.6.1.4.1.41112.1.4.5.1.7.1";
+  const std::string oid_bandwidth_tx_base_ = "iso.3.6.1.4.1.41112.1.4.5.1.9.1";
+  const std::string oid_bandwidth_rx_base_ = "iso.3.6.1.4.1.41112.1.4.5.1.10.1";
 
-  const std::string oid_rx_counter_ = "1.3.6.1.2.1.2.2.1.10.5";
-  const std::string oid_tx_counter_ = "1.3.6.1.2.1.2.2.1.16.5";
+  const std::string oid_rx_counter_ = "iso.3.6.1.2.1.2.2.1.10.6";
+  const std::string oid_tx_counter_ = "iso.3.6.1.2.1.2.2.1.16.6";
 
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr pub_bandwidth_tx_;
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr pub_bandwidth_rx_;
