@@ -20,6 +20,7 @@ find_package(std_msgs REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ArucoBoard.msg"
   "msg/ArucoMarkers.msg"
+  "msg/CANStatus.msg"
   "msg/DHT22.msg"
   "msg/Distance.msg"
   "msg/GasSensorReading.msg"
@@ -34,6 +35,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/SrtStats.msg"
   "msg/SvinStatus.msg"
   "msg/SystemTelemetry.msg"
+  "msg/USBDevice.msg"
+  "msg/USBList.msg"
   "msg/VideoPreset.msg"
   "msg/VideoPresets.msg"
   "msg/VideoSource.msg"
