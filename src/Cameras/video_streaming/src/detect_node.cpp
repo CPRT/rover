@@ -94,10 +94,14 @@ void DetectNode::apply_morse_element_properties(GstElement *morse) {
 
 static std::string get_detection_pipeline_str(std::string config_path) {
   std::stringstream ss;
-  ss << "nvvidconv ! queue ! mux.sink_0 "
+  ss << "nvvideoconvert compute-hw=1 nvbuf-memory-type=4 ! "
+        "video/x-raw(memory:NVMM),format=NV12 ! "
+        "queue ! "
+        "mux.sink_0 "
      << "nvstreammux name=mux batch-size=1 width=1920 "
-        "height=1080 live-source=1 ! queue ! nvinfer config-file-path="
-     << config_path << " ! queue ! nvdsosd name=osd ! nvvidconv ! ";
+        "height=1080 live-source=1 nvbuf-memory-type=4 ! queue ! nvinfer "
+        "config-file-path="
+     << config_path << " ! queue ! nvdsosd name=osd ! ";
   return ss.str();
 }
 
@@ -137,7 +141,9 @@ bool DetectNode::create_pipeline() {
     desc_ss << "identity ! ";
     break;
   }
-  desc_ss << "nvvidconv ! video/x-raw(memory:NVMM),format=NV12 ! interpipesink "
+  desc_ss << "nvvideoconvert compute-hw=1 nvbuf-memory-type=4 ! "
+             "video/x-raw(memory:NVMM),format=NV12 ! "
+             "interpipesink "
              "name=detect";
 
   RCLCPP_INFO(this->get_logger(), "Creating pipeline: %s",
