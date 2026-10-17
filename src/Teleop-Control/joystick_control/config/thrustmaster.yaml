@@ -1,0 +1,16 @@
+arm_teleop_node:
+  ros__parameters:
+    throttle:
+      axis: 3
+    joint_1_axis: 0
+    joint_2_axis: 1
+    joint_3_axis: 5
+    joint_4_axis: 2
+    wrist_yaw_positive: 1
+    wrist_yaw_negative: 3
+    joint_6_axis: 4
+    dot_inc: 13
+    claw_open_button: 2
+    disable_button: 4
+    ik_button: 5
+    manual_button: 6
