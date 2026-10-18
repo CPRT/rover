@@ -141,7 +141,7 @@ bool DetectNode::create_pipeline() {
     desc_ss << "identity ! ";
     break;
   }
-  desc_ss << "nvvideoconvert compute-hw=1 nvbuf-memory-type=4 ! "
+  desc_ss << "nvvideoconvert compute-hw=1 ! "
              "video/x-raw(memory:NVMM),format=NV12 ! "
              "interpipesink "
              "name=detect";
