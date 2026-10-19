@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.5)
-project(cdh_link LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.8)
+project(cdh_link)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -10,17 +10,15 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(interfaces REQUIRED)
 
-include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
+include_directories(include)
 
 add_executable(${PROJECT_NAME}
-  "src/science_node.cpp"
-  "src/main.cpp"
+  src/cdh_link.cpp
 )
+
 ament_target_dependencies(${PROJECT_NAME}
-  "rclcpp"
-  "interfaces"
+  rclcpp
+  interfaces
 )
 
 # Install Components

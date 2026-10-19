@@ -3,7 +3,7 @@
 <package format="3">
   <name>cdh_link</name>
   <version>0.0.0</version>
-  <description>Nodes for science sensors</description>
+  <description>CDH link</description>
   <maintainer email="va7nfh@gmail.com">Nathaniel</maintainer>
   <license>TODO: License declaration</license>
 
