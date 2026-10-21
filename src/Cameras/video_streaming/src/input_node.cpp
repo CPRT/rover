@@ -49,7 +49,9 @@ bool InputNode::create_pipeline() {
   // no cameras and provides a fixed-size reference pad at sink_0)
   desc << "videotestsrc is-live=true pattern=black "
        << "! video/x-raw,width=" << W << ",height=" << H << ",framerate=" << FPS
-       << "/1 " << "! nvvidconv ! tee name=t0 "
+       << "/1 "
+       << "! nvvideoconvert ! video/x-raw(memory:NVMM),format=NV12 ! tee "
+          "name=t0 "
        << "t0. ! queue leaky=downstream max-size-buffers=1 ! compositor.sink_0 "
        << "t0. ! queue leaky=downstream max-size-buffers=1 ! "
           "mosaic_compositor.sink_0 ";
@@ -105,7 +107,8 @@ bool InputNode::create_pipeline() {
     }
 
     // Split each camera via tee into both compositors
-    desc << "nvvidconv ! tee name=t" << index << " " << "t" << index
+    desc << "nvvideoconvert ! video/x-raw(memory:NVMM),format=NV12 ! tee name=t"
+         << index << " " << "t" << index
          << ". ! queue leaky=downstream max-size-buffers=1 "
          << "! compositor.sink_" << index << " " << "t" << index
          << ". ! queue leaky=downstream max-size-buffers=1 "
@@ -116,14 +119,16 @@ bool InputNode::create_pipeline() {
 
   // Stream 1 – operator compositor: layout is set dynamically via video_cb
   desc << "nvcompositor name=compositor sink_0::alpha=0.0 ! "
-       << "nvvidconv ! videorate ! " << "video/x-raw,width=" << W
-       << ",height=" << H << ",framerate=" << FPS << "/1 "
+          "video/x-raw(memory:NVMM),format=RGBA ! "
+       << "nvvideoconvert ! " << "video/x-raw(memory:NVMM),width=" << W
+       << ",height=" << H << ",framerate=" << FPS << "/1,format=NV12 "
        << "! interpipesink name=input ";
 
   // Stream 2 – mosaic compositor: fixed grid layout set by set_mosaic_layout()
   desc << "nvcompositor name=mosaic_compositor sink_0::alpha=0.0 ! "
-       << "nvvidconv ! videorate ! " << "video/x-raw,width=" << W
-       << ",height=" << H << ",framerate=" << FPS << "/1 "
+          "video/x-raw(memory:NVMM),format=RGBA ! "
+       << "nvvideoconvert ! " << "video/x-raw(memory:NVMM),width=" << W
+       << ",height=" << H << ",framerate=" << FPS << "/1,format=NV12 "
        << "! interpipesink name=mosaic";
 
   RCLCPP_INFO(this->get_logger(), "Pipeline description: %s",

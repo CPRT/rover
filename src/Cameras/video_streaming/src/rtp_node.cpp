@@ -58,12 +58,13 @@ RtpNode::~RtpNode() { BaseVideoNode::safe_gst_unref(h265_encoder_); }
 
 std::string RtpNode::get_pipeline_description() {
   std::stringstream desc;
-  desc << "interpipesrc format=3 listen-to=detect is-live=true ! "
-       << "nvvidconv ! videorate ! "
-       << "capsfilter caps=\"video/x-raw,framerate=" << target_framerate_
-       << "/1\" ! nvvidconv ! "
-       << "capsfilter caps=\"video/x-raw(memory:NVMM),height=" << height_
-       << ",width=" << width_ << "\" ! nvv4l2h265enc bitrate=" << bitrate_
+  desc << "interpipesrc format=time listen-to=detect is-live=true ! queue "
+          "max-size-buffers=3 leaky=downstream ! "
+       << "nvvideoconvert ! video/x-raw,format=NV12 ! videorate ! "
+          "nvvideoconvert ! "
+       << "video/x-raw(memory:NVMM),height=" << height_ << ",width=" << width_
+       << ",framerate=" << target_framerate_
+       << "/1,format=NV12 ! nvv4l2h265enc bitrate=" << bitrate_
        << " name=h265_enc EnableTwopassCBR=true control-rate=1 "
        << "insert-sps-pps=true maxperf-enable=true ! queue ! "
        << "rtph265pay pt=96 config-interval=-1 ! "

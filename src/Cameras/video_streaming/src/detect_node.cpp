@@ -94,12 +94,12 @@ void DetectNode::apply_morse_element_properties(GstElement *morse) {
 
 static std::string get_detection_pipeline_str(std::string config_path) {
   std::stringstream ss;
-  ss << "nvvideoconvert compute-hw=1 nvbuf-memory-type=4 ! "
+  ss << "nvvideoconvert ! "
         "video/x-raw(memory:NVMM),format=NV12 ! "
         "queue ! "
         "mux.sink_0 "
      << "nvstreammux name=mux batch-size=1 width=1920 "
-        "height=1080 live-source=1 nvbuf-memory-type=4 ! queue ! nvinfer "
+        "height=1080 live-source=1 ! queue ! nvinfer "
         "config-file-path="
      << config_path << " ! queue ! nvdsosd name=osd ! ";
   return ss.str();
@@ -108,10 +108,11 @@ static std::string get_detection_pipeline_str(std::string config_path) {
 bool DetectNode::create_pipeline() {
 
   std::stringstream desc_ss;
-  desc_ss << "interpipesrc format=3 listen-to="
+  desc_ss << "interpipesrc format=time listen-to="
           << this->get_parameter("listen_to").as_string()
           << " is-live=true "
-             "allow-renegotiation=true name=src ! ";
+             "allow-renegotiation=true name=src ! queue max-size-buffers=2 "
+             "leaky=downstream ! ";
   detection_type_ = string_to_detection_type(
       this->get_parameter("detection_type").as_string());
   switch (detection_type_) {
@@ -128,12 +129,12 @@ bool DetectNode::create_pipeline() {
         this->get_parameter("rockpick_config").as_string());
     break;
   case DetectionType::ARUCO:
-    desc_ss << "nvvidconv ! video/x-raw,format=NV12 ! videoconvert ! "
+    desc_ss << "nvvideoconvert ! video/x-raw,format=NV12 ! videoconvert ! "
                "arucomarker name=aruco_detector detect-every=10 ! queue ! "
                "videoconvert ! video/x-raw,format=NV12 ! ";
     break;
   case DetectionType::MORSE:
-    desc_ss << "nvvidconv ! video/x-raw,format=NV12 ! videoconvert ! "
+    desc_ss << "nvvideoconvert ! video/x-raw,format=NV12 ! videoconvert ! "
                "morseLED name=morse_decoder ! queue ! videoconvert ! "
                "video/x-raw,format=NV12 ! ";
     break;
@@ -141,8 +142,8 @@ bool DetectNode::create_pipeline() {
     desc_ss << "identity ! ";
     break;
   }
-  desc_ss << "nvvideoconvert compute-hw=1 ! "
-             "video/x-raw(memory:NVMM),format=NV12 ! "
+  desc_ss << "nvvideoconvert ! "
+             "video/x-raw(memory:NVMM),format=NV12 ! queue ! "
              "interpipesink "
              "name=detect";
 
