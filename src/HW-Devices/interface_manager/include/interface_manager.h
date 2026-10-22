@@ -26,6 +26,7 @@ public:
   explicit InterfaceManagerNode(
       const std::string name,
       const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
+  ~InterfaceManagerNode();
 
 private:
   void timer_callback();

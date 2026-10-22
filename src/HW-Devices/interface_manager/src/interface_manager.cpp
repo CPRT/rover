@@ -189,19 +189,18 @@ InterfaceManagerNode::InterfaceManagerNode(const std::string name,
     exit(1);
 
   udev = udev_new();
-  // if (!udev)
-  // return -1;
+  if (!udev)
+    RCLCPP_WARN(get_logger(), "Failed to initialize udev");
 
   hwdb = udev_hwdb_new(udev);
 
   RCLCPP_INFO(get_logger(), "Interface Manager Node started");
 }
 
-/*
-
-hwdb = udev_hwdb_unref(hwdb);
-        udev = udev_unref(udev);
-*/
+InterfaceManagerNode::~InterfaceManagerNode() {
+  hwdb = udev_hwdb_unref(hwdb);
+  udev = udev_unref(udev);
+}
 
 void InterfaceManagerNode::timer_callback() {
   this->send_can("can0", this->can0_status_pub_);
@@ -374,7 +373,6 @@ void InterfaceManagerNode::send_usb() {
     name.append(product);
     dev_msg.name = name;
 
-    // dumpdev(dev);
     msg.devices.push_back(dev_msg);
   }
 
