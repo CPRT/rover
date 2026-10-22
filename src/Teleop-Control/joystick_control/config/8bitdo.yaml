@@ -19,19 +19,6 @@ drive_teleop_node:
     cam_left_button: 6
     cam_right_button: 7
 
-arm_teleop_node:
-  ros__parameters:
-    throttle:
-      axis: 2
-    joint_1_axis: 0
-    joint_2_axis: 1
-    joint_3_axis: 5
-    joint_4_axis: 3
-    wrist_yaw_positive: 3
-    wrist_yaw_negative: 5
-    joint_6_axis: 4
-    dot_inc: 4
-
 drill_teleop_node:
   ros__parameters:
     drill_power_axis: 2
