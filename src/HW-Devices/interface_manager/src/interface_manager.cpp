@@ -204,7 +204,7 @@ hwdb = udev_hwdb_unref(hwdb);
 */
 
 void InterfaceManagerNode::timer_callback() {
-  this->send_can("vcan0", this->can0_status_pub_);
+  this->send_can("can0", this->can0_status_pub_);
   this->send_can("can1", this->can1_status_pub_);
   this->send_usb();
 }
