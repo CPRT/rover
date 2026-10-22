@@ -102,10 +102,10 @@ bool SrtNode::create_pipeline() {
     desc = g_strdup_printf(
 
         "interpipesrc format=3 listen-to=detect is-live=true ! "
-        "nvvideoconvert ! videorate ! "
+        "nvvidconv ! videorate ! "
         "capsfilter name=framerate_caps "
         "caps=\"video/x-raw(memory:NVMM),framerate=%d/1\" ! "
-        "nvvideoconvert ! "
+        "nvvidconv ! "
         "nvv4l2h265enc name=h265_enc iframeinterval=%d ! "
         "queue ! "
         "mux. mpegtsmux name=mux ! "

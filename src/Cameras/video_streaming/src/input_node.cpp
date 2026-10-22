@@ -49,8 +49,7 @@ bool InputNode::create_pipeline() {
   // no cameras and provides a fixed-size reference pad at sink_0)
   desc << "videotestsrc is-live=true pattern=black "
        << "! video/x-raw,width=" << W << ",height=" << H << ",framerate=" << FPS
-       << "/1 "
-       << "! nvvideoconvert ! video/x-raw(memory:NVMM),format=NV12 ! tee "
+       << "/1 ! nvvideoconvert ! video/x-raw(memory:NVMM),format=NV12 ! tee "
           "name=t0 "
        << "t0. ! queue leaky=downstream max-size-buffers=1 ! compositor.sink_0 "
        << "t0. ! queue leaky=downstream max-size-buffers=1 ! "
@@ -119,14 +118,12 @@ bool InputNode::create_pipeline() {
 
   // Stream 1 – operator compositor: layout is set dynamically via video_cb
   desc << "nvcompositor name=compositor sink_0::alpha=0.0 ! "
-          "video/x-raw(memory:NVMM),format=RGBA ! "
        << "nvvideoconvert ! " << "video/x-raw(memory:NVMM),width=" << W
        << ",height=" << H << ",framerate=" << FPS << "/1,format=NV12 "
        << "! interpipesink name=input ";
 
   // Stream 2 – mosaic compositor: fixed grid layout set by set_mosaic_layout()
   desc << "nvcompositor name=mosaic_compositor sink_0::alpha=0.0 ! "
-          "video/x-raw(memory:NVMM),format=RGBA ! "
        << "nvvideoconvert ! " << "video/x-raw(memory:NVMM),width=" << W
        << ",height=" << H << ",framerate=" << FPS << "/1,format=NV12 "
        << "! interpipesink name=mosaic";

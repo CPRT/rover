@@ -58,8 +58,7 @@ RtpNode::~RtpNode() { BaseVideoNode::safe_gst_unref(h265_encoder_); }
 
 std::string RtpNode::get_pipeline_description() {
   std::stringstream desc;
-  desc << "interpipesrc format=time listen-to=detect is-live=true ! queue "
-          "max-size-buffers=3 leaky=downstream ! "
+  desc << "interpipesrc format=3 listen-to=detect is-live=true ! "
        << "nvvideoconvert ! video/x-raw,format=NV12 ! videorate ! "
           "nvvideoconvert ! "
        << "video/x-raw(memory:NVMM),height=" << height_ << ",width=" << width_

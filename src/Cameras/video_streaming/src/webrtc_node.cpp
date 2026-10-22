@@ -12,7 +12,7 @@ WebRtcNode::WebRtcNode(const rclcpp::NodeOptions &options)
 
 bool WebRtcNode::create_pipeline() {
   const char *desc = "interpipesrc listen-to=detect ! "
-                     "identity silent=true ! nvvideoconvert ! "
+                     "identity silent=true ! nvvidconv ! "
                      "webrtcsink run-signalling-server=true "
                      "video-caps=\"video/x-h265; video/x-h264\"";
 
