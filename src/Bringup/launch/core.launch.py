@@ -53,9 +53,10 @@ def generate_launch_description():
     interface_manager_node = Node(
         package="interface_manager",
         executable="interface_manager",
-        name="interface_manager"
+        name="interface_manager",
     )
 
     return LaunchDescription(
-        get_included_launch_descriptions(launch_files) + [snmp_node, status_node, interface_manager_node]
+        get_included_launch_descriptions(launch_files)
+        + [snmp_node, status_node, interface_manager_node]
     )
