@@ -210,7 +210,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN if [ "$USE_NVIDIA" = "true" ]; then \
         apt-get update && apt-get install -y --no-install-recommends \
             libnvinfer10 libnvinfer-plugin10 libnvonnxparsers10 \
-        && rm -rf /var/lib/apt/lists/*; \
+        && rm -rf /var/lib/apt/lists/* \
+        # ZED SDK dlopen()s the unversioned names, which only the -dev packages provide
+        && for lib in libnvinfer libnvinfer_plugin libnvonnxparser; do \
+            ln -sf ${lib}.so.10 /usr/lib/$(uname -m)-linux-gnu/${lib}.so; \
+        done; \
     else \
         echo "Skipping NVIDIA dependencies installation"; \
     fi

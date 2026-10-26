@@ -59,6 +59,7 @@ docker run -it \
   --runtime=nvidia \
   --volume /dev/serial/by-id:/dev/serial/by-id \
   --volume /dev/v4l/by-id:/dev/v4l/by-id \
+  --volume /dev/bus/usb:/dev/bus/usb \
   --volume /usr/local/zed:/usr/local/zed \
   cprtsoftware/rover:latest \
   <COMMAND>
