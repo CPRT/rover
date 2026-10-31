@@ -5,6 +5,8 @@ input_node:
     camera_name:
     - "Drive"
     - "EndEffector"
+    - "D405RGB"
+    - "D405Depth"
     - "Belly"
     - "Mast"
     Drive:
@@ -30,3 +32,6 @@ input_node:
       encoded: true
       height: 768
       width: 1024
+    D405RGB:
+      path:
+      type: 3

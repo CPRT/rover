@@ -38,6 +38,17 @@ def generate_launch_description():
         extra_arguments=[{"use_intra_process_comms": true}],
     )
 
+    d405_params_file = os.path.join(config_dir, "d405.yaml")
+    d405_node = ComposableNode(
+        condition=IfCondition(launch_d405),
+        package="realsense2_camera",
+        plugin="RealSenseNodeFactory",
+        name="d405",
+        namespace="",
+        parameters=[d405_params_file],
+        extra_arguments=[{"use_intra_process_comms": true}],
+    )
+
     camera_params_file = os.path.join(config_dir, "cameras.yaml")
     preset_params_file = os.path.join(config_dir, "presets.yaml")
     # Define each composable node
@@ -131,5 +142,6 @@ def generate_launch_description():
             UnsetEnvironmentVariable("DISPLAY"),
             container,
             declare_launch_zed,
+            declare_launch_realsense,
         ]
     )
