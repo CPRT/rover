@@ -21,11 +21,11 @@ public:
 
   static int decode(uint8_t *payload, uint8_t *buf, uint16_t buf_len,
                     PacketType *type, uint16_t *apid, uint16_t *seq) {
-    *type = static_cast<PacketType>(buf[0] & 0x1000);
+    *type = static_cast<PacketType>((buf[0] & 0x10) >> 4);
     *apid = ((buf[0] & 0xf) << 8) | buf[1];
     *seq = ((buf[2] & 0x3f) << 8) | buf[3];
     uint16_t len = (buf[4] << 8) | buf[5];
-    if (len > buf_len) {
+    if (len > buf_len - 6) {
       return -1;
     }
     memcpy(payload, buf + 6, len);

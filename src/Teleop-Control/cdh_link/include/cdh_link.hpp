@@ -39,19 +39,19 @@ public:
   void open(std::string tm_ip, uint16_t tm_port, uint16_t tc_port) {
     this->tm_fd_ = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (this->tm_fd_ < 0) {
-      RCLCPP_FATAL(this->logger, "[%s]: TM Socket error %u", prefix, errno);
+      RCLCPP_FATAL(this->logger, "[%s] TM Socket error %u", prefix, errno);
     }
 
     tm_addr_.sin_family = AF_INET;
     tm_addr_.sin_port = htons(tm_port);
     if (inet_aton(tm_ip.c_str(), &tm_addr_.sin_addr) == 0) {
-      RCLCPP_FATAL(this->logger, "[%s]: Error converting address %s", prefix,
+      RCLCPP_FATAL(this->logger, "[%s] Error converting address %s", prefix,
                    tm_ip.c_str());
     }
 
     this->tc_fd_ = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (this->tc_fd_ < 0) {
-      RCLCPP_FATAL(this->logger, "[%s]: TC Socket error %s", prefix,
+      RCLCPP_FATAL(this->logger, "[%s] TC Socket error %s", prefix,
                    strerror(errno));
     }
 
@@ -61,7 +61,7 @@ public:
 
     if (bind(this->tc_fd_, (struct sockaddr *)&this->tc_addr_,
              sizeof(this->tc_addr_)) != 0) {
-      RCLCPP_FATAL(this->logger, "[%s]: TM Socket error %s", prefix,
+      RCLCPP_FATAL(this->logger, "[%s] TM Socket error %s", prefix,
                    strerror(errno));
     }
 
@@ -73,18 +73,22 @@ public:
         }
         uint8_t buf[1024];
         int recvd = recvfrom(this->tc_fd_, buf, sizeof(buf), 0, NULL, NULL);
-        RCLCPP_INFO(this->logger, "[%s]: Received %u bytes", prefix, recvd);
         uint8_t payload[1024];
         PacketType type;
         uint16_t apid, seq;
         if (SpacePacket::decode(payload, buf, recvd, &type, &apid, &seq) == 0) {
           this->recv_cb_(payload, type, apid, seq);
+        } else {
+          RCLCPP_WARN(this->logger,
+                      "[%s] Packet length error: expected %u, received %u",
+                      prefix, (buf[4] << 8) | buf[5], recvd - 6);
         }
       }
     });
 
-    RCLCPP_INFO(this->logger, "[%s]: link started: %s:%u, listening on :%u",
-                prefix, tm_ip.c_str(), tm_port, tc_port);
+    RCLCPP_INFO(this->logger,
+                "[%s] Link started, TM out: %s:%u, listening on :%u", prefix,
+                tm_ip.c_str(), tm_port, tc_port);
   }
 
   template <typename T> void sendTlm(TlmMsg<T> msg, uint16_t apid) {

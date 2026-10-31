@@ -5,6 +5,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <limits>
 
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -24,10 +25,14 @@ TopicIdx drive_motors[8] = {
 
 CdhNode::CdhNode()
     : Node("cdh_node"),
-      link(this->get_logger(), "Link 1",
-           std::bind(&CdhNode::recv_link1, this, std::placeholders::_1,
-                     std::placeholders::_2, std::placeholders::_3,
-                     std::placeholders::_4)) {
+      link1(this->get_logger(), "900 MHz",
+            std::bind(&CdhNode::recv_link1, this, std::placeholders::_1,
+                      std::placeholders::_2, std::placeholders::_3,
+                      std::placeholders::_4)),
+      link2(this->get_logger(), "2.4 GHz",
+            std::bind(&CdhNode::recv_link2, this, std::placeholders::_1,
+                      std::placeholders::_2, std::placeholders::_3,
+                      std::placeholders::_4)) {
   this->declareParameters();
   this->loadParameters();
 
@@ -50,10 +55,14 @@ CdhNode::CdhNode()
   joy_pub_ = this->create_publisher<sensor_msgs::msg::Joy>("/drive/joy",
                                                            rclcpp::QoS(1));
 
-  this->link.open(kTmIp, kTmPort, kTcPort);
+  throttle_pub_ = this->create_publisher<std_msgs::msg::Float32>(
+      "/drive_throttle", rclcpp::QoS(1));
+
+  this->link1.open(kTm1Ip, kTm1Port, kTc1Port);
+  this->link2.open(kTm2Ip, kTm2Port, kTc2Port);
   timer_ =
       this->create_wall_timer(std::chrono::duration<double>(1.0), [this]() {
-        this->link.sendTlm(drive_status_, APID_DRIVESTATUSMSG);
+        this->sendTlm(drive_status_, APID_DRIVESTATUSMSG);
         drive_status_.seq++;
       });
   RCLCPP_INFO(this->get_logger(), "CDH node started");
@@ -65,7 +74,7 @@ void CdhNode::system_telemetry_cb(
   sys_info_.msg.gpu_usage = msg->gpu_usage;
   sys_info_.msg.mem_usage = msg->mem_usage;
   sys_info_.msg.core_temp = msg->core_temp;
-  this->link.sendTlm(sys_info_, APID_SYSINFOMSG);
+  this->sendTlm(sys_info_, APID_SYSINFOMSG);
   sys_info_.seq++;
 }
 
@@ -80,34 +89,73 @@ void CdhNode::drive_joint_cb(const ros_phoenix::msg::MotorStatus::SharedPtr msg,
 
 void CdhNode::recv_link1(uint8_t *payload, PacketType type, uint16_t apid,
                          uint16_t seq) {
+  if (type != PacketType::COMMAND) {
+    RCLCPP_WARN(this->get_logger(),
+                "[900 MHz] Received message type %u, expected "
+                "PacketType::COMMAND (%u). Ignoring",
+                type, PacketType::COMMAND);
+    return;
+  }
+  this->processCmd(payload, apid, seq);
+}
+void CdhNode::recv_link2(uint8_t *payload, PacketType type, uint16_t apid,
+                         uint16_t seq) {
+  if (type != PacketType::COMMAND) {
+    RCLCPP_WARN(this->get_logger(),
+                "[2.4 GHz] Received message type %u, expected "
+                "PacketType::COMMAND (%u). Ignoring",
+                type, PacketType::COMMAND);
+    return;
+  }
+  this->processCmd(payload, apid, seq);
+}
+void CdhNode::processCmd(uint8_t *payload, uint16_t apid, uint16_t seq) {
   switch (apid) {
   case APID_DRIVECTRLCMD: {
-    DriveCtrlCmd *drive_cmd = reinterpret_cast<DriveCtrlCmd *>(payload);
+    DriveCtrlCmd *cmd = reinterpret_cast<DriveCtrlCmd *>(payload);
     sensor_msgs::msg::Joy joy_msg;
-    joy_msg.axes.push_back(drive_cmd->x);
-    joy_msg.axes.push_back(drive_cmd->y);
-    joy_msg.axes.push_back(drive_cmd->yaw);
-    joy_msg.axes.push_back(drive_cmd->throttle);
+    joy_msg.axes.push_back((float)cmd->y / std::numeric_limits<int16_t>::max());
+    joy_msg.axes.push_back((float)cmd->x / std::numeric_limits<int16_t>::max());
+    joy_msg.axes.push_back((float)cmd->yaw /
+                           std::numeric_limits<int16_t>::max());
     if (joy_pub_) {
       joy_pub_->publish(joy_msg);
     }
   } break;
-
+  case APID_DRIVETHROTTLECMD: {
+    DriveThrottleCmd *cmd = reinterpret_cast<DriveThrottleCmd *>(payload);
+    std_msgs::msg::Float32 msg;
+    msg.data = (float)cmd->throttle / std::numeric_limits<int16_t>::max();
+    if (throttle_pub_) {
+      throttle_pub_->publish(msg);
+    }
+  }
   default:
     break;
   }
 }
 
+template <typename T> void CdhNode::sendTlm(TlmMsg<T> msg, uint16_t apid) {
+  this->link1.sendTlm(msg, apid);
+  this->link2.sendTlm(msg, apid);
+}
+
 void CdhNode::declareParameters() {
-  this->declare_parameter("tm_port", 1234);
-  this->declare_parameter("tm_ip", std::string("127.0.0.1"));
-  this->declare_parameter("tc_port", 1235);
+  this->declare_parameter("tm1_port", 1234);
+  this->declare_parameter("tm1_ip", std::string("127.0.0.1"));
+  this->declare_parameter("tc1_port", 1235);
+  this->declare_parameter("tm2_port", 1236);
+  this->declare_parameter("tm2_ip", std::string("127.0.0.1"));
+  this->declare_parameter("tc2_port", 1237);
 }
 
 void CdhNode::loadParameters() {
-  this->get_parameter("tm_port", kTmPort);
-  this->get_parameter("tm_ip", kTmIp);
-  this->get_parameter("tc_port", kTcPort);
+  this->get_parameter("tm1_port", kTm1Port);
+  this->get_parameter("tm1_ip", kTm1Ip);
+  this->get_parameter("tc1_port", kTc1Port);
+  this->get_parameter("tm2_port", kTm2Port);
+  this->get_parameter("tm2_ip", kTm2Ip);
+  this->get_parameter("tc2_port", kTc2Port);
 }
 
 } // namespace cdh_link

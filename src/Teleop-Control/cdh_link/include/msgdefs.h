@@ -54,6 +54,9 @@ struct DriveCtrlCmd {
   int16_t x;
   int16_t y;
   int16_t yaw;
+};
+
+struct DriveThrottleCmd {
   int16_t throttle;
 };
 
@@ -73,8 +76,9 @@ struct ArmSetModeCmd {
 };
 
 #define APID_DRIVECTRLCMD 1
-#define APID_ARMJOGCMD 2
-#define APID_ARMSETMODECMD 3
+#define APID_DRIVETHROTTLECMD 2
+#define APID_ARMJOGCMD 3
+#define APID_ARMSETMODECMD 4
 
 std::ostream &operator<<(std::ostream &os, const SysInfoMsg &msg) {
   os << "CPU: " << (int)msg.cpu_usage << "% GPU: " << (int)msg.gpu_usage
