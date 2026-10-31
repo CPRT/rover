@@ -32,6 +32,9 @@ joy
 joy_linux
 libglib-dev
 libpcl-all-dev
+librealsense2
+realsense2-camera
+realsense2-camera-msgs
 libssl-dev
 liburdfdom-tools
 mavros

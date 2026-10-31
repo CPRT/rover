@@ -3,7 +3,6 @@
 drive::drive() : Node("drive_node"), initialized_(false) {
   declare_parameters();
   load_parameters();
-  setCarousell();
   twist_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
   servo_y_pub_ = this->create_publisher<std_msgs::msg::Float32>("/tilt", 10);
   servo_x_pub_ = this->create_publisher<std_msgs::msg::Float32>("/pan", 10);
@@ -12,69 +11,42 @@ drive::drive() : Node("drive_node"), initialized_(false) {
 
   camera_client_ =
       this->create_client<interfaces::srv::VideoOut>("/start_video");
+
+  auto presets_qos =
+      rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
+
+  presets_sub_ = this->create_subscription<interfaces::msg::VideoPresets>(
+      "/video_presets", presets_qos,
+      std::bind(&drive::presets_cb, this, std::placeholders::_1));
+
   joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
       "/joy", rclcpp::QoS(2).best_effort(),
       std::bind(&drive::drive_control, this, std::placeholders::_1));
+  drive_throttle_sub_ = this->create_subscription<std_msgs::msg::Float32>(
+      "/drive_throttle", 10,
+      std::bind(&drive::drive_throttle_cb, this, std::placeholders::_1));
   RCLCPP_INFO(this->get_logger(), "Drive controller started");
   servo_y_ = kDefaultServoY;
   servo_x_ = kDefaultServoX;
-  servo_mast_ = 0;
+  servo_mast_ = kDefaultServoM;
+  drive_throttle_ = 1.0f;
 };
-void drive::setCarousell() {
-  interfaces::srv::VideoOut::Request drive;
-  interfaces::srv::VideoOut::Request drive_eef;
-  interfaces::srv::VideoOut::Request eef_drive;
-  interfaces::srv::VideoOut::Request eef;
-  interfaces::srv::VideoOut::Request mast;
 
-  drive.num_sources = 1;
-  drive.sources.resize(drive.num_sources);
-  drive.sources[0].name = "Drive";
-  drive.sources[0].height = 100;
-  drive.sources[0].width = 100;
-  drive.sources[0].origin_x = 0;
-  drive.sources[0].origin_y = 0;
-
-  drive_eef.num_sources = 2;
-  drive_eef.sources.resize(drive_eef.num_sources);
-  drive_eef.sources[0] = drive.sources[0];
-  drive_eef.sources[1].name = "EndEffector";
-  drive_eef.sources[1].height = 20;
-  drive_eef.sources[1].width = 20;
-  drive_eef.sources[1].origin_x = 80;
-  drive_eef.sources[1].origin_y = 80;
-
-  eef.num_sources = 1;
-  eef.sources.resize(eef.num_sources);
-  eef.sources[0].name = "EndEffector";
-  eef.sources[0].height = 100;
-  eef.sources[0].width = 100;
-  eef.sources[0].origin_x = 0;
-  eef.sources[0].origin_y = 0;
-
-  eef_drive.num_sources = 2;
-  eef_drive.sources.resize(eef_drive.num_sources);
-  eef_drive.sources[0] = eef.sources[0];
-  eef_drive.sources[1].name = "Drive";
-  eef_drive.sources[1].height = 20;
-  eef_drive.sources[1].width = 20;
-  eef_drive.sources[1].origin_x = 80;
-  eef_drive.sources[1].origin_y = 80;
-
-  mast.num_sources = 1;
-  mast.sources.resize(mast.num_sources);
-  mast.sources[0].name = "Mast";
-  mast.sources[0].height = 100;
-  mast.sources[0].width = 100;
-  mast.sources[0].origin_x = 0;
-  mast.sources[0].origin_y = 0;
-
-  video_carousell_.push_back(drive);
-  video_carousell_.push_back(eef);
-  video_carousell_.push_back(drive_eef);
-  video_carousell_.push_back(eef_drive);
-  video_carousell_.push_back(mast);
+void drive::presets_cb(
+    const interfaces::msg::VideoPresets::SharedPtr presets_msg) {
+  video_carousell_ = presets_msg->presets;
   video_carousell_idx_ = 0;
+
+  RCLCPP_INFO(this->get_logger(), "Received %zu video presets",
+              video_carousell_.size());
+}
+
+void drive::drive_throttle_cb(
+    const std_msgs::msg::Float32::SharedPtr throttle_msg) {
+  drive_throttle_ = std::clamp(throttle_msg->data, 0.0f, 1.0f);
+
+  RCLCPP_INFO(this->get_logger(), "Drive throttle set to %.2f",
+              drive_throttle_);
 }
 
 void drive::camera_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
@@ -90,6 +62,12 @@ void drive::camera_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
     return;
   }
   cam_debounce_ = true;
+
+  if (video_carousell_.empty()) {
+    RCLCPP_WARN(this->get_logger(), "No video presets have been received");
+    return;
+  }
+
   if (left_but) {
     if (video_carousell_idx_ == 0) {
       video_carousell_idx_ = video_carousell_.size();
@@ -97,14 +75,14 @@ void drive::camera_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
     --video_carousell_idx_;
   }
   if (right_but) {
-    if (++video_carousell_idx_ == video_carousell_.size()) {
+    if (++video_carousell_idx_ >= video_carousell_.size()) {
       video_carousell_idx_ = 0;
     }
   }
-  auto request = std::make_shared<interfaces::srv::VideoOut::Request>(
-      video_carousell_[video_carousell_idx_]);
-  RCLCPP_INFO(this->get_logger(), "Sending Video preset index %ld",
-              video_carousell_idx_);
+  auto request = std::make_shared<interfaces::srv::VideoOut::Request>();
+  request->sources = video_carousell_[video_carousell_idx_].sources;
+  RCLCPP_INFO(this->get_logger(), "Sending Video preset %s",
+              video_carousell_[video_carousell_idx_].name.c_str());
   camera_client_->async_send_request(request);
 }
 
@@ -118,16 +96,25 @@ void drive::drive_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
     return;
   }
   auto twist = geometry_msgs::msg::Twist();
-  twist.linear.x = joystickMsg->axes[kForwardAxis] * kMaxLinear;
-  twist.linear.y = joystickMsg->axes[kStrafeAxis] * kMaxLinear;
-  twist.angular.z = joystickMsg->axes[kYawAxis] * kMaxAngular;
+  twist.linear.x =
+      joystickMsg->axes[kForwardAxis] * kMaxLinear * drive_throttle_;
+  twist.linear.y =
+      joystickMsg->axes[kStrafeAxis] * kMaxLinear * drive_throttle_;
+  twist.angular.z = joystickMsg->axes[kYawAxis] * kMaxAngular * drive_throttle_;
+
+  if (joystickMsg->buttons[kLockTurnBut]) {
+    twist.angular.z = 0.0;
+    twist.linear.y = 0.0;
+  }
 
   twist_pub_->publish(twist);
   camera_control(joystickMsg);
-
+  bool pub_mast = false;
   if (joystickMsg->buttons[kServoHomeButton]) {
     servo_y_ = kDefaultServoY;
     servo_x_ = kDefaultServoX;
+    servo_mast_ = kDefaultServoM;
+    pub_mast = true;
   }
 
   if (joystickMsg->axes[kServoYAxis] > kJoyDeadzone) {
@@ -137,8 +124,10 @@ void drive::drive_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   }
   if (joystickMsg->buttons[kMastLeftButton]) {
     servo_mast_ -= kServoIncrement;
+    pub_mast = true;
   } else if (joystickMsg->buttons[kMastRightButton]) {
     servo_mast_ += kServoIncrement;
+    pub_mast = true;
   }
   if (joystickMsg->axes[kServoXAxis] > kJoyDeadzone) {
     servo_x_ += kServoIncrement;
@@ -153,10 +142,11 @@ void drive::drive_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   servo_x_ = std::clamp(servo_x_, kServoMin, kServoMax);
   servo_msg.data = servo_x_;
   servo_x_pub_->publish(servo_msg);
-
-  servo_mast_ = std::clamp(servo_mast_, kServoMin, kServoMax);
-  servo_msg.data = servo_mast_;
-  servo_m_pub_->publish(servo_msg);
+  if (pub_mast) {
+    servo_mast_ = std::clamp(servo_mast_, kServoMin, kServoMax);
+    servo_msg.data = servo_mast_;
+    servo_m_pub_->publish(servo_msg);
+  }
 };
 
 void drive::declare_parameters() {
@@ -172,13 +162,16 @@ void drive::declare_parameters() {
   this->declare_parameter("mast_right_button", 1);
   this->declare_parameter("cam_left_button", 4);
   this->declare_parameter("cam_right_button", 5);
+  this->declare_parameter("lock_turn_button", 6);
   this->declare_parameter("servo_increment", 0.01);
   this->declare_parameter("servo_min", -3.14);
   this->declare_parameter("servo_max", 3.14);
   this->declare_parameter("joy_deadzone", 0.01);
   this->declare_parameter("default_servo_x", 0.0);
   this->declare_parameter("default_servo_y", 0.0);
+  this->declare_parameter("default_servo_m", 0.0);
 }
+
 void drive::load_parameters() {
   this->get_parameter("max_linear", kMaxLinear);
   this->get_parameter("max_angular", kMaxAngular);
@@ -192,12 +185,14 @@ void drive::load_parameters() {
   this->get_parameter("mast_right_button", kMastRightButton);
   this->get_parameter("cam_left_button", kCamLeftBut);
   this->get_parameter("cam_right_button", kCamRightBut);
+  this->get_parameter("lock_turn_button", kLockTurnBut);
   this->get_parameter("servo_increment", kServoIncrement);
   this->get_parameter("servo_min", kServoMin);
   this->get_parameter("servo_max", kServoMax);
   this->get_parameter("joy_deadzone", kJoyDeadzone);
   this->get_parameter("default_servo_x", kDefaultServoX);
   this->get_parameter("default_servo_y", kDefaultServoY);
+  this->get_parameter("default_servo_m", kDefaultServoM);
 
   RCLCPP_INFO(this->get_logger(), "Loaded Max Linear: %f", kMaxLinear);
   RCLCPP_INFO(this->get_logger(), "Loaded Max Angular: %f", kMaxAngular);

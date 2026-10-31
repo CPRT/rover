@@ -1,0 +1,4 @@
+# interfaces/srv/GetTopics.srv
+---
+string[] topics
+string[] types

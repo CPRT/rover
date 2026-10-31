@@ -8,18 +8,18 @@ def generate_launch_description():
         [
             launch_ros.actions.Node(
                 package="gpio_controller",
-                executable="lights",
-                name="led_strip_nodes",
+                executable="headlights",
+                name="headlight_node",
             ),
             launch_ros.actions.Node(
                 package="gpio_controller",
                 executable="mast_esp",
                 name="mast_esp_node",
             ),
-            # launch_ros.actions.Node(
-            #     package="gpio_controller",
-            #     executable="pdb_rails",
-            #     name="pdb_rails_node",
-            # ),
+            launch_ros.actions.Node(
+                package="gpio_controller",
+                executable="pdb_rails",
+                name="pdb_rails_node",
+            ),
         ]
     )

@@ -30,7 +30,7 @@ void VideoCaptureNode::handle_capture(
   std::stringstream pipeline_desc;
   pipeline_desc << "interpipesrc listen-to=" << listen_to_
                 << " is-live=true allow-renegotiation=false ! "
-                   "queue ! nvvidconv ! videoconvert ! "
+                   "queue ! nvvideoconvert ! videoconvert ! "
                    "jpegenc ! appsink name=sink emit-signals=true "
                    "max-buffers=1 drop=true sync=false";
 

@@ -1,0 +1,149 @@
+preset_node:
+  ros__parameters:
+    presets:
+    - "DrivePreset"
+    - "EEFPreset"
+    - "BellyPreset"
+    - "MastPreset"
+    - "SciencePreset"
+    - "MicroscopePreset"
+    - "DriveEEFPreset"
+    - "EEFDrivePreset"
+    - "EEFDriveMast"
+    - "DriveMastPreset"
+    - "BellyDrivePreset"
+    DrivePreset:
+      name: "Drive"
+      sources:
+      - "Drive"
+      Drive:
+        width: 100
+        height: 100
+        origin_x: 0
+        origin_y: 0
+    EEFPreset:
+      name: "EEF"
+      sources:
+      - "EndEffector"
+      EndEffector:
+        width: 100
+        height: 100
+        origin_x: 0
+        origin_y: 0
+    BellyPreset:
+      name: "Belly"
+      sources:
+      - "Belly"
+      Belly:
+        width: 100
+        height: 100
+        origin_x: 0
+        origin_y: 0
+    MastPreset:
+      name: "Mast"
+      sources:
+      - "Mast"
+      Mast:
+        width: 100
+        height: 100
+        origin_x: 0
+        origin_y: 0
+    SciencePreset:
+      name: "Science"
+      sources:
+      - "Science"
+      Science:
+        width: 100
+        height: 100
+        origin_x: 0
+        origin_y: 0
+    MicroscopePreset:
+      name: "Microscope"
+      sources:
+      - "Microscope"
+      Microscope:
+        width: 100
+        height: 100
+        origin_x: 0
+        origin_y: 0
+    DriveEEFPreset:
+      name: "Drive + EEF"
+      sources:
+      - "Drive"
+      - "EndEffector"
+      Drive:
+        width: 100
+        height: 100
+        origin_x: 0
+        origin_y: 0
+      EndEffector:
+        width: 30
+        height: 30
+        origin_x: 70
+        origin_y: 0
+    EEFDrivePreset:
+      name: "EEF + Drive"
+      sources:
+      - "EndEffector"
+      - "Drive"
+      EndEffector:
+        width: 100
+        height: 100
+        origin_x: 0
+        origin_y: 0
+      Drive:
+        width: 30
+        height: 30
+        origin_x: 70
+        origin_y: 0
+    EEFDriveMast:
+      name: "EEF + Drive + Mast"
+      sources:
+      - "EndEffector"
+      - "Drive"
+      - "Mast"
+      EndEffector:
+        width: 100
+        height: 100
+        origin_x: 0
+        origin_y: 0
+      Drive:
+        width: 30
+        height: 30
+        origin_x: 70
+        origin_y: 0
+      Mast:
+        width: 40
+        height: 40
+        origin_x: 0
+        origin_y: 0
+    DriveMastPreset:
+      name: "Drive + Mast"
+      sources:
+      - "Drive"
+      - "Mast"
+      Drive:
+        width: 100
+        height: 100
+        origin_x: 0
+        origin_y: 0
+      Mast:
+        width: 30
+        height: 30
+        origin_x: 70
+        origin_y: 0
+    BellyDrivePreset:
+      name: "Belly + Drive"
+      sources:
+      - "Belly"
+      - "Drive"
+      Belly:
+        width: 100
+        height: 100
+        origin_x: 0
+        origin_y: 0
+      Drive:
+        width: 30
+        height: 30
+        origin_x: 70
+        origin_y: 0

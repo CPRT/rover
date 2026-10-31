@@ -7,7 +7,7 @@ from ament_index_python.packages import get_package_share_directory
 def find_ps5():
     try:
         # check for wired first
-        wired_path = "/dev/input/by-id/usb-Sony_Interactive_Entertainment_DualSense_Wireless_Controller-if03-joystick"
+        wired_path = "/dev/input/by-id/usb-8BitDo_8BitDo_Ultimate_2C_Wired_Controller_E59ABE631E-joystick"
         if os.path.exists(wired_path):
             return wired_path
         # Check wireless after
@@ -34,9 +34,9 @@ def find_ps5():
 
 def generate_launch_description():
     pkg_joystick_control = get_package_share_directory("joystick_control")
-    parameters_file = os.path.join(pkg_joystick_control, "pxn.yaml")
+    parameters_file = os.path.join(pkg_joystick_control, "8bitdo.yaml")
     # Detect IDs dynamically
-    arm_dev = "/dev/input/by-id/usb-LiteStar_PXN-2113_Pro-joystick"
+    arm_dev = "/dev/input/by-id/usb-Thrustmaster_T.16000M-joystick"
     drive_dev = find_ps5()
 
     ld = LaunchDescription()

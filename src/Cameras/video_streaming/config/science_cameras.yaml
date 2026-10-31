@@ -4,46 +4,25 @@ input_node:
   ros__parameters:
     camera_name:
     - "Drive"
-    - "EndEffector"
+    - "Belly"
     - "Mast"
-    - "Strip"
-    - "Benedict"
-    - "HCL"
     - "Microscope"
-    - "Test"
+    - "Science"
     Drive:
       path: "/dev/v4l/by-id/drive_camera"
       type: 0
       encoded: false
-      height: 600
-      width: 960
-      framerate: 10
-    EndEffector:
-      path: "/dev/v4l/by-id/usb-MACROSILICON_USB_Video_20200909-video-index0"
+      height: 1200
+      width: 1920
+      framerate: 30
+    Belly:
+      path: "/dev/v4l/by-path/platform-141a0000.pcie-pci-0005:01:00.0-usb-0:3:1.0-video-index0"
       type: 0
       encoded: true
+      height: 480
+      width: 640
     Mast:
-      path: "/dev/v4l/by-path/platform-3610000.usb-usb-0:4.1.1.1:1.0-video-index0"
-      type: 0
-      encoded: true
-      height: 480
-      width: 640
-    Strip:
-      path: "/dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._USB_2.0_Camera_SN5100-video-index0"
-      type: 0
-      encoded: true
-      height: 480
-      width: 640
-      framerate: 30
-    Benedict:
-      path: "/dev/v4l/by-id/usb-8MP_USB_Camera_8MP_USB_Camera_2022051301-video-index0"
-      type: 0
-      encoded: true
-      height: 480
-      width: 640
-      framerate: 30
-    HCL:
-      path: "/dev/v4l/by-path/platform-3610000.usb-usb-0:2.1.4:1.0-video-index0"
+      path: "/dev/v4l/by-path/platform-141a0000.pcie-pci-0005:01:00.0-usb-0:4.3:1.0-video-index0"
       type: 0
       encoded: true
       height: 480
@@ -55,5 +34,10 @@ input_node:
       height: 1200
       width: 1600
       framerate: 15
-    Test:
-      type: 1
+    Science:
+      path: "/dev/v4l/by-id/usb-Sonix_Technology_Co.__Ltd._Webcam_Webcam-video-index0"
+      type: 0
+      encoded: true
+      height: 768
+      width: 1024
+      framerate: 30

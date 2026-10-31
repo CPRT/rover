@@ -19,6 +19,7 @@
 #include "interfaces/srv/go_to_named_pose.hpp"
 #include "interfaces/srv/go_to_pose.hpp"
 #include "interfaces/srv/save_current_pose.hpp"
+#include "std_srvs/srv/trigger.hpp"
 
 namespace arm_control {
 
@@ -74,6 +75,10 @@ private:
       const std::shared_ptr<interfaces::srv::GoToCamCoord::Request> request,
       std::shared_ptr<interfaces::srv::GoToCamCoord::Response> response);
 
+  void
+  stopCallback(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+               std::shared_ptr<std_srvs::srv::Trigger::Response> response);
+
   double planning_time_;
   int planning_attempts_;
   double vel_scaling_;
@@ -118,6 +123,8 @@ private:
 
   rclcpp::Service<interfaces::srv::GoToCamCoord>::SharedPtr
       go_to_cam_coord_service_;
+
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr stop_service_;
 
   rclcpp::TimerBase::SharedPtr initialization_timer_;
 };

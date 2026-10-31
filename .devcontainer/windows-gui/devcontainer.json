@@ -1,0 +1,39 @@
+{
+  "name": "CPRT Dev Container (Windows Host + GUI)",
+  "image": "cprtsoftware/rover:dev-lite",
+
+  // GUI support via WSLg. Unlike the Linux configs, the X11 socket cannot be
+  // mounted from /tmp/.X11-unix: that path is a WSLg tmpfs inside the user's
+  // WSL distro, but the Docker daemon resolves mount sources against its own
+  // filesystem (the docker-desktop distro), where it does not exist. Docker
+  // Desktop exposes the host's WSLg socket inside the VM at the path below.
+  // DISPLAY is hardcoded because WSLg always serves :0, and ${localEnv:DISPLAY}
+  // does not resolve to the WSL value from a Dev Containers window.
+  "runArgs": [
+    "--env", "DISPLAY=:0",
+    "--volume", "/run/desktop/mnt/host/wslg/.X11-unix:/tmp/.X11-unix:rw"
+  ],
+  "mounts": [
+  ],
+  "containerEnv": {
+    "SSH_AUTH_SOCK": "/ssh-agent",
+    "NVIDIA_VISIBLE_DEVICES": "all",
+    "NVIDIA_DRIVER_CAPABILITIES": "all"
+  },
+
+  "remoteUser": "ubuntu",
+  "containerUser": "ubuntu",
+  "remoteEnv": {
+    "USER": "ubuntu"
+  },
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+      },
+      "extensions": [ "ms-vscode.cpptools", "ms-azuretools.vscode-docker" ]
+    }
+  },
+  "postCreateCommand": "echo 'source /opt/ros/jazzy/setup.bash' >> ~/.bashrc"
+}
