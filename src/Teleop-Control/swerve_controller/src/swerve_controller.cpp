@@ -275,6 +275,10 @@ SwerveController::update(const rclcpp::Time &time,
                            "SwerveController: Command timeout (age=%.3f > "
                            "%.3f), stopping robot.",
                            age, cmd_timeout_);
+      
+      update_odometry_and_publish_(time);
+
+      return controller_interface::return_type::OK;
     }
   }
 
