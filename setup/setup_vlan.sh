@@ -1,5 +1,5 @@
-INTF="${1:-enP8p1s0}"
-IP_ADDR=$(ip -o -4 addr show dev enP8p1s0 | awk '{print $4}' | cut -d'/' -f1)
+INTF="${1:-end0}"
+IP_ADDR=$(ip -o -4 addr show dev $INTF | awk '{print $4}' | cut -d'/' -f1)
 LAST_OCTET=$(echo "$IP_ADDR" | cut -d'.' -f4)
 MAC_PREFIX=$(cat /sys/class/net/$INTF/address 2>/dev/null | cut -d':' -f1-5)
 
