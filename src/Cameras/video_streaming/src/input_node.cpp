@@ -84,7 +84,8 @@ bool InputNode::create_pipeline() {
       if (encoded) {
         desc << "use-compressed=true";
       }
-      desc << " ! ";
+      desc << " ! videoconvert ! video/x-raw,format=NV12 ! ";
+      break;
     default:
       RCLCPP_WARN(this->get_logger(), "Unimplemented Type for camera: %s",
                   name.c_str());

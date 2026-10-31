@@ -12,6 +12,7 @@ preset_node:
     - "EEFDriveMast"
     - "DriveMastPreset"
     - "BellyDrivePreset"
+    - "DepthPreset"
     DrivePreset:
       name: "Drive"
       sources:
@@ -24,7 +25,7 @@ preset_node:
     EEFPreset:
       name: "EEF"
       sources:
-      - "EndEffector"
+      - "D405RGB"
       EndEffector:
         width: 100
         height: 100
@@ -146,4 +147,19 @@ preset_node:
         width: 30
         height: 30
         origin_x: 70
+        origin_y: 0
+    DepthPreset:
+      name: "D405 Depth"
+      sources:
+      - "D405RGB"
+      - "D405Depth"
+      D405RGB:
+        width: 50
+        height: 50
+        origin_x: 0
+        origin_y: 0
+      D405Depth:
+        width: 50
+        height: 50
+        origin_x: 50
         origin_y: 0

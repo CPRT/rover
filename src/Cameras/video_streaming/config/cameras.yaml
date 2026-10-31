@@ -33,5 +33,10 @@ input_node:
       height: 768
       width: 1024
     D405RGB:
-      path:
+      path: "/d405_node/color/image_raw"
+      encoded: false
+      type: 3
+    D405Depth:
+      path: "/d405_node/depth/image_rect_raw"
+      encoded: false
       type: 3

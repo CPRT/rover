@@ -1,0 +1,23 @@
+d405_node:
+  ros__parameters:
+    enable_color: true
+    enable_depth: true
+    enable_infra: false
+    enable_infra1: false
+    enable_infra2: false
+
+    depth_module:
+      color_profile: 1280x720x30
+      depth_profile: 1280x720x30
+
+    colorizer:
+      enable: true
+
+    # disparity_filter:
+    #   enable: true
+
+    # disparity_to_depth:
+    #   enable: true
+
+    # spatial_filter:
+    #   enable: true

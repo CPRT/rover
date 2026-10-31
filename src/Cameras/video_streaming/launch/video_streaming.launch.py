@@ -1,7 +1,9 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import UnsetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument, UnsetEnvironmentVariable
+from launch.conditions import IfCondition
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 
@@ -15,38 +17,45 @@ def generate_launch_description():
         default_value="false",
         description="Launch zed with the rest of the video streaming package",
     )
-    default_zed_xacro_path = os.path.join(
-        get_package_share_directory("zed_description"), "urdf", "zed_descr.urdf.xacro"
-    )
-    rsp_name = camera_name_val + "_state_publisher"
-    rsp_node = Node(
-        condition=IfCondition(launch_zed),
-        package="robot_state_publisher",
-        executable="robot_state_publisher",
-        name="zed_state_publisher",
-        output=screen,
-        parameters=[{"robot_description": Command(xacro_command)}],
-        remappings=[("robot_description", "zed_description")],
-    )
-    zed_params_file = os.path.join(config_dir, "zed-for-arm.yaml")
-    zed_wrapper_component = ComposableNode(
-        condition=IfCondition(launch_zed),
-        package="zed_components",
-        plugin="stereolabs::ZedCamera",
-        name="zed",
-        parameters=[zed_params_file],
-        extra_arguments=[{"use_intra_process_comms": true}],
+    # default_zed_xacro_path = os.path.join(
+    #     get_package_share_directory("zed_description"), "urdf", "zed_descr.urdf.xacro"
+    # )
+    # rsp_name = camera_name_val + "_state_publisher"
+    # rsp_node = Node(
+    #     condition=IfCondition(launch_zed),
+    #     package="robot_state_publisher",
+    #     executable="robot_state_publisher",
+    #     name="zed_state_publisher",
+    #     output=screen,
+    #     parameters=[{"robot_description": Command(xacro_command)}],
+    #     remappings=[("robot_description", "zed_description")],
+    # )
+    # zed_params_file = os.path.join(config_dir, "zed-for-arm.yaml")
+    # zed_wrapper_component = ComposableNode(
+    #     condition=IfCondition(launch_zed),
+    #     package="zed_components",
+    #     plugin="stereolabs::ZedCamera",
+    #     name="zed",
+    #     parameters=[zed_params_file],
+    #     extra_arguments=[{"use_intra_process_comms": True}],
+    # )
+
+    launch_realsense = LaunchConfiguration("launch_realsense")
+    declare_launch_realsense = DeclareLaunchArgument(
+        "launch_realsense",
+        default_value="true",
+        description="Launch realsense with the rest of the video streaming package",
     )
 
     d405_params_file = os.path.join(config_dir, "d405.yaml")
     d405_node = ComposableNode(
-        condition=IfCondition(launch_d405),
+        condition=IfCondition(launch_realsense),
         package="realsense2_camera",
-        plugin="RealSenseNodeFactory",
-        name="d405",
+        plugin="realsense2_camera::RealSenseNodeFactory",
+        name="d405_node",
         namespace="",
         parameters=[d405_params_file],
-        extra_arguments=[{"use_intra_process_comms": true}],
+        extra_arguments=[{"use_intra_process_comms": True}],
     )
 
     camera_params_file = os.path.join(config_dir, "cameras.yaml")
@@ -58,7 +67,7 @@ def generate_launch_description():
         name="input_node",
         namespace="",
         parameters=[camera_params_file],
-        extra_arguments=[{"use_intra_process_comms": true}],
+        extra_arguments=[{"use_intra_process_comms": True}],
     )
 
     detect_node = ComposableNode(
@@ -133,6 +142,7 @@ def generate_launch_description():
             rtp_node,
             mosaic_webrtc_node,
             preset_node,
+            d405_node,
         ],
         output="screen",
     )
@@ -140,8 +150,8 @@ def generate_launch_description():
     return LaunchDescription(
         [
             UnsetEnvironmentVariable("DISPLAY"),
-            container,
             declare_launch_zed,
             declare_launch_realsense,
+            container,
         ]
     )
