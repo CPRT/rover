@@ -19,9 +19,9 @@ struct TopicIdx {
 
 TopicIdx drive_motors[8] = {
     {"/Left_front_wheel_joint", 0},     {"/Right_front_wheel_joint", 1},
-    {"/Left_rear_wheel_joint", 2},      {"/Right_rear_wheel_joint", 3},
+    {"/Left_back_wheel_joint", 2},      {"/Right_back_wheel_joint", 3},
     {"/Left_front_wheel_arm_joint", 4}, {"/Right_front_wheel_arm_joint", 5},
-    {"/Left_rear_wheel_arm_joint", 6},  {"/Right_rear_wheel_arm_joint", 7}};
+    {"/Left_back_wheel_arm_joint", 6},  {"/Right_back_wheel_arm_joint", 7}};
 
 CdhNode::CdhNode()
     : Node("cdh_node"),
@@ -114,10 +114,24 @@ void CdhNode::processCmd(uint8_t *payload, uint16_t apid, uint16_t seq) {
   case APID_DRIVECTRLCMD: {
     DriveCtrlCmd *cmd = reinterpret_cast<DriveCtrlCmd *>(payload);
     sensor_msgs::msg::Joy joy_msg;
+    joy_msg.header.stamp = this->now();
     joy_msg.axes.push_back((float)cmd->y / std::numeric_limits<int16_t>::max());
     joy_msg.axes.push_back((float)cmd->x / std::numeric_limits<int16_t>::max());
     joy_msg.axes.push_back((float)cmd->yaw /
                            std::numeric_limits<int16_t>::max());
+    joy_msg.axes.push_back(0.0f);
+    joy_msg.axes.push_back(0.0f);
+    joy_msg.axes.push_back(0.0f);
+    joy_msg.axes.push_back(0.0f);
+    joy_msg.axes.push_back(0.0f);
+    joy_msg.buttons.push_back(0);
+    joy_msg.buttons.push_back(0);
+    joy_msg.buttons.push_back(0);
+    joy_msg.buttons.push_back(0);
+    joy_msg.buttons.push_back(0);
+    joy_msg.buttons.push_back(0);
+    joy_msg.buttons.push_back(0);
+    joy_msg.buttons.push_back(0);
     if (joy_pub_) {
       joy_pub_->publish(joy_msg);
     }
