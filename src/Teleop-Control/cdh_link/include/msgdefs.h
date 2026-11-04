@@ -1,6 +1,7 @@
 #ifndef MSGDEFS_H
 #define MSGDEFS_H
 
+#include <ostream>
 #include <stdint.h>
 
 enum NavStatus : int8_t { NO_FIX = -1, FIX = 0 };

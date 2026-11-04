@@ -14,10 +14,13 @@ find_package(ros_phoenix REQUIRED)
 include_directories(include)
 
 add_executable(${PROJECT_NAME}
+  src/link_manager.cpp
   src/cdh_node.cpp
 )
 
 add_executable(recv src/recv.cpp)
+
+add_executable(joy_test src/joy_test.cpp)
 
 ament_target_dependencies(${PROJECT_NAME}
   rclcpp
@@ -26,7 +29,7 @@ ament_target_dependencies(${PROJECT_NAME}
 )
 
 # Install Components
-install(TARGETS ${PROJECT_NAME} recv
+install(TARGETS ${PROJECT_NAME} recv joy_test
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME})
@@ -43,6 +46,7 @@ ament_export_include_directories(
 ament_export_libraries(
   ${PROJECT_NAME}
   recv
+  joy_test
 )
 
 ament_package()

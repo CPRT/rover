@@ -15,6 +15,23 @@ template <typename T> struct TlmMsg {
   uint16_t seq;
 };
 
+enum LinkId {
+  L900,
+  L2400,
+};
+
+struct Link {
+  LinkId id;
+  std::string ground_ip;
+};
+
+struct LinkStatus {
+  LinkId id;
+  bool alive;
+  uint32_t bw_down;
+  uint32_t bw_up;
+};
+
 typedef std::function<void(uint8_t *payload, PacketType type, uint16_t apid,
                            uint16_t seq)>
     RecvCb;
@@ -105,12 +122,12 @@ private:
   struct sockaddr_in tm_addr_ {};
   struct sockaddr_in tc_addr_ {};
 
+  rclcpp::Logger logger;
+  char *prefix;
+
   std::shared_ptr<std::thread> recv_thread_;
   std::atomic_bool running_;
   RecvCb recv_cb_;
-
-  rclcpp::Logger logger;
-  char *prefix;
 };
 
 } // namespace cdh_link
