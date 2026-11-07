@@ -1,0 +1,5 @@
+<library path="gimbal_control">
+  <class name="gimbal_control/GimbalController" type="gimbal_control::GimbalController" base_class_type="controller_interface::ControllerInterface">
+    <description>Velocity Twist to bounded camera joint positions with center reset.</description>
+  </class>
+</library>

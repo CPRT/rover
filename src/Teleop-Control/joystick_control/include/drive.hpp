@@ -6,6 +6,7 @@
 #include "interfaces/srv/video_out.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/joy.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "std_msgs/msg/float32.hpp"
 #include <interfaces/msg/video_presets.hpp>
 
@@ -16,9 +17,6 @@ public:
 
 private:
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr twist_pub_;
-  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr servo_y_pub_;
-  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr servo_x_pub_;
-  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr servo_m_pub_;
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
   rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr drive_throttle_sub_;
   rclcpp::Subscription<interfaces::msg::VideoPresets>::SharedPtr presets_sub_;
@@ -31,6 +29,10 @@ private:
   void declare_parameters();
   void load_parameters();
   void presets_cb(const interfaces::msg::VideoPresets::SharedPtr presets_msg);
+
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr gimbal_pub_;
+  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr gimbal_reset_pub_;
+  double kGimbalSpeed;
 
   // Parameters
   double kMaxLinear;
@@ -46,21 +48,12 @@ private:
   int kLockTurnBut;
   int kCamLeftBut;
   int kCamRightBut;
-  double kServoIncrement;
-  double kServoMin;
-  double kServoMax;
   double kJoyDeadzone;
-  double kDefaultServoX;
-  double kDefaultServoY;
-  double kDefaultServoM;
 
   bool initialized_;
-  double servo_y_;
-  double servo_x_;
-  double servo_mast_;
   float drive_throttle_;
 
-  bool cam_debounce_;
+  bool cam_debounce_{false};
 };
 
 #endif // DRIVE_HPP

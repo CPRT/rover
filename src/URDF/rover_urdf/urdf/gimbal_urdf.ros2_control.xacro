@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="gimbal_control_joint" params="name channel center lower upper">
+    <joint name="${name}">
+      <command_interface name="position"><param name="min">${lower}</param><param name="max">${upper}</param></command_interface>
+      <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
+      <param name="channel">${channel}</param><param name="center">${center}</param>
+      <param name="range">6.2832</param><param name="min_us">350.0</param><param name="max_us">2500.0</param>
+      <param name="direction">1.0</param>
+    </joint>
+  </xacro:macro>
+  <xacro:macro name="gimbal_ros2_control" params="mock serial_port">
+    <ros2_control name="GimbalSystem" type="system">
+      <hardware>
+        <xacro:if value="${mock}"><plugin>mock_components/GenericSystem</plugin></xacro:if>
+        <xacro:unless value="${mock}">
+          <plugin>gimbal_control/MaestroSystem</plugin>
+          <param name="serial_port">${serial_port}</param><param name="device_number">12</param>
+        </xacro:unless>
+      </hardware>
+      <xacro:gimbal_control_joint name="gimbal_pan_joint" channel="1" center="3.10" lower="-3.10" upper="3.18"/>
+      <xacro:gimbal_control_joint name="gimbal_tilt_joint" channel="0" center="3.75" lower="-3.75" upper="2.53"/>
+      <xacro:gimbal_control_joint name="mast_camera_joint" channel="3" center="4.2" lower="-4.2" upper="2.08"/>
+    </ros2_control>
+  </xacro:macro>
+</robot>
