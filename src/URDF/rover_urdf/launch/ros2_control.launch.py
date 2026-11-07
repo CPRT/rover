@@ -2,6 +2,7 @@ import os
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, RegisterEventHandler
+from launch.conditions import IfCondition
 from launch.event_handlers import OnProcessStart
 from launch.substitutions import (
     Command,
@@ -82,15 +83,28 @@ def generate_launch_description():
         output="screen",
     )
 
+    gimbal_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["gimbal_controller"],
+        output="screen",
+        condition=IfCondition(LaunchConfiguration("use_gimbal")),
+    )
+
     delayed_spawners = RegisterEventHandler(
         OnProcessStart(
             target_action=controller_manager,
-            on_start=[jsb_spawner, chassis_controller_spawner],
+            on_start=[jsb_spawner, chassis_controller_spawner, gimbal_spawner],
         )
     )
 
     return LaunchDescription(
         [
+            DeclareLaunchArgument(
+                "use_gimbal",
+                default_value="true",
+                description="Spawn the gimbal controller; set the same value in launch.py",
+            ),
             declare_description_pkg,
             declare_xacro_file,
             declare_control_yaml,

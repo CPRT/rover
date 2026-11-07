@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <!-- Mount translations are configurable: CAD measurements are not available in this repository. -->
+  <xacro:macro name="camera_body" params="name">
+    <link name="${name}">
+      <visual><geometry><box size="0.06 0.08 0.04"/></geometry><material name="camera_black"><color rgba="0.1 0.1 0.1 1"/></material></visual>
+      <collision><geometry><box size="0.06 0.08 0.04"/></geometry></collision>
+      <inertial><mass value="0.1"/><inertia ixx="0.000067" ixy="0" ixz="0" iyy="0.000043" iyz="0" izz="0.000083"/></inertial>
+    </link>
+    <link name="${name}_optical"/>
+    <joint name="${name}_optical_joint" type="fixed">
+      <parent link="${name}"/><child link="${name}_optical"/>
+      <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
+    </joint>
+  </xacro:macro>
+  <xacro:macro name="gimbal_urdf" params="mount_xyz mount_rpy mast_xyz mast_rpy">
+    <link name="gimbal_mount"/>
+    <joint name="gimbal_mount_joint" type="fixed">
+      <parent link="base_link"/><child link="gimbal_mount"/>
+      <origin xyz="${mount_xyz}" rpy="${mount_rpy}"/>
+    </joint>
+    <link name="gimbal_pan_link"/>
+    <joint name="gimbal_pan_joint" type="revolute">
+      <parent link="gimbal_mount"/><child link="gimbal_pan_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="0 0 1"/>
+      <limit lower="-3.10" upper="3.18" effort="1" velocity="0.5"/>
+    </joint>
+    <xacro:camera_body name="gimbal_camera_link"/>
+    <joint name="gimbal_tilt_joint" type="revolute">
+      <parent link="gimbal_pan_link"/><child link="gimbal_camera_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="0 1 0"/>
+      <limit lower="-3.75" upper="2.53" effort="1" velocity="0.5"/>
+    </joint>
+    <link name="mast_camera_mount"/>
+    <joint name="mast_camera_mount_joint" type="fixed">
+      <parent link="base_link"/><child link="mast_camera_mount"/>
+      <origin xyz="${mast_xyz}" rpy="${mast_rpy}"/>
+    </joint>
+    <xacro:camera_body name="mast_camera_link"/>
+    <joint name="mast_camera_joint" type="revolute">
+      <parent link="mast_camera_mount"/><child link="mast_camera_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/><axis xyz="0 0 1"/>
+      <limit lower="-4.2" upper="2.08" effort="1" velocity="0.5"/>
+    </joint>
+  </xacro:macro>
+</robot>

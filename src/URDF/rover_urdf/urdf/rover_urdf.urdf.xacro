@@ -2,7 +2,21 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="rover_urdf">
   <xacro:arg name="use_arm" default="true"/>
   <xacro:arg name="use_drive" default="true"/>
+  <xacro:arg name="use_gimbal" default="true"/>
+  <xacro:arg name="gimbal_mock_hardware" default="false"/>
+  <xacro:arg name="gimbal_serial_port" default="/dev/serial/by-id/usb-Pololu_Corporation_Pololu_Mini_Maestro_12-Channel_USB_Servo_Controller_00460938-if00"/>
+  <xacro:arg name="gimbal_mount_xyz" default="0 0 0"/>
+  <xacro:arg name="gimbal_mount_rpy" default="0 0 0"/>
+  <xacro:arg name="mast_camera_xyz" default="0 0 0"/>
+  <xacro:arg name="mast_camera_rpy" default="0 0 0"/>
   <link name="base_link"/>
+  <xacro:if value="$(arg use_gimbal)">
+    <xacro:include filename="$(find rover_urdf)/urdf/gimbal_urdf.xacro"/>
+    <xacro:include filename="$(find rover_urdf)/urdf/gimbal_urdf.ros2_control.xacro"/>
+    <xacro:gimbal_urdf mount_xyz="$(arg gimbal_mount_xyz)" mount_rpy="$(arg gimbal_mount_rpy)"
+      mast_xyz="$(arg mast_camera_xyz)" mast_rpy="$(arg mast_camera_rpy)"/>
+    <xacro:gimbal_ros2_control mock="$(arg gimbal_mock_hardware)" serial_port="$(arg gimbal_serial_port)"/>
+  </xacro:if>
 
   <xacro:if value="$(arg use_arm)">
     <!-- Arm geometry -->

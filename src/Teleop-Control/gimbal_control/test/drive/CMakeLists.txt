@@ -1,0 +1,12 @@
+# Compile the production drive source independently of unrelated arm and CTRE targets.
+cmake_minimum_required(VERSION 3.8)
+project(gimbal_drive_verification)
+set(CMAKE_CXX_STANDARD 17)
+find_package(ament_cmake REQUIRED)
+set(dependencies rclcpp geometry_msgs sensor_msgs std_msgs interfaces)
+foreach(dependency IN LISTS dependencies)
+  find_package(${dependency} REQUIRED)
+endforeach()
+add_executable(drive ../../../joystick_control/src/drive.cpp)
+target_include_directories(drive PRIVATE ../../../joystick_control/include)
+ament_target_dependencies(drive ${dependencies})

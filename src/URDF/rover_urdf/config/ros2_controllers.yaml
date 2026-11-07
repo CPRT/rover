@@ -9,6 +9,9 @@
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
+    gimbal_controller:
+      type: gimbal_control/GimbalController
+
     chassis_controller:
       type: swerve_controller/SwerveController
 
@@ -65,3 +68,11 @@ chassis_controller:
     cmd_timeout: 0.5
     min_angle: -1.6
     max_angle: 1.6
+
+gimbal_controller:
+  ros__parameters:
+    joints: [gimbal_pan_joint, gimbal_tilt_joint, mast_camera_joint]
+    lower_limits: [-3.10, -3.75, -4.2]
+    upper_limits: [3.18, 2.53, 2.08]
+    max_velocity: [0.5, 0.5, 0.5]
+    command_timeout: 0.5
