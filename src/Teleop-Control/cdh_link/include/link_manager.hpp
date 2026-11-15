@@ -16,7 +16,7 @@ public:
   VideoStream(rclcpp::Node *parent, const std::string &node_prefix,
               int32_t bitrate = 1000000, LinkId link = L2400);
 
-  void setLink(Link link);
+  void setLink(Link* link);
   void setBitrate(int32_t bitrate);
 
   LinkId getLinkId() { return this->link_id_; };
@@ -33,18 +33,15 @@ private:
 
 class LinkManager {
 public:
-  LinkManager(rclcpp::Node *parent, Link link_900, Link link_2400);
+  LinkManager(rclcpp::Node *parent, Link* link_900, Link* link_2400);
 
   void process();
 
 private:
   rclcpp::Node *parent_;
 
-  Link link_900_;
-  Link link_2400_;
-
-  LinkStatus status_900_;
-  LinkStatus status_2400_;
+  Link* link_900_;
+  Link* link_2400_;
 
   VideoStream rtp_;
   VideoStream mosaic_;

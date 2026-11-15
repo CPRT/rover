@@ -23,10 +23,8 @@ enum LinkId {
 struct Link {
   LinkId id;
   std::string ground_ip;
-};
-
-struct LinkStatus {
-  LinkId id;
+  uint16_t hb_count_;
+  hb_time_;
   bool alive;
   uint32_t bw_down;
   uint32_t bw_up;
@@ -49,36 +47,36 @@ public:
     if (recv_thread_ && recv_thread_->joinable()) {
       recv_thread_->join();
     }
-    close(tm_fd_);
-    close(tc_fd_);
+    close(tx_fd_);
+    close(rx_fd_);
   };
 
-  void open(std::string tm_ip, uint16_t tm_port, uint16_t tc_port) {
-    this->tm_fd_ = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (this->tm_fd_ < 0) {
-      RCLCPP_FATAL(this->logger, "[%s] TM Socket error %u", prefix, errno);
+  void open(std::string tx_ip, uint16_t tx_port, uint16_t rx_port) {
+    this->tx_fd_ = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (this->tx_fd_ < 0) {
+      RCLCPP_FATAL(this->logger, "[%s] TX Socket error %u", prefix, errno);
     }
 
-    tm_addr_.sin_family = AF_INET;
-    tm_addr_.sin_port = htons(tm_port);
-    if (inet_aton(tm_ip.c_str(), &tm_addr_.sin_addr) == 0) {
+    tx_addr_.sin_family = AF_INET;
+    tx_addr_.sin_port = htons(tx_port);
+    if (inet_aton(tx_ip.c_str(), &tx_addr_.sin_addr) == 0) {
       RCLCPP_FATAL(this->logger, "[%s] Error converting address %s", prefix,
-                   tm_ip.c_str());
+                   tx_ip.c_str());
     }
 
-    this->tc_fd_ = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (this->tc_fd_ < 0) {
-      RCLCPP_FATAL(this->logger, "[%s] TC Socket error %s", prefix,
+    this->rx_fd_ = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (this->rx_fd_ < 0) {
+      RCLCPP_FATAL(this->logger, "[%s] RX Socket error %s", prefix,
                    strerror(errno));
     }
 
-    tc_addr_.sin_family = AF_INET;
-    tc_addr_.sin_addr.s_addr = INADDR_ANY;
-    tc_addr_.sin_port = htons(tc_port);
+    rx_addr_.sin_family = AF_INET;
+    rx_addr_.sin_addr.s_addr = INADDR_ANY;
+    rx_addr_.sin_port = htons(rx_port);
 
-    if (bind(this->tc_fd_, (struct sockaddr *)&this->tc_addr_,
-             sizeof(this->tc_addr_)) != 0) {
-      RCLCPP_FATAL(this->logger, "[%s] TM Socket error %s", prefix,
+    if (bind(this->rx_fd_, (struct sockaddr *)&this->rx_addr_,
+             sizeof(this->rx_addr_)) != 0) {
+      RCLCPP_FATAL(this->logger, "[%s] tx Socket error %s", prefix,
                    strerror(errno));
     }
 
@@ -89,7 +87,7 @@ public:
           break;
         }
         uint8_t buf[1024];
-        int recvd = recvfrom(this->tc_fd_, buf, sizeof(buf), 0, NULL, NULL);
+        int recvd = recvfrom(this->rx_fd_, buf, sizeof(buf), 0, NULL, NULL);
         uint8_t payload[1024];
         PacketType type;
         uint16_t apid, seq;
@@ -104,23 +102,23 @@ public:
     });
 
     RCLCPP_INFO(this->logger,
-                "[%s] Link started, TM out: %s:%u, listening on :%u", prefix,
-                tm_ip.c_str(), tm_port, tc_port);
+                "[%s] Link started, tx out: %s:%u, listening on :%u", prefix,
+                tx_ip.c_str(), tx_port, rx_port);
   }
 
   template <typename T> void sendTlm(TlmMsg<T> msg, uint16_t apid) {
     uint8_t buf[sizeof(T) + 6];
     SpacePacket::encode(buf, &msg.msg, sizeof(msg.msg), PacketType::TELEMETRY,
                         apid, msg.seq);
-    sendto(this->tm_fd_, buf, sizeof(buf), 0,
-           (struct sockaddr *)&this->tm_addr_, sizeof(this->tm_addr_));
+    sendto(this->tx_fd_, buf, sizeof(buf), 0,
+           (struct sockaddr *)&this->tx_addr_, sizeof(this->tx_addr_));
   }
 
 private:
-  int tm_fd_;
-  int tc_fd_;
-  struct sockaddr_in tm_addr_ {};
-  struct sockaddr_in tc_addr_ {};
+  int tx_fd_;
+  int rx_fd_;
+  struct sockaddr_in tx_addr_ {};
+  struct sockaddr_in rx_addr_ {};
 
   rclcpp::Logger logger;
   char *prefix;

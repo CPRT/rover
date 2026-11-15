@@ -11,6 +11,7 @@
 #include "cdh_link.hpp"
 #include "msgdefs.h"
 #include "packet.h"
+#include "link_manager.hpp"
 
 namespace cdh_link {
 
@@ -45,8 +46,13 @@ private:
 
   rclcpp::TimerBase::SharedPtr timer_;
 
-  CdhLink link1;
-  CdhLink link2;
+  CdhLink link1_;
+  CdhLink link2_;
+
+  Link link_900_{};
+  Link link_2400_{};
+
+  LinkManager manager_;
 
   uint16_t kTm1Port;
   std::string kTm1Ip;

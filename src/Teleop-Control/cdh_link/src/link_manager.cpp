@@ -20,21 +20,23 @@ void VideoStream::setBitrate(int32_t bitrate) {
   }
 }
 
-void VideoStream::setLink(Link link) {
+void VideoStream::setLink(Link* link) {
   std_msgs::msg::String msg;
-  msg.data = link.ground_ip;
+  msg.data = link->ground_ip;
   if (this->ip_pub_) {
     this->ip_pub_->publish(msg);
-    this->link_id_ = link.id;
+    this->link_id_ = link->id;
   }
 }
 
-LinkManager::LinkManager(rclcpp::Node *parent, Link link_900, Link link_2400)
+LinkManager::LinkManager(rclcpp::Node *parent, Link* link_900, Link* link_2400)
     : parent_(parent), link_900_(link_900), link_2400_(link_2400),
       rtp_(parent, "/rtp_node", 500000), mosaic_(parent, "/mosaic_node") {}
 
 void LinkManager::process() {
-  if ((!status_2400_.alive && rtp_.getLinkId() == L2400) || (!status_900_.alive && rtp_.getLinkId() == L900)) {
+  // Checkout hearbeat timeouts
+
+  if ((!link_2400_->alive && rtp_.getLinkId() == L2400) || (!link_900_->alive && rtp_.getLinkId() == L900)) {
     rtp_.setLink(rtp_.getLinkId() == L900 ? link_2400_ : link_900_);
   }
 

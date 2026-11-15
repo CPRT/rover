@@ -51,6 +51,10 @@ struct ArmStatusMsg {
 #define APID_NAVINFOMSG 2
 #define APID_SYSINFOMSG 3
 
+struct HeartbeatCmd {
+  uint8_t spare;
+};
+
 struct DriveCtrlCmd {
   int16_t x;
   int16_t y;
@@ -76,6 +80,7 @@ struct ArmSetModeCmd {
   ArmMode mode;
 };
 
+#define APID_HEARTBEAT 0
 #define APID_DRIVECTRLCMD 1
 #define APID_DRIVETHROTTLECMD 2
 #define APID_ARMJOGCMD 3

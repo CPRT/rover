@@ -25,14 +25,15 @@ TopicIdx drive_motors[8] = {
 
 CdhNode::CdhNode()
     : Node("cdh_node"),
-      link1(this->get_logger(), "900 MHz",
+      link1_(this->get_logger(), "900 MHz",
             std::bind(&CdhNode::recv_link1, this, std::placeholders::_1,
                       std::placeholders::_2, std::placeholders::_3,
                       std::placeholders::_4)),
-      link2(this->get_logger(), "2.4 GHz",
+      link2_(this->get_logger(), "2.4 GHz",
             std::bind(&CdhNode::recv_link2, this, std::placeholders::_1,
                       std::placeholders::_2, std::placeholders::_3,
-                      std::placeholders::_4)) {
+                      std::placeholders::_4)),
+      manager_(this, &link_900_, &link_2400_) {
   this->declareParameters();
   this->loadParameters();
 
