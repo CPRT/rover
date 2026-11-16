@@ -1,0 +1,5 @@
+<library path="gimbal_control">
+  <class name="gimbal_control/MaestroSystem" type="gimbal_control::MaestroSystem" base_class_type="hardware_interface::SystemInterface">
+    <description>Pololu Maestro USB serial position interface; states are commanded estimates.</description>
+  </class>
+</library>

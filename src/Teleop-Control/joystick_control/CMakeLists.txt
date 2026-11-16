@@ -38,6 +38,8 @@ add_executable(drill
 )
 
 ament_target_dependencies(drive
+  std_msgs
+  sensor_msgs
   rclcpp
   geometry_msgs
   joy

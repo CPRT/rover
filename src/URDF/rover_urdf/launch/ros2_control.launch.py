@@ -82,10 +82,17 @@ def generate_launch_description():
         output="screen",
     )
 
+    gimbal_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["gimbal_controller"],
+        output="screen",
+    )
+
     delayed_spawners = RegisterEventHandler(
         OnProcessStart(
             target_action=controller_manager,
-            on_start=[jsb_spawner, chassis_controller_spawner],
+            on_start=[jsb_spawner, chassis_controller_spawner, gimbal_spawner],
         )
     )
 

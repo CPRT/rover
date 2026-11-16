@@ -1,13 +1,17 @@
 #include "drive.hpp"
+#include <algorithm>
+#include <cmath>
 
 drive::drive() : Node("drive_node"), initialized_(false) {
   declare_parameters();
   load_parameters();
   twist_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
-  servo_y_pub_ = this->create_publisher<std_msgs::msg::Float32>("/tilt", 10);
-  servo_x_pub_ = this->create_publisher<std_msgs::msg::Float32>("/pan", 10);
   servo_m_pub_ =
       this->create_publisher<std_msgs::msg::Float32>("/mast_angle", 10);
+  gimbal_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
+      "/gimbal_controller/cmd_vel", 1);
+  gimbal_reset_pub_ = this->create_publisher<std_msgs::msg::Bool>(
+      "/gimbal_controller/reset", 1);
 
   camera_client_ =
       this->create_client<interfaces::srv::VideoOut>("/start_video");
@@ -26,8 +30,6 @@ drive::drive() : Node("drive_node"), initialized_(false) {
       "/drive_throttle", 10,
       std::bind(&drive::drive_throttle_cb, this, std::placeholders::_1));
   RCLCPP_INFO(this->get_logger(), "Drive controller started");
-  servo_y_ = kDefaultServoY;
-  servo_x_ = kDefaultServoX;
   servo_mast_ = kDefaultServoM;
   drive_throttle_ = 1.0f;
 };
@@ -110,18 +112,25 @@ void drive::drive_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
   twist_pub_->publish(twist);
   camera_control(joystickMsg);
   bool pub_mast = false;
-  if (joystickMsg->buttons[kServoHomeButton]) {
-    servo_y_ = kDefaultServoY;
-    servo_x_ = kDefaultServoX;
+  auto reset = std_msgs::msg::Bool();
+  reset.data = joystickMsg->buttons[kServoHomeButton] != 0;
+  gimbal_reset_pub_->publish(reset);
+  if (reset.data) {
     servo_mast_ = kDefaultServoM;
     pub_mast = true;
   }
-
-  if (joystickMsg->axes[kServoYAxis] > kJoyDeadzone) {
-    servo_y_ -= kServoIncrement;
-  } else if (joystickMsg->axes[kServoYAxis] < -kJoyDeadzone) {
-    servo_y_ += kServoIncrement;
+  auto gimbal = geometry_msgs::msg::Twist();
+  if (!reset.data) {
+    const auto velocity = [this](double axis) {
+      return std::abs(axis) > kJoyDeadzone
+                 ? std::clamp(axis, -1.0, 1.0) * kGimbalSpeed
+                 : 0.0;
+    };
+    gimbal.angular.z = velocity(joystickMsg->axes[kServoXAxis]);
+    gimbal.angular.y = -velocity(joystickMsg->axes[kServoYAxis]);
   }
+  gimbal_pub_->publish(gimbal);
+
   if (joystickMsg->buttons[kMastLeftButton]) {
     servo_mast_ -= kServoIncrement;
     pub_mast = true;
@@ -129,21 +138,9 @@ void drive::drive_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
     servo_mast_ += kServoIncrement;
     pub_mast = true;
   }
-  if (joystickMsg->axes[kServoXAxis] > kJoyDeadzone) {
-    servo_x_ += kServoIncrement;
-  } else if (joystickMsg->axes[kServoXAxis] < -kJoyDeadzone) {
-    servo_x_ -= kServoIncrement;
-  }
-  auto servo_msg = std_msgs::msg::Float32();
-  servo_y_ = std::clamp(servo_y_, kServoMin, kServoMax);
-  servo_msg.data = servo_y_;
-  servo_y_pub_->publish(servo_msg);
-
-  servo_x_ = std::clamp(servo_x_, kServoMin, kServoMax);
-  servo_msg.data = servo_x_;
-  servo_x_pub_->publish(servo_msg);
   if (pub_mast) {
     servo_mast_ = std::clamp(servo_mast_, kServoMin, kServoMax);
+    auto servo_msg = std_msgs::msg::Float32();
     servo_msg.data = servo_mast_;
     servo_m_pub_->publish(servo_msg);
   }
@@ -167,9 +164,8 @@ void drive::declare_parameters() {
   this->declare_parameter("servo_min", -3.14);
   this->declare_parameter("servo_max", 3.14);
   this->declare_parameter("joy_deadzone", 0.01);
-  this->declare_parameter("default_servo_x", 0.0);
-  this->declare_parameter("default_servo_y", 0.0);
   this->declare_parameter("default_servo_m", 0.0);
+  this->declare_parameter("gimbal_speed", 0.4);
 }
 
 void drive::load_parameters() {
@@ -190,9 +186,8 @@ void drive::load_parameters() {
   this->get_parameter("servo_min", kServoMin);
   this->get_parameter("servo_max", kServoMax);
   this->get_parameter("joy_deadzone", kJoyDeadzone);
-  this->get_parameter("default_servo_x", kDefaultServoX);
-  this->get_parameter("default_servo_y", kDefaultServoY);
   this->get_parameter("default_servo_m", kDefaultServoM);
+  this->get_parameter("gimbal_speed", kGimbalSpeed);
 
   RCLCPP_INFO(this->get_logger(), "Loaded Max Linear: %f", kMaxLinear);
   RCLCPP_INFO(this->get_logger(), "Loaded Max Angular: %f", kMaxAngular);

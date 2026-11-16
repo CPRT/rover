@@ -3,6 +3,10 @@
   <xacro:arg name="use_arm" default="true"/>
   <xacro:arg name="use_drive" default="true"/>
   <link name="base_link"/>
+  <xacro:include filename="$(find rover_urdf)/urdf/gimbal_urdf.xacro"/>
+  <xacro:include filename="$(find rover_urdf)/urdf/gimbal_urdf.ros2_control.xacro"/>
+  <xacro:gimbal_urdf/>
+  <xacro:gimbal_ros2_control/>
 
   <xacro:if value="$(arg use_arm)">
     <!-- Arm geometry -->

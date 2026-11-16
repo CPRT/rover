@@ -13,8 +13,6 @@ drive_teleop_node:
     mast_right_button: 1
     servo_min: 0.0
     servo_max: 6.28
-    default_servo_x: 3.10
-    default_servo_y: 3.75
     default_servo_m: 4.2
     cam_left_button: 6
     cam_right_button: 7
