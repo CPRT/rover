@@ -7,10 +7,10 @@ namespace gimbal_control {
 using CallbackReturn = controller_interface::CallbackReturn;
 CallbackReturn GimbalController::on_init() {
   auto_declare<std::vector<std::string>>(
-      "joints", {"gimbal_pan_joint", "gimbal_tilt_joint", "mast_camera_joint"});
-  auto_declare<std::vector<double>>("lower_limits", {-3.10, -3.75, -4.2});
-  auto_declare<std::vector<double>>("upper_limits", {3.18, 2.53, 2.08});
-  auto_declare<std::vector<double>>("max_velocity", {0.5, 0.5, 0.5});
+      "joints", {"gimbal_pan_joint", "gimbal_tilt_joint"});
+  auto_declare<std::vector<double>>("lower_limits", {-3.10, -3.75});
+  auto_declare<std::vector<double>>("upper_limits", {3.18, 2.53});
+  auto_declare<std::vector<double>>("max_velocity", {0.5, 0.5});
   auto_declare<double>("command_timeout", 0.5);
   return CallbackReturn::SUCCESS;
 }
@@ -32,10 +32,11 @@ CallbackReturn GimbalController::on_configure(const rclcpp_lifecycle::State &) {
   upper_ = get_node()->get_parameter("upper_limits").as_double_array();
   max_velocity_ = get_node()->get_parameter("max_velocity").as_double_array();
   timeout_ = get_node()->get_parameter("command_timeout").as_double();
-  if (joints_.size() != 3 || lower_.size() != 3 || upper_.size() != 3 ||
-      max_velocity_.size() != 3 || !std::isfinite(timeout_) || timeout_ <= 0)
+  if (joints_.size() != kNumJoints || lower_.size() != kNumJoints ||
+      upper_.size() != kNumJoints || max_velocity_.size() != kNumJoints ||
+      !std::isfinite(timeout_) || timeout_ <= 0)
     return CallbackReturn::ERROR;
-  for (size_t i = 0; i < 3; ++i) {
+  for (size_t i = 0; i < kNumJoints; ++i) {
     if (joints_[i].empty() || !std::isfinite(lower_[i]) ||
         !std::isfinite(upper_[i]) || !std::isfinite(max_velocity_[i]) ||
         lower_[i] >= upper_[i] || lower_[i] > 0 || upper_[i] < 0 ||
@@ -51,7 +52,7 @@ CallbackReturn GimbalController::on_configure(const rclcpp_lifecycle::State &) {
         if (!active_.load())
           return;
         Command command;
-        command.velocity = {msg->angular.z, msg->angular.y, msg->angular.x};
+        command.velocity = {msg->angular.z, msg->angular.y};
         // Invalid input stops all motion, rather than leaving the old velocity
         // active.
         for (double v : command.velocity)
@@ -75,9 +76,10 @@ CallbackReturn GimbalController::on_configure(const rclcpp_lifecycle::State &) {
   return CallbackReturn::SUCCESS;
 }
 CallbackReturn GimbalController::on_activate(const rclcpp_lifecycle::State &) {
-  if (command_interfaces_.size() != 3 || state_interfaces_.size() != 3)
+  if (command_interfaces_.size() != kNumJoints ||
+      state_interfaces_.size() != kNumJoints)
     return CallbackReturn::ERROR;
-  for (size_t i = 0; i < 3; ++i) {
+  for (size_t i = 0; i < kNumJoints; ++i) {
     auto name = joints_[i] + "/position";
     auto c =
         std::find_if(command_interfaces_.begin(), command_interfaces_.end(),
@@ -93,7 +95,7 @@ CallbackReturn GimbalController::on_activate(const rclcpp_lifecycle::State &) {
         positions_[i] > upper_[i])
       return CallbackReturn::ERROR;
   }
-  for (size_t i = 0; i < 3; ++i)
+  for (size_t i = 0; i < kNumJoints; ++i)
     command_interfaces_[command_indices_[i]].set_value(positions_[i]);
   ignored_sequence_ = sequence_.load();
   reset_held_ = false;
@@ -122,7 +124,7 @@ GimbalController::update(const rclcpp::Time &, const rclcpp::Duration &period) {
                          std::chrono::steady_clock::now() - command.received)
                          .count();
   bool centered = true;
-  for (size_t i = 0; i < 3; ++i) {
+  for (size_t i = 0; i < kNumJoints; ++i) {
     double delta = 0;
     const double step = max_velocity_[i] * dt;
     if (resetting)

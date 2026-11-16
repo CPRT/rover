@@ -22,11 +22,6 @@ def generate_launch_description():
     use_joint_state_pub = LaunchConfiguration("use_joint_state_pub")
     use_rviz = LaunchConfiguration("use_rviz")
     urdf_file = LaunchConfiguration("urdf_file")
-    use_gimbal = LaunchConfiguration("use_gimbal")
-    robot_description = ParameterValue(
-        Command(["ros2 run xacro xacro ", urdf_file, " use_gimbal:=", use_gimbal]),
-        value_type=str,
-    )
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         "rviz_config_file",
@@ -58,7 +53,13 @@ def generate_launch_description():
         executable="robot_state_publisher",
         name="robot_state_publisher",
         output="screen",
-        parameters=[{"robot_description": robot_description}],
+        parameters=[
+            {
+                "robot_description": ParameterValue(
+                    Command(["ros2 run xacro xacro ", urdf_file]), value_type=str
+                )
+            }
+        ],
     )
 
     start_joint_state_publisher_cmd = Node(
@@ -67,7 +68,13 @@ def generate_launch_description():
         executable="joint_state_publisher_gui",
         name="joint_state_publisher_gui",
         output="screen",
-        parameters=[{"robot_description": robot_description}],
+        parameters=[
+            {
+                "robot_description": ParameterValue(
+                    Command(["ros2 run xacro xacro ", urdf_file]), value_type=str
+                )
+            }
+        ],
     )
 
     rviz_cmd = Node(
@@ -83,13 +90,6 @@ def generate_launch_description():
     ld = LaunchDescription()
 
     # Declare the launch options
-    ld.add_action(
-        DeclareLaunchArgument(
-            "use_gimbal",
-            default_value="true",
-            description="Include gimbal joints and hardware in the robot description",
-        )
-    )
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_urdf_cmd)
     ld.add_action(declare_use_robot_state_pub_cmd)

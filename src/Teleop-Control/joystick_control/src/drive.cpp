@@ -1,12 +1,13 @@
 #include "drive.hpp"
 #include <algorithm>
 #include <cmath>
-#include <stdexcept>
 
 drive::drive() : Node("drive_node"), initialized_(false) {
   declare_parameters();
   load_parameters();
   twist_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
+  servo_m_pub_ =
+      this->create_publisher<std_msgs::msg::Float32>("/mast_angle", 10);
   gimbal_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
       "/gimbal_controller/cmd_vel", 1);
   gimbal_reset_pub_ = this->create_publisher<std_msgs::msg::Bool>(
@@ -29,6 +30,7 @@ drive::drive() : Node("drive_node"), initialized_(false) {
       "/drive_throttle", 10,
       std::bind(&drive::drive_throttle_cb, this, std::placeholders::_1));
   RCLCPP_INFO(this->get_logger(), "Drive controller started");
+  servo_mast_ = kDefaultServoM;
   drive_throttle_ = 1.0f;
 };
 
@@ -87,27 +89,6 @@ void drive::camera_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
 }
 
 void drive::drive_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
-  // Controller mappings differ; malformed/disconnected Joy input must not index
-  // past the arrays.
-  const auto valid_index = [](int index, size_t size) {
-    return index >= 0 && static_cast<size_t>(index) < size;
-  };
-  bool valid = true;
-  for (int axis :
-       {kForwardAxis, kStrafeAxis, kYawAxis, kServoXAxis, kServoYAxis}) {
-    valid = valid && valid_index(axis, joystickMsg->axes.size());
-    if (valid)
-      valid = std::isfinite(joystickMsg->axes[axis]);
-  }
-  for (int button : {kLockTurnBut, kCamLeftBut, kCamRightBut, kServoHomeButton,
-                     kMastLeftButton, kMastRightButton})
-    valid = valid && valid_index(button, joystickMsg->buttons.size());
-  if (!valid) {
-    twist_pub_->publish(geometry_msgs::msg::Twist());
-    gimbal_pub_->publish(geometry_msgs::msg::Twist());
-    initialized_ = false;
-    return;
-  }
   if (!initialized_) {
     if (std::abs(joystickMsg->axes[kForwardAxis]) < kJoyDeadzone &&
         std::abs(joystickMsg->axes[kStrafeAxis]) < kJoyDeadzone &&
@@ -130,9 +111,14 @@ void drive::drive_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
 
   twist_pub_->publish(twist);
   camera_control(joystickMsg);
+  bool pub_mast = false;
   auto reset = std_msgs::msg::Bool();
   reset.data = joystickMsg->buttons[kServoHomeButton] != 0;
   gimbal_reset_pub_->publish(reset);
+  if (reset.data) {
+    servo_mast_ = kDefaultServoM;
+    pub_mast = true;
+  }
   auto gimbal = geometry_msgs::msg::Twist();
   if (!reset.data) {
     const auto velocity = [this](double axis) {
@@ -142,12 +128,22 @@ void drive::drive_control(std::shared_ptr<sensor_msgs::msg::Joy> joystickMsg) {
     };
     gimbal.angular.z = velocity(joystickMsg->axes[kServoXAxis]);
     gimbal.angular.y = -velocity(joystickMsg->axes[kServoYAxis]);
-    if (joystickMsg->buttons[kMastLeftButton])
-      gimbal.angular.x = -kGimbalSpeed;
-    else if (joystickMsg->buttons[kMastRightButton])
-      gimbal.angular.x = kGimbalSpeed;
   }
   gimbal_pub_->publish(gimbal);
+
+  if (joystickMsg->buttons[kMastLeftButton]) {
+    servo_mast_ -= kServoIncrement;
+    pub_mast = true;
+  } else if (joystickMsg->buttons[kMastRightButton]) {
+    servo_mast_ += kServoIncrement;
+    pub_mast = true;
+  }
+  if (pub_mast) {
+    servo_mast_ = std::clamp(servo_mast_, kServoMin, kServoMax);
+    auto servo_msg = std_msgs::msg::Float32();
+    servo_msg.data = servo_mast_;
+    servo_m_pub_->publish(servo_msg);
+  }
 };
 
 void drive::declare_parameters() {
@@ -164,7 +160,11 @@ void drive::declare_parameters() {
   this->declare_parameter("cam_left_button", 4);
   this->declare_parameter("cam_right_button", 5);
   this->declare_parameter("lock_turn_button", 6);
+  this->declare_parameter("servo_increment", 0.01);
+  this->declare_parameter("servo_min", -3.14);
+  this->declare_parameter("servo_max", 3.14);
   this->declare_parameter("joy_deadzone", 0.01);
+  this->declare_parameter("default_servo_m", 0.0);
   this->declare_parameter("gimbal_speed", 0.4);
 }
 
@@ -182,10 +182,12 @@ void drive::load_parameters() {
   this->get_parameter("cam_left_button", kCamLeftBut);
   this->get_parameter("cam_right_button", kCamRightBut);
   this->get_parameter("lock_turn_button", kLockTurnBut);
+  this->get_parameter("servo_increment", kServoIncrement);
+  this->get_parameter("servo_min", kServoMin);
+  this->get_parameter("servo_max", kServoMax);
   this->get_parameter("joy_deadzone", kJoyDeadzone);
+  this->get_parameter("default_servo_m", kDefaultServoM);
   this->get_parameter("gimbal_speed", kGimbalSpeed);
-  if (!std::isfinite(kGimbalSpeed) || kGimbalSpeed <= 0)
-    throw std::invalid_argument("gimbal_speed must be finite and positive");
 
   RCLCPP_INFO(this->get_logger(), "Loaded Max Linear: %f", kMaxLinear);
   RCLCPP_INFO(this->get_logger(), "Loaded Max Angular: %f", kMaxAngular);

@@ -71,8 +71,8 @@ chassis_controller:
 
 gimbal_controller:
   ros__parameters:
-    joints: [gimbal_pan_joint, gimbal_tilt_joint, mast_camera_joint]
-    lower_limits: [-3.10, -3.75, -4.2]
-    upper_limits: [3.18, 2.53, 2.08]
-    max_velocity: [0.5, 0.5, 0.5]
+    joints: [gimbal_pan_joint, gimbal_tilt_joint]
+    lower_limits: [-3.10, -3.75]
+    upper_limits: [3.18, 2.53]
+    max_velocity: [0.5, 0.5]
     command_timeout: 0.5

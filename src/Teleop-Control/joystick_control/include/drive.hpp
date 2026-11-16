@@ -17,6 +17,7 @@ public:
 
 private:
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr twist_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr servo_m_pub_;
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
   rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr drive_throttle_sub_;
   rclcpp::Subscription<interfaces::msg::VideoPresets>::SharedPtr presets_sub_;
@@ -48,9 +49,14 @@ private:
   int kLockTurnBut;
   int kCamLeftBut;
   int kCamRightBut;
+  double kServoIncrement;
+  double kServoMin;
+  double kServoMax;
   double kJoyDeadzone;
+  double kDefaultServoM;
 
   bool initialized_;
+  double servo_mast_;
   float drive_throttle_;
 
   bool cam_debounce_{false};

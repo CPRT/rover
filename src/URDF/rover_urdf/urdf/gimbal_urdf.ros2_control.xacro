@@ -9,18 +9,15 @@
       <param name="direction">1.0</param>
     </joint>
   </xacro:macro>
-  <xacro:macro name="gimbal_ros2_control" params="mock serial_port">
+  <xacro:macro name="gimbal_ros2_control">
     <ros2_control name="GimbalSystem" type="system">
       <hardware>
-        <xacro:if value="${mock}"><plugin>mock_components/GenericSystem</plugin></xacro:if>
-        <xacro:unless value="${mock}">
-          <plugin>gimbal_control/MaestroSystem</plugin>
-          <param name="serial_port">${serial_port}</param><param name="device_number">12</param>
-        </xacro:unless>
+        <plugin>gimbal_control/MaestroSystem</plugin>
+        <param name="serial_port">/dev/serial/by-id/usb-Pololu_Corporation_Pololu_Mini_Maestro_12-Channel_USB_Servo_Controller_00460938-if00</param>
+        <param name="device_number">12</param>
       </hardware>
       <xacro:gimbal_control_joint name="gimbal_pan_joint" channel="1" center="3.10" lower="-3.10" upper="3.18"/>
       <xacro:gimbal_control_joint name="gimbal_tilt_joint" channel="0" center="3.75" lower="-3.75" upper="2.53"/>
-      <xacro:gimbal_control_joint name="mast_camera_joint" channel="3" center="4.2" lower="-4.2" upper="2.08"/>
     </ros2_control>
   </xacro:macro>
 </robot>

@@ -27,15 +27,16 @@ public:
                                            const rclcpp::Duration &) override;
 
 private:
+  static constexpr size_t kNumJoints = 2; // pan, tilt
   struct Command {
-    std::array<double, 3> velocity{};
+    std::array<double, kNumJoints> velocity{};
     std::chrono::steady_clock::time_point received{};
     uint64_t sequence{0};
   };
   std::vector<std::string> joints_;
   std::vector<double> lower_, upper_, max_velocity_;
-  std::array<double, 3> positions_{};
-  std::array<size_t, 3> command_indices_{}, state_indices_{};
+  std::array<double, kNumJoints> positions_{};
+  std::array<size_t, kNumJoints> command_indices_{}, state_indices_{};
   double timeout_{0.5};
   bool homing_{false};
   uint64_t ignored_sequence_{0};

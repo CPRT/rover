@@ -22,18 +22,6 @@ def generate_launch_description():
     control_yaml = os.path.join(desc_dir, "config", "ros2_controllers.yaml")
     use_arm = LaunchConfiguration("use_arm")
     use_drive = LaunchConfiguration("use_drive")
-    gimbal_defaults = {
-        "use_gimbal": "true",
-        "gimbal_mock_hardware": "false",
-        "gimbal_serial_port": "/dev/serial/by-id/usb-Pololu_Corporation_Pololu_Mini_Maestro_12-Channel_USB_Servo_Controller_00460938-if00",
-        "gimbal_mount_xyz": "0 0 0",
-        "gimbal_mount_rpy": "0 0 0",
-        "mast_camera_xyz": "0 0 0",
-        "mast_camera_rpy": "0 0 0",
-    }
-    gimbal_xacro_args = []
-    for name in gimbal_defaults:
-        gimbal_xacro_args.extend([" ", name, ":='", LaunchConfiguration(name), "'"])
     joystick_control_dir = get_package_share_directory("joystick_control")
     joy_parameters_file = os.path.join(joystick_control_dir, "8bitdo.yaml")
 
@@ -58,7 +46,6 @@ def generate_launch_description():
                 use_arm,
                 " use_drive:=",
                 use_drive,
-                *gimbal_xacro_args,
             ]
         ),
         value_type=str,
@@ -119,7 +106,6 @@ def generate_launch_description():
         executable="spawner",
         arguments=["gimbal_controller"],
         output="screen",
-        condition=IfCondition(LaunchConfiguration("use_gimbal")),
     )
 
     delayed_spawners = RegisterEventHandler(
@@ -155,8 +141,6 @@ def generate_launch_description():
     )
 
     ld = LaunchDescription()
-    for name, default in gimbal_defaults.items():
-        ld.add_action(DeclareLaunchArgument(name, default_value=default))
     ld.add_action(declare_use_arm_cmd)
     ld.add_action(declare_use_drive_cmd)
     ld.add_action(start_robot_state_publisher_cmd)
